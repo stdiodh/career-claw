@@ -9,7 +9,9 @@ career-claw/
 ├─ app/                     # Kotlin + Spring Boot application
 ├─ infra/
 │  ├─ nginx/
-│  │  └─ default.conf
+│  │  ├─ default.conf
+│  │  ├─ claw.stdiodh.xyz.conf.example
+│  │  └─ README.md
 │  ├─ openclaw/
 │  │  ├─ openclaw.json
 │  │  └─ workspace/
@@ -129,6 +131,7 @@ docker compose up -d --remove-orphans
 - The app image is pulled from Docker Hub. Keeping the Docker Hub repository public is the simplest setup because the EC2 host can pull without an extra `docker login`.
 - If the EC2 host already uses another Nginx/Certbot stack on `80/443`, do not run a second Nginx container for `career-claw`.
 - Keep the host `APP_PORT` on a non-conflicting port such as `8082`, then proxy `claw.stdiodh.xyz` from the existing Nginx stack to that port.
+- A shared-host Nginx sample for `claw.stdiodh.xyz` lives in [`infra/nginx/claw.stdiodh.xyz.conf.example`](/Users/dh/Desktop/Code/career-claw/infra/nginx/claw.stdiodh.xyz.conf.example).
 - Keep OpenClaw internal-only. Its Docker port binding is loopback-only, so it is not exposed through the instance's public interface.
 - Certbot/HTTPS is not wired yet, but the Nginx layout is intentionally simple so TLS and certificate volumes can be layered in later.
 
