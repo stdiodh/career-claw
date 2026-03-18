@@ -23,4 +23,4 @@ mkdir -p "${OPENCLAW_DIR}/workspace"
 cd "${INFRA_DIR}"
 
 docker compose --env-file ../.env -f compose.yaml pull
-docker compose --env-file ../.env -f compose.yaml up -d --build --remove-orphans
+docker compose --env-file ../.env -f compose.yaml up -d --remove-orphans

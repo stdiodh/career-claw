@@ -31,6 +31,7 @@ career-claw/
 - `app` is the Kotlin + Spring Boot service and listens internally on port `8080`.
 - `openclaw` is included as internal infrastructure and is not publicly exposed. Its gateway port is bound to `127.0.0.1` on the host only.
 - Docker Compose is the orchestration layer for local, development, and EC2 deployment workflows.
+- Production deployment uses a prebuilt app image from Docker Hub, while local development can still build the app image directly.
 
 Request flow:
 
@@ -97,6 +98,9 @@ Expected GitHub secrets:
 - `AWS_HOST`
 - `AWS_USER`
 - `AWS_SSH_KEY`
+- `DOCKER_USERNAME`
+- `DOCKER_PASSWORD`
+- `DOCKER_REPONAME`
 - `GEMINI_API_KEY`
 - `DISCORD_TOKEN`
 - `OPENCLAW_AUTH_TOKEN`
@@ -105,22 +109,24 @@ Expected GitHub secrets:
 The workflow:
 
 - checks out the repository
+- builds the Spring Boot app image and pushes it to Docker Hub
 - configures SSH access
 - generates the server `.env` file from GitHub Secrets
-- syncs the repo contents to `/opt/career-claw` on the EC2 instance
+- syncs `infra/` to `/opt/career-claw` on the EC2 instance
 - runs `infra/scripts/deploy.sh` remotely
 
 The deploy script then runs Docker Compose from `infra/` and refreshes the stack with:
 
 ```bash
 docker compose pull
-docker compose up -d --build --remove-orphans
+docker compose up -d --remove-orphans
 ```
 
 ## EC2 deployment notes
 
 - Install Docker Engine and Docker Compose v2 on the EC2 host.
 - The deploy workflow uploads `/opt/career-claw/.env` from GitHub Secrets on each deployment.
+- The app image is pulled from Docker Hub. Keeping the Docker Hub repository public is the simplest setup because the EC2 host can pull without an extra `docker login`.
 - Make sure ports `80` and `443` are allowed in the EC2 security group.
 - Keep OpenClaw internal-only. Its Docker port binding is loopback-only, so it is not exposed through the instance's public interface.
 - Certbot/HTTPS is not wired yet, but the Nginx layout is intentionally simple so TLS and certificate volumes can be layered in later.
