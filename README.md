@@ -1,6 +1,6 @@
 # career-claw
 
-`career-claw` is the main monorepo for the service. The public-facing entrypoint is a Kotlin + Spring Boot application, fronted by Nginx, with OpenClaw running as internal-only infrastructure for agent workflows. The repository is set up for a practical single-developer flow on AWS EC2 using Docker Compose and GitHub Actions.
+`career-claw` is the main monorepo for the service. The public-facing entrypoint is a Kotlin + Spring Boot application, with OpenClaw running as internal-only infrastructure for agent workflows. In production on the shared EC2 host, the existing `didimlog` Nginx and Certbot stack is expected to front this service.
 
 ## Repository layout
 
@@ -27,8 +27,8 @@ career-claw/
 
 ## Architecture
 
-- `nginx` is the public entrypoint and listens on ports `80` and `443`.
-- `app` is the Kotlin + Spring Boot service and listens internally on port `8080`.
+- `app` is the Kotlin + Spring Boot service and runs in Docker on container port `8080`.
+- In production, the app is published on host port `8081` by default so the existing `didimlog` Nginx can proxy traffic for `claw.stdiodh.xyz`.
 - `openclaw` is included as internal infrastructure and is not publicly exposed. Its gateway port is bound to `127.0.0.1` on the host only.
 - Docker Compose is the orchestration layer for local, development, and EC2 deployment workflows.
 - Production deployment uses a prebuilt app image from Docker Hub, while local development can still build the app image directly.
@@ -36,7 +36,7 @@ career-claw/
 Request flow:
 
 ```text
-Internet -> Nginx -> Spring Boot app
+Internet -> existing didimlog Nginx -> career-claw app
 ```
 
 OpenClaw stays outside the public request path.
@@ -78,9 +78,9 @@ docker compose --env-file .env -f infra/compose.yaml down
 
 Local endpoints:
 
-- App through Nginx: `http://localhost`
-- Direct app health via Nginx: `http://localhost/health`
-- Actuator health via Nginx: `http://localhost/actuator/health`
+- App: `http://localhost:8081`
+- Direct app health: `http://localhost:8081/health`
+- Actuator health: `http://localhost:8081/actuator/health`
 - OpenClaw gateway, host-local only: `http://127.0.0.1:18789`
 
 ## CI/CD
@@ -127,7 +127,8 @@ docker compose up -d --remove-orphans
 - Install Docker Engine and Docker Compose v2 on the EC2 host.
 - The deploy workflow uploads `/opt/career-claw/.env` from GitHub Secrets on each deployment.
 - The app image is pulled from Docker Hub. Keeping the Docker Hub repository public is the simplest setup because the EC2 host can pull without an extra `docker login`.
-- Make sure ports `80` and `443` are allowed in the EC2 security group.
+- If the EC2 host already uses another Nginx/Certbot stack on `80/443`, do not run a second Nginx container for `career-claw`.
+- Keep the host `APP_PORT` on a non-conflicting port such as `8081`, then proxy `claw.stdiodh.xyz` from the existing Nginx stack to that port.
 - Keep OpenClaw internal-only. Its Docker port binding is loopback-only, so it is not exposed through the instance's public interface.
 - Certbot/HTTPS is not wired yet, but the Nginx layout is intentionally simple so TLS and certificate volumes can be layered in later.
 
