@@ -1,10 +1,9 @@
 services:
   app:
-    image: ${DOCKER_USERNAME}/${DOCKER_REPONAME}:${APP_IMAGE_TAG:-latest}
+    image: ${APP_IMAGE:-career-claw-app}:${IMAGE_TAG:-local}
     build:
       context: ../app
       dockerfile: Dockerfile
-    pull_policy: always
     restart: unless-stopped
     env_file:
       - ../.env

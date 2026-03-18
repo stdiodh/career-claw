@@ -93,7 +93,7 @@ Local endpoints:
 
 ### Deploy
 
-`.github/workflows/deploy.yml` deploys to EC2 on pushes to `main` and via manual trigger.
+`.github/workflows/deploy.yml` is a release-style deploy workflow that builds the app image, pushes it to Docker Hub, copies the infra files to EC2, and runs Docker Compose on the server.
 
 Expected GitHub secrets:
 
@@ -111,23 +111,23 @@ Expected GitHub secrets:
 The workflow:
 
 - checks out the repository
+- runs `./gradlew check` from `app/`
 - builds the Spring Boot app image and pushes it to Docker Hub
-- configures SSH access
+- copies `infra/` to `/home/<aws_user>/app/career-claw` on EC2
 - generates the server `.env` file from GitHub Secrets
-- syncs `infra/` to `/opt/career-claw` on the EC2 instance
 - runs `docker compose pull` and `docker compose up -d` directly on EC2
 
 The EC2 deployment step runs Docker Compose from `infra/` with:
 
 ```bash
-docker compose pull
-docker compose up -d --remove-orphans
+docker compose --env-file ../.env -f compose.yaml pull app openclaw
+docker compose --env-file ../.env -f compose.yaml up -d --force-recreate app openclaw
 ```
 
 ## EC2 deployment notes
 
 - Install Docker Engine and Docker Compose v2 on the EC2 host.
-- The deploy workflow uploads `/opt/career-claw/.env` from GitHub Secrets on each deployment.
+- The deploy workflow uploads `/home/<aws_user>/app/career-claw/.env` from GitHub Secrets on each deployment.
 - The app image is pulled from Docker Hub. Keeping the Docker Hub repository public is the simplest setup because the EC2 host can pull without an extra `docker login`.
 - If the EC2 host already uses another Nginx/Certbot stack on `80/443`, do not run a second Nginx container for `career-claw`.
 - Keep the host `APP_PORT` on a non-conflicting port such as `8082`, then proxy `claw.stdiodh.xyz` from the existing Nginx stack to that port.
