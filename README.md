@@ -28,7 +28,7 @@ career-claw/
 ## Architecture
 
 - `app` is the Kotlin + Spring Boot service and runs in Docker on container port `8080`.
-- In production, the app is published on host port `8081` by default so the existing `didimlog` Nginx can proxy traffic for `claw.stdiodh.xyz`.
+- In production, the app is published on host port `8082` by default so the existing `didimlog` Nginx can proxy traffic for `claw.stdiodh.xyz`.
 - `openclaw` is included as internal infrastructure and is not publicly exposed. Its gateway port is bound to `127.0.0.1` on the host only.
 - Docker Compose is the orchestration layer for local, development, and EC2 deployment workflows.
 - Production deployment uses a prebuilt app image from Docker Hub, while local development can still build the app image directly.
@@ -78,9 +78,9 @@ docker compose --env-file .env -f infra/compose.yaml down
 
 Local endpoints:
 
-- App: `http://localhost:8081`
-- Direct app health: `http://localhost:8081/health`
-- Actuator health: `http://localhost:8081/actuator/health`
+- App: `http://localhost:8082`
+- Direct app health: `http://localhost:8082/health`
+- Actuator health: `http://localhost:8082/actuator/health`
 - OpenClaw gateway, host-local only: `http://127.0.0.1:18789`
 
 ## CI/CD
@@ -128,7 +128,7 @@ docker compose up -d --remove-orphans
 - The deploy workflow uploads `/opt/career-claw/.env` from GitHub Secrets on each deployment.
 - The app image is pulled from Docker Hub. Keeping the Docker Hub repository public is the simplest setup because the EC2 host can pull without an extra `docker login`.
 - If the EC2 host already uses another Nginx/Certbot stack on `80/443`, do not run a second Nginx container for `career-claw`.
-- Keep the host `APP_PORT` on a non-conflicting port such as `8081`, then proxy `claw.stdiodh.xyz` from the existing Nginx stack to that port.
+- Keep the host `APP_PORT` on a non-conflicting port such as `8082`, then proxy `claw.stdiodh.xyz` from the existing Nginx stack to that port.
 - Keep OpenClaw internal-only. Its Docker port binding is loopback-only, so it is not exposed through the instance's public interface.
 - Certbot/HTTPS is not wired yet, but the Nginx layout is intentionally simple so TLS and certificate volumes can be layered in later.
 
