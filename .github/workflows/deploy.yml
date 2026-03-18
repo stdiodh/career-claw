@@ -95,10 +95,14 @@ jobs:
         run: |
           rsync -az .deploy.env "${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }}:${DEPLOY_PATH}/.env"
 
-      - name: Run remote deploy
+      - name: Run docker compose on EC2
         run: |
           ssh "${{ secrets.AWS_USER }}@${{ secrets.AWS_HOST }}" \
-            "bash ${DEPLOY_PATH}/infra/scripts/deploy.sh ${DEPLOY_PATH}"
+            "mkdir -p ${DEPLOY_PATH}/infra/openclaw/workspace && \
+             cd ${DEPLOY_PATH}/infra && \
+             docker compose --env-file ../.env -f compose.yaml pull && \
+             docker compose --env-file ../.env -f compose.yaml up -d --remove-orphans && \
+             docker compose --env-file ../.env -f compose.yaml ps"
 
       - name: Remove local deployment env file
         if: always()

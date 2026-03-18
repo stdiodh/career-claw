@@ -113,9 +113,9 @@ The workflow:
 - configures SSH access
 - generates the server `.env` file from GitHub Secrets
 - syncs `infra/` to `/opt/career-claw` on the EC2 instance
-- runs `infra/scripts/deploy.sh` remotely
+- runs `docker compose pull` and `docker compose up -d` directly on EC2
 
-The deploy script then runs Docker Compose from `infra/` and refreshes the stack with:
+The EC2 deployment step runs Docker Compose from `infra/` with:
 
 ```bash
 docker compose pull
