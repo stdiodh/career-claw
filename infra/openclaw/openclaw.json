@@ -1,0 +1,6 @@
+{
+  "timezone": "Asia/Seoul",
+  "cron": {
+    "enabled": true
+  }
+}
