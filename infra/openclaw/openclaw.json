@@ -4,6 +4,9 @@
       "userTimezone": "Asia/Seoul"
     }
   },
+  "gateway": {
+    "mode": "local"
+  },
   "cron": {
     "enabled": true
   }
