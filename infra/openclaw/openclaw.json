@@ -1,5 +1,9 @@
 {
-  "timezone": "Asia/Seoul",
+  "agents": {
+    "defaults": {
+      "userTimezone": "Asia/Seoul"
+    }
+  },
   "cron": {
     "enabled": true
   }
