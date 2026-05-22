@@ -1,40 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
 .env
 .env.*
 !.env.example
-.deploy.env
 
+# Logs
+*.log
+logs/
+
+# OS files
 .DS_Store
+Thumbs.db
 
+# Build outputs and editor files
 .gradle/
 build/
 out/
 .kotlin/
-
 app/.gradle/
 app/build/
-
 .idea/
 *.iws
 *.iml
 *.ipr
 .vscode/
 
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings/
-.springBeans
-.sts4-cache/
-bin/
-
-coverage/
-
+# Legacy local infrastructure state
 infra/certbot/
 infra/nginx/certs/
 infra/openclaw/runtime/
 infra/openclaw/data/
 
+# Local certificates and keys
 *.pem
 *.key
 *.crt
+
+# Generated reports
+reports/*.md
+reports/*.markdown
+!reports/.gitkeep

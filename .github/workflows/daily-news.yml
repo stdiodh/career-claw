@@ -1,0 +1,99 @@
+name: Daily Career Feed News
+
+on:
+  schedule:
+    # GitHub Actions cron uses UTC. 00:07 UTC is 09:07 Asia/Seoul.
+    - cron: "7 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  daily-news:
+    name: Generate and send daily news briefing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Prepare KST runtime prompt and report path
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p reports
+
+          kst_now="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
+          report_date="$(TZ=Asia/Seoul date '+%Y-%m-%d')"
+          runtime_prompt="${RUNNER_TEMP}/daily-news-prompt-${GITHUB_RUN_ID}.md"
+          report_file="reports/${report_date}-daily-news.md"
+
+          KST_NOW="${kst_now}" RUNTIME_PROMPT="${runtime_prompt}" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          source = Path(".github/codex/prompts/daily-news.md")
+          destination = Path(os.environ["RUNTIME_PROMPT"])
+          prompt = source.read_text(encoding="utf-8")
+          destination.write_text(
+              prompt.replace("{{KST_NOW}}", os.environ["KST_NOW"]),
+              encoding="utf-8",
+          )
+          PY
+
+          {
+            echo "kst_now=${kst_now}"
+            echo "report_date=${report_date}"
+            echo "runtime_prompt=${runtime_prompt}"
+            echo "report_file=${report_file}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Generate Markdown report with Codex live web search
+        id: generate_report
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ steps.prepare.outputs.runtime_prompt }}
+          output-file: ${{ steps.prepare.outputs.report_file }}
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          codex-args: '["--search"]'
+
+      - name: Validate generated Markdown report
+        shell: bash
+        env:
+          REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -f "${REPORT_FILE}" ]; then
+            echo "Expected report file was not created: ${REPORT_FILE}" >&2
+            exit 1
+          fi
+
+          if [ ! -s "${REPORT_FILE}" ]; then
+            echo "Generated report file is empty: ${REPORT_FILE}" >&2
+            exit 1
+          fi
+
+      - name: Send Markdown report to Discord
+        shell: bash
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
+        run: |
+          set -euo pipefail
+          python3 scripts/send-discord.py "${REPORT_FILE}"
+
+      - name: Upload Markdown report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: career-feed-daily-news-${{ steps.prepare.outputs.report_date }}
+          path: ${{ steps.prepare.outputs.report_file }}
+          if-no-files-found: warn
