@@ -1,0 +1,61 @@
+name: Daily Career Feed
+
+on:
+  schedule:
+    # GitHub Actions cron uses UTC. 00:03 UTC is 09:03 Asia/Seoul.
+    - cron: "3 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  daily-feed:
+    name: Collect and send free category briefs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Prepare report directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/candidates reports/briefs
+
+      - name: Collect feed candidates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/collect-feeds.py
+
+      - name: Render free briefs
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/render-brief.py
+
+      - name: Send category briefs to Discord with staggered offsets
+        shell: bash
+        env:
+          DISCORD_WEBHOOK_AI_NEWS: ${{ secrets.DISCORD_WEBHOOK_AI_NEWS }}
+          DISCORD_WEBHOOK_BACKEND_NEWS: ${{ secrets.DISCORD_WEBHOOK_BACKEND_NEWS }}
+          DISCORD_WEBHOOK_SECURITY_ALERTS: ${{ secrets.DISCORD_WEBHOOK_SECURITY_ALERTS }}
+          DISCORD_WEBHOOK_BACKEND_TECH: ${{ secrets.DISCORD_WEBHOOK_BACKEND_TECH }}
+          DISCORD_WEBHOOK_JOB_FEED: ${{ secrets.DISCORD_WEBHOOK_JOB_FEED }}
+        run: |
+          set -euo pipefail
+          python3 scripts/send-category-briefs.py
+
+      - name: Upload candidates and briefs as artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: career-feed-free-${{ github.run_id }}
+          path: |
+            reports/candidates
+            reports/briefs
+          if-no-files-found: warn

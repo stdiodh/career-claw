@@ -8,8 +8,12 @@ GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다�
 
 | Secret | 설명 |
 | --- | --- |
-| `OPENAI_API_KEY` | Codex 기반 브리핑 생성과 live web search에 사용할 OpenAI API 키 |
-| `DISCORD_WEBHOOK_URL` | 브리핑을 전송할 Discord Webhook URL |
+| `DISCORD_WEBHOOK_AI_NEWS` | AI News 채널 Webhook URL |
+| `DISCORD_WEBHOOK_BACKEND_NEWS` | Backend News 채널 Webhook URL |
+| `DISCORD_WEBHOOK_SECURITY_ALERTS` | Security Alerts 채널 Webhook URL |
+| `DISCORD_WEBHOOK_BACKEND_TECH` | Backend Tech Radar 채널 Webhook URL |
+| `DISCORD_WEBHOOK_JOB_FEED` | Job Feed 채널 Webhook URL |
+| `OPENAI_API_KEY` | 선택형 AI workflow에서만 사용하는 OpenAI API 키 |
 
 주의 사항:
 
@@ -19,100 +23,103 @@ GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다�
 
 ## Workflow 실행 방식
 
-Career Feed의 일일 브리핑 workflow는 `.github/workflows/daily-news.yml`에 정의되어 있다.
+### Daily Career Feed
 
-- Workflow 이름: `Daily Career Feed News`
-- 예약 실행: 매일 `09:07 Asia/Seoul`
-- GitHub Actions cron: `7 0 * * *`
+기본 일일 workflow는 `.github/workflows/daily-feed.yml`에 정의되어 있다.
+
+- Workflow 이름: `Daily Career Feed`
+- 예약 실행: 매일 `09:03 Asia/Seoul`
+- GitHub Actions cron: `3 0 * * *`
 - 수동 실행: `workflow_dispatch`
+- OpenAI API 사용: 없음
 
-GitHub Actions의 schedule 이벤트는 기본 브랜치에 있는 workflow 파일을 기준으로 동작한다. 기본 브랜치에 workflow가 반영되지 않았거나 비활성화된 경우 예약 실행은 동작하지 않는다.
+실행 순서는 다음과 같다.
 
-workflow는 실행 시점의 KST 시간을 계산해 `.github/codex/prompts/daily-news.md` 안의 `{{KST_NOW}}`를 치환한 임시 runtime prompt를 만든다. Codex는 live web search를 사용해 브리핑을 생성하고, 결과를 `reports/YYYY-MM-DD-daily-news.md`에 저장한 뒤 Discord Webhook으로 전송한다. 생성된 리포트는 GitHub Actions artifact로도 업로드된다.
+1. RSS/Atom 후보 수집
+2. `reports/candidates/{category}.json` 생성
+3. 무료 Markdown 브리핑 렌더링
+4. 09:07 KST부터 카테고리별 Webhook 순차 전송
+5. 후보와 브리핑 artifact 업로드
 
-## 수동 실행 방법
+### Manual AI Light Brief
 
-GitHub Actions 화면에서 다음 방식으로 수동 실행한다.
+`.github/workflows/ai-brief-manual.yml`은 수동 실행 전용이다.
 
-1. GitHub 저장소의 `Actions` 탭으로 이동한다.
-2. `Daily Career Feed News` workflow를 선택한다.
-3. `Run workflow`를 클릭한다.
-4. 실행 대상 브랜치를 확인하고 `Run workflow`를 실행한다.
-5. 실행 로그에서 runtime prompt 생성, Codex 리포트 생성, Markdown 검증, Discord 전송, artifact 업로드 단계가 성공했는지 확인한다.
-6. Discord 채널에 브리핑 메시지가 도착했는지 확인한다.
+- live web search를 사용하지 않는다.
+- `OPENAI_API_KEY`가 필요하다.
+- 후보 JSON은 카테고리당 최대 5개만 전달한다.
+- summary는 항목당 240자 이하로 제한한다.
+- runtime prompt가 8000자 이상이면 실패한다.
 
-수동 실행은 다음 상황에서 사용한다.
+### Manual AI Search Brief
 
-- GitHub Secrets 설정 직후 연결을 확인할 때
-- 프롬프트를 수정한 뒤 결과 품질을 확인할 때
-- Discord Webhook 재발급 후 전송을 확인할 때
-- 예약 실행 실패 원인을 재현할 때
+`.github/workflows/daily-news.yml`은 기존 Codex live web search 기반 workflow를 수동 고급 모드로 보존한 것이다.
 
-## 로컬 전송 테스트
+- 자동 schedule이 없다.
+- `OPENAI_API_KEY`가 필요하다.
+- 비용이 커질 수 있으므로 특별한 이슈를 확인해야 할 때만 실행한다.
+- 결과는 Discord 전송 전에 artifact로 저장한다.
 
-이미 생성된 Markdown 리포트가 있다면 로컬에서 Discord 전송 스크립트만 확인할 수 있다.
+## 소스 추가 방법
 
-```bash
-DISCORD_WEBHOOK_URL="..." python3 scripts/send-discord.py reports/YYYY-MM-DD-daily-news.md
+RSS/Atom 소스는 `configs/sources.json`에 추가한다.
+
+```json
+{
+  "category": "backend-news",
+  "name": "Spring Blog",
+  "url": "https://spring.io/blog.atom",
+  "type": "atom"
+}
 ```
 
-실제 Webhook URL은 터미널 히스토리나 로그에 남지 않도록 주의한다. 필요한 경우 일회성 셸 환경변수나 커밋되지 않는 `.env` 파일을 사용한다.
+기준:
+
+- 공식 블로그, 공식 릴리스 노트, 공식 보안 공지를 우선한다.
+- URL 접근 가능성을 확인한 뒤 추가한다.
+- 확실하지 않은 URL은 TODO로 남기고 실제 수집 대상에 넣지 않는다.
+- 1차 MVP에서 실제 수집은 `rss`, `atom`만 지원한다.
+- `webpage`, `github-releases`는 추후 확장용으로만 둔다.
 
 ## 로컬 검증 방법
 
-Secret 없이 기본 파일 구조, Python 문법, 샘플 리포트 생성을 확인하려면 다음 명령을 실행한다.
+Secret 없이 기본 파일 구조, Python 문법, 무료 브리핑 렌더링, 전송 dry-run을 확인하려면 다음 명령을 실행한다.
 
 ```bash
 ./scripts/validate.sh
 ```
 
-검증 스크립트는 다음을 확인한다.
-
-- `python3 -m py_compile scripts/send-discord.py`
-- `python3 scripts/make-sample-report.py`
-- `reports/sample-daily-news.md` 생성 여부
-- `.github/codex/prompts/daily-news.md` 존재 여부
-- `.github/workflows/daily-news.yml` 존재 여부
-
-`DISCORD_WEBHOOK_URL`이 설정되어 있어도 `validate.sh`는 자동으로 Discord 전송을 실행하지 않는다. 실제 전송 테스트는 사용자가 아래 명령을 명시적으로 실행할 때만 수행한다.
+실제 Discord 전송은 자동으로 실행하지 않는다. 전송 테스트가 필요하면 대상 Webhook 환경변수를 설정한 뒤 명시적으로 실행한다.
 
 ```bash
-python3 scripts/send-discord.py reports/sample-daily-news.md
+python3 scripts/send-category-briefs.py
+```
+
+기존 단일 파일 전송 스크립트도 유지한다.
+
+```bash
+DISCORD_WEBHOOK_URL="..." python3 scripts/send-discord.py reports/sample-daily-news.md
 ```
 
 ## Artifact 확인 방법
 
-1차 MVP에서는 매일 생성된 Markdown 리포트를 GitHub 저장소에 자동 commit/push하지 않는다. 결과 확인은 Discord 알림과 GitHub Actions artifact를 기준으로 한다.
+일일 workflow는 다음 산출물을 artifact로 업로드한다.
 
-workflow가 끝나면 실행 상세 화면의 artifact 영역에서 `career-feed-daily-news-YYYY-MM-DD` 파일을 내려받아 생성된 Markdown 리포트를 확인할 수 있다. Discord 전송이 실패하더라도 리포트 파일이 생성된 경우 artifact 업로드 단계에서 확인할 수 있다.
+- `reports/candidates/*.json`
+- `reports/briefs/*.md`
 
 저장 정책은 다음과 같다.
 
 - `reports/.gitkeep`만 저장소에 유지한다.
-- `reports/*.md`, `reports/*.markdown`은 `.gitignore` 대상이다.
-- `reports/YYYY-MM-DD-daily-news.md`는 Actions 실행 중 생성되고 artifact로 업로드된다.
-- `reports/sample-daily-news.md`는 로컬 테스트용으로 생성될 수 있지만 기본 커밋 대상이 아니다.
-- 장기 보관이 필요해지면 일일 workflow에 자동 커밋을 넣지 않고 별도의 archive workflow로 분리한다.
+- 실행 중 생성된 후보 JSON과 Markdown 브리핑은 기본 커밋 대상이 아니다.
+- 장기 보관이 필요해지면 별도의 archive workflow로 분리한다.
 
 ## 실패 시 확인할 것
 
-실패가 발생하면 다음 순서로 확인한다.
-
-- `OPENAI_API_KEY` Secret이 등록되어 있는지 확인한다.
-- `DISCORD_WEBHOOK_URL` Secret이 등록되어 있고 값이 최신인지 확인한다.
-- workflow가 기본 브랜치에 존재하는지 확인한다.
-- `reports/` 디렉터리 생성 단계가 성공했는지 확인한다.
-- Discord Webhook이 삭제되거나 대상 채널 권한이 변경되지 않았는지 확인한다.
-- 생성된 Markdown 리포트가 비어 있지 않은지 확인한다.
-- Discord 메시지 길이가 2000자를 초과하지 않았는지 확인한다.
-- GitHub Actions 로그에서 Codex 실행 오류, 네트워크 오류, 인증 오류, API 제한 오류를 확인한다.
-
-## Discord Webhook 재발급 시 주의할 것
-
-Discord Webhook을 재발급하면 기존 URL은 더 이상 사용하지 않는 것을 전제로 운영한다.
-
-- 새 Webhook URL을 GitHub Secret `DISCORD_WEBHOOK_URL`에 즉시 반영한다.
-- 이전 Webhook URL이 코드, 문서, 이슈, PR, 로그에 노출되지 않았는지 확인한다.
-- 노출 가능성이 있으면 기존 Webhook을 삭제하고 새 Webhook으로 교체한다.
-- 재발급 후에는 `workflow_dispatch`로 수동 실행해 메시지 전송을 확인한다.
-- Webhook 권한과 대상 채널이 의도한 브리핑 채널인지 확인한다.
+- enabled 채널의 Discord Webhook Secret이 등록되어 있는지 확인한다.
+- `configs/channels.json`의 `webhook_env` 값이 Secret 이름과 일치하는지 확인한다.
+- `configs/sources.json`의 RSS/Atom URL이 접근 가능한지 확인한다.
+- `reports/candidates/{category}.json`이 생성되었는지 확인한다.
+- `reports/briefs/{category}.md`가 비어 있지 않은지 확인한다.
+- AI workflow 실패 시 runtime prompt 크기 제한에 걸렸는지 확인한다.
+- `AI_SEARCH_MODE`는 live web search 비용이 발생할 수 있음을 확인한다.

@@ -1,0 +1,131 @@
+name: Manual AI Light Brief
+
+on:
+  workflow_dispatch:
+    inputs:
+      category:
+        description: Category to refine
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - ai-news
+          - backend-news
+          - security-alerts
+          - backend-tech
+          - job-feed
+      max_items:
+        description: Maximum items per category
+        required: true
+        default: "3"
+
+permissions:
+  contents: read
+
+jobs:
+  ai-light-brief:
+    name: Refine collected candidates without live search
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Prepare report directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/candidates reports/briefs
+
+      - name: Collect feed candidates
+        shell: bash
+        env:
+          CATEGORY: ${{ inputs.category }}
+        run: |
+          set -euo pipefail
+          python3 scripts/collect-feeds.py --category "${CATEGORY}"
+
+      - name: Build compact AI input
+        id: ai_input
+        shell: bash
+        env:
+          CATEGORY: ${{ inputs.category }}
+          MAX_ITEMS: ${{ inputs.max_items }}
+        run: |
+          set -euo pipefail
+
+          runtime_prompt="${RUNNER_TEMP}/compact-brief-${GITHUB_RUN_ID}.md"
+          include_disabled=()
+          if [ "${CATEGORY}" != "all" ]; then
+            include_disabled=(--include-disabled)
+          fi
+
+          python3 scripts/build-ai-input.py \
+            --category "${CATEGORY}" \
+            --max-items "${MAX_ITEMS}" \
+            --output "${runtime_prompt}" \
+            "${include_disabled[@]}"
+
+          prompt_size="$(wc -c < "${runtime_prompt}" | tr -d ' ')"
+          echo "runtime_prompt=${runtime_prompt}" >> "${GITHUB_OUTPUT}"
+          echo "runtime_prompt_size=${prompt_size}" >> "${GITHUB_OUTPUT}"
+          echo "Runtime prompt size: ${prompt_size} bytes"
+
+      - name: Run Codex without live web search
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ steps.ai_input.outputs.runtime_prompt }}
+          output-file: reports/briefs/ai-light-result.md
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          codex-args: '["--model","gpt-5.4-mini","-c","model_reasoning_effort=\"low\""]'
+
+      - name: Validate refined Markdown
+        shell: bash
+        env:
+          CATEGORY: ${{ inputs.category }}
+        run: |
+          set -euo pipefail
+
+          if [ "${CATEGORY}" = "all" ]; then
+            python3 scripts/send-category-briefs.py --dry-run
+          else
+            python3 scripts/send-category-briefs.py \
+              --category "${CATEGORY}" \
+              --include-disabled \
+              --dry-run
+          fi
+
+      - name: Send to matching Discord channel
+        shell: bash
+        env:
+          CATEGORY: ${{ inputs.category }}
+          DISCORD_WEBHOOK_AI_NEWS: ${{ secrets.DISCORD_WEBHOOK_AI_NEWS }}
+          DISCORD_WEBHOOK_BACKEND_NEWS: ${{ secrets.DISCORD_WEBHOOK_BACKEND_NEWS }}
+          DISCORD_WEBHOOK_SECURITY_ALERTS: ${{ secrets.DISCORD_WEBHOOK_SECURITY_ALERTS }}
+          DISCORD_WEBHOOK_BACKEND_TECH: ${{ secrets.DISCORD_WEBHOOK_BACKEND_TECH }}
+          DISCORD_WEBHOOK_JOB_FEED: ${{ secrets.DISCORD_WEBHOOK_JOB_FEED }}
+        run: |
+          set -euo pipefail
+
+          if [ "${CATEGORY}" = "all" ]; then
+            python3 scripts/send-category-briefs.py
+          else
+            python3 scripts/send-category-briefs.py \
+              --category "${CATEGORY}" \
+              --include-disabled
+          fi
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: career-feed-ai-light-${{ github.run_id }}
+          path: |
+            reports/candidates
+            reports/briefs
+          if-no-files-found: warn

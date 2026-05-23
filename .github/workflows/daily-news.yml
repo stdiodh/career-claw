@@ -1,17 +1,26 @@
-name: Daily Career Feed News
+name: Manual AI Search Brief
 
 on:
-  schedule:
-    # GitHub Actions cron uses UTC. 00:07 UTC is 09:07 Asia/Seoul.
-    - cron: "7 0 * * *"
   workflow_dispatch:
+    inputs:
+      webhook_secret:
+        description: Discord webhook Secret used for manual delivery
+        required: true
+        default: DISCORD_WEBHOOK_AI_NEWS
+        type: choice
+        options:
+          - DISCORD_WEBHOOK_AI_NEWS
+          - DISCORD_WEBHOOK_BACKEND_NEWS
+          - DISCORD_WEBHOOK_SECURITY_ALERTS
+          - DISCORD_WEBHOOK_BACKEND_TECH
+          - DISCORD_WEBHOOK_JOB_FEED
 
 permissions:
   contents: read
 
 jobs:
-  daily-news:
-    name: Generate and send daily news briefing
+  manual-ai-search:
+    name: Generate manual live-search briefing
     runs-on: ubuntu-latest
 
     steps:
@@ -31,7 +40,7 @@ jobs:
           kst_now="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
           report_date="$(TZ=Asia/Seoul date '+%Y-%m-%d')"
           runtime_prompt="${RUNNER_TEMP}/daily-news-prompt-${GITHUB_RUN_ID}.md"
-          report_file="reports/${report_date}-daily-news.md"
+          report_file="reports/${report_date}-ai-search.md"
 
           KST_NOW="${kst_now}" RUNTIME_PROMPT="${runtime_prompt}" python3 - <<'PY'
           import os
@@ -81,19 +90,18 @@ jobs:
             exit 1
           fi
 
+      - name: Upload Markdown report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: career-feed-ai-search-${{ steps.prepare.outputs.report_date }}
+          path: ${{ steps.prepare.outputs.report_file }}
+          if-no-files-found: warn
+
       - name: Send Markdown report to Discord
         shell: bash
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets[inputs.webhook_secret] }}
           REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
         run: |
           set -euo pipefail
           python3 scripts/send-discord.py "${REPORT_FILE}"
-
-      - name: Upload Markdown report artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: career-feed-daily-news-${{ steps.prepare.outputs.report_date }}
-          path: ${{ steps.prepare.outputs.report_file }}
-          if-no-files-found: warn

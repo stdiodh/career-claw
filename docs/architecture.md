@@ -1,50 +1,51 @@
 # 아키텍처
 
-Career Feed는 GitHub Actions, Codex, Markdown 리포트, Discord Webhook을 연결해 매일 개발자 커리어 브리핑을 전달하는 자동화 프로젝트다.
+Career Feed는 GitHub Actions, RSS/Atom 수집, Markdown 리포트, Discord Webhook을 연결해 개발자 커리어 브리핑을 전달하는 자동화 프로젝트다.
 
-## 전체 흐름
+## 기본 흐름
 
 ```text
 GitHub Actions
       |
       v
-Codex live web search
+RSS/Atom source collection
       |
       v
-Markdown report
+Candidate JSON
       |
       v
-Discord Webhook
+Rule-based Markdown brief
       |
       v
-Discord channel
+Category Discord Webhook
 ```
+
+기본 일일 알림은 `FREE_MODE`로 실행되며 OpenAI API를 사용하지 않는다. 후보 수집은 `configs/sources.json`, 전송 대상은 `configs/channels.json`, 카테고리 정책은 `refs/categories/*.md`를 기준으로 한다.
 
 ## 구성 요소
 
 ### GitHub Actions
 
-GitHub Actions는 예약 실행과 수동 실행의 진입점이다. 매일 정해진 시간에 브리핑 작업을 실행하고, 필요할 때 `workflow_dispatch`로 같은 작업을 수동 실행할 수 있도록 한다.
+GitHub Actions는 예약 실행과 수동 실행의 진입점이다. 기본 workflow는 매일 09:03 KST에 후보 수집을 시작하고 09:07 KST부터 채널별 Webhook으로 순차 전송한다.
 
-초기 MVP에서는 별도 서버를 운영하지 않고 GitHub Actions 실행 환경 안에서 작업을 완료한다.
+### RSS/Atom collector
 
-### Codex
+`scripts/collect-feeds.py`는 Python 표준 라이브러리만 사용해 RSS/Atom을 파싱한다. 각 항목의 제목, 원본 URL, 출처, 발행시각, summary를 추출하고 최근 24시간 항목을 우선한다. 항목이 부족하면 최근 72시간까지 확장한다.
 
-Codex는 live web search를 사용해 최근 24시간의 AI, 백엔드, 클라우드, 보안, 오픈소스 릴리스 관련 정보를 확인한다. 공식 출처, 릴리스 노트, 보안 공지를 우선해 검토하고 3~5개 주요 항목만 선별한다.
+### Markdown renderer
 
-### Markdown report
+`scripts/render-brief.py`는 후보 JSON을 읽어 짧은 Discord용 Markdown을 생성한다. 긴 해설을 만들지 않고 원본 URL 중심으로 구성한다.
 
-선별된 항목은 Discord에서 읽기 쉬운 Markdown 리포트로 정리한다. 리포트는 날짜, 분류, 요약, 실무 관점의 의미, 출처 링크를 포함하는 형식을 지향한다.
+### Discord sender
 
-생성된 일일 리포트 파일은 기본적으로 커밋하지 않는다. 저장소에는 `reports/.gitkeep`만 유지해 디렉터리 구조를 보존한다.
+`scripts/send-category-briefs.py`는 `configs/channels.json`을 읽고 enabled 채널의 `brief_file`을 해당 Webhook으로 전송한다. 기존 `scripts/send-discord.py`는 단일 Markdown 파일 전송용으로 유지한다.
 
-### Discord Webhook
+### Optional AI workflows
 
-Discord Webhook은 생성된 Markdown 리포트를 지정된 Discord 채널로 전송한다. Webhook URL은 `DISCORD_WEBHOOK_URL` 환경변수 또는 GitHub Secrets로만 주입한다.
+`AI_LIGHT_MODE`는 이미 수집된 후보 JSON만 Codex에 전달해 짧게 정제한다. `AI_SEARCH_MODE`는 live web search를 사용하는 수동 고급 모드이며 자동 실행하지 않는다.
 
 ## 초기 MVP에서 제외하는 것
 
-- OpenClaw 연동
 - 상시 실행 서버
 - Discord Gateway Bot
 - Slash Command

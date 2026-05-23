@@ -53,4 +53,9 @@ infra/openclaw/data/
 # Generated reports
 reports/*.md
 reports/*.markdown
+reports/candidates/*.json
+reports/briefs/*.md
+reports/briefs/*.markdown
 !reports/.gitkeep
+!reports/candidates/.gitkeep
+!reports/briefs/.gitkeep

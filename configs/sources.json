@@ -1,0 +1,112 @@
+{
+  "sources": [
+    {
+      "category": "ai-news",
+      "name": "OpenAI News",
+      "url": "https://openai.com/news/rss.xml",
+      "type": "rss"
+    },
+    {
+      "category": "ai-news",
+      "name": "Google AI Blog",
+      "url": "https://blog.google/innovation-and-ai/technology/ai/rss/",
+      "type": "rss"
+    },
+    {
+      "category": "ai-news",
+      "name": "GitHub Changelog",
+      "url": "https://github.blog/changelog/feed/",
+      "type": "rss"
+    },
+    {
+      "category": "backend-news",
+      "name": "Spring Blog",
+      "url": "https://spring.io/blog.atom",
+      "type": "atom"
+    },
+    {
+      "category": "backend-news",
+      "name": "Node.js Blog",
+      "url": "https://nodejs.org/en/feed/blog.xml",
+      "type": "rss"
+    },
+    {
+      "category": "backend-news",
+      "name": "Go Blog",
+      "url": "https://go.dev/blog/feed.atom",
+      "type": "atom"
+    },
+    {
+      "category": "backend-news",
+      "name": "Rust Blog",
+      "url": "https://blog.rust-lang.org/feed.xml",
+      "type": "rss"
+    },
+    {
+      "category": "backend-news",
+      "name": "Kubernetes Blog",
+      "url": "https://kubernetes.io/feed.xml",
+      "type": "rss"
+    },
+    {
+      "category": "backend-news",
+      "name": "Docker Blog",
+      "url": "https://www.docker.com/feed/",
+      "type": "rss"
+    },
+    {
+      "category": "backend-news",
+      "name": "AWS News Blog",
+      "url": "https://aws.amazon.com/blogs/aws/feed/",
+      "type": "rss"
+    },
+    {
+      "category": "backend-news",
+      "name": "PostgreSQL News",
+      "url": "https://www.postgresql.org/news.rss",
+      "type": "rss"
+    },
+    {
+      "category": "security-alerts",
+      "name": "CISA Cybersecurity Advisories",
+      "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+      "type": "rss"
+    },
+    {
+      "category": "security-alerts",
+      "name": "CISA News",
+      "url": "https://www.cisa.gov/news.xml",
+      "type": "rss"
+    },
+    {
+      "category": "security-alerts",
+      "name": "GitHub Security Blog",
+      "url": "https://github.blog/security/feed/",
+      "type": "rss"
+    },
+    {
+      "category": "security-alerts",
+      "name": "Cloudflare Security Blog",
+      "url": "https://blog.cloudflare.com/tag/security/rss/",
+      "type": "rss"
+    },
+    {
+      "category": "security-alerts",
+      "name": "Cisco Security Advisories",
+      "url": "https://sec.cloudapps.cisco.com/security/center/psirtrss20/CiscoSecurityAdvisory.xml",
+      "type": "rss"
+    },
+    {
+      "category": "backend-tech",
+      "name": "TODO: GitHub Releases for selected tools",
+      "url": "",
+      "type": "github-releases"
+    },
+    {
+      "category": "job-feed",
+      "name": "TODO: Official company career pages",
+      "url": "",
+      "type": "webpage"
+    }
+  ]
+}
