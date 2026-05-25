@@ -17,16 +17,19 @@ Candidate JSON
 Rule-based Markdown brief
       |
       v
+Daily Overview + category briefs
+      |
+      v
 Category Discord Webhook
 ```
 
-기본 일일 알림은 `FREE_MODE`로 실행되며 OpenAI API를 사용하지 않는다. 후보 수집은 `configs/sources.json`, 전송 대상은 `configs/channels.json`, 카테고리 정책은 `refs/categories/*.md`를 기준으로 한다.
+기본 일일 알림은 `FREE_MODE`로 실행되며 OpenAI API를 사용하지 않는다. 후보 수집은 `configs/sources.json`, 전송 대상은 `configs/channels.json`, 카테고리 정책은 `refs/categories/*.md`를 기준으로 한다. Daily Overview가 먼저 전송되고, 이후 카테고리별 상세가 1분 간격으로 전송된다.
 
 ## 구성 요소
 
 ### GitHub Actions
 
-GitHub Actions는 예약 실행과 수동 실행의 진입점이다. 기본 workflow는 매일 09:03 KST에 후보 수집을 시작하고 09:07 KST부터 채널별 Webhook으로 순차 전송한다.
+GitHub Actions는 예약 실행과 수동 실행의 진입점이다. 기본 workflow는 매일 09:03 KST 실행을 요청하고, 09:07 KST부터 채널별 Webhook으로 순차 전송하는 것을 목표로 한다.
 
 ### RSS/Atom collector
 

@@ -63,6 +63,7 @@ jobs:
           } >> "${GITHUB_OUTPUT}"
 
       - name: Generate Markdown report with Codex live web search
+        # AI_SEARCH_MODE only: this step uses live web search and must stay manual.
         id: generate_report
         uses: openai/codex-action@v1
         with:

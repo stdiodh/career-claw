@@ -51,6 +51,10 @@ def load_channels(path: Path, category_filter: str, include_disabled: bool) -> l
         category = str(channel.get("id", "")).strip()
         if category_filter != "all" and category != category_filter:
             continue
+        if channel.get("include_in_ai") is False:
+            continue
+        if not str(channel.get("candidate_file", "")).strip():
+            continue
         enabled = bool(channel.get("enabled", False))
         if not enabled and not include_disabled:
             continue

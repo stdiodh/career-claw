@@ -2,7 +2,8 @@ name: Daily Career Feed
 
 on:
   schedule:
-    # GitHub Actions cron uses UTC. 00:03 UTC is 09:03 Asia/Seoul.
+    # GitHub Actions cron uses UTC. 00:03 UTC requests a 09:03 Asia/Seoul start,
+    # then scripts/send-category-briefs.py waits until 09:07 KST.
     - cron: "3 0 * * *"
   workflow_dispatch:
 
@@ -19,6 +20,12 @@ jobs:
         uses: actions/checkout@v5
         with:
           persist-credentials: false
+
+      - name: Log KST workflow start
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Workflow start KST: $(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
 
       - name: Prepare report directories
         shell: bash
@@ -38,9 +45,16 @@ jobs:
           set -euo pipefail
           python3 scripts/render-brief.py
 
+      - name: Render daily overview
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/render-overview.py
+
       - name: Send category briefs to Discord with staggered offsets
         shell: bash
         env:
+          DISCORD_WEBHOOK_DAILY_OVERVIEW: ${{ secrets.DISCORD_WEBHOOK_DAILY_OVERVIEW }}
           DISCORD_WEBHOOK_AI_NEWS: ${{ secrets.DISCORD_WEBHOOK_AI_NEWS }}
           DISCORD_WEBHOOK_BACKEND_NEWS: ${{ secrets.DISCORD_WEBHOOK_BACKEND_NEWS }}
           DISCORD_WEBHOOK_SECURITY_ALERTS: ${{ secrets.DISCORD_WEBHOOK_SECURITY_ALERTS }}

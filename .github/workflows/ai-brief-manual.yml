@@ -92,7 +92,7 @@ jobs:
           set -euo pipefail
 
           if [ "${CATEGORY}" = "all" ]; then
-            python3 scripts/send-category-briefs.py --dry-run
+            python3 scripts/send-category-briefs.py --exclude-overview --dry-run
           else
             python3 scripts/send-category-briefs.py \
               --category "${CATEGORY}" \
@@ -104,6 +104,7 @@ jobs:
         shell: bash
         env:
           CATEGORY: ${{ inputs.category }}
+          DISCORD_WEBHOOK_DAILY_OVERVIEW: ${{ secrets.DISCORD_WEBHOOK_DAILY_OVERVIEW }}
           DISCORD_WEBHOOK_AI_NEWS: ${{ secrets.DISCORD_WEBHOOK_AI_NEWS }}
           DISCORD_WEBHOOK_BACKEND_NEWS: ${{ secrets.DISCORD_WEBHOOK_BACKEND_NEWS }}
           DISCORD_WEBHOOK_SECURITY_ALERTS: ${{ secrets.DISCORD_WEBHOOK_SECURITY_ALERTS }}
@@ -113,7 +114,7 @@ jobs:
           set -euo pipefail
 
           if [ "${CATEGORY}" = "all" ]; then
-            python3 scripts/send-category-briefs.py
+            python3 scripts/send-category-briefs.py --exclude-overview
           else
             python3 scripts/send-category-briefs.py \
               --category "${CATEGORY}" \
