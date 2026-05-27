@@ -107,7 +107,7 @@ jobs:
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
           prompt-file: ${{ steps.prepare.outputs.runtime_prompt }}
-          output-file: ${{ steps.prepare.outputs.report_file }}
+          output-file: reports/briefs/kr-premium-action-summary.md
           sandbox: workspace-write
           safety-strategy: drop-sudo
           codex-args: '["--model","gpt-5.4-mini","-c","model_reasoning_effort=\"low\""]'
