@@ -1,26 +1,20 @@
 # Discord 채널 설정
 
-KR Premium v2 기본 알림은 하나의 Discord 채널/Webhook으로 받는 것을 권장한다.
-
-기본 Webhook Secret:
-
-```text
-DISCORD_WEBHOOK_KR_PREMIUM_BRIEF
-```
-
-이 Secret은 아래 두 workflow가 공유한다.
-
-- `Daily Korea Tech Brief`
-- `Weekly Backend Career Brief`
+KR Premium v2 기본 알림은 Daily Tech와 Weekly Career를 서로 다른 Discord 채널/Webhook으로 받는다.
 
 ## 기본 운영 채널
 
 | 알림 | Workflow | Secret |
 | --- | --- | --- |
-| Daily Korea Tech Brief | `.github/workflows/kr-tech-daily.yml` | `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` |
-| Weekly Backend Career Brief | `.github/workflows/kr-backend-career-weekly.yml` | `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` |
+| Daily Korea Tech Brief | `.github/workflows/kr-tech-daily.yml` | `DISCORD_WEBHOOK_KR_TECH_DAILY` |
+| Weekly Backend Career Brief | `.github/workflows/kr-backend-career-weekly.yml` | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` |
 
-두 알림을 같은 채널에서 받으면 평일 기술 흐름과 월요일 커리어 액션을 한곳에서 확인할 수 있다. Webhook을 늘리지 않으므로 GitHub Secrets 관리도 단순해진다.
+추천 채널 구성:
+
+- `#career-tech-daily`: `DISCORD_WEBHOOK_KR_TECH_DAILY`
+- `#career-backend-weekly`: `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
+
+`DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`는 기존 4섹션 통합 브리핑을 수동으로 보낼 때만 쓰는 legacy/manual Secret으로 남긴다.
 
 ## Legacy/manual free RSS 채널
 

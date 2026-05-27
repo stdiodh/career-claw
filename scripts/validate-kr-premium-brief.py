@@ -22,6 +22,7 @@ LEGACY_SECTIONS = [
 DAILY_SECTIONS = [
     "한국 AI 테크",
     "백엔드/개발자 기술",
+    "오픈소스 기여 후보",
     "오늘 할 일",
 ]
 WEEKLY_SECTIONS = [
@@ -35,6 +36,7 @@ NO_ITEM_PHRASES = [
     "오늘 확인된 주요 항목이 없습니다",
     "오늘 기준으로 포함할 만한 신뢰도 높은 후보를 찾지 못했습니다",
     "오늘은 긴급 체크 항목 없음",
+    "오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다.",
     "이번 주 마감 임박 항목 없음",
     "이번 주 추천 항목 없음",
 ]
@@ -77,6 +79,14 @@ WEEKLY_REQUIRED_FIELDS = [
     "마감",
     "왜 나에게 맞는가",
     "내 액션",
+    "링크",
+]
+DAILY_OSS_FIELDS = [
+    "저장소",
+    "왜 나에게 맞는가",
+    "첫 30분 액션",
+    "예상 난이도",
+    "주의할 점",
     "링크",
 ]
 
@@ -270,6 +280,19 @@ def validate_legacy_item(section_title: str, item: Item) -> None:
 def validate_daily_tech(content: str) -> None:
     if "Career Feed - Korea Tech Daily" not in content:
         fail("Missing daily tech title.")
+    if re.search(r"^##\s+긴급 체크\s*$", content, re.MULTILINE):
+        fail("Daily tech brief must not include 긴급 체크 section.")
+    forbidden_structure_phrases = [
+        "백엔드 개발자가 바로 확인해야 하는 보안/장애/패치",
+        "오늘은 긴급 체크 항목 없음",
+    ]
+    found_forbidden = [phrase for phrase in forbidden_structure_phrases if phrase in content]
+    if found_forbidden:
+        fail(
+            "Daily tech brief still contains security/emergency-check structure: "
+            + ", ".join(found_forbidden)
+        )
+
     sections = extract_sections(content)
     validate_common(content, min_links=2)
     require_sections(sections, DAILY_SECTIONS)
@@ -290,6 +313,8 @@ def validate_daily_tech(content: str) -> None:
         for item in items:
             validate_daily_item(title, item)
 
+    validate_daily_oss_section(sections)
+
 
 def validate_daily_item(section_title: str, item: Item) -> None:
     missing = [
@@ -303,6 +328,41 @@ def validate_daily_item(section_title: str, item: Item) -> None:
         fail(
             "Daily item must include either 백엔드 관점 or Kotlin/Spring Boot 관련성: "
             f"{section_title} / {item.title}"
+        )
+    validate_item_markdown_link(item)
+
+
+def validate_daily_oss_section(sections: list[Section]) -> None:
+    section = find_section(sections, "오픈소스 기여 후보")
+    if section is None:
+        fail("Daily tech brief must include 오픈소스 기여 후보 section.")
+
+    no_item_phrase = "오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다."
+    has_issue_link = bool(
+        re.search(r"\[Issue 보기\]\(https://github\.com/[^)]+/issues/\d+\)", section.body)
+        or re.search(r"https://github\.com/[^\s)]+/issues/\d+", section.body)
+    )
+    if no_item_phrase not in section.body and not has_issue_link:
+        fail("OSS section must include an Issue 보기 link or the required empty-state phrase.")
+
+    items = extract_items(section)
+    if len(items) > 1:
+        fail("OSS section must include at most one candidate.")
+    if not items:
+        if no_item_phrase in section.body:
+            return
+        fail("OSS section has no candidate and no required empty-state phrase.")
+
+    item = items[0]
+    present_fields = [
+        field
+        for field in DAILY_OSS_FIELDS
+        if re.search(rf"^\s*-\s*{re.escape(field)}\s*:", item.body, re.MULTILINE)
+    ]
+    if len(present_fields) < 4:
+        fail(
+            "OSS candidate must include at least 4 required fields: "
+            f"{item.title} ({', '.join(present_fields) or 'none'})"
         )
     validate_item_markdown_link(item)
 

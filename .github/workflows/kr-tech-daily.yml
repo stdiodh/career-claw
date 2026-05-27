@@ -29,7 +29,7 @@ jobs:
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DISCORD_WEBHOOK_KR_PREMIUM_BRIEF: ${{ secrets.DISCORD_WEBHOOK_KR_PREMIUM_BRIEF }}
+          DISCORD_WEBHOOK_KR_TECH_DAILY: ${{ secrets.DISCORD_WEBHOOK_KR_TECH_DAILY }}
         run: |
           set -euo pipefail
 
@@ -37,8 +37,8 @@ jobs:
           if [ -z "${OPENAI_API_KEY}" ]; then
             missing+=("OPENAI_API_KEY")
           fi
-          if [ -z "${DISCORD_WEBHOOK_KR_PREMIUM_BRIEF}" ]; then
-            missing+=("DISCORD_WEBHOOK_KR_PREMIUM_BRIEF")
+          if [ -z "${DISCORD_WEBHOOK_KR_TECH_DAILY}" ]; then
+            missing+=("DISCORD_WEBHOOK_KR_TECH_DAILY")
           fi
 
           if [ "${#missing[@]}" -gt 0 ]; then
@@ -55,6 +55,7 @@ jobs:
       - name: Collect Korea tech candidates
         shell: bash
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
           NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: |
@@ -83,6 +84,7 @@ jobs:
           runtime += "아래 후보 JSON 파일과 사용자 프로필을 읽고 최종 브리핑을 작성한다.\n\n"
           runtime += "- `reports/candidates/kr-ai-tech-news.json`\n"
           runtime += "- `reports/candidates/kr-backend-tech-news.json`\n"
+          runtime += "- `reports/candidates/kr-oss-contribution-opportunities.json`\n"
           runtime += "- `configs/audience-profile.json`\n"
           runtime += "\n## Runtime output\n\n"
           runtime += "- 최종 Markdown은 `reports/briefs/kr-tech-daily.md`에만 작성한다.\n"
@@ -118,7 +120,7 @@ jobs:
       - name: Send Korea tech daily brief to Discord
         shell: bash
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_KR_PREMIUM_BRIEF }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_KR_TECH_DAILY }}
           REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
         run: |
           set -euo pipefail
@@ -132,6 +134,7 @@ jobs:
           path: |
             reports/candidates/kr-ai-tech-news.json
             reports/candidates/kr-backend-tech-news.json
+            reports/candidates/kr-oss-contribution-opportunities.json
             reports/briefs/kr-tech-daily.md
             reports/briefs/kr-tech-daily-codex-summary.md
           if-no-files-found: warn

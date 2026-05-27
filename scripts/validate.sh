@@ -81,6 +81,42 @@ if grep -q "reports/briefs/kr-backend-career-weekly.md" .github/workflows/kr-bac
   exit 1
 fi
 
+if ! grep -q "DISCORD_WEBHOOK_KR_TECH_DAILY" .github/workflows/kr-tech-daily.yml; then
+  echo "Cost guard failed: kr-tech-daily.yml must use DISCORD_WEBHOOK_KR_TECH_DAILY." >&2
+  exit 1
+fi
+
+if ! grep -q "DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY" .github/workflows/kr-backend-career-weekly.yml; then
+  echo "Cost guard failed: kr-backend-career-weekly.yml must use DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY." >&2
+  exit 1
+fi
+
+if grep -q "DISCORD_WEBHOOK_KR_PREMIUM_BRIEF" .github/workflows/kr-tech-daily.yml; then
+  echo "Cost guard failed: kr-tech-daily.yml must not use the legacy KR premium webhook." >&2
+  exit 1
+fi
+
+if grep -q "DISCORD_WEBHOOK_KR_PREMIUM_BRIEF" .github/workflows/kr-backend-career-weekly.yml; then
+  echo "Cost guard failed: kr-backend-career-weekly.yml must not use the legacy KR premium webhook." >&2
+  exit 1
+fi
+
+for workflow in .github/workflows/*.yml; do
+  if grep -q "schedule:" "${workflow}" \
+    && grep -q "DISCORD_WEBHOOK_KR_PREMIUM_BRIEF" "${workflow}"; then
+    echo "Cost guard failed: scheduled workflow must not use the legacy KR premium webhook: ${workflow}" >&2
+    exit 1
+  fi
+done
+
+echo "==> Checking shell and workflow syntax"
+bash -n scripts/validate.sh
+if command -v ruby >/dev/null 2>&1; then
+  ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }' .github/workflows/*.yml
+else
+  echo "Warning: ruby not found; skipping workflow YAML parse check." >&2
+fi
+
 echo "==> Creating sample Markdown report"
 python3 scripts/make-sample-report.py
 
@@ -200,8 +236,8 @@ daily_valid = """# Career Feed - Korea Tech Daily
 - 출처/시각: Kakao Tech / 2026-05-27 09:00 KST
 - 링크: [원문 보기](https://tech.kakao.com/)
 
-## 긴급 체크
-- 오늘은 긴급 체크 항목 없음
+## 오픈소스 기여 후보
+- 오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다.
 
 ## 오늘 할 일
 - AI API 인증 방식을 정리합니다.

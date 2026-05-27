@@ -13,7 +13,7 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 
 - 제품명과 문서명은 `Career Feed`로 통일합니다.
 - 저장소 이름이나 로컬 경로명은 환경에 따라 다를 수 있으며, 제품명을 의미하지 않습니다.
-- 현재 기본 운영은 GitHub Actions, 한국 후보 수집, AI 편집, Markdown 검증, 단일 Discord Webhook 전송으로 구성합니다.
+- 현재 기본 운영은 GitHub Actions, 한국 후보 수집, AI 편집, Markdown 검증, 분리된 Discord Webhook 전송으로 구성합니다.
 
 ## 운영 모드
 
@@ -28,12 +28,13 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 ## 핵심 기능
 
 - 25살 Kotlin/Spring Boot 백엔드 지망생 기준의 한국어 액션 리스트 생성
-- Naver News Search API, RSS, 공식 페이지 기반 후보 pool 생성
-- Daily Tech: 한국 AI 테크 뉴스와 백엔드/개발자 기술 뉴스만 선별
+- Naver News Search API, RSS, 공식 페이지, GitHub Issues 기반 후보 pool 생성
+- Daily Tech: 한국 AI 테크, 백엔드/개발자 기술, 오픈소스 기여 후보를 선별
 - Weekly Career: 백엔드 인턴, 신입/주니어, 해커톤, 공모전, 경진대회만 선별
-- 보안은 독립 daily 섹션이 아니라 백엔드 개발자가 바로 확인해야 하는 이슈만 `긴급 체크`로 최대 1개 포함
+- Daily Tech는 Spring Boot/Kotlin/JVM GitHub issue 기반 오픈소스 기여 후보를 최대 1개 포함
+- 보안 알림은 기본 daily 알림에서 제외하고 legacy/manual 백업으로만 유지
 - Codex Action의 `output-file`은 summary 파일로만 사용하고, 실제 브리핑 파일은 workspace에 직접 작성
-- Discord Webhook은 기본 운영에서 `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` 하나만 사용
+- Discord Webhook은 Daily Tech와 Weekly Career를 분리해 사용
 
 초기 범위에 포함하지 않는 항목은 다음과 같습니다.
 
@@ -65,13 +66,15 @@ Codex KR Premium v2 editor
 reports/briefs/*.md
         |
         v
-DISCORD_WEBHOOK_KR_PREMIUM_BRIEF
+DISCORD_WEBHOOK_KR_TECH_DAILY
+DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY
 ```
 
 Daily Tech 출력:
 
 - `reports/candidates/kr-ai-tech-news.json`
 - `reports/candidates/kr-backend-tech-news.json`
+- `reports/candidates/kr-oss-contribution-opportunities.json`
 - `reports/briefs/kr-tech-daily.md`
 
 Weekly Career 출력:
@@ -88,11 +91,18 @@ GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에 다음 S
 | Secret | 설명 |
 | --- | --- |
 | `OPENAI_API_KEY` | Codex 편집에 사용하는 OpenAI API Key |
-| `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` | Daily/Weekly KR Premium v2 브리핑을 전송할 Discord Webhook URL |
 | `NAVER_CLIENT_ID` | Naver News Search API 후보 수집용 |
 | `NAVER_CLIENT_SECRET` | Naver News Search API 후보 수집용 |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Daily Korea Tech Brief를 전송할 Discord Webhook URL |
+| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Weekly Backend Career Brief를 전송할 Discord Webhook URL |
 
-워크플로 자체의 필수 검사는 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`만 대상으로 합니다. Naver Secrets가 없으면 RSS/공식 URL 후보만 수집하므로 품질이 낮아질 수 있습니다.
+Daily workflow의 필수 검사는 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_DAILY`를 대상으로 합니다. Weekly workflow의 필수 검사는 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`를 대상으로 합니다. Naver Secrets가 없으면 RSS/공식 URL 후보만 수집하므로 품질이 낮아질 수 있습니다.
+
+### Legacy/manual KR Premium용 선택 Secret
+
+| Secret | 설명 |
+| --- | --- |
+| `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` | 기존 4섹션 통합 manual legacy 브리핑 전송이 필요할 때 |
 
 ### Legacy/manual free RSS용 선택 Secrets
 
@@ -116,11 +126,12 @@ Secret 값은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 - 평일 `00:10 UTC`, 즉 `09:10 Asia/Seoul` 실행 요청
 - `workflow_dispatch` 수동 실행 가능
 - 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-tech`
-- 입력 후보: `kr-ai-tech-news.json`, `kr-backend-tech-news.json`
+- 입력 후보: `kr-ai-tech-news.json`, `kr-backend-tech-news.json`, `kr-oss-contribution-opportunities.json`
 - prompt: `.github/codex/prompts/kr-tech-daily-brief.md`
 - 실제 report: `reports/briefs/kr-tech-daily.md`
 - Codex summary: `reports/briefs/kr-tech-daily-codex-summary.md`
 - 검증: `python3 scripts/validate-kr-premium-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
+- Discord Secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
 
 ### Weekly Backend Career Brief
 
@@ -134,6 +145,7 @@ Secret 값은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 - 실제 report: `reports/briefs/kr-backend-career-weekly.md`
 - Codex summary: `reports/briefs/kr-backend-career-weekly-codex-summary.md`
 - 검증: `python3 scripts/validate-kr-premium-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career`
+- Discord Secret: `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
 
 ### Manual Legacy Korea Premium Brief
 
@@ -214,6 +226,8 @@ repository-root/
 - 긴 요약보다 원문 링크 접근성과 사용자의 다음 행동을 우선한다.
 - 기본 자동 알림은 KR Premium v2 Daily/Weekly workflow가 담당한다.
 - 기존 무료 RSS workflow와 legacy KR Premium workflow는 수동 백업으로만 사용한다.
+- 오픈소스 후보는 GitHub issue 기반으로 추천만 하며 자동 댓글, PR 생성, assign은 하지 않는다.
+- 보안 알림은 기본 daily에 포함하지 않고 legacy/manual 백업으로만 다룬다.
 - 기사 전문, Secret 값, Webhook URL은 저장소와 로그에 남기지 않는다.
 
 ## GitHub Secrets 정리
@@ -222,14 +236,16 @@ repository-root/
 
 ```text
 OPENAI_API_KEY
-DISCORD_WEBHOOK_KR_PREMIUM_BRIEF
 NAVER_CLIENT_ID
 NAVER_CLIENT_SECRET
+DISCORD_WEBHOOK_KR_TECH_DAILY
+DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY
 ```
 
-삭제 가능한 legacy/manual Webhook Secrets:
+legacy/manual로만 남길 수 있는 Secrets:
 
 ```text
+DISCORD_WEBHOOK_KR_PREMIUM_BRIEF
 DISCORD_WEBHOOK_DAILY_OVERVIEW
 DISCORD_WEBHOOK_AI_NEWS
 DISCORD_WEBHOOK_BACKEND_NEWS

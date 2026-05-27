@@ -16,7 +16,7 @@ Career Feed의 기본 오전 알림은 KR Premium v2로 운영한다. OpenAI API
 ## 기본 정책
 
 - `--search`를 사용하지 않는다.
-- Naver News Search API, RSS, 공식 URL 후보 pool을 먼저 만든다.
+- Naver News Search API, RSS, 공식 URL, GitHub Issues 후보 pool을 먼저 만든다.
 - OpenAI는 후보 JSON을 읽고 최종 Markdown을 편집/선별/요약하는 데만 사용한다.
 - 모델은 기본적으로 `gpt-5.4-mini`, reasoning effort는 `low`를 사용한다.
 - Codex Action의 `output-file`은 summary 파일로만 사용한다.
@@ -31,7 +31,7 @@ Daily Tech:
 - workflow: `.github/workflows/kr-tech-daily.yml`
 - schedule: 평일 09:10 KST
 - 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-tech`
-- 입력 후보: AI 테크, 백엔드 기술
+- 입력 후보: AI 테크, 백엔드 기술, 오픈소스 기여 후보
 - 출력: `reports/briefs/kr-tech-daily.md`
 
 Weekly Career:
@@ -42,7 +42,7 @@ Weekly Career:
 - 입력 후보: 백엔드 커리어 이벤트
 - 출력: `reports/briefs/kr-backend-career-weekly.md`
 
-보안 뉴스는 독립 daily 섹션으로 운영하지 않는다. 백엔드 개발자가 바로 조치해야 하는 패치/장애/취약점 이슈만 daily 기술 브리핑의 `긴급 체크`로 최대 1개 포함한다.
+보안 뉴스는 기본 daily 섹션으로 운영하지 않는다. 보안 알림은 legacy/manual 백업으로만 유지한다. Daily Tech는 Spring Boot/Kotlin/JVM GitHub issue 기반 오픈소스 기여 후보를 최대 1개 포함하며, 자동 댓글, PR 생성, assign은 하지 않는다.
 
 ## 월 예상 비용
 
@@ -66,6 +66,9 @@ Weekly Career:
 - `kr-premium-brief.yml`은 legacy manual workflow이므로 `schedule:`이 없어야 한다.
 - schedule이 있는 workflow에는 `--search`가 없어야 한다.
 - Daily/Weekly workflow의 Codex `output-file`은 실제 report 파일이 아니라 summary 파일이어야 한다.
+- Daily Tech workflow는 `DISCORD_WEBHOOK_KR_TECH_DAILY`를 사용해야 한다.
+- Weekly Career workflow는 `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`를 사용해야 한다.
+- schedule이 있는 workflow는 legacy `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`를 기본 전송에 사용하지 않는다.
 - OpenAI Billing에서 monthly budget과 알림을 설정한다.
 - 최초 실사용 테스트는 daily 1회, weekly 1회만 실행한다.
 
@@ -83,12 +86,14 @@ Weekly Career:
 남길 Secrets:
 
 - `OPENAI_API_KEY`
-- `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`
 - `NAVER_CLIENT_ID`
 - `NAVER_CLIENT_SECRET`
+- `DISCORD_WEBHOOK_KR_TECH_DAILY`
+- `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
 
 legacy/manual로만 남길 수 있는 Secrets:
 
+- `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`
 - `DISCORD_WEBHOOK_DAILY_OVERVIEW`
 - `DISCORD_WEBHOOK_AI_NEWS`
 - `DISCORD_WEBHOOK_BACKEND_NEWS`

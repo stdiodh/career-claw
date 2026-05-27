@@ -21,9 +21,11 @@ workflow는 `{{KST_NOW}}`를 현재 Asia/Seoul 기준시각으로 치환한다. 
 
 - `reports/candidates/kr-ai-tech-news.json`
 - `reports/candidates/kr-backend-tech-news.json`
+- `reports/candidates/kr-oss-contribution-opportunities.json`
 - `configs/audience-profile.json`
 
-각 후보의 URL, source URL, published_at, query, relevance, reliability, tags, score, persona_fit_score, backend_fit_score, kotlin_spring_fit_score, security_action_required, exclude_reason을 참고한다.
+뉴스 후보는 URL, source URL, published_at, query, relevance, reliability, tags, score, persona_fit_score, backend_fit_score, kotlin_spring_fit_score, exclude_reason을 참고한다.
+오픈소스 후보는 repository, issue_number, labels, updated_at, summary, contribution_type, junior_fit_score, backend_fit_score, kotlin_spring_fit_score, first_pr_potential_score, risk_score, exclude_reason, score를 참고한다.
 
 ## 출력 파일
 
@@ -60,9 +62,17 @@ workflow는 `{{KST_NOW}}`를 현재 Asia/Seoul 기준시각으로 치환한다. 
 - 출처/시각:
 - 링크: [원문 보기](URL)
 
-## 긴급 체크
-- 백엔드 개발자가 바로 확인해야 하는 보안/장애/패치 이슈가 있을 때만 최대 1개
-- 없으면 "오늘은 긴급 체크 항목 없음"
+## 오픈소스 기여 후보
+### 후보. 제목
+- 저장소:
+- 왜 나에게 맞는가:
+- 첫 30분 액션:
+- 예상 난이도:
+- 주의할 점:
+- 링크: [Issue 보기](URL)
+
+좋은 후보가 없으면 아래 문장만 쓴다.
+- 오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다.
 
 ## 오늘 할 일
 - 최대 3개
@@ -72,7 +82,12 @@ workflow는 `{{KST_NOW}}`를 현재 Asia/Seoul 기준시각으로 치환한다. 
 
 - 한국 AI 테크는 최대 2개만 포함한다.
 - 백엔드/개발자 기술은 최대 3개만 포함한다.
-- 긴급 체크는 `security_action_required=true`이거나 백엔드 개발자가 바로 패치/확인해야 하는 경우만 최대 1개 포함한다.
+- 오픈소스 기여 후보는 최대 1개만 포함한다.
+- 오픈소스 기여 후보는 Spring Boot/Kotlin/JVM 관련 issue만 포함한다.
+- 4학년/주니어가 첫 PR 또는 triage로 시도할 수 있는 issue만 포함한다.
+- 보안 취약점 처리, release blocker, compiler backend 같은 고난도 issue는 제외한다.
+- issue 내용을 과장하지 않는다.
+- 첫 30분 액션은 읽기, 재현, 문서 확인, 로컬 빌드처럼 사용자가 직접 확인할 수 있는 행동으로 쓴다.
 - 주가/투자만 있는 AI 뉴스는 제외한다.
 - 일반 소비자 서비스 출시만 있는 뉴스는 제외한다.
 - 백엔드 개발자에게 직접 영향이 없으면 제외한다.

@@ -24,14 +24,17 @@ from zoneinfo import ZoneInfo
 KST = ZoneInfo("Asia/Seoul")
 NAVER_CLIENT_ID_ENV = "NAVER_CLIENT_ID"
 NAVER_CLIENT_SECRET_ENV = "NAVER_CLIENT_SECRET"
+GITHUB_TOKEN_ENV_NAMES = ("GITHUB_TOKEN", "GH_TOKEN")
 REQUEST_TIMEOUT_SECONDS = 20
 SUMMARY_LIMIT = 240
+OSS_SUMMARY_LIMIT = 300
 TITLE_LIMIT = 240
 DEFAULT_DISPLAY = 10
 MAX_DISPLAY = 20
 DEFAULT_MAX_CANDIDATES = 30
 USER_AGENT = "career-feed-kr-collector"
 SUPPORTED_FEED_TYPES = {"rss", "atom"}
+OSS_CATEGORY_ID = "kr-oss-contribution-opportunities"
 RELIABILITY_SCORE = {
     "official": 20,
     "major_media": 12,
@@ -40,7 +43,7 @@ RELIABILITY_SCORE = {
     "unknown": 0,
 }
 MODE_CATEGORY_IDS = {
-    "daily-tech": {"kr-ai-tech-news", "kr-backend-tech-news"},
+    "daily-tech": {"kr-ai-tech-news", "kr-backend-tech-news", OSS_CATEGORY_ID},
     "weekly-career": {"kr-backend-career-events"},
 }
 BACKEND_KEYWORDS = [
@@ -113,6 +116,32 @@ class Candidate:
     source_reliability_score: int
     actionability_score: int
     security_action_required: bool
+    exclude_reason: str
+    score: int
+
+
+@dataclass(frozen=True)
+class OssIssueCandidate:
+    category: str
+    title: str
+    url: str
+    source_url: str
+    source: str
+    repository: str
+    issue_number: int
+    labels: list[str]
+    state: str
+    assignees_count: int
+    comments: int
+    created_at: datetime | None
+    updated_at: datetime | None
+    summary: str
+    contribution_type: str
+    junior_fit_score: int
+    backend_fit_score: int
+    kotlin_spring_fit_score: int
+    first_pr_potential_score: int
+    risk_score: int
     exclude_reason: str
     score: int
 
@@ -263,6 +292,20 @@ def get_naver_credentials(dry_run: bool) -> tuple[str, str] | None:
         "Warning: missing optional environment variable(s): "
         f"{', '.join(missing)}. Naver News Search API collection skipped; "
         "RSS/reference candidates will still be collected.",
+        file=sys.stderr,
+    )
+    return None
+
+
+def get_github_token() -> str | None:
+    for env_name in GITHUB_TOKEN_ENV_NAMES:
+        token = os.environ.get(env_name, "").strip()
+        if token:
+            return token
+    print(
+        "Warning: GITHUB_TOKEN/GH_TOKEN is not set. "
+        "GitHub Issues collection will use the public unauthenticated API "
+        "and may hit rate limits.",
         file=sys.stderr,
     )
     return None
@@ -794,6 +837,297 @@ def collect_reference_candidates(
     return candidates
 
 
+def fetch_github_issues(repository: str, token: str | None) -> list[dict[str, object]]:
+    params = urllib.parse.urlencode(
+        {
+            "state": "open",
+            "sort": "updated",
+            "direction": "desc",
+            "per_page": 50,
+        }
+    )
+    request = urllib.request.Request(
+        f"https://api.github.com/repos/{repository}/issues?{params}",
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+            **({"Authorization": f"Bearer {token}"} if token else {}),
+        },
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        detail = " ".join(body.split())[:300] if body else exc.reason
+        if token and exc.code in {403, 404}:
+            print(
+                f"Warning: GitHub token could not read {repository} ({exc.code}); "
+                "retrying with the public unauthenticated API.",
+                file=sys.stderr,
+            )
+            return fetch_github_issues(repository, None)
+        if exc.code == 403:
+            print(
+                f"Warning: GitHub Issues API rate/auth limit for {repository} "
+                f"({exc.code}): {detail}",
+                file=sys.stderr,
+            )
+            return []
+        raise RuntimeError(
+            f"GitHub Issues API request failed for {repository} ({exc.code}): {detail}"
+        ) from exc
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"GitHub Issues API request failed for {repository}: {exc}") from exc
+
+    if not isinstance(payload, list):
+        return []
+    return [item for item in payload if isinstance(item, dict)]
+
+
+def label_names(issue: dict[str, object]) -> list[str]:
+    raw_labels = issue.get("labels", [])
+    if not isinstance(raw_labels, list):
+        return []
+    labels = []
+    for label in raw_labels:
+        if isinstance(label, dict):
+            name = str(label.get("name", "")).strip()
+            if name:
+                labels.append(name)
+    return labels
+
+
+def infer_contribution_type(text: str) -> str:
+    lowered = text.lower()
+    if text_contains_any(lowered, ["documentation", "docs", "doc", "getting started"]):
+        return "docs"
+    if text_contains_any(lowered, ["test", "tests", "testing"]):
+        return "test"
+    if text_contains_any(lowered, ["sample", "example"]):
+        return "sample"
+    if text_contains_any(lowered, ["reproducer", "reproduce", "repro", "bug"]):
+        return "bug-repro"
+    if text_contains_any(lowered, ["enhancement", "improvement"]):
+        return "small-enhancement"
+    return "triage"
+
+
+def oss_issue_scores(
+    category: dict[str, object],
+    *,
+    text: str,
+    labels: list[str],
+    assignees_count: int,
+    comments: int,
+    updated_at: datetime | None,
+    current_time: datetime,
+    state: str,
+    is_pull_request: bool,
+) -> tuple[int, int, int, int, int, str, int]:
+    label_text = " ".join(labels)
+    searchable = f"{label_text} {text}"
+    positive_labels = category_values(category, "positive_labels")
+    negative_keywords = category_values(category, "negative_keywords")
+
+    label_score = 30 if text_contains_any(label_text, positive_labels) else 0
+    contribution_keywords = [
+        "documentation",
+        "docs",
+        "sample",
+        "example",
+        "test",
+        "reproducer",
+        "getting started",
+    ]
+    contribution_score = 25 if text_contains_any(searchable, contribution_keywords) else 0
+    stack_score = 25 if text_contains_any(
+        searchable, ["Spring Boot", "Spring", "Kotlin", "Java", "Gradle", "JVM"]
+    ) else 0
+    assignee_score = 15 if assignees_count == 0 else -30
+    recent_score = 0
+    stale_penalty = 0
+    if updated_at:
+        age = current_time - updated_at
+        if age <= timedelta(days=30):
+            recent_score = 15
+        elif age > timedelta(days=90):
+            stale_penalty = -30
+    comments_score = 10 if comments <= 10 else 0
+    clarity_score = 10 if text_contains_any(
+        searchable,
+        ["steps", "reproducer", "reproduce", "expected", "actual", "documentation", "docs", "test"],
+    ) else 0
+
+    risk_score = 0
+    exclude_reasons = []
+    if state != "open" or is_pull_request:
+        risk_score += 50
+        exclude_reasons.append("not-open-issue")
+    if text_contains_any(searchable, ["security vulnerability", "CVE"]):
+        risk_score += 50
+        exclude_reasons.append("security-vulnerability")
+    if text_contains_any(searchable, ["compiler backend", "IR backend"]):
+        risk_score += 50
+        exclude_reasons.append("high-complexity-internals")
+    if text_contains_any(
+        searchable,
+        ["release blocker", "requires design", "RFC", "epic", "needs team decision"],
+    ):
+        risk_score += 40
+        exclude_reasons.append("needs-maintainer-design")
+    if text_contains_any(searchable, negative_keywords):
+        risk_score += 10
+    if stale_penalty:
+        exclude_reasons.append("stale-over-90-days")
+
+    junior_fit_score = max(
+        min(label_score + contribution_score + max(assignee_score, 0) + comments_score + clarity_score, 100),
+        0,
+    )
+    backend_fit_score = 25 if text_contains_any(searchable, BACKEND_KEYWORDS) else 0
+    kotlin_spring_fit_score = stack_score
+    first_pr_potential_score = max(
+        min(label_score + contribution_score + max(assignee_score, 0) + comments_score, 100),
+        0,
+    )
+    score = (
+        label_score
+        + contribution_score
+        + stack_score
+        + assignee_score
+        + recent_score
+        + comments_score
+        + clarity_score
+        + stale_penalty
+        - risk_score
+    )
+    return (
+        junior_fit_score,
+        backend_fit_score,
+        kotlin_spring_fit_score,
+        first_pr_potential_score,
+        risk_score,
+        ",".join(dict.fromkeys(exclude_reasons)),
+        score,
+    )
+
+
+def build_oss_issue_candidate(
+    category: dict[str, object],
+    repository: str,
+    issue: dict[str, object],
+    current_time: datetime,
+) -> OssIssueCandidate | None:
+    if "pull_request" in issue:
+        return None
+    state = str(issue.get("state", "")).strip()
+    if state != "open":
+        return None
+
+    title = truncate_text(strip_html(str(issue.get("title", ""))), TITLE_LIMIT)
+    html_url = str(issue.get("html_url", "")).strip()
+    number = issue.get("number", 0)
+    try:
+        issue_number = int(number)
+    except (TypeError, ValueError):
+        issue_number = 0
+    if not title or not html_url or issue_number <= 0:
+        return None
+
+    labels = label_names(issue)
+    raw_body = strip_html(str(issue.get("body") or ""))
+    summary = truncate_text(raw_body, OSS_SUMMARY_LIMIT)
+    assignees = issue.get("assignees", [])
+    assignees_count = len(assignees) if isinstance(assignees, list) else 0
+    try:
+        comments = int(issue.get("comments", 0))
+    except (TypeError, ValueError):
+        comments = 0
+    created_at = parse_datetime(str(issue.get("created_at", "")))
+    updated_at = parse_datetime(str(issue.get("updated_at", "")))
+    searchable = f"{repository} {title} {summary} {' '.join(labels)}"
+    contribution_type = infer_contribution_type(searchable)
+    (
+        junior_fit_score,
+        backend_fit_score,
+        kotlin_spring_fit_score,
+        first_pr_potential_score,
+        risk_score,
+        exclude_reason,
+        score,
+    ) = oss_issue_scores(
+        category,
+        text=searchable,
+        labels=labels,
+        assignees_count=assignees_count,
+        comments=comments,
+        updated_at=updated_at,
+        current_time=current_time,
+        state=state,
+        is_pull_request=False,
+    )
+
+    return OssIssueCandidate(
+        category=OSS_CATEGORY_ID,
+        title=title,
+        url=html_url,
+        source_url=f"https://github.com/{repository}",
+        source="GitHub Issues",
+        repository=repository,
+        issue_number=issue_number,
+        labels=labels,
+        state=state,
+        assignees_count=assignees_count,
+        comments=comments,
+        created_at=created_at,
+        updated_at=updated_at,
+        summary=summary,
+        contribution_type=contribution_type,
+        junior_fit_score=junior_fit_score,
+        backend_fit_score=backend_fit_score,
+        kotlin_spring_fit_score=kotlin_spring_fit_score,
+        first_pr_potential_score=first_pr_potential_score,
+        risk_score=risk_score,
+        exclude_reason=exclude_reason,
+        score=score,
+    )
+
+
+def collect_oss_issue_candidates(
+    category: dict[str, object],
+    current_time: datetime,
+) -> list[OssIssueCandidate]:
+    repositories = category_values(category, "github_repositories")
+    token = get_github_token()
+    candidates: list[OssIssueCandidate] = []
+
+    for repository in repositories:
+        if "/" not in repository:
+            print(f"Warning: invalid GitHub repository id: {repository}", file=sys.stderr)
+            continue
+        for issue in fetch_github_issues(repository, token):
+            candidate = build_oss_issue_candidate(category, repository, issue, current_time)
+            if candidate:
+                candidates.append(candidate)
+
+    try:
+        max_candidates = int(category.get("max_candidates", DEFAULT_MAX_CANDIDATES))
+    except (TypeError, ValueError):
+        max_candidates = DEFAULT_MAX_CANDIDATES
+
+    return sorted(
+        candidates,
+        key=lambda item: (
+            item.score,
+            item.updated_at or datetime.min.replace(tzinfo=KST),
+        ),
+        reverse=True,
+    )[:max(max_candidates, 0)]
+
+
 def dedupe_candidates(candidates: list[Candidate]) -> list[Candidate]:
     deduped: list[Candidate] = []
     seen_urls: set[str] = set()
@@ -843,7 +1177,36 @@ def sort_and_limit(
     )[:max(max_candidates, 0)]
 
 
-def serialize_candidate(candidate: Candidate) -> dict[str, object]:
+def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, object]:
+    return {
+        "title": candidate.title,
+        "url": candidate.url,
+        "source_url": candidate.source_url,
+        "source": candidate.source,
+        "repository": candidate.repository,
+        "issue_number": candidate.issue_number,
+        "labels": candidate.labels,
+        "state": candidate.state,
+        "assignees_count": candidate.assignees_count,
+        "comments": candidate.comments,
+        "created_at": format_kst(candidate.created_at) if candidate.created_at else "",
+        "updated_at": format_kst(candidate.updated_at) if candidate.updated_at else "",
+        "summary": candidate.summary,
+        "contribution_type": candidate.contribution_type,
+        "junior_fit_score": candidate.junior_fit_score,
+        "backend_fit_score": candidate.backend_fit_score,
+        "kotlin_spring_fit_score": candidate.kotlin_spring_fit_score,
+        "first_pr_potential_score": candidate.first_pr_potential_score,
+        "risk_score": candidate.risk_score,
+        "exclude_reason": candidate.exclude_reason,
+        "score": candidate.score,
+    }
+
+
+def serialize_candidate(candidate: Candidate | OssIssueCandidate) -> dict[str, object]:
+    if isinstance(candidate, OssIssueCandidate):
+        return serialize_oss_issue_candidate(candidate)
+
     return {
         "title": candidate.title,
         "url": candidate.url,
@@ -885,7 +1248,7 @@ def write_category_output(
     output_dir: Path,
     category: dict[str, object],
     generated_at: datetime,
-    candidates: list[Candidate],
+    candidates: list[Candidate] | list[OssIssueCandidate],
 ) -> None:
     category_id = str(category.get("id", "")).strip()
     output_path = output_path_for_category(output_dir, category)
@@ -909,9 +1272,13 @@ def collect_category(
     current_time: datetime,
     penalty_keywords: list[str],
     dry_run: bool,
-) -> list[Candidate]:
+) -> list[Candidate] | list[OssIssueCandidate]:
     if dry_run:
         return []
+
+    category_id = str(category.get("id", "")).strip()
+    if category_id == OSS_CATEGORY_ID:
+        return collect_oss_issue_candidates(category, current_time)
 
     candidates = collect_feed_candidates(config, category, current_time, penalty_keywords)
     candidates.extend(

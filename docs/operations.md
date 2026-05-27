@@ -8,7 +8,7 @@ KR Premium v2는 아래 두 알림만 기본 자동 운영으로 둔다.
 
 | Workflow | 주기 | 목표 시각 | 내용 |
 | --- | ---: | ---: | --- |
-| `Daily Korea Tech Brief` | 월~금 | 09:10 KST | 한국 AI 테크, 백엔드/개발자 기술 뉴스 |
+| `Daily Korea Tech Brief` | 월~금 | 09:10 KST | 한국 AI 테크, 백엔드/개발자 기술, 오픈소스 기여 후보 |
 | `Weekly Backend Career Brief` | 월요일 | 09:30 KST | 백엔드 인턴, 신입/주니어, 해커톤, 공모전, 경진대회 |
 
 기존 `Manual Legacy Korea Premium Brief`와 `Manual Free RSS Career Feed`는 수동 백업으로만 유지한다.
@@ -17,21 +17,23 @@ KR Premium v2는 아래 두 알림만 기본 자동 운영으로 둔다.
 
 GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다음 Secrets를 등록한다.
 
-### 남길 Secrets
+### 기본 운영 Secrets
 
 | Secret | 설명 |
 | --- | --- |
 | `OPENAI_API_KEY` | Codex 편집에 사용하는 OpenAI API Key |
-| `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` | KR Premium v2 Daily/Weekly 브리핑을 전송할 Discord Webhook URL |
 | `NAVER_CLIENT_ID` | Naver News Search API 후보 수집용 |
 | `NAVER_CLIENT_SECRET` | Naver News Search API 후보 수집용 |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Daily Korea Tech Brief를 전송할 Discord Webhook URL |
+| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Weekly Backend Career Brief를 전송할 Discord Webhook URL |
 
-워크플로 필수 검사는 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`만 대상으로 한다. Naver Secrets가 없으면 RSS/공식 URL 후보만 수집하므로 품질이 낮아질 수 있다.
+Daily workflow 필수 검사는 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_DAILY`를 대상으로 한다. Weekly workflow 필수 검사는 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`를 대상으로 한다. Naver Secrets가 없으면 RSS/공식 URL 후보만 수집하므로 품질이 낮아질 수 있다.
 
 ### Legacy/manual로만 남길 수 있는 Secrets
 
 | Secret | 필요한 경우 |
 | --- | --- |
+| `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` | 기존 4섹션 통합 KR Premium manual legacy 전송 |
 | `DISCORD_WEBHOOK_DAILY_OVERVIEW` | 수동 무료 RSS Daily Overview 전송 |
 | `DISCORD_WEBHOOK_AI_NEWS` | 수동 무료 RSS AI News 전송 |
 | `DISCORD_WEBHOOK_BACKEND_NEWS` | 수동 무료 RSS Backend News 전송 |
@@ -56,11 +58,11 @@ Secret 값은 코드, 문서 예시, 커밋 로그에 남기지 않는다.
 
 실행 순서는 다음과 같다.
 
-1. 한국 AI 테크/백엔드 기술 후보 수집
+1. 한국 AI 테크/백엔드 기술/오픈소스 기여 후보 수집
 2. runtime prompt 생성
 3. Codex Action으로 실제 report 파일 작성
 4. Markdown 품질 검증
-5. `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`로 Discord 전송
+5. `DISCORD_WEBHOOK_KR_TECH_DAILY`로 Discord 전송
 6. 후보, report, summary artifact 업로드
 
 ### Weekly Backend Career Brief
@@ -80,7 +82,7 @@ Secret 값은 코드, 문서 예시, 커밋 로그에 남기지 않는다.
 2. runtime prompt 생성
 3. Codex Action으로 실제 report 파일 작성
 4. Markdown 품질 검증
-5. `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`로 Discord 전송
+5. `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`로 Discord 전송
 6. 후보, report, summary artifact 업로드
 
 ### Manual Legacy Korea Premium Brief
@@ -107,10 +109,13 @@ Secret 값은 코드, 문서 예시, 커밋 로그에 남기지 않는다.
 | --- | --- |
 | `--mode daily-tech` | `reports/candidates/kr-ai-tech-news.json` |
 | `--mode daily-tech` | `reports/candidates/kr-backend-tech-news.json` |
+| `--mode daily-tech` | `reports/candidates/kr-oss-contribution-opportunities.json` |
 | `--mode weekly-career` | `reports/candidates/kr-backend-career-events.json` |
 | legacy/all | `reports/candidates/kr-security-alerts.json` |
 
-`kr-security-alerts`는 삭제하지 않고 legacy/manual 용도로 남긴다. 기본 daily 알림에서는 보안 독립 섹션을 만들지 않고, 백엔드 개발자가 바로 확인해야 하는 이슈만 `긴급 체크`로 포함한다.
+`kr-security-alerts`는 삭제하지 않고 legacy/manual 용도로 남긴다. 기본 daily 알림에서는 보안 알림을 제외하고, GitHub issue 기반 오픈소스 기여 후보를 최대 1개 포함한다. 오픈소스 후보 수집은 issue 조회와 추천만 수행하며 자동 댓글, PR 생성, assign은 하지 않는다.
+
+GitHub Actions에서는 workflow의 `github.token`을 `GITHUB_TOKEN`으로 주입해 GitHub Issues API를 조회한다. 로컬에서는 `GITHUB_TOKEN` 또는 `GH_TOKEN`이 없어도 공개 API로 가능한 범위에서 동작하지만 rate limit에 걸릴 수 있다.
 
 ## 로컬 검증
 
@@ -151,7 +156,7 @@ GitHub Actions schedule은 UTC 기준이며, 실행 시각은 정확 보장이 �
 ## 수동 실행 전 체크리스트
 
 1. 변경 사항이 `main` 브랜치에 push되어 있는지 확인한다.
-2. GitHub Actions에 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`가 등록되어 있는지 확인한다.
+2. GitHub Actions에 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_DAILY`, `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`가 등록되어 있는지 확인한다.
 3. 후보 품질을 위해 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`이 등록되어 있는지 확인한다.
 4. 로컬에서 `./scripts/validate.sh`가 통과했는지 확인한다.
 5. OpenAI 비용이 발생할 수 있음을 확인한다.
@@ -169,7 +174,7 @@ GitHub Actions schedule은 UTC 기준이며, 실행 시각은 정확 보장이 �
 
 ## 실패 시 확인할 것
 
-1. Secret 누락: `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` 등록 여부를 확인한다.
+1. Secret 누락: `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_DAILY`, `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` 등록 여부를 확인한다.
 2. Naver API 실패: `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`과 API 사용 한도를 확인한다.
 3. OpenAI quota/billing: 결제 한도, 월 예산, quota 오류를 확인한다.
 4. Codex Action 실패: runtime prompt 생성과 `codex-args`를 확인한다.
@@ -191,5 +196,5 @@ Discord에서 브리핑 본문을 먼저 읽을 수 있도록 링크와 embed pr
 ## 사용자가 GitHub에서 직접 할 일
 
 1. 새 Daily/Weekly workflow가 `main`에 반영된 뒤 Actions 탭에서 schedule과 manual 실행 가능 여부를 확인한다.
-2. `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`, `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`이 등록되어 있는지 확인한다.
+2. `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_DAILY`, `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`, `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`이 등록되어 있는지 확인한다.
 3. 새 구조가 Discord에 정상 도착하면 legacy Webhook Secrets 삭제 여부를 판단한다.

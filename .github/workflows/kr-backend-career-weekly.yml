@@ -29,7 +29,7 @@ jobs:
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          DISCORD_WEBHOOK_KR_PREMIUM_BRIEF: ${{ secrets.DISCORD_WEBHOOK_KR_PREMIUM_BRIEF }}
+          DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
         run: |
           set -euo pipefail
 
@@ -37,8 +37,8 @@ jobs:
           if [ -z "${OPENAI_API_KEY}" ]; then
             missing+=("OPENAI_API_KEY")
           fi
-          if [ -z "${DISCORD_WEBHOOK_KR_PREMIUM_BRIEF}" ]; then
-            missing+=("DISCORD_WEBHOOK_KR_PREMIUM_BRIEF")
+          if [ -z "${DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY}" ]; then
+            missing+=("DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY")
           fi
 
           if [ "${#missing[@]}" -gt 0 ]; then
@@ -117,7 +117,7 @@ jobs:
       - name: Send backend career weekly brief to Discord
         shell: bash
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_KR_PREMIUM_BRIEF }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
           REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
         run: |
           set -euo pipefail
