@@ -121,21 +121,24 @@ def render_overview(channels: list[dict[str, object]]) -> tuple[Path, str]:
         else:
             lines.append(f"- {name}: 오늘 확인된 주요 항목이 없습니다. / {send_time} 전송 예정")
 
-    lines.extend(["", "## 대표 원본 URL"])
+    lines.extend(["", "## 대표 원문"])
     for summary in category_summaries:
         name = str(summary["name"])
         representative = summary["representative"]
         if isinstance(representative, dict):
             title = truncate_text(str(representative.get("title", "")), TITLE_LIMIT) or "원문"
             url = str(representative.get("url", "")).strip()
-            lines.append(f"- {name}: [{title}]({url})")
+            if url:
+                lines.append(f"- {name}: [{title}]({url})")
+            else:
+                lines.append(f"- {name}: 대표 원문 링크를 확인하지 못했습니다.")
         else:
             lines.append(f"- {name}: 오늘 확인된 주요 항목이 없습니다.")
 
     markdown = "\n".join(lines).strip() + "\n"
     if len(markdown) > TARGET_LENGTH:
-        compact_lines = lines[: lines.index("## 대표 원본 URL")]
-        compact_lines.extend(["## 대표 원본 URL", "- 상세 원본 URL은 카테고리별 브리핑에서 확인합니다."])
+        compact_lines = lines[: lines.index("## 대표 원문")]
+        compact_lines.extend(["## 대표 원문", "- 상세 원문은 카테고리별 브리핑에서 확인합니다."])
         markdown = "\n".join(compact_lines).strip() + "\n"
 
     return Path(str(overview.get("brief_file", ""))), markdown

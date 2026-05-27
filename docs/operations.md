@@ -22,6 +22,15 @@ GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다�
 | `DISCORD_WEBHOOK_BACKEND_TECH` | Backend Tech Radar 채널을 활성화하거나 수동 전송할 때 |
 | `DISCORD_WEBHOOK_JOB_FEED` | Job Feed 채널을 활성화하거나 수동 전송할 때 |
 | `OPENAI_API_KEY` | `AI_LIGHT_MODE`, `AI_SEARCH_MODE` 수동 workflow를 실행할 때 |
+| `NAVER_CLIENT_ID` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
+| `NAVER_CLIENT_SECRET` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
+
+### KR_PREMIUM_MODE 필수 Secrets
+
+| Secret | 설명 |
+| --- | --- |
+| `OPENAI_API_KEY` | 한국 중심 AI 브리핑 생성에 사용하는 OpenAI API Key |
+| `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` | KR Premium 통합 브리핑을 전송할 Discord Webhook URL |
 
 주의 사항:
 
@@ -53,6 +62,80 @@ GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다�
 4. Daily Overview 렌더링
 5. 09:07 KST부터 Daily Overview와 카테고리별 Webhook 순차 전송
 6. 후보와 브리핑 artifact 업로드
+
+### KR_PREMIUM_MODE 후보 수집
+
+`KR_PREMIUM_MODE`는 기존 `Daily Career Feed`를 대체하지 않는다. 한국 기준 고품질 브리핑을 만들기 위한 별도 후보 pool을 먼저 생성하는 경로다.
+
+- 스크립트: `scripts/collect-kr-feeds.py`
+- 설정: `configs/kr-sources.json`
+- 선택 환경변수: `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
+- Naver News Search API는 JSON 응답, `sort=date`, query당 `display <= 20`만 사용한다.
+- Naver Secret이 없으면 warning을 출력하고 RSS/공식 URL 후보만 수집한다.
+- RSS/Atom은 공개 RSS만 사용하고, 안정적이지 않은 공식 페이지는 config의 `reference_pages`에만 보관한다.
+- 기사 전문은 저장하지 않고 제목, URL, 출처, 발행시각, 검색 snippet만 저장한다.
+
+출력 파일은 다음과 같다.
+
+| 카테고리 | 출력 파일 |
+| --- | --- |
+| 한국 AI 뉴스 | `reports/candidates/kr-ai-news.json` |
+| 한국 백엔드/개발자 기술 뉴스 | `reports/candidates/kr-backend-news.json` |
+| 한국 보안/취약점 알림 | `reports/candidates/kr-security-alerts.json` |
+| 국내 커리어 이벤트 | `reports/candidates/kr-career-events.json` |
+
+Secret 없이 스키마만 검증하려면 dry-run을 실행한다.
+
+```bash
+python3 scripts/collect-kr-feeds.py --dry-run
+```
+
+실제 후보 수집은 Naver API Secret을 셸 환경변수나 GitHub Actions Secrets로 주입한 뒤 실행한다.
+
+```bash
+python3 scripts/collect-kr-feeds.py
+```
+
+### KR_PREMIUM_MODE 비용 운영 기준
+
+`KR_PREMIUM_MODE`는 OpenAI API 비용이 발생한다. 비용은 검색 호출 수, 토큰 수, 모델 설정, 수동 재실행 횟수에 따라 달라진다.
+
+| 운영 방식 | 월 예상 비용 | 기준 |
+| --- | ---: | --- |
+| `FREE_MODE` | $0 | OpenAI API 미사용 |
+| `KR_PREMIUM_MODE` 기본 | 약 $10~20 | 하루 1회 통합 브리핑, `gpt-5.4-mini` 기준 |
+| `KR_PREMIUM_MODE` 고품질/검색량 증가 | $30~60 이상 가능 | live web search와 출력 길이 증가 |
+
+운영 가드는 다음과 같다.
+
+- 하루 1회 schedule만 둔다.
+- 카테고리별 별도 AI workflow를 만들지 않는다.
+- 기본 모델은 `gpt-5.4-mini`로 둔다.
+- 후보 수와 출력 길이를 제한한다.
+- OpenAI Billing monthly budget 설정을 권장한다.
+- 같은 날 `workflow_dispatch`를 여러 번 실행하지 않는다.
+
+### KR_PREMIUM_MODE 품질 검증
+
+AI가 생성한 `reports/briefs/kr-premium-daily.md`는 Discord 전송 전에 `scripts/validate-kr-premium-brief.py`로 검증한다.
+
+검증 기준은 다음과 같다.
+
+- 파일이 존재하고 비어 있지 않아야 한다.
+- `기준시각`과 KST 시각이 있어야 한다.
+- 한국 AI 뉴스, 한국 백엔드/개발자 기술 뉴스, 한국 보안/취약점 알림, 국내 인턴십/해커톤/공모전/경진대회 섹션이 모두 있어야 한다.
+- 각 섹션에는 최소 1개 항목이 있거나 "오늘 확인된 주요 항목 없음" 계열 문구가 있어야 한다.
+- 전체 링크가 최소 4개 이상이어야 한다.
+- 일반적인 "왜 봐야 함" placeholder 문구가 2회 이상 나오면 실패한다.
+- 각 항목은 무슨 일, 왜 봐야 함, 내 액션, 출처, 시각, 신뢰도, 링크 중 최소 4개 이상을 포함해야 한다.
+- 커리어 이벤트 항목은 유형, 대상, 마감 중 최소 2개 이상을 포함해야 한다.
+- "링크 없음"은 실패로 처리하고, "출처 없음"은 warning으로 표시한다.
+
+로컬에서 다음 명령으로 검증할 수 있다.
+
+```bash
+python3 scripts/validate-kr-premium-brief.py reports/briefs/kr-premium-daily.md
+```
 
 ## 시간 정책
 
@@ -159,6 +242,12 @@ Secret 없이 기본 파일 구조, Python 문법, 무료 브리핑 렌더링, �
 ./scripts/validate.sh
 ```
 
+KR_PREMIUM_MODE 후보 수집 스키마만 확인하려면 다음 명령을 실행한다.
+
+```bash
+python3 scripts/collect-kr-feeds.py --dry-run
+```
+
 실제 Discord 전송은 자동으로 실행하지 않는다. 전송 테스트가 필요하면 대상 Webhook 환경변수를 설정한 뒤 명시적으로 실행한다.
 
 ```bash
@@ -184,6 +273,16 @@ DISCORD_WEBHOOK_URL="..." python3 scripts/send-discord.py reports/sample-daily-n
 - 실행 중 생성된 후보 JSON과 Markdown 브리핑은 기본 커밋 대상이 아니다.
 - 장기 보관이 필요해지면 별도의 archive workflow로 분리한다.
 
+## Discord 메시지 포맷
+
+Discord에서 브리핑 본문을 먼저 읽을 수 있도록 링크와 embed preview를 제한한다.
+
+- `scripts/send-discord.py`는 Discord webhook payload에 `SUPPRESS_EMBEDS` flag를 설정한다.
+- Daily Overview의 대표 링크는 카테고리별 제목 링크 1개만 표시한다.
+- KR Premium Brief의 항목 링크 텍스트는 `[원문 보기](URL)` 형식을 기본으로 한다.
+- 한 항목에서 같은 URL을 본문과 별도 원본 보기 섹션에 중복해서 쓰지 않는다.
+- Markdown 표는 사용하지 않는다.
+
 ## 실패 시 확인할 것
 
 1. Secret 누락: enabled 채널의 Discord Webhook Secret이 등록되어 있는지 확인한다.
@@ -195,3 +294,4 @@ DISCORD_WEBHOOK_URL="..." python3 scripts/send-discord.py reports/sample-daily-n
 7. GitHub schedule 지연: schedule 이벤트가 지연되거나 누락되지 않았는지 확인한다.
 8. AI workflow 실패: runtime prompt 크기 제한에 걸렸는지 확인한다.
 9. `AI_SEARCH_MODE`: live web search 비용이 발생할 수 있음을 확인한다.
+10. `KR_PREMIUM_MODE`: `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 누락 또는 Naver API 인증 실패 여부를 확인한다.

@@ -1,0 +1,428 @@
+{
+  "mode": "KR_PREMIUM_MODE",
+  "naver": {
+    "endpoint": "https://openapi.naver.com/v1/search/news.json",
+    "display": 10,
+    "sort": "date",
+    "recent_hours": 72
+  },
+  "reliability_domains": {
+    "official": [
+      "boho.or.kr",
+      "kisa.or.kr",
+      "krcert.or.kr",
+      "ncloud.com",
+      "kakao.ai",
+      "upstage.ai",
+      "wrtn.ai",
+      "rebellion.ai",
+      "furiosa.ai"
+    ],
+    "major_media": [
+      "etnews.com",
+      "zdnet.co.kr",
+      "bloter.net",
+      "aitimes.com",
+      "ddaily.co.kr",
+      "itworld.co.kr",
+      "cio.com"
+    ],
+    "platform": [
+      "dacon.io",
+      "programmers.co.kr",
+      "aifactory.space",
+      "linkareer.com",
+      "wevity.com",
+      "all-con.co.kr",
+      "wanted.co.kr",
+      "jumpit.co.kr",
+      "saramin.co.kr"
+    ],
+    "aggregator": [
+      "naver.com",
+      "news.naver.com"
+    ]
+  },
+  "penalty_keywords": [
+    "루머",
+    "찌라시",
+    "주가",
+    "급등",
+    "급락",
+    "목표가",
+    "투자의견",
+    "매수",
+    "매도",
+    "증권가",
+    "관련주",
+    "테마주"
+  ],
+  "categories": [
+    {
+      "id": "kr-ai-news",
+      "name": "한국 AI 뉴스",
+      "output_file": "reports/candidates/kr-ai-news.json",
+      "max_candidates": 30,
+      "tags": ["ai"],
+      "naver_queries": [
+        "생성형 AI",
+        "AI 에이전트",
+        "국산 AI",
+        "LLM",
+        "네이버클라우드 AI",
+        "카카오 AI",
+        "업스테이지",
+        "뤼튼",
+        "리벨리온",
+        "퓨리오사AI"
+      ],
+      "rss_sources": [
+        {
+          "name": "ETNews AI RSS",
+          "url": "http://rss.etnews.com/04046.xml",
+          "type": "rss",
+          "source_reliability": "major_media"
+        }
+      ],
+      "reference_pages": [
+        {
+          "name": "Naver Cloud AI Services",
+          "url": "https://www.ncloud.com/product/aiService",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kakao AI",
+          "url": "https://www.kakao.ai/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Upstage",
+          "url": "https://www.upstage.ai/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Wrtn",
+          "url": "https://wrtn.ai/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Rebellions",
+          "url": "https://rebellions.ai/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "FuriosaAI",
+          "url": "https://furiosa.ai/",
+          "source_reliability": "official"
+        }
+      ],
+      "korea_keywords": [
+        "한국",
+        "국내",
+        "국산",
+        "네이버",
+        "카카오",
+        "업스테이지",
+        "뤼튼",
+        "리벨리온",
+        "퓨리오사",
+        "SKT",
+        "KT",
+        "LG",
+        "삼성"
+      ],
+      "developer_keywords": [
+        "API",
+        "SDK",
+        "LLM",
+        "모델",
+        "에이전트",
+        "개발자",
+        "플랫폼",
+        "오픈소스",
+        "클라우드",
+        "코딩"
+      ]
+    },
+    {
+      "id": "kr-backend-news",
+      "name": "한국 백엔드/개발자 기술 뉴스",
+      "output_file": "reports/candidates/kr-backend-news.json",
+      "max_candidates": 30,
+      "tags": ["backend"],
+      "naver_queries": [
+        "백엔드 개발",
+        "서버 개발",
+        "클라우드 네이티브",
+        "쿠버네티스",
+        "Kubernetes",
+        "Spring Boot",
+        "Java Kotlin",
+        "PostgreSQL Redis Kafka",
+        "개발자 플랫폼",
+        "테크블로그 백엔드"
+      ],
+      "rss_sources": [
+        {
+          "name": "ETNews SW RSS",
+          "url": "http://rss.etnews.com/04.xml",
+          "type": "rss",
+          "source_reliability": "major_media"
+        },
+        {
+          "name": "ETNews SW Detail RSS",
+          "url": "http://rss.etnews.com/04043.xml",
+          "type": "rss",
+          "source_reliability": "major_media"
+        }
+      ],
+      "reference_pages": [
+        {
+          "name": "Naver D2",
+          "url": "https://d2.naver.com/home",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kakao Tech",
+          "url": "https://tech.kakao.com/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Woowa Tech",
+          "url": "https://techblog.woowahan.com/",
+          "source_reliability": "official"
+        }
+      ],
+      "korea_keywords": [
+        "한국",
+        "국내",
+        "네이버",
+        "카카오",
+        "쿠팡",
+        "토스",
+        "배달의민족",
+        "우아한형제들",
+        "라인",
+        "당근",
+        "무신사"
+      ],
+      "developer_keywords": [
+        "백엔드",
+        "서버",
+        "Spring",
+        "Spring Boot",
+        "Java",
+        "Kotlin",
+        "Node.js",
+        "TypeScript",
+        "Go",
+        "Python",
+        "Kubernetes",
+        "쿠버네티스",
+        "PostgreSQL",
+        "Redis",
+        "Kafka",
+        "클라우드",
+        "테크블로그",
+        "개발자"
+      ]
+    },
+    {
+      "id": "kr-security-alerts",
+      "name": "한국 보안/취약점 알림",
+      "output_file": "reports/candidates/kr-security-alerts.json",
+      "max_candidates": 30,
+      "tags": ["security"],
+      "naver_queries": [
+        "보안 업데이트",
+        "취약점",
+        "CVE",
+        "KISA 보안공지",
+        "KrCERT",
+        "공급망 공격",
+        "랜섬웨어",
+        "개발자 보안",
+        "오픈소스 보안"
+      ],
+      "rss_sources": [
+        {
+          "name": "ETNews Security RSS",
+          "url": "http://rss.etnews.com/04045.xml",
+          "type": "rss",
+          "source_reliability": "major_media"
+        },
+        {
+          "name": "Boho Security Notice RSS",
+          "url": "https://www.boho.or.kr/kr/rss.do?bbsId=B0000133",
+          "type": "rss",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Boho Vulnerability RSS",
+          "url": "https://www.boho.or.kr/kr/rss.do?bbsId=B0000302",
+          "type": "rss",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Boho Alert Level RSS",
+          "url": "https://www.boho.or.kr/kr/rss.do?bbsId=B0000342",
+          "type": "rss",
+          "source_reliability": "official"
+        }
+      ],
+      "reference_pages": [
+        {
+          "name": "KISA Boho Security Notice",
+          "url": "https://www.boho.or.kr/kr/bbs/list.do?bbsId=B0000133",
+          "source_reliability": "official"
+        },
+        {
+          "name": "KISA Boho Vulnerability Info",
+          "url": "https://www.boho.or.kr/kr/bbs/list.do?bbsId=B0000302",
+          "source_reliability": "official"
+        },
+        {
+          "name": "KrCERT/CC",
+          "url": "https://www.boho.or.kr/",
+          "source_reliability": "official"
+        }
+      ],
+      "korea_keywords": [
+        "한국",
+        "국내",
+        "KISA",
+        "한국인터넷진흥원",
+        "보호나라",
+        "KrCERT",
+        "과기정통부",
+        "개인정보위"
+      ],
+      "developer_keywords": [
+        "취약점",
+        "CVE",
+        "보안 업데이트",
+        "패치",
+        "공급망",
+        "랜섬웨어",
+        "오픈소스",
+        "npm",
+        "PyPI",
+        "컨테이너",
+        "클라우드",
+        "인증",
+        "권한"
+      ]
+    },
+    {
+      "id": "kr-career-events",
+      "name": "국내 인턴십/해커톤/공모전/AI 경진대회",
+      "output_file": "reports/candidates/kr-career-events.json",
+      "max_candidates": 30,
+      "tags": ["internship", "hackathon"],
+      "naver_queries": [
+        "개발자 인턴",
+        "백엔드 인턴",
+        "AI 인턴",
+        "데이터 사이언스 인턴",
+        "AI 해커톤",
+        "개발자 해커톤",
+        "AI 경진대회",
+        "데이터 경진대회",
+        "개발 공모전",
+        "주니어 개발자 채용",
+        "site:dacon.io AI 경진대회",
+        "site:programmers.co.kr 대회",
+        "site:aifactory.space 경진대회",
+        "site:linkareer.com 개발자 인턴",
+        "site:wevity.com 해커톤",
+        "site:all-con.co.kr 개발 공모전",
+        "site:wanted.co.kr 백엔드 인턴",
+        "site:jumpit.co.kr 신입 개발자",
+        "site:saramin.co.kr AI 인턴"
+      ],
+      "rss_sources": [],
+      "reference_pages": [
+        {
+          "name": "DACON Competitions",
+          "url": "https://dacon.io/competitions",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Programmers",
+          "url": "https://programmers.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "AI Factory",
+          "url": "https://aifactory.space/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Linkareer",
+          "url": "https://linkareer.com/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Wevity",
+          "url": "https://www.wevity.com/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "All-Con",
+          "url": "https://www.all-con.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Wanted",
+          "url": "https://www.wanted.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Jumpit",
+          "url": "https://www.jumpit.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Saramin",
+          "url": "https://www.saramin.co.kr/",
+          "source_reliability": "platform"
+        }
+      ],
+      "korea_keywords": [
+        "한국",
+        "국내",
+        "서울",
+        "경기",
+        "대전",
+        "부산",
+        "대구",
+        "광주",
+        "인천",
+        "데이콘",
+        "프로그래머스",
+        "인공지능팩토리",
+        "링커리어",
+        "위비티",
+        "올콘",
+        "원티드",
+        "점핏",
+        "사람인"
+      ],
+      "developer_keywords": [
+        "개발자 인턴",
+        "백엔드 인턴",
+        "AI 인턴",
+        "ML 인턴",
+        "데이터 인턴",
+        "신입 개발자",
+        "주니어 개발자",
+        "해커톤",
+        "공모전",
+        "경진대회",
+        "데이터 경진대회",
+        "채용",
+        "모집"
+      ]
+    }
+  ]
+}

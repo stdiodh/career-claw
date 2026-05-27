@@ -8,11 +8,13 @@ echo "==> Checking Python syntax"
 python3 -m py_compile \
   scripts/build-ai-input.py \
   scripts/collect-feeds.py \
+  scripts/collect-kr-feeds.py \
   scripts/make-sample-report.py \
   scripts/render-brief.py \
   scripts/render-overview.py \
   scripts/send-category-briefs.py \
-  scripts/send-discord.py
+  scripts/send-discord.py \
+  scripts/validate-kr-premium-brief.py
 
 echo "==> Checking cost guards"
 if grep -q "openai/codex-action" .github/workflows/daily-feed.yml; then
@@ -41,6 +43,9 @@ if grep -q -- "--search" .github/workflows/ai-brief-manual.yml; then
 fi
 
 for workflow in .github/workflows/*.yml; do
+  if [ "${workflow}" = ".github/workflows/kr-premium-brief.yml" ]; then
+    continue
+  fi
   if grep -q "schedule:" "${workflow}" && grep -q -- "--search" "${workflow}"; then
     echo "Cost guard failed: scheduled workflow must not use Codex live web search: ${workflow}" >&2
     exit 1
@@ -64,6 +69,8 @@ from pathlib import Path
 from subprocess import run
 
 for path in Path("reports/briefs").glob("*.md"):
+    if path.name == "kr-premium-daily.md":
+        continue
     limit = 1000 if path.name == "daily-overview.md" else 1200
     size = len(path.read_text(encoding="utf-8"))
     if size > limit:
@@ -108,10 +115,32 @@ PY
 echo "==> Checking category send dry-run"
 python3 scripts/send-category-briefs.py --dry-run
 
+echo "==> Checking Discord payload embed suppression"
+python3 - <<'PY'
+import importlib.util
+import json
+from pathlib import Path
+
+spec = importlib.util.spec_from_file_location("send_discord", Path("scripts/send-discord.py"))
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+payload = json.loads(module.build_payload("https://example.com").decode("utf-8"))
+if payload.get("flags") != 4:
+    raise SystemExit("Discord payload must set SUPPRESS_EMBEDS flag.")
+PY
+
+echo "==> Checking KR premium brief validation fixtures"
+python3 scripts/validate-kr-premium-brief.py tests/fixtures/kr-premium-brief-valid.md
+if python3 scripts/validate-kr-premium-brief.py tests/fixtures/kr-premium-brief-invalid-generic.md; then
+  echo "KR premium validation fixture should have failed." >&2
+  exit 1
+fi
+
 echo "==> Checking required files"
 required_files=(
   "reports/sample-daily-news.md"
   "configs/channels.json"
+  "configs/kr-sources.json"
   "configs/sources.json"
   "docs/channels.md"
   "docs/cost-policy.md"
@@ -119,15 +148,21 @@ required_files=(
   "refs/categories/backend-news.md"
   "refs/categories/security-alerts.md"
   "scripts/collect-feeds.py"
+  "scripts/collect-kr-feeds.py"
   "scripts/render-brief.py"
   "scripts/render-overview.py"
   "scripts/send-category-briefs.py"
   "scripts/build-ai-input.py"
+  "scripts/validate-kr-premium-brief.py"
+  "tests/fixtures/kr-premium-brief-valid.md"
+  "tests/fixtures/kr-premium-brief-invalid-generic.md"
   ".github/codex/prompts/compact-brief.md"
   ".github/codex/prompts/daily-news.md"
+  ".github/codex/prompts/kr-premium-brief.md"
   ".github/workflows/daily-feed.yml"
   ".github/workflows/ai-brief-manual.yml"
   ".github/workflows/daily-news.yml"
+  ".github/workflows/kr-premium-brief.yml"
 )
 
 for file in "${required_files[@]}"; do

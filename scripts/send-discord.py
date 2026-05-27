@@ -21,6 +21,7 @@ REQUEST_TIMEOUT_SECONDS = 30
 WEBHOOK_USERNAME = "Career Feed"
 USER_AGENT = "career-feed-discord-sender"
 CHUNK_HEADER_PREFIX = "Career Feed"
+SUPPRESS_EMBEDS_FLAG = 4
 
 
 def parse_args() -> argparse.Namespace:
@@ -181,6 +182,7 @@ def build_payload(content: str) -> bytes:
         "content": content,
         "username": WEBHOOK_USERNAME,
         "allowed_mentions": {"parse": []},
+        "flags": SUPPRESS_EMBEDS_FLAG,
     }
     return json.dumps(payload, ensure_ascii=False).encode("utf-8")
 

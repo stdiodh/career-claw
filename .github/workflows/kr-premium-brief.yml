@@ -1,0 +1,140 @@
+name: Daily Korea Premium Brief
+
+on:
+  schedule:
+    # GitHub Actions cron uses UTC. 00:15 UTC requests a 09:15 Asia/Seoul start,
+    # after the FREE_MODE Daily Career Feed messages.
+    - cron: "15 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  kr-premium-brief:
+    name: Generate and send Korea premium brief
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Check required secrets
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DISCORD_WEBHOOK_KR_PREMIUM_BRIEF: ${{ secrets.DISCORD_WEBHOOK_KR_PREMIUM_BRIEF }}
+        run: |
+          set -euo pipefail
+
+          missing=()
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            missing+=("OPENAI_API_KEY")
+          fi
+          if [ -z "${DISCORD_WEBHOOK_KR_PREMIUM_BRIEF}" ]; then
+            missing+=("DISCORD_WEBHOOK_KR_PREMIUM_BRIEF")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required secret(s): %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Prepare report directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/candidates reports/briefs
+
+      - name: Collect Korean premium candidates
+        shell: bash
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          python3 scripts/collect-kr-feeds.py
+
+      - name: Prepare KST runtime prompt
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          kst_now="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
+          runtime_prompt="${RUNNER_TEMP}/kr-premium-brief-${GITHUB_RUN_ID}.md"
+          report_file="reports/briefs/kr-premium-daily.md"
+
+          KST_NOW="${kst_now}" RUNTIME_PROMPT="${runtime_prompt}" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          source = Path(".github/codex/prompts/kr-premium-brief.md")
+          destination = Path(os.environ["RUNTIME_PROMPT"])
+          prompt = source.read_text(encoding="utf-8")
+          prompt = prompt.replace("{{KST_NOW}}", os.environ["KST_NOW"])
+          candidate_files = [
+              "reports/candidates/kr-ai-news.json",
+              "reports/candidates/kr-backend-news.json",
+              "reports/candidates/kr-security-alerts.json",
+              "reports/candidates/kr-career-events.json",
+          ]
+          runtime = prompt + "\n\n## Runtime candidate files\n\n"
+          runtime += "아래 후보 JSON 파일을 읽고 최종 브리핑을 작성한다.\n\n"
+          runtime += "\n".join(f"- `{path}`" for path in candidate_files)
+          runtime += "\n\n## Runtime output\n\n"
+          runtime += "- 최종 Markdown은 `reports/briefs/kr-premium-daily.md`에만 작성한다.\n"
+          runtime += "- 후보 JSON, config, workflow, script 파일은 수정하지 않는다.\n"
+          runtime += "- Secret 값이나 Webhook URL은 출력하지 않는다.\n"
+          destination.write_text(runtime, encoding="utf-8")
+          PY
+
+          {
+            echo "kst_now=${kst_now}"
+            echo "runtime_prompt=${runtime_prompt}"
+            echo "report_file=${report_file}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Generate Korea premium Markdown brief
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ steps.prepare.outputs.runtime_prompt }}
+          output-file: ${{ steps.prepare.outputs.report_file }}
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          codex-args: '["--model","gpt-5.4-mini","-c","model_reasoning_effort=\"low\"","--search"]'
+
+      - name: Validate Korea premium Markdown
+        shell: bash
+        env:
+          REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
+        run: |
+          set -euo pipefail
+          python3 scripts/validate-kr-premium-brief.py "${REPORT_FILE}"
+
+      - name: Send Korea premium brief to Discord
+        shell: bash
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_KR_PREMIUM_BRIEF }}
+          REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
+        run: |
+          set -euo pipefail
+          python3 scripts/send-discord.py "${REPORT_FILE}"
+
+      - name: Upload Korea premium artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: career-feed-kr-premium-${{ github.run_id }}
+          path: |
+            reports/candidates/kr-*.json
+            reports/briefs/kr-premium-daily.md
+          if-no-files-found: warn
