@@ -110,7 +110,7 @@ jobs:
           output-file: ${{ steps.prepare.outputs.report_file }}
           sandbox: workspace-write
           safety-strategy: drop-sudo
-          codex-args: '["--model","gpt-5.4-mini","-c","model_reasoning_effort=\"low\"","--search"]'
+          codex-args: '["--model","gpt-5.4-mini","-c","model_reasoning_effort=\"low\""]'
 
       - name: Validate Korea premium Markdown
         shell: bash
