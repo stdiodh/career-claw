@@ -1,0 +1,24 @@
+{
+  "persona": {
+    "age": 25,
+    "education": "4-year university student or upcoming graduate",
+    "target_role": "backend developer",
+    "level": "student/intern/junior",
+    "primary_stack": ["Kotlin", "Spring Boot", "Java", "REST API", "SQL"],
+    "secondary_stack": ["Docker", "Kubernetes", "AWS", "Redis", "Kafka", "PostgreSQL"],
+    "location": "Korea",
+    "language": "ko"
+  },
+  "preferences": {
+    "daily_topics": ["kr-ai-tech", "kr-backend-dev-tech"],
+    "weekly_topics": ["backend-internship", "hackathon", "contest", "competition"],
+    "exclude": [
+      "stock-only",
+      "investment-only",
+      "senior-only",
+      "frontend-only",
+      "marketing-only",
+      "expired-deadline"
+    ]
+  }
+}

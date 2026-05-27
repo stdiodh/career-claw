@@ -1,6 +1,8 @@
 # Career Feed Korea Premium Brief Prompt
 
 이 프롬프트는 `KR_PREMIUM_MODE` 전용이다.
+KR Premium v2에서는 daily 기술 브리핑과 weekly 커리어 브리핑을 분리한다.
+이 파일은 기존 4섹션 통합 브리핑을 수동 legacy 용도로만 보존한다.
 
 중요:
 - OpenAI API 비용이 발생할 수 있다.
@@ -29,10 +31,10 @@ workflow는 `{{KST_NOW}}`를 현재 Asia/Seoul 기준시각으로 치환한다. 
 
 다음 후보 JSON을 기본 입력으로 사용한다.
 
-- `reports/candidates/kr-ai-news.json`
-- `reports/candidates/kr-backend-news.json`
+- `reports/candidates/kr-ai-tech-news.json`
+- `reports/candidates/kr-backend-tech-news.json`
 - `reports/candidates/kr-security-alerts.json`
-- `reports/candidates/kr-career-events.json`
+- `reports/candidates/kr-backend-career-events.json`
 
 각 후보의 원본 URL, source URL, published_at, query, relevance, reliability, tags, score를 선별 근거로 사용한다.
 

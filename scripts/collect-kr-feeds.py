@@ -39,6 +39,55 @@ RELIABILITY_SCORE = {
     "aggregator": 5,
     "unknown": 0,
 }
+MODE_CATEGORY_IDS = {
+    "daily-tech": {"kr-ai-tech-news", "kr-backend-tech-news"},
+    "weekly-career": {"kr-backend-career-events"},
+}
+BACKEND_KEYWORDS = [
+    "backend",
+    "백엔드",
+    "서버",
+    "api",
+    "spring",
+    "java",
+    "kotlin",
+    "db",
+    "database",
+    "postgresql",
+    "redis",
+    "kafka",
+    "kubernetes",
+    "msa",
+]
+KOTLIN_SPRING_KEYWORDS = ["kotlin", "spring", "spring boot", "java"]
+STUDENT_KEYWORDS = [
+    "인턴",
+    "신입",
+    "주니어",
+    "대학생",
+    "졸업",
+    "채용연계형",
+    "해커톤",
+    "공모전",
+    "경진대회",
+]
+ACTION_KEYWORDS = [
+    "지원",
+    "접수",
+    "모집",
+    "참가",
+    "신청",
+    "마감",
+    "업데이트",
+    "출시",
+    "발표",
+    "패치",
+    "취약점",
+]
+SECURITY_ACTION_KEYWORDS = ["취약점", "cve", "보안 업데이트", "패치", "공급망", "랜섬웨어"]
+EXPIRED_DEADLINE_KEYWORDS = ["마감 종료", "접수 종료", "모집 종료", "지원 종료", "마감됨"]
+SENIOR_ONLY_KEYWORDS = ["시니어", "senior", "경력 3년", "경력 5년", "3년 이상", "5년 이상"]
+FRONTEND_MARKETING_KEYWORDS = ["프론트엔드", "frontend", "디자인", "마케팅", "기획자"]
 
 
 @dataclass(frozen=True)
@@ -56,6 +105,15 @@ class Candidate:
     developer_relevance: str
     source_reliability: str
     tags: list[str]
+    persona_fit_score: int
+    backend_fit_score: int
+    kotlin_spring_fit_score: int
+    student_fit_score: int
+    deadline_urgency_score: int
+    source_reliability_score: int
+    actionability_score: int
+    security_action_required: bool
+    exclude_reason: str
     score: int
 
 
@@ -69,6 +127,12 @@ def parse_args() -> argparse.Namespace:
         "--category",
         default="all",
         help="Category id to collect, or 'all'.",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=["all", "daily-tech", "weekly-career"],
+        default="all",
+        help="Collection mode for KR Premium v2 workflows.",
     )
     parser.add_argument(
         "--dry-run",
@@ -148,13 +212,14 @@ def title_is_duplicate(title: str, seen_titles: list[str]) -> bool:
     return False
 
 
-def load_config(path: Path, category_filter: str) -> dict[str, object]:
+def load_config(path: Path, category_filter: str, mode_filter: str) -> dict[str, object]:
     data = json.loads(path.read_text(encoding="utf-8"))
     categories = data.get("categories", [])
     if not isinstance(categories, list):
         raise RuntimeError("configs/kr-sources.json must contain a categories array.")
 
     selected = []
+    mode_category_ids = MODE_CATEGORY_IDS.get(mode_filter, set())
     for category in categories:
         if not isinstance(category, dict):
             continue
@@ -163,10 +228,12 @@ def load_config(path: Path, category_filter: str) -> dict[str, object]:
             continue
         if category_filter != "all" and category_id != category_filter:
             continue
+        if mode_filter != "all" and category_id not in mode_category_ids:
+            continue
         selected.append(category)
 
     if category_filter != "all" and not selected:
-        raise RuntimeError(f"Unknown KR category: {category_filter}")
+        raise RuntimeError(f"Unknown KR category or mode mismatch: {category_filter}")
 
     return {**data, "categories": selected}
 
@@ -216,6 +283,10 @@ def text_contains_any(text: str, keywords: list[str]) -> bool:
 def count_matches(text: str, keywords: list[str]) -> int:
     lowered = text.lower()
     return sum(1 for keyword in keywords if keyword and keyword.lower() in lowered)
+
+
+def keyword_fit_score(text: str, keywords: list[str], points_per_match: int, limit: int) -> int:
+    return min(count_matches(text, keywords) * points_per_match, limit)
 
 
 def contains_korean(text: str) -> bool:
@@ -285,6 +356,45 @@ def build_tags(category: dict[str, object], text: str) -> list[str]:
     return sorted(tags)
 
 
+def infer_exclude_reason(category_id: str, text: str) -> str:
+    if text_contains_any(text, EXPIRED_DEADLINE_KEYWORDS):
+        return "expired-deadline"
+    if text_contains_any(text, SENIOR_ONLY_KEYWORDS):
+        return "senior-only"
+    if category_id == "kr-backend-career-events" and text_contains_any(
+        text, FRONTEND_MARKETING_KEYWORDS
+    ):
+        return "frontend-or-marketing-focused"
+    if text_contains_any(text, ["주가", "급등", "급락", "목표가", "투자의견", "관련주"]):
+        return "stock-or-investment-only"
+    if category_id == "kr-backend-career-events" and not text_contains_any(
+        text, BACKEND_KEYWORDS + STUDENT_KEYWORDS
+    ):
+        return "unclear-backend-student-fit"
+    return ""
+
+
+def deadline_urgency_score_for(category_id: str, text: str, exclude_reason: str) -> int:
+    if exclude_reason == "expired-deadline":
+        return -50
+    if category_id != "kr-backend-career-events":
+        return 0
+    if text_contains_any(text, ["오늘", "내일", "이번 주", "7일", "마감"]):
+        return 20
+    if text_contains_any(text, ["접수", "모집", "지원"]):
+        return 10
+    return 0
+
+
+def actionability_score_for(category_id: str, text: str) -> int:
+    score = keyword_fit_score(text, ACTION_KEYWORDS, 5, 20)
+    if category_id == "kr-backend-career-events" and text_contains_any(
+        text, ["공식", "채용", "대회", "공모전", "해커톤"]
+    ):
+        score += 10
+    return min(score, 30)
+
+
 def score_candidate(
     candidate: Candidate,
     current_time: datetime,
@@ -309,10 +419,18 @@ def score_candidate(
         score += 10
 
     score += RELIABILITY_SCORE.get(candidate.source_reliability, 0)
+    score += candidate.persona_fit_score // 2
+    score += candidate.actionability_score
+    score += candidate.deadline_urgency_score
+
+    if candidate.security_action_required:
+        score += 10
 
     searchable = f"{candidate.title} {candidate.summary}"
     if text_contains_any(searchable, penalty_keywords):
         score -= 30
+    if candidate.exclude_reason:
+        score -= 50
 
     return score
 
@@ -343,9 +461,32 @@ def build_candidate(
     korea_relevance = classify_korea_relevance(category, searchable, clean_url)
     developer_relevance = classify_developer_relevance(category, searchable)
     tags = build_tags(category, searchable)
+    category_id = str(category.get("id", "")).strip()
+    backend_fit_score = keyword_fit_score(searchable, BACKEND_KEYWORDS, 10, 30)
+    kotlin_spring_fit_score = keyword_fit_score(searchable, KOTLIN_SPRING_KEYWORDS, 10, 30)
+    student_fit_score = keyword_fit_score(searchable, STUDENT_KEYWORDS, 10, 25)
+    exclude_reason = infer_exclude_reason(category_id, searchable)
+    if query == "reference_page" and exclude_reason == "unclear-backend-student-fit":
+        exclude_reason = ""
+    deadline_urgency_score = deadline_urgency_score_for(
+        category_id, searchable, exclude_reason
+    )
+    source_reliability_score = RELIABILITY_SCORE.get(source_reliability, 0)
+    actionability_score = actionability_score_for(category_id, searchable)
+    security_action_required = (
+        category_id == "kr-backend-tech-news"
+        and text_contains_any(searchable, SECURITY_ACTION_KEYWORDS)
+    )
+    persona_fit_score = min(
+        backend_fit_score
+        + kotlin_spring_fit_score
+        + student_fit_score
+        + actionability_score,
+        100,
+    )
 
     candidate = Candidate(
-        category=str(category.get("id", "")).strip(),
+        category=category_id,
         title=clean_title,
         url=clean_url,
         source_url=clean_source_url,
@@ -358,6 +499,15 @@ def build_candidate(
         developer_relevance=developer_relevance,
         source_reliability=source_reliability,
         tags=tags,
+        persona_fit_score=persona_fit_score,
+        backend_fit_score=backend_fit_score,
+        kotlin_spring_fit_score=kotlin_spring_fit_score,
+        student_fit_score=student_fit_score,
+        deadline_urgency_score=deadline_urgency_score,
+        source_reliability_score=source_reliability_score,
+        actionability_score=actionability_score,
+        security_action_required=security_action_required,
+        exclude_reason=exclude_reason,
         score=0,
     )
     return replace(candidate, score=score_candidate(candidate, current_time, penalty_keywords))
@@ -707,6 +857,15 @@ def serialize_candidate(candidate: Candidate) -> dict[str, object]:
         "developer_relevance": candidate.developer_relevance,
         "source_reliability": candidate.source_reliability,
         "tags": candidate.tags,
+        "persona_fit_score": candidate.persona_fit_score,
+        "backend_fit_score": candidate.backend_fit_score,
+        "kotlin_spring_fit_score": candidate.kotlin_spring_fit_score,
+        "student_fit_score": candidate.student_fit_score,
+        "deadline_urgency_score": candidate.deadline_urgency_score,
+        "source_reliability_score": candidate.source_reliability_score,
+        "actionability_score": candidate.actionability_score,
+        "security_action_required": candidate.security_action_required,
+        "exclude_reason": candidate.exclude_reason,
         "score": candidate.score,
     }
 
@@ -778,7 +937,7 @@ def main() -> int:
     current_time = now_kst()
 
     try:
-        config = load_config(config_path, args.category)
+        config = load_config(config_path, args.category, args.mode)
         credentials = get_naver_credentials(args.dry_run)
         penalty_keywords = [
             str(keyword).strip()

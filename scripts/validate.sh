@@ -37,13 +37,23 @@ if grep -q -- "--search" .github/workflows/daily-feed.yml; then
   exit 1
 fi
 
-if ! grep -q "schedule:" .github/workflows/kr-premium-brief.yml; then
-  echo "Cost guard failed: kr-premium-brief.yml must define the default daily schedule." >&2
+if grep -q "schedule:" .github/workflows/kr-premium-brief.yml; then
+  echo "Cost guard failed: legacy kr-premium-brief.yml must stay manual." >&2
   exit 1
 fi
 
 if grep -q "schedule:" .github/workflows/daily-news.yml; then
   echo "Cost guard failed: daily-news.yml must stay manual and must not define schedule." >&2
+  exit 1
+fi
+
+if ! grep -q 'cron: "10 0 \* \* 1-5"' .github/workflows/kr-tech-daily.yml; then
+  echo "Cost guard failed: kr-tech-daily.yml must define the weekday 09:10 KST schedule." >&2
+  exit 1
+fi
+
+if ! grep -q 'cron: "30 0 \* \* 1"' .github/workflows/kr-backend-career-weekly.yml; then
+  echo "Cost guard failed: kr-backend-career-weekly.yml must define the Monday 09:30 KST schedule." >&2
   exit 1
 fi
 
@@ -53,14 +63,23 @@ if grep -q -- "--search" .github/workflows/ai-brief-manual.yml; then
 fi
 
 for workflow in .github/workflows/*.yml; do
-  if [ "${workflow}" = ".github/workflows/kr-premium-brief.yml" ]; then
-    continue
-  fi
   if grep -q "schedule:" "${workflow}" && grep -q -- "--search" "${workflow}"; then
     echo "Cost guard failed: scheduled workflow must not use Codex live web search: ${workflow}" >&2
     exit 1
   fi
 done
+
+if grep -q "reports/briefs/kr-tech-daily.md" .github/workflows/kr-tech-daily.yml \
+  && grep -q "output-file: reports/briefs/kr-tech-daily.md" .github/workflows/kr-tech-daily.yml; then
+  echo "Cost guard failed: Codex output-file must not overwrite kr-tech-daily.md." >&2
+  exit 1
+fi
+
+if grep -q "reports/briefs/kr-backend-career-weekly.md" .github/workflows/kr-backend-career-weekly.yml \
+  && grep -q "output-file: reports/briefs/kr-backend-career-weekly.md" .github/workflows/kr-backend-career-weekly.yml; then
+  echo "Cost guard failed: Codex output-file must not overwrite kr-backend-career-weekly.md." >&2
+  exit 1
+fi
 
 echo "==> Creating sample Markdown report"
 python3 scripts/make-sample-report.py
@@ -149,10 +168,122 @@ if python3 scripts/validate-kr-premium-brief.py tests/fixtures/kr-premium-brief-
   exit 1
 fi
 
+echo "==> Checking KR Premium v2 validation samples"
+python3 - <<'PY'
+from pathlib import Path
+from subprocess import run
+from tempfile import TemporaryDirectory
+
+daily_valid = """# Career Feed - Korea Tech Daily
+기준시각: 2026-05-27 09:10 KST
+
+한 줄 요약:
+- 오늘은 국내 AI API와 Spring 운영 사례를 먼저 확인합니다.
+
+## 1. 한국 AI 테크
+
+### 1-1. 네이버클라우드 AI API 업데이트
+- 무슨 일: 국내 AI API 활용 후보가 확인됐습니다.
+- 왜 나에게 중요한가: 백엔드 포트폴리오에서 AI API 연동 주제를 고를 때 참고할 수 있습니다.
+- 백엔드 관점: 인증, 요청 제한, 장애 대응 설계를 함께 확인해야 합니다.
+- 내 액션: API 문서에서 Spring Boot 연동 가능성을 정리합니다.
+- 출처/시각: Naver Cloud / 2026-05-27 09:00 KST
+- 링크: [원문 보기](https://www.ncloud.com/product/aiService)
+
+## 2. 백엔드/개발자 기술
+
+### 2-1. 카카오 기술 블로그 백엔드 사례
+- 무슨 일: 국내 대규모 서비스 운영 사례를 확인할 수 있습니다.
+- 왜 나에게 중요한가: 장애 대응과 API 설계 면접 소재로 활용할 수 있습니다.
+- Kotlin/Spring Boot 관련성: Spring 기반 API 서버 설계와 비교해 정리하기 좋습니다.
+- 내 액션: 아키텍처 선택 이유를 포트폴리오 메모로 남깁니다.
+- 출처/시각: Kakao Tech / 2026-05-27 09:00 KST
+- 링크: [원문 보기](https://tech.kakao.com/)
+
+## 긴급 체크
+- 오늘은 긴급 체크 항목 없음
+
+## 오늘 할 일
+- AI API 인증 방식을 정리합니다.
+- Spring 운영 사례 키워드를 기록합니다.
+"""
+
+weekly_valid = """# Career Feed - Backend Career Weekly
+기준시각: 2026-05-27 09:30 KST
+
+이번 주 요약:
+- 이번 주는 백엔드 인턴과 경진대회 지원 가능성을 먼저 확인합니다.
+
+## 이번 주 추천 TOP 5
+
+### 1. 백엔드 채용연계형 인턴
+- 유형: 인턴
+- 대상 적합성: 학생/신입 지원 가능성이 있어 확인 가치가 있습니다.
+- 백엔드 적합성: 서버 API 개발 경험과 직접 관련됩니다.
+- Kotlin/Spring Boot 관련성: Java/Spring Boot 경험을 요구합니다.
+- 마감: 2026-06-30
+- 왜 나에게 맞는가: 신입 백엔드 포트폴리오와 연결하기 좋습니다.
+- 내 액션: 지원 자격과 과제 여부를 확인합니다.
+- 출처: Wanted
+- 링크: [원문 보기](https://www.wanted.co.kr/)
+
+## 마감 임박
+- 이번 주 마감 임박 항목 없음
+
+## 포트폴리오 관점 추천
+- 데이콘 경진대회: API 서버와 모델 결과 저장 구조를 포트폴리오로 남기기 좋습니다. [원문 보기](https://dacon.io/competitions)
+
+## 제외한 후보
+- 시니어 백엔드 채용: 경력 5년 이상만 가능해 제외
+"""
+
+weekly_invalid = """# Career Feed - Backend Career Weekly
+기준시각: 2026-05-27 09:30 KST
+
+이번 주 요약:
+- 마감 지난 항목을 추천하는 잘못된 예시입니다.
+
+## 이번 주 추천 TOP 5
+
+### 1. 오래된 백엔드 공고
+- 유형: 신입
+- 대상 적합성: 학생 지원 가능
+- 백엔드 적합성: 서버 개발
+- Kotlin/Spring Boot 관련성: Spring Boot
+- 마감: 마감 지남
+- 왜 나에게 맞는가: 확인용
+- 내 액션: 확인
+- 출처: Wanted
+- 링크: [원문 보기](https://www.wanted.co.kr/)
+
+## 마감 임박
+- [원문 보기](https://dacon.io/competitions)
+
+## 포트폴리오 관점 추천
+- 없음
+"""
+
+with TemporaryDirectory() as temp_dir:
+    root = Path(temp_dir)
+    daily = root / "daily.md"
+    weekly = root / "weekly.md"
+    invalid = root / "invalid.md"
+    daily.write_text(daily_valid, encoding="utf-8")
+    weekly.write_text(weekly_valid, encoding="utf-8")
+    invalid.write_text(weekly_invalid, encoding="utf-8")
+
+    run(["python3", "scripts/validate-kr-premium-brief.py", str(daily), "--type", "daily-tech"], check=True)
+    run(["python3", "scripts/validate-kr-premium-brief.py", str(weekly), "--type", "weekly-career"], check=True)
+    failed = run(["python3", "scripts/validate-kr-premium-brief.py", str(invalid), "--type", "weekly-career"]).returncode
+    if failed == 0:
+        raise SystemExit("Weekly career invalid sample should have failed.")
+PY
+
 echo "==> Checking required files"
 required_files=(
   "reports/sample-daily-news.md"
   "configs/channels.json"
+  "configs/audience-profile.json"
   "configs/kr-sources.json"
   "configs/sources.json"
   "docs/channels.md"
@@ -171,10 +302,14 @@ required_files=(
   "tests/fixtures/kr-premium-brief-invalid-generic.md"
   ".github/codex/prompts/compact-brief.md"
   ".github/codex/prompts/daily-news.md"
+  ".github/codex/prompts/kr-tech-daily-brief.md"
+  ".github/codex/prompts/kr-backend-career-weekly.md"
   ".github/codex/prompts/kr-premium-brief.md"
   ".github/workflows/daily-feed.yml"
   ".github/workflows/ai-brief-manual.yml"
   ".github/workflows/daily-news.yml"
+  ".github/workflows/kr-tech-daily.yml"
+  ".github/workflows/kr-backend-career-weekly.yml"
   ".github/workflows/kr-premium-brief.yml"
 )
 
