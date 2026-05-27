@@ -3,7 +3,7 @@ name: Daily Korea Premium Brief
 on:
   schedule:
     # GitHub Actions cron uses UTC. 00:15 UTC requests a 09:15 Asia/Seoul start,
-    # after the FREE_MODE Daily Career Feed messages.
+    # which is the default morning Career Feed delivery time.
     - cron: "15 0 * * *"
   workflow_dispatch:
 

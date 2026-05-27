@@ -13,8 +13,6 @@ on:
           - ai-news
           - backend-news
           - security-alerts
-          - backend-tech
-          - job-feed
       max_items:
         description: Maximum items per category
         required: true
@@ -108,8 +106,6 @@ jobs:
           DISCORD_WEBHOOK_AI_NEWS: ${{ secrets.DISCORD_WEBHOOK_AI_NEWS }}
           DISCORD_WEBHOOK_BACKEND_NEWS: ${{ secrets.DISCORD_WEBHOOK_BACKEND_NEWS }}
           DISCORD_WEBHOOK_SECURITY_ALERTS: ${{ secrets.DISCORD_WEBHOOK_SECURITY_ALERTS }}
-          DISCORD_WEBHOOK_BACKEND_TECH: ${{ secrets.DISCORD_WEBHOOK_BACKEND_TECH }}
-          DISCORD_WEBHOOK_JOB_FEED: ${{ secrets.DISCORD_WEBHOOK_JOB_FEED }}
         run: |
           set -euo pipefail
 

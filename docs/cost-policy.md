@@ -1,29 +1,29 @@
 # 비용 정책
 
-Career Feed의 기본 원칙은 매일 실행되는 알림에서 OpenAI API와 live web search를 사용하지 않는 것이다. 비용 절약이 1순위이며, 사용자가 원본 URL을 직접 확인할 수 있도록 링크 중심 브리핑을 만든다.
+Career Feed의 기본 오전 알림은 `KR_PREMIUM_MODE` 하나로 운영한다. OpenAI API 비용이 발생하므로 하루 1회 통합 브리핑, 제한된 후보 수, 품질 검증, 예산 알림을 비용 가드로 둔다. 무료 RSS/Atom 기반 `FREE_MODE`는 수동 백업으로만 유지한다.
 
 ## 운영 모드
 
 | 모드 | 용도 | 실행 방식 | 비용 기준 |
 | --- | --- | --- | --- |
-| `FREE_MODE` | 무료 RSS/Atom 기반 기본 알림 | 매일 자동 | OpenAI API 사용 안 함 |
-| `KR_PREMIUM_MODE` | 한국 중심 AI 검색/선별 통합 브리핑 | 매일 자동 가능 | OpenAI API 비용 발생 |
+| `FREE_MODE` | 무료 RSS/Atom 기반 백업 알림 | 수동 실행 전용 | OpenAI API 사용 안 함 |
+| `KR_PREMIUM_MODE` | 한국 중심 AI 검색/선별 통합 브리핑 | 매일 자동 | OpenAI API 비용 발생 |
 | `AI_LIGHT_MODE` | 후보 JSON만 짧게 정제 | 수동 실행 전용 | 낮은 비용, live web search 없음 |
 | `AI_SEARCH_MODE` | 수동 고급 브리핑 | 수동 실행 전용 | 검색량에 따라 비용 증가 |
 
 ## 기본 정책
 
-- 매일 알림은 `FREE_MODE`로 운영한다.
+- 기본 오전 알림은 `KR_PREMIUM_MODE`로 운영한다.
 - `FREE_MODE` workflow는 `OPENAI_API_KEY`를 요구하지 않는다.
-- `Daily Career Feed`에는 `OPENAI_API_KEY`를 추가하지 않는다.
-- Daily Overview는 `DISCORD_WEBHOOK_DAILY_OVERVIEW`로 전송하며 AI 비용을 발생시키지 않는다.
+- `Manual Free RSS Career Feed`에는 `OPENAI_API_KEY`를 추가하지 않는다.
+- 무료 RSS Daily Overview는 수동 백업으로만 사용하며 AI 비용을 발생시키지 않는다.
 - 후보 수집은 `configs/sources.json`에 등록된 RSS/Atom/공식 URL을 기준으로 한다.
 - 브리핑은 원본 제목, 1줄 요약, 출처, 발행일, URL 중심으로 구성한다.
 - 원문 확인이 필요한 항목은 내용을 추측하지 않고 "원문 확인 필요"라고 표시한다.
 
 ## KR_PREMIUM_MODE 제한
 
-- 기존 `Daily Career Feed`와 별도 경로로 운영한다.
+- 기존 무료 RSS workflow와 별도 경로로 운영한다.
 - 후보 수집은 먼저 `scripts/collect-kr-feeds.py`로 구조화된 JSON을 만든다.
 - Naver News Search API는 JSON 응답, `sort=date`, query당 `display <= 20`만 사용한다.
 - 기사 전문을 저장하지 않고 제목, URL, 출처, 발행시각, 검색 snippet만 저장한다.
@@ -77,10 +77,19 @@ Career Feed의 기본 원칙은 매일 실행되는 알림에서 OpenAI API와 l
 - `OPENAI_API_KEY`
 - `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`
 
-선택:
+한국 뉴스 품질 향상 권장:
 
 - `NAVER_CLIENT_ID`
 - `NAVER_CLIENT_SECRET`
+
+기본 운영에서 더 이상 필수가 아닌 legacy/manual free RSS Secrets:
+
+- `DISCORD_WEBHOOK_DAILY_OVERVIEW`
+- `DISCORD_WEBHOOK_AI_NEWS`
+- `DISCORD_WEBHOOK_BACKEND_NEWS`
+- `DISCORD_WEBHOOK_SECURITY_ALERTS`
+- `DISCORD_WEBHOOK_BACKEND_TECH`
+- `DISCORD_WEBHOOK_JOB_FEED`
 
 ## AI_LIGHT_MODE 제한
 
@@ -102,7 +111,8 @@ Career Feed의 기본 원칙은 매일 실행되는 알림에서 OpenAI API와 l
 ## Validate 비용 가드
 
 - `daily-feed.yml`에는 `openai/codex-action`, `OPENAI_API_KEY`, `--search`가 없어야 한다.
+- `daily-feed.yml`에는 `schedule:`이 없어야 한다.
 - `daily-news.yml`에는 `schedule:`이 없어야 한다.
 - `ai-brief-manual.yml`에는 `--search`가 없어야 한다.
 - `kr-premium-brief.yml`을 제외한 workflow에서 `schedule:`과 `--search`가 동시에 존재하면 실패한다.
-- KR premium workflow를 추가할 때는 `OPENAI_API_KEY`가 기존 `daily-feed.yml`에 주입되지 않는지 확인한다.
+- KR premium workflow를 수정할 때는 `OPENAI_API_KEY`가 기존 `daily-feed.yml`에 주입되지 않는지 확인한다.

@@ -1,10 +1,6 @@
-name: Daily Career Feed
+name: Manual Free RSS Career Feed
 
 on:
-  schedule:
-    # GitHub Actions cron uses UTC. 00:03 UTC requests a 09:03 Asia/Seoul start,
-    # then scripts/send-category-briefs.py waits until 09:07 KST.
-    - cron: "3 0 * * *"
   workflow_dispatch:
 
 permissions:
@@ -51,18 +47,19 @@ jobs:
           set -euo pipefail
           python3 scripts/render-overview.py
 
-      - name: Send category briefs to Discord with staggered offsets
+      - name: Send legacy free category briefs to Discord
         shell: bash
         env:
           DISCORD_WEBHOOK_DAILY_OVERVIEW: ${{ secrets.DISCORD_WEBHOOK_DAILY_OVERVIEW }}
           DISCORD_WEBHOOK_AI_NEWS: ${{ secrets.DISCORD_WEBHOOK_AI_NEWS }}
           DISCORD_WEBHOOK_BACKEND_NEWS: ${{ secrets.DISCORD_WEBHOOK_BACKEND_NEWS }}
           DISCORD_WEBHOOK_SECURITY_ALERTS: ${{ secrets.DISCORD_WEBHOOK_SECURITY_ALERTS }}
-          DISCORD_WEBHOOK_BACKEND_TECH: ${{ secrets.DISCORD_WEBHOOK_BACKEND_TECH }}
-          DISCORD_WEBHOOK_JOB_FEED: ${{ secrets.DISCORD_WEBHOOK_JOB_FEED }}
         run: |
           set -euo pipefail
-          python3 scripts/send-category-briefs.py
+          python3 scripts/send-category-briefs.py --category daily-overview --include-disabled
+          python3 scripts/send-category-briefs.py --category ai-news --include-disabled
+          python3 scripts/send-category-briefs.py --category backend-news --include-disabled
+          python3 scripts/send-category-briefs.py --category security-alerts --include-disabled
 
       - name: Upload candidates and briefs as artifacts
         if: always()

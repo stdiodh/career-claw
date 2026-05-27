@@ -3,7 +3,7 @@
     {
       "id": "daily-overview",
       "name": "Daily Overview",
-      "enabled": true,
+      "enabled": false,
       "reference": "",
       "candidate_file": "",
       "brief_file": "reports/briefs/daily-overview.md",
@@ -15,7 +15,7 @@
     {
       "id": "ai-news",
       "name": "AI News",
-      "enabled": true,
+      "enabled": false,
       "reference": "refs/categories/ai-news.md",
       "candidate_file": "reports/candidates/ai-news.json",
       "brief_file": "reports/briefs/ai-news.md",
@@ -26,7 +26,7 @@
     {
       "id": "backend-news",
       "name": "Backend News",
-      "enabled": true,
+      "enabled": false,
       "reference": "refs/categories/backend-news.md",
       "candidate_file": "reports/candidates/backend-news.json",
       "brief_file": "reports/briefs/backend-news.md",
@@ -37,7 +37,7 @@
     {
       "id": "security-alerts",
       "name": "Security Alerts",
-      "enabled": true,
+      "enabled": false,
       "reference": "refs/categories/security-alerts.md",
       "candidate_file": "reports/candidates/security-alerts.json",
       "brief_file": "reports/briefs/security-alerts.md",

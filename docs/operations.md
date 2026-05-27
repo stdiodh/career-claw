@@ -4,33 +4,30 @@
 
 ## GitHub Secrets 설정
 
-GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다음 Secrets를 등록한다. `FREE_MODE` MVP 운영에는 enabled 채널의 Webhook Secret만 필수다.
+GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다음 Secrets를 등록한다. 기본 오전 알림은 `KR_PREMIUM_MODE`이며, 무료 RSS Webhook Secret은 기본 운영 필수가 아니다.
 
-### MVP 필수 Secrets
-
-| Secret | 설명 |
-| --- | --- |
-| `DISCORD_WEBHOOK_DAILY_OVERVIEW` | Daily Overview 채널 Webhook URL |
-| `DISCORD_WEBHOOK_AI_NEWS` | AI News 채널 Webhook URL |
-| `DISCORD_WEBHOOK_BACKEND_NEWS` | Backend News 채널 Webhook URL |
-| `DISCORD_WEBHOOK_SECURITY_ALERTS` | Security Alerts 채널 Webhook URL |
-
-### 선택 Secrets
-
-| Secret | 필요한 경우 |
-| --- | --- |
-| `DISCORD_WEBHOOK_BACKEND_TECH` | Backend Tech Radar 채널을 활성화하거나 수동 전송할 때 |
-| `DISCORD_WEBHOOK_JOB_FEED` | Job Feed 채널을 활성화하거나 수동 전송할 때 |
-| `OPENAI_API_KEY` | `AI_LIGHT_MODE`, `AI_SEARCH_MODE` 수동 workflow를 실행할 때 |
-| `NAVER_CLIENT_ID` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
-| `NAVER_CLIENT_SECRET` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
-
-### KR_PREMIUM_MODE 필수 Secrets
+### 기본 운영 필수 Secrets
 
 | Secret | 설명 |
 | --- | --- |
 | `OPENAI_API_KEY` | 한국 중심 AI 브리핑 생성에 사용하는 OpenAI API Key |
 | `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` | KR Premium 통합 브리핑을 전송할 Discord Webhook URL |
+
+### 한국 뉴스 품질 향상 권장 Secrets
+
+| Secret | 필요한 경우 |
+| --- | --- |
+| `NAVER_CLIENT_ID` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
+| `NAVER_CLIENT_SECRET` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
+
+### Legacy/manual free RSS용 선택 Secrets
+
+| Secret | 필요한 경우 |
+| --- | --- |
+| `DISCORD_WEBHOOK_DAILY_OVERVIEW` | 수동 무료 RSS Daily Overview 전송이 필요할 때 |
+| `DISCORD_WEBHOOK_AI_NEWS` | 수동 무료 RSS AI News 전송이 필요할 때 |
+| `DISCORD_WEBHOOK_BACKEND_NEWS` | 수동 무료 RSS Backend News 전송이 필요할 때 |
+| `DISCORD_WEBHOOK_SECURITY_ALERTS` | 수동 무료 RSS Security Alerts 전송이 필요할 때 |
 
 주의 사항:
 
@@ -40,19 +37,40 @@ GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다�
 
 ## MVP 운영 범위
 
-현재 `FREE_MODE` MVP 운영 경로는 GitHub Actions, RSS/Atom 수집, Markdown 생성, Discord Webhook 전송이다. `app/`와 `infra/`는 이 경로에서 사용하지 않으며, 서버 또는 인프라 확장을 진행할 때 재검토한다.
+현재 기본 오전 알림 경로는 GitHub Actions, 한국 후보 수집, AI 편집, 품질 검증, 단일 Discord Webhook 전송이다. `FREE_MODE`는 수동 백업 경로로만 유지한다. `app/`와 `infra/`는 이 경로에서 사용하지 않으며, 서버 또는 인프라 확장을 진행할 때 재검토한다.
 
 ## Workflow 실행 방식
 
-### Daily Career Feed
+### Daily Korea Premium Brief
 
-기본 일일 workflow는 `.github/workflows/daily-feed.yml`에 정의되어 있다.
+기본 일일 workflow는 `.github/workflows/kr-premium-brief.yml`에 정의되어 있다.
 
-- Workflow 이름: `Daily Career Feed`
-- 예약 실행 요청: 매일 `09:03 Asia/Seoul`
-- GitHub Actions cron: `3 0 * * *`
+- Workflow 이름: `Daily Korea Premium Brief`
+- 예약 실행 요청: 매일 `09:15 Asia/Seoul`
+- GitHub Actions cron: `15 0 * * *`
+- 수동 실행: `workflow_dispatch`
+- 필수 Secrets: `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`
+- 권장 Secrets: `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`
+
+실행 순서는 다음과 같다.
+
+1. 한국 후보 수집
+2. `reports/candidates/kr-*.json` 생성
+3. KR Premium AI 편집 프롬프트 생성
+4. Codex Action으로 `reports/briefs/kr-premium-daily.md` 생성
+5. 품질 검증
+6. `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` 하나로 Discord 전송
+7. 후보와 브리핑 artifact 업로드
+
+### Manual Free RSS Career Feed
+
+무료 RSS 백업 workflow는 `.github/workflows/daily-feed.yml`에 정의되어 있다.
+
+- Workflow 이름: `Manual Free RSS Career Feed`
+- 예약 실행 없음
 - 수동 실행: `workflow_dispatch`
 - OpenAI API 사용: 없음
+- legacy/manual free RSS Webhook Secret이 있을 때만 Discord 전송 가능
 
 실행 순서는 다음과 같다.
 
@@ -60,12 +78,12 @@ GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다�
 2. `reports/candidates/{category}.json` 생성
 3. 무료 Markdown 브리핑 렌더링
 4. Daily Overview 렌더링
-5. 09:07 KST부터 Daily Overview와 카테고리별 Webhook 순차 전송
+5. Daily Overview와 legacy 무료 카테고리별 Webhook 순차 전송
 6. 후보와 브리핑 artifact 업로드
 
 ### KR_PREMIUM_MODE 후보 수집
 
-`KR_PREMIUM_MODE`는 기존 `Daily Career Feed`를 대체하지 않는다. 한국 기준 고품질 브리핑을 만들기 위한 별도 후보 pool을 먼저 생성하는 경로다.
+`KR_PREMIUM_MODE`는 기본 오전 알림이며, 기존 무료 RSS workflow는 삭제하지 않고 수동 백업으로 유지한다. 한국 기준 고품질 브리핑을 만들기 위한 별도 후보 pool을 먼저 생성한다.
 
 - 스크립트: `scripts/collect-kr-feeds.py`
 - 설정: `configs/kr-sources.json`
@@ -139,49 +157,45 @@ python3 scripts/validate-kr-premium-brief.py reports/briefs/kr-premium-daily.md
 
 ## 시간 정책
 
-Daily Career Feed의 시간은 정확 보장이 아니라 목표 시각으로 운영한다. GitHub Actions schedule은 GitHub 인프라 상태에 따라 지연되거나 누락될 수 있다.
+Daily Korea Premium Brief의 시간은 정확 보장이 아니라 목표 시각으로 운영한다. GitHub Actions schedule은 GitHub 인프라 상태에 따라 지연되거나 누락될 수 있다.
 
-- GitHub Actions cron은 UTC 기준이며 `3 0 * * *`는 09:03 KST 실행 요청이다.
-- workflow가 목표 전송 시각보다 일찍 시작되면 `scripts/send-category-briefs.py`가 09:07 KST까지 대기한다.
-- workflow가 목표 전송 시각보다 늦게 시작되면 대기하지 않고 즉시 전송한다.
-- 예정 전송 시각보다 5분 이상 늦으면 Discord 메시지에 지연 알림 문구를 붙인다.
+- GitHub Actions cron은 UTC 기준이며 `15 0 * * *`는 09:15 KST 실행 요청이다.
+- 기본 오전 알림은 `Daily Korea Premium Brief` 하나만 사용한다.
+- 무료 RSS workflow에는 schedule이 없다.
 
 목표 전송 시각은 다음과 같다.
 
 | 메시지 | 목표 시각 |
 | --- | --- |
-| Daily Overview | 09:07 KST |
-| AI News | 09:08 KST |
-| Backend News | 09:09 KST |
-| Security Alerts | 09:10 KST |
+| KR Premium 통합 브리핑 | 09:15 KST |
 
-전송 단계 로그에는 카테고리, 목표 KST 시각, 현재 KST 시각, dry-run 여부가 남는다. 더 정확한 실행 시각이 필요하면 GitHub Actions schedule만으로는 부족하며, 외부 scheduler가 `repository_dispatch` 또는 `workflow_dispatch`를 호출하는 구조를 별도로 검토한다.
+더 정확한 실행 시각이 필요하면 GitHub Actions schedule만으로는 부족하며, 외부 scheduler가 `repository_dispatch` 또는 `workflow_dispatch`를 호출하는 구조를 별도로 검토한다.
 
 ### 수동 실행 전 체크리스트
 
 1. 변경 사항이 `main` 브랜치에 push되어 있는지 확인한다.
-2. GitHub Actions에 MVP 필수 Secrets 4개가 등록되어 있는지 확인한다.
-3. `.github/workflows/daily-feed.yml`의 workflow 이름이 `Daily Career Feed`인지 확인한다.
-4. workflow에 `workflow_dispatch`가 있는지 확인한다.
-5. workflow가 `OPENAI_API_KEY` 없이 실행되는지 확인한다.
+2. GitHub Actions에 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`가 등록되어 있는지 확인한다.
+3. 한국 뉴스 품질을 위해 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`이 등록되어 있는지 확인한다.
+4. `.github/workflows/kr-premium-brief.yml`의 workflow 이름이 `Daily Korea Premium Brief`인지 확인한다.
+5. `.github/workflows/daily-feed.yml`에 `schedule:`이 없는지 확인한다.
+6. 로컬에서 `./scripts/validate.sh`가 통과했는지 확인한다.
 6. 로컬에서 `./scripts/validate.sh`가 통과했는지 확인한다.
 
 ### GitHub Actions 수동 실행 방법
 
 1. GitHub 저장소의 `Actions` 탭으로 이동한다.
-2. 왼쪽 workflow 목록에서 `Daily Career Feed`를 선택한다.
+2. 왼쪽 workflow 목록에서 `Daily Korea Premium Brief`를 선택한다.
 3. `Run workflow`를 선택한다.
 4. branch를 `main`으로 선택한다.
 5. 실행을 시작하고 완료 상태가 성공인지 확인한다.
 
 ### 수동 실행 후 확인 체크리스트
 
-1. workflow 실행 로그에서 후보 수집, 브리핑 렌더링, Daily Overview 렌더링, Discord 전송 단계가 성공했는지 확인한다.
+1. workflow 실행 로그에서 한국 후보 수집, AI 브리핑 생성, 품질 검증, Discord 전송 단계가 성공했는지 확인한다.
 2. artifact를 다운로드한다.
-3. `reports/candidates/*.json`이 포함되어 있는지 확인한다.
-4. `reports/briefs/*.md`가 포함되어 있는지 확인한다.
-5. Discord에 Daily Overview 메시지가 먼저 도착했는지 확인한다.
-6. Discord에 AI News, Backend News, Security Alerts 메시지가 순서대로 도착했는지 확인한다.
+3. `reports/candidates/kr-*.json`이 포함되어 있는지 확인한다.
+4. `reports/briefs/kr-premium-daily.md`가 포함되어 있는지 확인한다.
+5. Discord에 KR Premium 통합 브리핑이 도착했는지 확인한다.
 
 ### Manual AI Light Brief
 
@@ -205,13 +219,13 @@ Daily Career Feed의 시간은 정확 보장이 아니라 목표 시각으로 �
 
 ## 매일 메시지가 오지 않았을 때 확인 순서
 
-1. GitHub Actions의 `Daily Career Feed` 실행 이력이 있는지 확인한다.
+1. GitHub Actions의 `Daily Korea Premium Brief` 실행 이력이 있는지 확인한다.
 2. schedule 이벤트가 지연되거나 누락되지 않았는지 확인한다.
-3. `DISCORD_WEBHOOK_DAILY_OVERVIEW`와 enabled 카테고리의 Webhook Secret이 등록되어 있는지 확인한다.
-4. Discord Webhook이 삭제되거나 대상 채널 권한이 변경되지 않았는지 확인한다.
-5. RSS 수집 단계에서 네트워크 오류가 반복되는지 확인한다.
-6. `reports/candidates/*.json`과 `reports/briefs/*.md` artifact가 생성되었는지 확인한다.
-7. `scripts/send-category-briefs.py` 로그의 성공/실패 카테고리 요약을 확인한다.
+3. `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`가 등록되어 있는지 확인한다.
+4. `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`이 등록되어 있는지 확인한다.
+5. Discord Webhook이 삭제되거나 대상 채널 권한이 변경되지 않았는지 확인한다.
+6. 후보 수집 또는 Codex Action 단계에서 오류가 반복되는지 확인한다.
+7. `reports/candidates/kr-*.json`과 `reports/briefs/kr-premium-daily.md` artifact가 생성되었는지 확인한다.
 
 ## 소스 추가 방법
 
@@ -236,7 +250,7 @@ RSS/Atom 소스는 `configs/sources.json`에 추가한다.
 
 ## 로컬 검증 방법
 
-Secret 없이 기본 파일 구조, Python 문법, 무료 브리핑 렌더링, 전송 dry-run을 확인하려면 다음 명령을 실행한다.
+Secret 없이 기본 파일 구조, Python 문법, KR Premium 후보 스키마, 수동 무료 RSS dry-run을 확인하려면 다음 명령을 실행한다.
 
 ```bash
 ./scripts/validate.sh
@@ -248,7 +262,7 @@ KR_PREMIUM_MODE 후보 수집 스키마만 확인하려면 다음 명령을 실�
 python3 scripts/collect-kr-feeds.py --dry-run
 ```
 
-실제 Discord 전송은 자동으로 실행하지 않는다. 전송 테스트가 필요하면 대상 Webhook 환경변수를 설정한 뒤 명시적으로 실행한다.
+수동 무료 RSS 전송 테스트가 필요하면 legacy Webhook 환경변수를 설정한 뒤 명시적으로 실행한다.
 
 ```bash
 python3 scripts/send-category-briefs.py
@@ -262,10 +276,10 @@ DISCORD_WEBHOOK_URL="..." python3 scripts/send-discord.py reports/sample-daily-n
 
 ## Artifact 확인 방법
 
-일일 workflow는 다음 산출물을 artifact로 업로드한다.
+기본 일일 workflow는 다음 산출물을 artifact로 업로드한다.
 
-- `reports/candidates/*.json`
-- `reports/briefs/*.md`
+- `reports/candidates/kr-*.json`
+- `reports/briefs/kr-premium-daily.md`
 
 저장 정책은 다음과 같다.
 
@@ -295,3 +309,29 @@ Discord에서 브리핑 본문을 먼저 읽을 수 있도록 링크와 embed pr
 8. AI workflow 실패: runtime prompt 크기 제한에 걸렸는지 확인한다.
 9. `AI_SEARCH_MODE`: live web search 비용이 발생할 수 있음을 확인한다.
 10. `KR_PREMIUM_MODE`: `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 누락 또는 Naver API 인증 실패 여부를 확인한다.
+
+## GitHub Secrets 정리
+
+`Daily Korea Premium Brief`가 기본 오전 알림으로 동작하고 `Manual Free RSS Career Feed`의 schedule 제거가 배포된 뒤에는 기존 무료 RSS Webhook Secret을 삭제할 수 있다.
+
+삭제해도 되는 legacy/manual free RSS Secrets:
+
+```text
+DISCORD_WEBHOOK_DAILY_OVERVIEW
+DISCORD_WEBHOOK_AI_NEWS
+DISCORD_WEBHOOK_BACKEND_NEWS
+DISCORD_WEBHOOK_SECURITY_ALERTS
+DISCORD_WEBHOOK_BACKEND_TECH
+DISCORD_WEBHOOK_JOB_FEED
+```
+
+남길 Secrets:
+
+```text
+OPENAI_API_KEY
+DISCORD_WEBHOOK_KR_PREMIUM_BRIEF
+NAVER_CLIENT_ID
+NAVER_CLIENT_SECRET
+```
+
+주의: `daily-feed.yml`의 schedule 제거가 배포되기 전에는 기존 무료 Webhook Secret을 삭제하지 않는다. 삭제하면 기존 무료 workflow가 매일 실패할 수 있다.

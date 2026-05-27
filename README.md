@@ -2,35 +2,35 @@
 
 Career Feed는 AI와 백엔드 개발자에게 필요한 최신 기술 뉴스, 보안 알림, 채용공고 후보를 Discord로 전달하는 자동 브리핑 프로젝트입니다.
 
-기본 운영은 OpenAI API를 사용하지 않는 `FREE_MODE`입니다. 코드가 RSS/Atom/공식 URL에서 후보를 수집하고, 규칙 기반으로 짧은 Markdown 브리핑을 만든 뒤 카테고리별 Discord Webhook으로 전송합니다. AI는 필요할 때만 수동으로 짧은 정제에 사용합니다.
+기본 오전 알림은 한국 중심 고품질 통합 브리핑인 `KR_PREMIUM_MODE`입니다. 무료 RSS/Atom 기반 `FREE_MODE`는 삭제하지 않고 수동 백업 workflow로만 유지합니다.
 
 ## 프로젝트 이름 정책
 
 - 제품명과 문서명은 `Career Feed`로 통일합니다.
 - 저장소 이름이나 로컬 경로명은 환경에 따라 다를 수 있으며, 제품명을 의미하지 않습니다.
-- 현재 운영 MVP는 GitHub Actions, RSS/Atom 수집, Markdown 생성, Discord Webhook 전송으로 구성합니다.
+- 현재 기본 운영은 GitHub Actions, 한국 후보 수집, AI 편집, Markdown 검증, 단일 Discord Webhook 전송으로 구성합니다.
 
 ## 운영 모드
 
 | 모드 | 용도 | 기본 실행 여부 |
 | --- | --- | --- |
-| `FREE_MODE` | 무료 RSS/Atom 수집, 규칙 기반 요약, 카테고리별 Discord 전송 | 매일 자동 |
-| `KR_PREMIUM_MODE` | 한국 중심 AI 검색/선별 통합 브리핑 | 매일 자동 가능, OpenAI 비용 발생 |
+| `FREE_MODE` | 무료 RSS/Atom 수집, 규칙 기반 요약, 카테고리별 Discord 전송 | 수동 백업 |
+| `KR_PREMIUM_MODE` | 한국 중심 AI 검색/선별 통합 브리핑 | 매일 자동, OpenAI 비용 발생 |
 | `AI_LIGHT_MODE` | 수집된 후보 JSON만 Codex가 짧게 정제, live web search 없음 | 수동 실행 |
 | `AI_SEARCH_MODE` | Codex live web search 기반 수동 고급 브리핑 | 수동 실행 |
 
-기본 매일 알림은 `FREE_MODE`가 담당하며 `OPENAI_API_KEY`가 없어도 실행됩니다. `KR_PREMIUM_MODE`는 별도 workflow로 운영하고, `Daily Career Feed`에는 `OPENAI_API_KEY`를 추가하지 않습니다.
+기본 매일 오전 알림은 `KR_PREMIUM_MODE`가 담당합니다. `FREE_MODE`는 `Manual Free RSS Career Feed`에서 수동 백업으로만 실행하며, `OPENAI_API_KEY` 없이 동작합니다.
 
 ## 핵심 기능
 
-- 매일 `09:03 Asia/Seoul` 실행 요청, `09:07` Daily Overview 전송 후 카테고리별 순차 전송
+- 매일 `09:15 Asia/Seoul` 목표로 KR Premium 통합 브리핑 전송
 - RSS/Atom 기반 후보 URL 수집
+- Naver News Search API 기반 한국 뉴스 후보 수집
 - 원본 URL 보존
 - 후보가 없어도 "오늘 확인된 주요 항목이 없습니다." 메시지 생성
-- 카테고리별 최대 항목 수 제한
-- Discord Webhook 카테고리 분리
+- Discord Webhook은 기본 운영에서 `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` 하나만 사용
 - 선택형 AI 정제 workflow 제공
-- live web search workflow는 수동 고급 모드로만 보존
+- 무료 RSS workflow와 live web search workflow는 수동 백업/고급 모드로만 보존
 
 초기 범위에 포함하지 않는 항목은 다음과 같습니다.
 
@@ -41,72 +41,71 @@ Career Feed는 AI와 백엔드 개발자에게 필요한 최신 기술 뉴스, �
 - 로그인/회원 기능
 - 웹 대시보드
 
-`app/`와 `infra/`는 현재 `FREE_MODE` MVP 운영 경로에서 사용하지 않습니다. 서버 또는 인프라 확장을 진행할 때 재검토합니다.
+`app/`와 `infra/`는 현재 기본 오전 알림 운영 경로에서 사용하지 않습니다. 서버 또는 인프라 확장을 진행할 때 재검토합니다.
 
-## 아키텍처
+## 기본 아키텍처
 
 ```text
 GitHub Actions
         |
         v
-RSS/Atom/official URL collection
+KR candidate collection
+Naver News Search API + RSS/official references
         |
         v
-reports/candidates/{category}.json
+reports/candidates/kr-*.json
         |
         v
-Rule-based Markdown renderer
+Codex KR premium editor
         |
         v
-reports/briefs/{category}.md
+reports/briefs/kr-premium-daily.md
         |
         v
-Category Discord Webhooks
+DISCORD_WEBHOOK_KR_PREMIUM_BRIEF
 ```
 
-선택형 AI 정제는 이미 생성된 후보 JSON과 `refs/categories/*.md`만 사용합니다. `AI_LIGHT_MODE`에서는 `--search`를 사용하지 않습니다.
+무료 RSS 백업 workflow는 기존 `configs/sources.json`, `configs/channels.json`, `refs/categories/*.md`를 계속 사용합니다. `AI_LIGHT_MODE`에서는 `--search`를 사용하지 않습니다.
 
 ## 필요한 Secrets
 
-GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에 다음 Secrets를 등록합니다. `FREE_MODE` MVP 운영에는 enabled 채널의 Webhook Secret만 필수입니다.
+GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에 다음 Secrets를 등록합니다. 기본 오전 알림에는 KR Premium Secrets만 필요합니다.
 
-### MVP 필수 Secrets
-
-| Secret | 설명 |
-| --- | --- |
-| `DISCORD_WEBHOOK_DAILY_OVERVIEW` | Daily Overview 채널 Webhook URL |
-| `DISCORD_WEBHOOK_AI_NEWS` | AI News 채널 Webhook URL |
-| `DISCORD_WEBHOOK_BACKEND_NEWS` | Backend News 채널 Webhook URL |
-| `DISCORD_WEBHOOK_SECURITY_ALERTS` | Security Alerts 채널 Webhook URL |
-
-### 선택 Secrets
-
-| Secret | 필요한 경우 |
-| --- | --- |
-| `DISCORD_WEBHOOK_BACKEND_TECH` | Backend Tech Radar 채널을 활성화하거나 수동 전송할 때 |
-| `DISCORD_WEBHOOK_JOB_FEED` | Job Feed 채널을 활성화하거나 수동 전송할 때 |
-| `OPENAI_API_KEY` | `AI_LIGHT_MODE`, `AI_SEARCH_MODE` 수동 workflow를 실행할 때 |
-| `NAVER_CLIENT_ID` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
-| `NAVER_CLIENT_SECRET` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
-
-### KR_PREMIUM_MODE 필수 Secrets
+### 기본 운영 필수 Secrets
 
 | Secret | 설명 |
 | --- | --- |
 | `OPENAI_API_KEY` | 한국 중심 AI 브리핑 생성에 사용하는 OpenAI API Key |
 | `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` | KR Premium 통합 브리핑을 전송할 Discord Webhook URL |
 
+### 한국 뉴스 품질 향상 권장 Secrets
+
+| Secret | 필요한 경우 |
+| --- | --- |
+| `NAVER_CLIENT_ID` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
+| `NAVER_CLIENT_SECRET` | `KR_PREMIUM_MODE` 후보 수집에서 Naver News Search API를 사용할 때 |
+
+### Legacy/manual free RSS용 선택 Secrets
+
+| Secret | 설명 |
+| --- | --- |
+| `DISCORD_WEBHOOK_DAILY_OVERVIEW` | 수동 무료 RSS Daily Overview 전송이 필요할 때 |
+| `DISCORD_WEBHOOK_AI_NEWS` | 수동 무료 RSS AI News 전송이 필요할 때 |
+| `DISCORD_WEBHOOK_BACKEND_NEWS` | 수동 무료 RSS Backend News 전송이 필요할 때 |
+| `DISCORD_WEBHOOK_SECURITY_ALERTS` | 수동 무료 RSS Security Alerts 전송이 필요할 때 |
+
 Secret 값은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 
 ## Workflow
 
-### Daily Career Feed
+### Manual Free RSS Career Feed
 
 `.github/workflows/daily-feed.yml`
 
-- 유일한 자동 실행 workflow
-- 매일 `00:03 UTC`, 즉 `09:03 Asia/Seoul` 실행 요청
-- 일찍 시작되면 내부 대기 후 `09:07`부터 Daily Overview와 카테고리별 상세 전송
+- 수동 백업 workflow
+- 자동 schedule 없음
+- 기존 해외 RSS/Atom 중심 무료 브리핑을 필요할 때만 실행
+- legacy/manual free RSS용 Webhook Secret이 있을 때 전송 가능
 - `OPENAI_API_KEY` 불필요
 - Codex Action과 live web search를 사용하지 않음
 - 후보와 브리핑을 artifact로 업로드
@@ -201,11 +200,13 @@ repository-root/
 ├─ .github/
 │  ├─ codex/prompts/
 │  │  ├─ compact-brief.md
-│  │  └─ daily-news.md
+│  │  ├─ daily-news.md
+│  │  └─ kr-premium-brief.md
 │  └─ workflows/
 │     ├─ ai-brief-manual.yml
 │     ├─ daily-feed.yml
-│     └─ daily-news.yml
+│     ├─ daily-news.yml
+│     └─ kr-premium-brief.yml
 ├─ configs/
 │  ├─ channels.json
 │  ├─ kr-sources.json
@@ -228,7 +229,34 @@ repository-root/
 - `reports/` 산출물은 기본적으로 저장소에 커밋하지 않는다.
 - 원본 URL을 반드시 보존한다.
 - 긴 요약보다 원문 링크 접근성을 우선한다.
-- GitHub Actions workflow는 기본적으로 `FREE_MODE`를 사용한다.
-- AI 사용은 수동 보조 기능으로 제한한다.
+- GitHub Actions 기본 오전 알림은 `KR_PREMIUM_MODE`를 사용한다.
+- 무료 RSS workflow는 수동 백업으로만 사용한다.
+- 기존 무료 RSS Webhook Secret은 기본 운영 필수가 아니다.
 - KR_PREMIUM_MODE도 먼저 구조화된 후보 JSON을 만든 뒤 AI 정제에 넘긴다.
 - 기사 전문, Secret 값, Webhook URL은 저장소와 로그에 남기지 않는다.
+
+## GitHub Secrets 정리
+
+`Daily Korea Premium Brief`가 기본 오전 알림으로 동작하고 `Manual Free RSS Career Feed`의 schedule 제거가 배포된 뒤에는 기존 무료 RSS Webhook Secret을 삭제할 수 있습니다.
+
+삭제해도 되는 legacy/manual free RSS Secrets:
+
+```text
+DISCORD_WEBHOOK_DAILY_OVERVIEW
+DISCORD_WEBHOOK_AI_NEWS
+DISCORD_WEBHOOK_BACKEND_NEWS
+DISCORD_WEBHOOK_SECURITY_ALERTS
+DISCORD_WEBHOOK_BACKEND_TECH
+DISCORD_WEBHOOK_JOB_FEED
+```
+
+남길 Secrets:
+
+```text
+OPENAI_API_KEY
+DISCORD_WEBHOOK_KR_PREMIUM_BRIEF
+NAVER_CLIENT_ID
+NAVER_CLIENT_SECRET
+```
+
+주의: `daily-feed.yml`의 schedule 제거가 배포되기 전에는 기존 무료 Webhook Secret을 삭제하지 않습니다. 삭제하면 기존 무료 workflow가 매일 실패할 수 있습니다.

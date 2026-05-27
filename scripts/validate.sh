@@ -27,8 +27,18 @@ if grep -q "OPENAI_API_KEY" .github/workflows/daily-feed.yml; then
   exit 1
 fi
 
+if grep -q "schedule:" .github/workflows/daily-feed.yml; then
+  echo "Cost guard failed: daily-feed.yml must stay manual and must not define schedule." >&2
+  exit 1
+fi
+
 if grep -q -- "--search" .github/workflows/daily-feed.yml; then
   echo "Cost guard failed: daily-feed.yml must not use live web search." >&2
+  exit 1
+fi
+
+if ! grep -q "schedule:" .github/workflows/kr-premium-brief.yml; then
+  echo "Cost guard failed: kr-premium-brief.yml must define the default daily schedule." >&2
   exit 1
 fi
 
@@ -112,8 +122,11 @@ with tempfile.TemporaryDirectory() as temp_dir:
         raise SystemExit("Empty candidate brief did not include the required original-link placeholder.")
 PY
 
-echo "==> Checking category send dry-run"
-python3 scripts/send-category-briefs.py --dry-run
+echo "==> Checking manual free category send dry-run"
+python3 scripts/send-category-briefs.py --category daily-overview --include-disabled --dry-run
+python3 scripts/send-category-briefs.py --category ai-news --include-disabled --dry-run
+python3 scripts/send-category-briefs.py --category backend-news --include-disabled --dry-run
+python3 scripts/send-category-briefs.py --category security-alerts --include-disabled --dry-run
 
 echo "==> Checking Discord payload embed suppression"
 python3 - <<'PY'
