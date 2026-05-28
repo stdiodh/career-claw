@@ -8,6 +8,7 @@ echo "==> Checking Python syntax"
 python3 -m py_compile \
   scripts/check-workflow-schedules.py \
   scripts/collect-kr-feeds.py \
+  scripts/render-weekly-career-site-radar.py \
   scripts/select-ps-problem.py \
   scripts/send-discord.py \
   scripts/update-ps-progress.py \
@@ -45,8 +46,18 @@ grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-daily.yml
 grep -q 'uses: actions/checkout@v5' .github/workflows/kr-backend-career-weekly.yml
 grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-backend-career-weekly.yml
 grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'cron: "7 9 \* \* 1"' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-backend-career-weekly.yml
+grep -q 'contents: read' .github/workflows/kr-backend-career-weekly.yml
+grep -q 'workflow_dispatch:' .github/workflows/kr-backend-career-weekly.yml
+grep -q 'send_to_discord:' .github/workflows/kr-backend-career-weekly.yml
+grep -q 'render-weekly-career-site-radar.py' .github/workflows/kr-backend-career-weekly.yml
+if grep -q 'schedule:' .github/workflows/kr-backend-career-weekly.yml; then
+  echo "kr-backend-career-weekly.yml must not define a schedule." >&2
+  exit 1
+fi
+if grep -q 'openai/codex-action\|OPENAI_API_KEY\|NAVER_CLIENT_ID\|NAVER_CLIENT_SECRET\|git commit' .github/workflows/kr-backend-career-weekly.yml; then
+  echo "Weekly site radar workflow must not use OpenAI, Naver, or cache commits." >&2
+  exit 1
+fi
 
 grep -q 'uses: actions/checkout@v5' .github/workflows/mark-ps-solved.yml
 grep -q 'uses: actions/setup-python@v6' .github/workflows/mark-ps-solved.yml
@@ -57,7 +68,7 @@ fi
 
 echo "==> Checking current prompts"
 test -f .github/codex/prompts/kr-tech-daily-brief.md
-test -f .github/codex/prompts/kr-backend-career-weekly.md
+test ! -f .github/codex/prompts/kr-backend-career-weekly.md
 
 removed_prompts=(
   ".github/codex/prompts/compact-""brief.md"
@@ -70,8 +81,8 @@ for file in "${removed_prompts[@]}"; do
 done
 
 prompt_count="$(find .github/codex/prompts -maxdepth 1 -type f | wc -l | tr -d ' ')"
-if [ "${prompt_count}" != "2" ]; then
-  echo "Expected exactly 2 prompt files, found ${prompt_count}." >&2
+if [ "${prompt_count}" != "1" ]; then
+  echo "Expected exactly 1 prompt file, found ${prompt_count}." >&2
   exit 1
 fi
 
@@ -99,13 +110,13 @@ required_files=(
   "configs/kr-sources.json"
 	  "configs/backend-practical-knowledge-curriculum.json"
 	  "configs/company-career-watchlist.json"
-	  "configs/weekly-career-coverage.json"
 	  "configs/weekly-career-site-radar.json"
 	  "configs/oss-repositories.json"
 	  "configs/programmers-ps-curriculum.json"
 	  "data/ps-progress.json"
   "scripts/check-workflow-schedules.py"
   "scripts/collect-kr-feeds.py"
+  "scripts/render-weekly-career-site-radar.py"
   "scripts/select-ps-problem.py"
   "scripts/send-discord.py"
   "scripts/update-ps-progress.py"
@@ -128,11 +139,13 @@ fi
 echo "==> Checking collector dry-runs"
 python3 scripts/collect-kr-feeds.py --mode daily-tech --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
+python3 scripts/render-weekly-career-site-radar.py
+python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career
 python3 - <<'PY'
 import json
 from pathlib import Path
 
-required = {"job", "intern", "hackathon", "contest", "competition"}
+required = {"official-careers", "job-intern-platforms", "activities-competitions"}
 path = Path("reports/candidates/weekly-career-site-radar.json")
 data = json.loads(path.read_text(encoding="utf-8"))
 
@@ -149,9 +162,15 @@ if section_ids != required:
     extra = sorted(section_ids - required)
     raise SystemExit(f"site radar section id mismatch: missing={missing} extra={extra}")
 
+minimums = {
+    "official-careers": 7,
+    "job-intern-platforms": 6,
+    "activities-competitions": 5,
+}
 for section in sections:
     sites = section.get("sites", []) if isinstance(section, dict) else []
-    if not isinstance(sites, list) or len(sites) < 3:
+    section_id = str(section.get("id", "")) if isinstance(section, dict) else ""
+    if not isinstance(sites, list) or len(sites) < minimums[section_id]:
         raise SystemExit(f"site radar section has too few sites: {section}")
 
 compat = json.loads(Path("reports/candidates/kr-backend-career-events.json").read_text(encoding="utf-8"))

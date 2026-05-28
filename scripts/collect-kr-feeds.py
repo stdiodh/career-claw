@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import difflib
 import email.utils
 import html
@@ -48,6 +49,40 @@ WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH = Path(
     "reports/candidates/weekly-career-site-radar.json"
 )
 WEEKLY_CAREER_BRIEF_OUTPUT_PATH = Path("reports/briefs/kr-backend-career-weekly.md")
+WEEKLY_SITE_RADAR_SECTION_IDS = {
+    "official-careers",
+    "job-intern-platforms",
+    "activities-competitions",
+}
+WEEKLY_SITE_RADAR_REQUIRED_SITE_FIELDS = (
+    "id",
+    "name",
+    "applies_to",
+    "links",
+    "search_keywords",
+    "exclude_keywords",
+    "check_rule",
+)
+WEEKLY_SITE_RADAR_NEWS_DOMAINS = {
+    "news.naver.com",
+    "n.news.naver.com",
+    "etnews.com",
+    "zdnet.co.kr",
+    "bloter.net",
+    "aitimes.com",
+    "itworld.co.kr",
+    "ciokorea.com",
+    "ddaily.co.kr",
+    "hankyung.com",
+    "chosun.com",
+    "joongang.co.kr",
+    "donga.com",
+    "yna.co.kr",
+    "newsis.com",
+    "newswire.co.kr",
+    "prnewswire.com",
+    "prtimes.jp",
+}
 BACKEND_PRACTICAL_CURRICULUM_PATH = Path(
     "configs/backend-practical-knowledge-curriculum.json"
 )
@@ -101,13 +136,8 @@ WEEKLY_COMPAT_EMPTY_OUTPUTS = [
 ]
 WEEKLY_CAREER_EMPTY_OUTPUTS = WEEKLY_COMPAT_EMPTY_OUTPUTS + list(WEEKLY_CATEGORY_OUTPUTS.values())
 WEEKLY_CAREER_COMPAT_OUTPUT_CATEGORIES = {
-    Path("reports/candidates/kr-backend-intern-jobs.json"): "kr-backend-intern-jobs",
-    Path("reports/candidates/kr-backend-entry-jobs.json"): "kr-backend-entry-jobs",
-    Path("reports/candidates/kr-backend-career-activities.json"): (
-        "kr-backend-career-activities"
-    ),
-    Path("reports/candidates/kr-backend-company-watchlist.json"): (
-        "kr-backend-company-watchlist"
+    Path("reports/candidates/kr-backend-career-events.json"): (
+        "kr-backend-career-events"
     ),
     Path("reports/candidates/kr-backend-jobs.json"): "kr-backend-jobs",
     Path("reports/candidates/kr-backend-interns.json"): "kr-backend-interns",
@@ -807,44 +837,132 @@ def load_weekly_career_site_radar_config(
     path: Path = WEEKLY_CAREER_SITE_RADAR_CONFIG_PATH,
 ) -> dict[str, object]:
     data = load_required_json(path)
+    normalized, _diagnostics = normalize_weekly_career_site_radar_config(data)
+    return normalized
+
+
+def weekly_site_radar_domain(url: str) -> str:
+    domain = urllib.parse.urlsplit(url).netloc.lower()
+    return domain[4:] if domain.startswith("www.") else domain
+
+
+def is_weekly_site_radar_news_url(url: str) -> bool:
+    parsed = urllib.parse.urlsplit(url)
+    domain = weekly_site_radar_domain(url)
+    if any(
+        domain == blocked or domain.endswith(f".{blocked}")
+        for blocked in WEEKLY_SITE_RADAR_NEWS_DOMAINS
+    ):
+        return True
+    lowered = f"{domain}{parsed.path}".lower()
+    return bool(re.search(r"(?:^|[./_-])(news|press|pr)(?:[./_-]|$)", lowered))
+
+
+def require_non_empty_string_list(value: object, field: str, context: str) -> list[str]:
+    if not isinstance(value, list) or not value:
+        raise RuntimeError(f"Weekly career radar {context} needs non-empty {field}.")
+    cleaned = [str(item).strip() for item in value if str(item).strip()]
+    if not cleaned:
+        raise RuntimeError(f"Weekly career radar {context} needs non-empty {field}.")
+    return cleaned
+
+
+def normalize_weekly_career_site_radar_config(
+    data: dict[str, object],
+) -> tuple[dict[str, object], dict[str, object]]:
+    normalized = copy.deepcopy(data)
     sections = data.get("sections", [])
     if not isinstance(sections, list) or not sections:
         raise RuntimeError("configs/weekly-career-site-radar.json must contain sections.")
 
     seen_ids: set[str] = set()
-    for section in sections:
+    seen_site_ids: set[str] = set()
+    seen_site_names: set[str] = set()
+    seen_urls: set[str] = set()
+    duplicate_urls: list[str] = []
+    site_count = 0
+    link_count = 0
+    normalized_sections = normalized.get("sections", [])
+    if not isinstance(normalized_sections, list):
+        raise RuntimeError("configs/weekly-career-site-radar.json must contain sections.")
+
+    for section_index, section in enumerate(sections):
         if not isinstance(section, dict):
             raise RuntimeError("Every weekly career radar section must be an object.")
         section_id = str(section.get("id", "")).strip()
         label = str(section.get("label", "")).strip()
-        check_rule = str(section.get("check_rule", "")).strip()
+        description = str(section.get("description", "")).strip()
         sites = section.get("sites", [])
-        if not section_id or not label or not check_rule:
-            raise RuntimeError("Every weekly career radar section needs id, label, and check_rule.")
+        if not section_id or not label or not description:
+            raise RuntimeError("Every weekly career radar section needs id, label, and description.")
         if section_id in seen_ids:
             raise RuntimeError(f"Duplicate weekly career radar section id: {section_id}")
         seen_ids.add(section_id)
         if not isinstance(sites, list) or not sites:
             raise RuntimeError(f"Weekly career radar section has no sites: {section_id}")
-        for site in sites:
+        normalized_section = normalized_sections[section_index]
+        if not isinstance(normalized_section, dict):
+            raise RuntimeError("Every weekly career radar section must be an object.")
+        normalized_sites = normalized_section.get("sites", [])
+        if not isinstance(normalized_sites, list):
+            raise RuntimeError(f"Weekly career radar section has no sites: {section_id}")
+
+        for site_index, site in enumerate(sites):
             if not isinstance(site, dict):
                 raise RuntimeError(f"Weekly career radar site must be an object: {section_id}")
-            for field in (
-                "name",
-                "url",
-                "how_to_check",
-                "keywords",
-                "exclude_keywords",
-                "backend_portfolio_angle",
-            ):
+            context = f"{section_id}/{site.get('id', site.get('name', 'unknown'))}"
+            for field in WEEKLY_SITE_RADAR_REQUIRED_SITE_FIELDS:
                 if field not in site:
                     raise RuntimeError(
-                        f"Weekly career radar site is missing {field}: {section_id}"
+                        f"Weekly career radar site is missing {field}: {context}"
                     )
-            if not str(site.get("name", "")).strip() or not str(site.get("url", "")).strip():
-                raise RuntimeError(f"Weekly career radar site needs name and url: {section_id}")
+            site_id = str(site.get("id", "")).strip()
+            name = str(site.get("name", "")).strip()
+            check_rule = str(site.get("check_rule", "")).strip()
+            if not site_id or not name or not check_rule:
+                raise RuntimeError(f"Weekly career radar site needs id, name, and check_rule: {context}")
+            if site_id in seen_site_ids:
+                raise RuntimeError(f"Duplicate weekly career radar site id: {site_id}")
+            if name in seen_site_names:
+                raise RuntimeError(f"Duplicate weekly career radar site name: {name}")
+            seen_site_ids.add(site_id)
+            seen_site_names.add(name)
+            require_non_empty_string_list(site.get("applies_to"), "applies_to", context)
+            require_non_empty_string_list(site.get("search_keywords"), "search_keywords", context)
+            require_non_empty_string_list(site.get("exclude_keywords"), "exclude_keywords", context)
 
-    required_ids = set(WEEKLY_CATEGORY_ORDER)
+            links = site.get("links", [])
+            if not isinstance(links, list) or not links:
+                raise RuntimeError(f"Weekly career radar site needs links: {context}")
+            normalized_site = normalized_sites[site_index]
+            if not isinstance(normalized_site, dict):
+                raise RuntimeError(f"Weekly career radar site must be an object: {section_id}")
+            normalized_links: list[dict[str, str]] = []
+            for link in links:
+                if not isinstance(link, dict):
+                    raise RuntimeError(f"Weekly career radar link must be an object: {context}")
+                label = str(link.get("label", "")).strip()
+                url = str(link.get("url", "")).strip()
+                if not label or not url:
+                    raise RuntimeError(f"Weekly career radar link needs label and url: {context}")
+                parsed = urllib.parse.urlsplit(url)
+                if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                    raise RuntimeError(f"Weekly career radar link must use http(s): {context}")
+                if is_weekly_site_radar_news_url(url):
+                    raise RuntimeError(f"Weekly career radar link must not use news URL: {context}")
+                normalized_url = normalize_url(url)
+                if normalized_url in seen_urls:
+                    duplicate_urls.append(url)
+                    continue
+                seen_urls.add(normalized_url)
+                normalized_links.append({"label": label, "url": url})
+            if not normalized_links:
+                raise RuntimeError(f"Weekly career radar site has no unique links: {context}")
+            normalized_site["links"] = normalized_links
+            site_count += 1
+            link_count += len(normalized_links)
+
+    required_ids = WEEKLY_SITE_RADAR_SECTION_IDS
     if seen_ids != required_ids:
         missing = sorted(required_ids - seen_ids)
         extra = sorted(seen_ids - required_ids)
@@ -852,18 +970,30 @@ def load_weekly_career_site_radar_config(
             "Weekly career radar section id mismatch: "
             f"missing={missing} extra={extra}"
         )
-    return data
+    diagnostics = {
+        "site_count": site_count,
+        "link_count": link_count,
+        "duplicate_urls_removed": len(duplicate_urls),
+        "duplicate_urls": duplicate_urls,
+    }
+    return normalized, diagnostics
 
 
 def build_weekly_career_site_radar_payload(generated_at: datetime) -> dict[str, object]:
-    config = load_weekly_career_site_radar_config()
+    config = load_required_json(WEEKLY_CAREER_SITE_RADAR_CONFIG_PATH)
+    normalized, diagnostics = normalize_weekly_career_site_radar_config(config)
     return {
         "category": "weekly-career-site-radar",
         "generated_at": format_kst(generated_at),
-        "schema_version": int(config.get("schema_version", 1) or 1),
-        "timezone": str(config.get("timezone", "Asia/Seoul")),
-        "audience": str(config.get("audience", "")),
-        "sections": config["sections"],
+        "schema_version": int(normalized.get("schema_version", 1) or 1),
+        "timezone": str(normalized.get("timezone", "Asia/Seoul")),
+        "audience": str(normalized.get("audience", "")),
+        "title": str(normalized.get("title", "Backend Career Site Radar")),
+        "site_count": diagnostics["site_count"],
+        "link_count": diagnostics["link_count"],
+        "duplicate_urls_removed": diagnostics["duplicate_urls_removed"],
+        "diagnostics": diagnostics,
+        "sections": normalized["sections"],
     }
 
 
@@ -875,24 +1005,20 @@ def build_disabled_weekly_career_compat_payload(
         "category": category,
         "generated_at": format_kst(generated_at),
         "items": [],
-        "selected_by_category": {},
         "diagnostics": {
             "status": "disabled",
-            "reason": (
-                "Weekly Career now uses curated site radar to avoid unreliable "
-                "automated candidate extraction."
-            ),
+            "reason": "Weekly Career now uses manual site radar instead of automated candidate recommendation.",
         },
     }
 
 
 def render_weekly_career_site_radar_markdown(payload: dict[str, object]) -> str:
     lines = [
-        "# Career Feed - Backend Career Weekly",
+        "# Career Feed - Backend Career Site Radar",
         f"기준시각: {payload['generated_at']}",
         "",
-        "이번 주 방향:",
-        "- 자동 추천 대신, 직접 확인할 백엔드 커리어 사이트를 5개 유형별로 점검합니다.",
+        "이번 실행 목적:",
+        "- 자동 추천 없이, 직접 확인할 백엔드 커리어 사이트와 검색 키워드를 정리합니다.",
         "",
     ]
 
@@ -910,28 +1036,70 @@ def render_weekly_career_site_radar_markdown(payload: dict[str, object]) -> str:
             if not isinstance(site, dict):
                 continue
             name = str(site.get("name", "")).strip()
-            url = str(site.get("url", "")).strip()
-            how_to_check = str(site.get("how_to_check", "")).strip()
-            lines.append(f"- {name}: {how_to_check} [사이트 보기]({url})")
-        lines.append(f"- 이번 주 확인 기준: {section.get('check_rule', '')}")
+            applies_to = ", ".join(
+                str(item).strip()
+                for item in site.get("applies_to", [])
+                if str(item).strip()
+            )
+            links = site.get("links", [])
+            if not isinstance(links, list):
+                links = []
+            rendered_links = ", ".join(
+                f"[{str(link.get('label', '')).strip()}]({str(link.get('url', '')).strip()})"
+                for link in links
+                if isinstance(link, dict)
+                and str(link.get("label", "")).strip()
+                and str(link.get("url", "")).strip()
+            )
+            search_keywords = ", ".join(
+                str(item).strip()
+                for item in site.get("search_keywords", [])
+                if str(item).strip()
+            )
+            exclude_keywords = ", ".join(
+                str(item).strip()
+                for item in site.get("exclude_keywords", [])
+                if str(item).strip()
+            )
+            check_rule = str(site.get("check_rule", "")).strip()
+            lines.extend(
+                [
+                    f"### {name}",
+                    f"- 확인 유형: {applies_to}",
+                    f"- 바로가기: {rendered_links}",
+                    f"- 검색 키워드: {search_keywords}",
+                    f"- 제외 키워드: {exclude_keywords}",
+                    f"- 확인 기준: {check_rule}",
+                    "",
+                ]
+            )
         lines.append("")
 
     lines.extend(
         [
-            "## 이번 주 30분 액션",
-            "- 공식 채용 2곳, 인턴 사이트 2곳, 대외활동/대회 사이트 2곳만 열어보고 지원/참가 가능성이 있는 링크를 직접 북마크합니다.",
+            "## 30분 확인 루틴",
+            "1. 공식 채용 사이트 2곳을 열고 Backend/Server/Intern 키워드로 확인합니다.",
+            "2. 채용·인턴 플랫폼 2곳을 열고 채용연계형/체험형 인턴을 확인합니다.",
+            "3. 대외활동/대회 플랫폼 2곳을 열고 API 서버나 DB 산출물이 남는 활동만 북마크합니다.",
             "",
         ]
     )
     return "\n".join(lines).rstrip() + "\n"
 
 
+def write_weekly_career_site_radar_payload(generated_at: datetime) -> dict[str, object]:
+    radar_payload = build_weekly_career_site_radar_payload(generated_at)
+    write_json_file(WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH, radar_payload)
+    return radar_payload
+
+
 def write_weekly_career_site_radar_report(
     generated_at: datetime,
     payload: dict[str, object] | None = None,
 ) -> dict[str, object]:
-    radar_payload = payload or build_weekly_career_site_radar_payload(generated_at)
-    write_json_file(WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH, radar_payload)
+    radar_payload = payload or write_weekly_career_site_radar_payload(generated_at)
+    if payload is not None:
+        write_json_file(WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH, radar_payload)
     WEEKLY_CAREER_BRIEF_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     WEEKLY_CAREER_BRIEF_OUTPUT_PATH.write_text(
         render_weekly_career_site_radar_markdown(radar_payload),
@@ -4427,7 +4595,7 @@ def write_category_output(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     if category_id == WEEKLY_CAREER_CATEGORY_ID:
         del candidates, penalty_keywords, update_cache
-        radar_payload = write_weekly_career_site_radar_report(generated_at)
+        radar_payload = write_weekly_career_site_radar_payload(generated_at)
         payload = build_disabled_weekly_career_compat_payload(category_id, generated_at)
         WEEKLY_CAREER_LAST_PAYLOAD = payload
     elif category_id == OSS_CATEGORY_ID:
@@ -4457,7 +4625,7 @@ def write_category_output(
     if category_id == WEEKLY_CAREER_CATEGORY_ID:
         print(
             "Wrote weekly career site radar "
-            f"({len(radar_payload['sections'])} section(s)): "
+            f"({radar_payload['site_count']} site(s), {radar_payload['link_count']} link(s)): "
             f"{WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH}"
         )
         print(f"Wrote disabled weekly career candidate payload: {output_path}")
@@ -4902,6 +5070,16 @@ def main() -> int:
     current_time = now_kst()
 
     try:
+        if args.mode == "weekly-career":
+            radar_payload = write_weekly_career_site_radar_payload(current_time)
+            print(
+                "Wrote weekly career site radar "
+                f"({radar_payload['site_count']} site(s), {radar_payload['link_count']} link(s)): "
+                f"{WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH}"
+            )
+            write_weekly_career_split_outputs(current_time, [])
+            return 0
+
         if args.mode == "daily-tech":
             write_backend_practical_candidate(current_time)
 

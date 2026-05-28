@@ -1,59 +1,37 @@
-name: Weekly Backend Career Brief
+name: Backend Career Site Radar
 
 on:
-  schedule:
-    - cron: "7 9 * * 1"
-      timezone: "Asia/Seoul"
   workflow_dispatch:
+    inputs:
+      send_to_discord:
+        description: "Send rendered site radar to Discord"
+        required: false
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 permissions:
   contents: read
 
 concurrency:
-  group: career-feed-backend-career-weekly-${{ github.ref }}
+  group: career-feed-backend-career-site-radar-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  kr-backend-career-weekly:
-    name: Generate and send backend career weekly brief
+  backend-career-site-radar:
+    name: Render backend career site radar
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Log workflow trigger context
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          EVENT_SCHEDULE: ${{ github.event.schedule }}
-        run: |
-          set -euo pipefail
-          echo "event_name=${EVENT_NAME}"
-          echo "event_schedule=${EVENT_SCHEDULE:-}"
-          echo "kst_now=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
-
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.x"
-
-      - name: Check required secrets
-        shell: bash
-        env:
-          DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
-        run: |
-          set -euo pipefail
-
-          missing=()
-          if [ -z "${DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY}" ]; then
-            missing+=("DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY")
-          fi
-
-          if [ "${#missing[@]}" -gt 0 ]; then
-            printf 'Missing required secret(s): %s\n' "${missing[*]}" >&2
-            exit 1
-          fi
 
       - name: Prepare report directories
         shell: bash
@@ -61,45 +39,37 @@ jobs:
           set -euo pipefail
           mkdir -p reports/candidates reports/briefs
 
-      - name: Collect backend career site radar
+      - name: Render backend career site radar
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/collect-kr-feeds.py --mode weekly-career
+          python3 scripts/render-weekly-career-site-radar.py
 
-      - name: Validate backend career weekly Markdown
+      - name: Validate backend career site radar
         shell: bash
-        env:
-          REPORT_FILE: reports/briefs/kr-backend-career-weekly.md
         run: |
           set -euo pipefail
-          python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type weekly-career
+          python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career
 
-      - name: Send backend career weekly brief to Discord
+      - name: Send backend career site radar to Discord
+        if: ${{ inputs.send_to_discord == 'true' }}
         shell: bash
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
-          REPORT_FILE: reports/briefs/kr-backend-career-weekly.md
         run: |
           set -euo pipefail
-          python3 scripts/send-discord.py "${REPORT_FILE}"
+          if [ -z "${DISCORD_WEBHOOK_URL}" ]; then
+            echo "Missing required secret: DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY" >&2
+            exit 1
+          fi
+          python3 scripts/send-discord.py reports/briefs/kr-backend-career-weekly.md
 
-      - name: Upload backend career weekly artifacts
+      - name: Upload backend career site radar artifacts
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: career-feed-kr-backend-career-weekly-${{ github.run_id }}
+          name: career-feed-backend-career-site-radar-${{ github.run_id }}
           path: |
             reports/candidates/weekly-career-site-radar.json
-            reports/candidates/kr-backend-jobs.json
-            reports/candidates/kr-backend-interns.json
-            reports/candidates/kr-backend-hackathons.json
-            reports/candidates/kr-backend-contests.json
-            reports/candidates/kr-backend-competitions.json
-            reports/candidates/kr-backend-intern-jobs.json
-            reports/candidates/kr-backend-entry-jobs.json
-            reports/candidates/kr-backend-career-activities.json
-            reports/candidates/kr-backend-company-watchlist.json
-            reports/candidates/kr-backend-career-events.json
             reports/briefs/kr-backend-career-weekly.md
           if-no-files-found: warn

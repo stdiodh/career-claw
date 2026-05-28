@@ -5,7 +5,7 @@
 | 경로 | 실행 | 산출물 |
 | --- | --- | --- |
 | Daily Backend Brief | 평일 08:47 KST | `reports/briefs/kr-tech-daily.md` |
-| Weekly Backend Career Brief | 월요일 09:07 KST | `reports/briefs/kr-backend-career-weekly.md` |
+| Backend Career Site Radar | 수동 실행 | `reports/briefs/kr-backend-career-weekly.md` |
 | Mark PS Solved | 수동 실행 | `data/ps-progress.json` |
 
 ## Daily Backend Brief
@@ -16,11 +16,11 @@
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
 
-## Weekly Backend Career Brief
+## Backend Career Site Radar
 
 - workflow: `.github/workflows/kr-backend-career-weekly.yml`
-- site radar 생성: `python3 scripts/collect-kr-feeds.py --mode weekly-career`
-- prompt: `.github/codex/prompts/kr-backend-career-weekly.md`
+- site radar JSON 생성: `python3 scripts/collect-kr-feeds.py --mode weekly-career`
+- Markdown 생성: `python3 scripts/render-weekly-career-site-radar.py`
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career`
 - Discord secret: `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
 
@@ -36,6 +36,7 @@
 ```bash
 python3 scripts/collect-kr-feeds.py --mode daily-tech --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
+python3 scripts/render-weekly-career-site-radar.py
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 ./scripts/validate.sh

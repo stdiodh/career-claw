@@ -81,6 +81,31 @@ def check_mark_ps_workflow() -> None:
     print("ok: Mark PS Solved has workflow_dispatch only")
 
 
+def check_weekly_site_radar_workflow() -> None:
+    text = read_required(WEEKLY_WORKFLOW)
+    require_contains(text, "workflow_dispatch:", WEEKLY_WORKFLOW)
+    require_contains(text, "Backend Career Site Radar", WEEKLY_WORKFLOW)
+    require_contains(text, "permissions:", WEEKLY_WORKFLOW)
+    require_contains(text, "contents: read", WEEKLY_WORKFLOW)
+    require_contains(text, "send_to_discord", WEEKLY_WORKFLOW)
+    require_contains(text, "DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY", WEEKLY_WORKFLOW)
+    require_contains(text, "render-weekly-career-site-radar.py", WEEKLY_WORKFLOW)
+    require_contains(text, "validate-career-feed-brief.py", WEEKLY_WORKFLOW)
+    require_contains(
+        text,
+        "group: career-feed-backend-career-site-radar-${{ github.ref }}",
+        WEEKLY_WORKFLOW,
+    )
+    require_absent(text, "schedule:", WEEKLY_WORKFLOW)
+    require_absent(text, "cron:", WEEKLY_WORKFLOW)
+    require_absent(text, "openai/codex-action", WEEKLY_WORKFLOW)
+    require_absent(text, "OPENAI_API_KEY", WEEKLY_WORKFLOW)
+    require_absent(text, "NAVER_CLIENT_ID", WEEKLY_WORKFLOW)
+    require_absent(text, "NAVER_CLIENT_SECRET", WEEKLY_WORKFLOW)
+    require_absent(text, "git commit", WEEKLY_WORKFLOW)
+    print("ok: Backend Career Site Radar has workflow_dispatch only")
+
+
 def check_removed_workflows_absent() -> None:
     existing = [str(path) for path in REMOVED_WORKFLOWS if path.exists()]
     if existing:
@@ -97,13 +122,7 @@ def main() -> int:
             secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
             concurrency_group="career-feed-kr-tech-daily-${{ github.ref }}",
         )
-        check_scheduled_workflow(
-            WEEKLY_WORKFLOW,
-            label="Weekly Backend Career Brief",
-            cron="7 9 * * 1",
-            secret="DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY",
-            concurrency_group="career-feed-backend-career-weekly-${{ github.ref }}",
-        )
+        check_weekly_site_radar_workflow()
         check_mark_ps_workflow()
     except RuntimeError as exc:
         print(f"schedule guard failed: {exc}", file=sys.stderr)

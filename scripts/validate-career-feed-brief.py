@@ -27,15 +27,16 @@ DAILY_SECTIONS = [
     "주니어 백엔드 실무지식",
 ]
 WEEKLY_SECTIONS = [
-    "채용 확인",
-    "인턴 확인",
-    "해커톤 확인",
-    "공모전 확인",
-    "경진대회 확인",
-    "이번 주 30분 액션",
+    "공식 채용 사이트",
+    "채용·인턴 플랫폼",
+    "해커톤·공모전·경진대회 플랫폼",
+    "30분 확인 루틴",
 ]
-WEEKLY_CATEGORY_LABELS = ["채용 확인", "인턴 확인", "해커톤 확인", "공모전 확인", "경진대회 확인"]
-WEEKLY_SECTION_MIN_SITE_COUNT = 3
+WEEKLY_SITE_SECTION_MIN_COUNTS = {
+    "공식 채용 사이트": 7,
+    "채용·인턴 플랫폼": 6,
+    "해커톤·공모전·경진대회 플랫폼": 5,
+}
 WEEKLY_JOB_REQUIRED_SITE_NAMES = [
     "NAVER",
     "Kakao",
@@ -45,8 +46,22 @@ WEEKLY_JOB_REQUIRED_SITE_NAMES = [
     "Toss",
     "당근",
 ]
-WEEKLY_INTERN_REQUIRED_SITE_NAMES = ["Linkareer", "Work24", "Saramin", "JobKorea"]
-WEEKLY_COMPETITION_REQUIRED_SITE_NAMES = ["DACON", "AI Factory", "Programmers"]
+WEEKLY_INTERN_REQUIRED_SITE_NAMES = [
+    "Linkareer",
+    "Work24",
+    "ZeroBase",
+    "Saramin",
+    "JobKorea",
+    "Wanted",
+    "Jumpit",
+]
+WEEKLY_COMPETITION_REQUIRED_SITE_NAMES = [
+    "DACON",
+    "AI Factory",
+    "Programmers",
+    "Wevity",
+    "All-Con",
+]
 WEEKLY_CATEGORY_EMPTY_STATES = {
     "채용": "이번 주 기준을 만족하는 채용 후보가 없습니다.",
     "인턴": "이번 주 기준을 만족하는 인턴 후보가 없습니다.",
@@ -147,14 +162,11 @@ DAILY_NEWS_FORBIDDEN_PATTERNS = [
     r"공부로 연결할 점",
 ]
 WEEKLY_REQUIRED_FIELDS = [
-    "유형",
-    "직무/역할",
-    "지원/참가 조건",
-    "기술/산출물 키워드",
-    "확인 상태",
-    "이번 주 액션",
-    "출처",
-    "링크",
+    "확인 유형",
+    "바로가기",
+    "검색 키워드",
+    "제외 키워드",
+    "확인 기준",
 ]
 WEEKLY_FORBIDDEN_FIELDS = [
     joined("대상 ", "적합성"),
@@ -729,55 +741,74 @@ def validate_daily_practical_section(sections: list[Section]) -> None:
 
 
 def validate_weekly_career(content: str) -> None:
-    if "Career Feed - Backend Career Weekly" not in content:
-        fail("Missing weekly career title.")
+    if "Career Feed - Backend Career Site Radar" not in content:
+        fail("Missing weekly career site radar title.")
     validate_weekly_forbidden_text(content)
     sections = extract_sections(content)
-    validate_common(content, min_links=15, allow_duplicate_links=True)
+    validate_common(content, min_links=19)
+    validate_no_raw_weekly_urls(content)
+    validate_no_duplicate_weekly_site_headings(content)
     require_sections(sections, WEEKLY_SECTIONS)
 
-    for label in WEEKLY_CATEGORY_LABELS:
+    for label, min_count in WEEKLY_SITE_SECTION_MIN_COUNTS.items():
         section = find_section(sections, label)
         if section is None:
-            fail(f"Weekly career brief must include {label} section.")
-        validate_weekly_site_radar_section(section)
+            fail(f"Weekly career site radar must include {label} section.")
+        validate_weekly_site_radar_section(section, min_count)
 
     validate_weekly_site_presence(sections)
-    action_section = find_section(sections, "이번 주 30분 액션")
-    if action_section is None or "북마크" not in action_section.body:
-        fail("Weekly career brief must include the 30-minute bookmark action.")
+    routine_section = find_section(sections, "30분 확인 루틴")
+    if routine_section is None or "북마크" not in routine_section.body:
+        fail("Weekly career site radar must include the 30-minute bookmark routine.")
 
 
-def weekly_site_lines(section: Section) -> list[str]:
-    return [
-        line.strip()
-        for line in section.body.splitlines()
-        if line.strip().startswith("- ") and "[사이트 보기]" in line
+def validate_no_raw_weekly_urls(content: str) -> None:
+    without_markdown_links = MARKDOWN_LINK_RE.sub("", content)
+    raw_urls = LINK_RE.findall(without_markdown_links)
+    if raw_urls:
+        fail(f"Weekly career site radar uses raw URL text: {raw_urls[0]}")
+
+
+def validate_no_duplicate_weekly_site_headings(content: str) -> None:
+    headings = [
+        heading.strip()
+        for heading in re.findall(r"^###\s+(.+?)\s*$", content, flags=re.MULTILINE)
     ]
+    duplicated = sorted({heading for heading in headings if headings.count(heading) > 1})
+    if duplicated:
+        fail(f"Duplicate weekly career site heading found: {duplicated[0]}")
 
 
-def validate_weekly_site_radar_section(section: Section) -> None:
-    lines = weekly_site_lines(section)
-    if len(lines) < WEEKLY_SECTION_MIN_SITE_COUNT:
+def validate_weekly_site_radar_section(section: Section, min_count: int) -> None:
+    sites = extract_items(section)
+    if len(sites) < min_count:
         fail(
-            f"Weekly career section needs at least {WEEKLY_SECTION_MIN_SITE_COUNT} site links: "
+            f"Weekly career section needs at least {min_count} site entries: "
             f"{section.heading}"
         )
-    if "이번 주 확인 기준:" not in section.body:
-        fail(f"Weekly career section is missing check rule: {section.heading}")
-    for line in lines:
-        if not SITE_LINK_RE.search(line):
-            fail(f"Weekly career site link must use [사이트 보기](URL): {section.heading}")
-        urls = SITE_LINK_RE.findall(line)
-        if len(urls) != 1:
-            fail(f"Weekly career site line must include exactly one site link: {section.heading}")
-        validate_weekly_site_url(urls[0], section.heading)
+    for site in sites:
+        missing = missing_bullet_fields(site.body, WEEKLY_REQUIRED_FIELDS)
+        if missing:
+            fail(
+                f"Weekly career site entry is missing field(s): "
+                f"{', '.join(missing)} ({site.title})"
+            )
+        link_line = bullet_field_value(site.body, "바로가기")
+        links = re.findall(r"\[([^\]]+)\]\((https?://[^)]+)\)", link_line)
+        if not links:
+            fail(f"Weekly career site entry must include Markdown links: {site.title}")
+        for label, url in links:
+            if label.strip() == "사이트 보기":
+                fail(f"Weekly career site link label is too generic: {site.title}")
+            validate_weekly_site_url(url, site.title)
 
 
 def validate_weekly_site_url(url: str, context: str) -> None:
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        fail(f"Weekly career site radar uses invalid URL: {context} ({url})")
     if is_blocked_weekly_domain(url):
         fail(f"Weekly career site radar uses news URL: {context} ({url})")
-    parsed = urllib.parse.urlsplit(url)
     lowered = f"{parsed.netloc}{parsed.path}".lower()
     if re.search(r"(?:^|[./_-])(news|press|pr)(?:[./_-]|$)", lowered):
         fail(f"Weekly career site radar uses news or press URL: {context} ({url})")
@@ -793,27 +824,27 @@ def count_weekly_named_sites(sections: list[Section], section_label: str, names:
 def validate_weekly_site_presence(sections: list[Section]) -> None:
     job_count = count_weekly_named_sites(
         sections,
-        "채용 확인",
+        "공식 채용 사이트",
         WEEKLY_JOB_REQUIRED_SITE_NAMES,
     )
-    if job_count < 5:
-        fail("Weekly career job section must include at least 5 official company career sites.")
+    if job_count < len(WEEKLY_JOB_REQUIRED_SITE_NAMES):
+        fail("Weekly career official site section is missing required company sites.")
 
     intern_count = count_weekly_named_sites(
         sections,
-        "인턴 확인",
+        "채용·인턴 플랫폼",
         WEEKLY_INTERN_REQUIRED_SITE_NAMES,
     )
-    if intern_count < 3:
-        fail("Weekly career intern section must include at least 3 required intern sites.")
+    if intern_count < len(WEEKLY_INTERN_REQUIRED_SITE_NAMES):
+        fail("Weekly career platform section is missing required job/intern sites.")
 
     competition_count = count_weekly_named_sites(
         sections,
-        "경진대회 확인",
+        "해커톤·공모전·경진대회 플랫폼",
         WEEKLY_COMPETITION_REQUIRED_SITE_NAMES,
     )
-    if competition_count < 2:
-        fail("Weekly career competition section must include at least 2 required competition sites.")
+    if competition_count < len(WEEKLY_COMPETITION_REQUIRED_SITE_NAMES):
+        fail("Weekly career activity section is missing required competition sites.")
 
 
 def extract_weekly_category_blocks(section: Section) -> dict[str, str]:
