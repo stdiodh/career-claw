@@ -41,15 +41,11 @@ jobs:
       - name: Check required secrets
         shell: bash
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
         run: |
           set -euo pipefail
 
           missing=()
-          if [ -z "${OPENAI_API_KEY}" ]; then
-            missing+=("OPENAI_API_KEY")
-          fi
           if [ -z "${DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY}" ]; then
             missing+=("DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY")
           fi
@@ -71,59 +67,10 @@ jobs:
           set -euo pipefail
           python3 scripts/collect-kr-feeds.py --mode weekly-career
 
-      - name: Prepare KST runtime prompt
-        id: prepare
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          kst_now="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
-          runtime_prompt="${RUNNER_TEMP}/kr-backend-career-weekly-${GITHUB_RUN_ID}.md"
-          report_file="reports/briefs/kr-backend-career-weekly.md"
-
-          KST_NOW="${kst_now}" RUNTIME_PROMPT="${runtime_prompt}" python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          source = Path(".github/codex/prompts/kr-backend-career-weekly.md")
-          destination = Path(os.environ["RUNTIME_PROMPT"])
-          prompt = source.read_text(encoding="utf-8")
-          prompt = prompt.replace("{{KST_NOW}}", os.environ["KST_NOW"])
-          runtime = prompt + "\n\n## Runtime candidate files\n\n"
-          runtime += "아래 site radar JSON과 사용자 프로필만 읽고 최종 브리핑을 작성한다.\n\n"
-          runtime += "- `reports/candidates/weekly-career-site-radar.json`\n"
-          runtime += "- `configs/audience-profile.json`\n"
-          runtime += "\n## Runtime output\n\n"
-          runtime += "- 최종 Markdown은 `reports/briefs/kr-backend-career-weekly.md`에만 작성한다.\n"
-          runtime += "- `weekly-career-site-radar.json`에 없는 사이트와 URL은 추가하지 않는다.\n"
-          runtime += "- 후보 제목, 마감일, 회사/주최, 직무/역할, 주최기관, 지원 조건을 생성하지 않는다.\n"
-          runtime += "- 뉴스 검색 결과, 뉴스 기사, 과거 기사, 수상 기사, 종료된 대회를 사용하지 않는다.\n"
-          runtime += "- 링크는 `[사이트 보기](URL)` 형식만 사용한다.\n"
-          runtime += "- 후보 JSON, config, workflow, script 파일은 runtime Codex 생성 단계에서 수정하지 않는다.\n"
-          runtime += "- Secret 값이나 Webhook URL은 출력하지 않는다.\n"
-          destination.write_text(runtime, encoding="utf-8")
-          PY
-
-          {
-            echo "kst_now=${kst_now}"
-            echo "runtime_prompt=${runtime_prompt}"
-            echo "report_file=${report_file}"
-          } >> "${GITHUB_OUTPUT}"
-
-      - name: Generate backend career weekly Markdown brief
-        uses: openai/codex-action@v1
-        with:
-          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
-          prompt-file: ${{ steps.prepare.outputs.runtime_prompt }}
-          output-file: reports/briefs/kr-backend-career-weekly-codex-summary.md
-          sandbox: workspace-write
-          safety-strategy: drop-sudo
-          codex-args: '["--model","gpt-5.4-mini","-c","model_reasoning_effort=\"low\""]'
-
       - name: Validate backend career weekly Markdown
         shell: bash
         env:
-          REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
+          REPORT_FILE: reports/briefs/kr-backend-career-weekly.md
         run: |
           set -euo pipefail
           python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type weekly-career
@@ -132,7 +79,7 @@ jobs:
         shell: bash
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
-          REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
+          REPORT_FILE: reports/briefs/kr-backend-career-weekly.md
         run: |
           set -euo pipefail
           python3 scripts/send-discord.py "${REPORT_FILE}"
@@ -155,5 +102,4 @@ jobs:
             reports/candidates/kr-backend-company-watchlist.json
             reports/candidates/kr-backend-career-events.json
             reports/briefs/kr-backend-career-weekly.md
-            reports/briefs/kr-backend-career-weekly-codex-summary.md
           if-no-files-found: warn

@@ -67,6 +67,7 @@ workflow는 `{{KST_NOW}}`를 현재 Asia/Seoul 기준시각으로 치환한다.
 
 - `weekly-career-site-radar.json`의 `sections`와 `sites`만 사용한다.
 - JSON에 없는 section, site, URL을 추가하지 않는다.
+- 각 section의 `sites` 배열에 있는 모든 site를 빠짐없이 출력한다.
 - 각 site는 `name`, `how_to_check`, `url`을 사용해 한 줄로 쓴다.
 - 링크는 반드시 `[사이트 보기](URL)` 형식으로 쓴다.
 - 각 section 끝에는 `check_rule`을 `이번 주 확인 기준` 한 줄로 쓴다.
