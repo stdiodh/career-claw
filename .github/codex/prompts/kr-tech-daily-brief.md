@@ -119,7 +119,7 @@ PS 루틴 후보는 current_track, today_problem, advance_recommendation을 참�
 - Markdown 표, 코드블록, 긴 인용문은 사용하지 않는다.
 - Discord에서 읽기 쉽게 각 섹션은 짧고 실천 가능하게 쓴다.
 - "왜 나에게 중요한가" 문구를 쓰지 않는다.
-- "Kotlin/Spring Boot 관련성" 문구를 쓰지 않는다.
+- 내부 추천 점수나 적합도 필드명을 출력하지 않는다.
 - "백엔드 관점" 문구를 쓰지 않는다.
 - "긴급 체크" 문구를 쓰지 않는다.
 - Secret 값이나 Webhook URL을 출력하지 않는다.

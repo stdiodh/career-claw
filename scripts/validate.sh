@@ -8,25 +8,89 @@ echo "==> Checking Python syntax"
 python3 -m py_compile \
   scripts/collect-kr-feeds.py \
   scripts/select-ps-problem.py \
-  scripts/update-ps-progress.py \
   scripts/send-discord.py \
+  scripts/update-ps-progress.py \
   scripts/validate-career-feed-brief.py
 
-echo "==> Checking shell and workflow syntax"
-bash -n scripts/validate.sh
-if command -v ruby >/dev/null 2>&1; then
-  ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }' .github/workflows/*.yml
-else
-  echo "Warning: ruby not found; skipping workflow YAML parse check." >&2
+echo "==> Checking current workflows"
+test -f .github/workflows/kr-tech-daily.yml
+test -f .github/workflows/kr-backend-career-weekly.yml
+test -f .github/workflows/mark-ps-solved.yml
+
+removed_workflows=(
+  ".github/workflows/ai-brief-""manual.yml"
+  ".github/workflows/daily-""feed.yml"
+  ".github/workflows/daily-""news.yml"
+  ".github/workflows/kr-""pre""mium-brief.yml"
+)
+
+for file in "${removed_workflows[@]}"; do
+  test ! -f "${file}"
+done
+
+workflow_count="$(find .github/workflows -maxdepth 1 -type f | wc -l | tr -d ' ')"
+if [ "${workflow_count}" != "3" ]; then
+  echo "Expected exactly 3 workflow files, found ${workflow_count}." >&2
+  exit 1
 fi
+
+echo "==> Checking workflow versions and schedules"
+grep -q 'uses: actions/checkout@v5' .github/workflows/kr-tech-daily.yml
+grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-tech-daily.yml
+grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-tech-daily.yml
+grep -q 'cron: "47 8 \* \* 1-5"' .github/workflows/kr-tech-daily.yml
+grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-daily.yml
+
+grep -q 'uses: actions/checkout@v5' .github/workflows/kr-backend-career-weekly.yml
+grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-backend-career-weekly.yml
+grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-backend-career-weekly.yml
+grep -q 'cron: "7 9 \* \* 1"' .github/workflows/kr-backend-career-weekly.yml
+grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-backend-career-weekly.yml
+
+grep -q 'uses: actions/checkout@v5' .github/workflows/mark-ps-solved.yml
+grep -q 'uses: actions/setup-python@v6' .github/workflows/mark-ps-solved.yml
+if grep -q 'schedule:' .github/workflows/mark-ps-solved.yml; then
+  echo "mark-ps-solved.yml must not define a schedule." >&2
+  exit 1
+fi
+
+echo "==> Checking current prompts"
+test -f .github/codex/prompts/kr-tech-daily-brief.md
+test -f .github/codex/prompts/kr-backend-career-weekly.md
+
+removed_prompts=(
+  ".github/codex/prompts/compact-""brief.md"
+  ".github/codex/prompts/daily-""news.md"
+  ".github/codex/prompts/kr-""pre""mium-brief.md"
+)
+
+for file in "${removed_prompts[@]}"; do
+  test ! -f "${file}"
+done
+
+prompt_count="$(find .github/codex/prompts -maxdepth 1 -type f | wc -l | tr -d ' ')"
+if [ "${prompt_count}" != "2" ]; then
+  echo "Expected exactly 2 prompt files, found ${prompt_count}." >&2
+  exit 1
+fi
+
+echo "==> Checking removed scripts"
+removed_scripts=(
+  "scripts/build-ai-input.py"
+  "scripts/collect-""feeds.py"
+  "scripts/make-sample-""report.py"
+  "scripts/render-""brief.py"
+  "scripts/render-""overview.py"
+  "scripts/send-category-""briefs.py"
+  "scripts/validate-kr-""pre""mium-brief.py"
+)
+
+for file in "${removed_scripts[@]}"; do
+  test ! -f "${file}"
+done
 
 echo "==> Checking required files"
 required_files=(
-  ".github/workflows/kr-tech-daily.yml"
-  ".github/workflows/kr-backend-career-weekly.yml"
-  ".github/workflows/mark-ps-solved.yml"
-  ".github/codex/prompts/kr-tech-daily-brief.md"
-  ".github/codex/prompts/kr-backend-career-weekly.md"
   "configs/audience-profile.json"
   "configs/kr-sources.json"
   "configs/backend-practical-knowledge-curriculum.json"
@@ -36,8 +100,8 @@ required_files=(
   "data/ps-progress.json"
   "scripts/collect-kr-feeds.py"
   "scripts/select-ps-problem.py"
-  "scripts/update-ps-progress.py"
   "scripts/send-discord.py"
+  "scripts/update-ps-progress.py"
   "scripts/validate-career-feed-brief.py"
   "tests/fixtures/kr-tech-daily-valid.md"
   "tests/fixtures/kr-backend-career-weekly-valid.md"
@@ -47,38 +111,25 @@ for file in "${required_files[@]}"; do
   test -f "${file}"
 done
 
-workflow_count="$(find .github/workflows -maxdepth 1 -type f | wc -l | tr -d ' ')"
-prompt_count="$(find .github/codex/prompts -maxdepth 1 -type f | wc -l | tr -d ' ')"
-if [ "${workflow_count}" != "3" ]; then
-  echo "Expected exactly 3 workflow files, found ${workflow_count}." >&2
-  exit 1
-fi
-if [ "${prompt_count}" != "2" ]; then
-  echo "Expected exactly 2 prompt files, found ${prompt_count}." >&2
-  exit 1
+echo "==> Checking workflow YAML parse"
+if command -v ruby >/dev/null 2>&1; then
+  ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path); puts "ok: #{path}" }' .github/workflows/*.yml
+else
+  echo "Warning: ruby not found; skipping workflow YAML parse check." >&2
 fi
 
 echo "==> Checking collector dry-runs"
 python3 scripts/collect-kr-feeds.py --mode daily-tech --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 
-echo "==> Checking Markdown fixtures"
+echo "==> Checking fixtures"
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 
 echo "==> Checking PS progress status"
 python3 scripts/update-ps-progress.py --status >/dev/null
 
-echo "==> Checking current route references"
-if ! grep -q "DISCORD_WEBHOOK_KR_TECH_DAILY" .github/workflows/kr-tech-daily.yml; then
-  echo "kr-tech-daily.yml must use DISCORD_WEBHOOK_KR_TECH_DAILY." >&2
-  exit 1
-fi
-if ! grep -q "DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY" .github/workflows/kr-backend-career-weekly.yml; then
-  echo "kr-backend-career-weekly.yml must use DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY." >&2
-  exit 1
-fi
-
+echo "==> Checking removed references"
 blocked_terms=(
   "leg""acy"
   "Leg""acy"
@@ -93,12 +144,13 @@ blocked_terms=(
   "daily-""news"
   "ai-brief-""manual"
   "compact-""brief"
-  "validate-kr-""pre""mium-brief"
+  "kr-""pre""mium-brief"
   "collect-""feeds"
   "render-""overview"
   "render-""brief"
   "send-category-""briefs"
   "make-sample-""report"
+  "validate-kr-""pre""mium-brief"
   "DISCORD_WEBHOOK_KR_""PRE""MIUM_""BRIEF"
   "DISCORD_WEBHOOK_DAILY_""OVERVIEW"
   "DISCORD_WEBHOOK_AI_""NEWS"
@@ -108,7 +160,6 @@ blocked_terms=(
   "DISCORD_WEBHOOK_JOB_""FEED"
   "무료 ""RSS"
   "수동 ""백업"
-  "manual ""backup"
 )
 
 blocked_pattern=""
@@ -121,8 +172,36 @@ for term in "${blocked_terms[@]}"; do
 done
 
 if rg -n "${blocked_pattern}" .github scripts configs docs README.md .env.example tests AGENTS.md .gitignore; then
-  echo "Retired route references remain." >&2
+  echo "Removed route references remain. Clean them up before finishing." >&2
   exit 1
 fi
+
+echo "==> Checking removed output fields"
+removed_output_terms=(
+  "오늘 ""할 일"
+  "Mark PS Solved ""workflow"
+  "대상 ""적합성"
+  "백엔드 ""적합성"
+  "Kotlin/Spring Boot ""관련성"
+  "왜 나에게 ""맞는가"
+  "제외한 ""후보"
+)
+
+removed_output_pattern=""
+for term in "${removed_output_terms[@]}"; do
+  if [ -z "${removed_output_pattern}" ]; then
+    removed_output_pattern="${term}"
+  else
+    removed_output_pattern="${removed_output_pattern}|${term}"
+  fi
+done
+
+if rg -n "${removed_output_pattern}" .github scripts tests README.md docs .env.example; then
+  echo "Removed output fields remain. Clean them up before finishing." >&2
+  exit 1
+fi
+
+echo "==> Checking diff whitespace"
+git diff --check
 
 echo "==> Validation complete"

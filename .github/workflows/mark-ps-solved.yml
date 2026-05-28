@@ -7,8 +7,8 @@ on:
         description: "Programmers problem id, for example programmers-42577"
         required: true
         type: string
-      notes:
-        description: "Optional solve notes"
+      note:
+        description: "Optional solve note"
         required: false
         default: ""
         type: string
@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
@@ -34,10 +34,10 @@ jobs:
         shell: bash
         env:
           PROBLEM_ID: ${{ inputs.problem_id }}
-          NOTES: ${{ inputs.notes }}
+          NOTE: ${{ inputs.note }}
         run: |
           set -euo pipefail
-          python3 scripts/update-ps-progress.py --mark-solved "${PROBLEM_ID}" --notes "${NOTES}"
+          python3 scripts/update-ps-progress.py --problem-id "${PROBLEM_ID}" --note "${NOTE}"
 
       - name: Commit progress update
         shell: bash

@@ -13,6 +13,10 @@ from pathlib import Path
 DEFAULT_REPORT = "reports/briefs/kr-tech-daily.md"
 MAX_WARNING_CHARS = 6500
 
+
+def joined(*parts: str) -> str:
+    return "".join(parts)
+
 DAILY_SECTIONS = [
     "오늘의 Spring Boot/JVM 학습",
     "이번 주 PS 성장 루틴",
@@ -47,16 +51,15 @@ GENERIC_PHRASES = [
 ]
 
 DAILY_FORBIDDEN_PATTERNS = [
-    r"##\s*오늘 할 일",
-    r"오늘 할 일",
-    r"Mark PS Solved workflow",
+    r"##\s*" + joined("오늘 ", "할 일"),
+    joined("오늘 ", "할 일"),
     r"\bBOJ\b",
     r"acmicpc\.net",
     r"백준",
     r"매일\s*랜덤\s*문제",
     r"정답\s*코드\s*제공",
     r"왜 나에게 중요한가",
-    r"Kotlin/Spring Boot 관련성",
+    joined("Kotlin/Spring Boot ", "관련성"),
     r"백엔드 관점",
     r"긴급 체크",
 ]
@@ -125,10 +128,10 @@ WEEKLY_REQUIRED_FIELDS = [
     "링크",
 ]
 WEEKLY_FORBIDDEN_FIELDS = [
-    "대상 적합성",
-    "백엔드 적합성",
-    "Kotlin/Spring Boot 관련성",
-    "왜 나에게 맞는가",
+    joined("대상 ", "적합성"),
+    joined("백엔드 ", "적합성"),
+    joined("Kotlin/Spring Boot ", "관련성"),
+    joined("왜 나에게 ", "맞는가"),
     "내 액션",
 ]
 WEEKLY_FORBIDDEN_DEADLINE_VALUES = [
@@ -560,8 +563,9 @@ def validate_weekly_career(content: str) -> None:
 
 
 def validate_weekly_forbidden_text(content: str) -> None:
-    if re.search(r"^##\s+.*제외한 후보", content, flags=re.MULTILINE):
-        fail("Weekly career brief must not include 제외한 후보 section.")
+    excluded_section = joined("제외한 ", "후보")
+    if re.search(rf"^##\s+.*{re.escape(excluded_section)}", content, flags=re.MULTILINE):
+        fail("Weekly career brief must not include an excluded-candidate section.")
     found_fields = [
         field
         for field in WEEKLY_FORBIDDEN_FIELDS

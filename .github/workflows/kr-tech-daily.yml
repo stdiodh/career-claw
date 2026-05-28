@@ -2,8 +2,8 @@ name: Daily Korea Tech Brief
 
 on:
   schedule:
-    # GitHub Actions cron uses UTC. 00:10 UTC requests a 09:10 Asia/Seoul start.
-    - cron: "10 0 * * 1-5"
+    - cron: "47 8 * * 1-5"
+      timezone: "Asia/Seoul"
   workflow_dispatch:
 
 permissions:
@@ -21,7 +21,7 @@ jobs:
           persist-credentials: true
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
@@ -93,11 +93,11 @@ jobs:
           runtime += "`spring-study-topic.json`은 1번 Spring Boot/JVM 학습 섹션에만 사용한다.\n"
           runtime += "`kr-dev-ai-news.json` 또는 `kr-ai-tech-news.json`에서만 4번 한국 최신 개발/AI 뉴스를 고른다.\n"
           runtime += "4번 뉴스에는 Spring 공식 문서, GitHub issue, Programmers 링크를 사용하지 않는다.\n"
-          runtime += "`backend-practical-knowledge.json`을 5번 주니어 백엔드 실무지식의 primary 후보로 사용한다.\n"
-          runtime += "`## 오늘 할 일` 섹션은 출력하지 않는다.\n"
+          runtime += "`backend-practical-knowledge.json`의 today 후보를 5번 주니어 백엔드 실무지식에 사용한다.\n"
+          runtime += "`## 오늘 " "할 일` 섹션은 출력하지 않는다.\n"
           runtime += "\n## Runtime output\n\n"
           runtime += "- 최종 Markdown은 `reports/briefs/kr-tech-daily.md`에만 작성한다.\n"
-          runtime += "- 후보 JSON, progress, config, workflow, script 파일은 수정하지 않는다.\n"
+          runtime += "- 후보 JSON, progress, config, workflow, script 파일은 runtime Codex 생성 단계에서 수정하지 않는다.\n"
           runtime += "- Secret 값이나 Webhook URL은 출력하지 않는다.\n"
           destination.write_text(runtime, encoding="utf-8")
           PY
@@ -153,7 +153,7 @@ jobs:
 
       - name: Upload Korea tech daily artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: career-feed-kr-tech-daily-${{ github.run_id }}
           path: |

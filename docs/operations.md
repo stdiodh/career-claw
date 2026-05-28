@@ -2,14 +2,15 @@
 
 ## 운영 경로
 
-| 경로 | Workflow | 산출물 |
+| 경로 | 실행 | 산출물 |
 | --- | --- | --- |
-| Daily Backend Brief | `.github/workflows/kr-tech-daily.yml` | `reports/briefs/kr-tech-daily.md` |
-| Weekly Backend Career Brief | `.github/workflows/kr-backend-career-weekly.yml` | `reports/briefs/kr-backend-career-weekly.md` |
-| Mark PS Solved | `.github/workflows/mark-ps-solved.yml` | `data/ps-progress.json` |
+| Daily Backend Brief | 평일 08:47 KST | `reports/briefs/kr-tech-daily.md` |
+| Weekly Backend Career Brief | 월요일 09:07 KST | `reports/briefs/kr-backend-career-weekly.md` |
+| Mark PS Solved | 수동 실행 | `data/ps-progress.json` |
 
 ## Daily Backend Brief
 
+- workflow: `.github/workflows/kr-tech-daily.yml`
 - 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-tech`
 - prompt: `.github/codex/prompts/kr-tech-daily-brief.md`
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
@@ -17,6 +18,7 @@
 
 ## Weekly Backend Career Brief
 
+- workflow: `.github/workflows/kr-backend-career-weekly.yml`
 - 후보 수집: `python3 scripts/collect-kr-feeds.py --mode weekly-career`
 - prompt: `.github/codex/prompts/kr-backend-career-weekly.md`
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career`
@@ -24,9 +26,10 @@
 
 ## Mark PS Solved
 
+- workflow: `.github/workflows/mark-ps-solved.yml`
 - 진행 파일: `data/ps-progress.json`
 - 상태 확인: `python3 scripts/update-ps-progress.py --status`
-- 풀이 기록: `python3 scripts/update-ps-progress.py --mark-solved <problem_id> --notes "<memo>"`
+- 풀이 기록: `python3 scripts/update-ps-progress.py --problem-id <problem_id> --note "<memo>"`
 
 ## 검증
 

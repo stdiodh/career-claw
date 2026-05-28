@@ -21,8 +21,10 @@ def parse_args() -> argparse.Namespace:
     action = parser.add_mutually_exclusive_group(required=True)
     action.add_argument("--status", action="store_true", help="Print current PS status.")
     action.add_argument("--mark-solved", metavar="PROBLEM_ID", help="Mark a problem solved.")
+    action.add_argument("--problem-id", metavar="PROBLEM_ID", help="Mark a problem solved.")
     action.add_argument("--advance-track", metavar="TRACK_ID", help="Move to another track.")
     parser.add_argument("--notes", default="", help="Optional notes for --mark-solved.")
+    parser.add_argument("--note", default="", help="Optional note for --problem-id.")
     return parser.parse_args()
 
 
@@ -215,12 +217,14 @@ def main() -> int:
             return 0
 
         changed = False
-        if args.mark_solved:
+        problem_id = args.problem_id or args.mark_solved
+        note = args.note or args.notes
+        if problem_id:
             changed = mark_solved(
                 curriculum,
                 progress,
-                args.mark_solved.strip(),
-                args.notes,
+                problem_id.strip(),
+                note,
             )
         elif args.advance_track:
             changed = advance_track(curriculum, progress, args.advance_track.strip())

@@ -2,8 +2,6 @@
 
 Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord Webhook으로 백엔드 학습/커리어 브리핑을 전송하는 자동화 프로젝트입니다.
 
-제품명과 문서명은 `Career Feed`로 통일합니다. 저장소 이름이나 로컬 경로명은 환경에 따라 다를 수 있습니다.
-
 ## 운영 경로
 
 현재 운영 경로는 3개만 유지합니다.
@@ -14,7 +12,13 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 | Weekly Backend Career Brief | `.github/workflows/kr-backend-career-weekly.yml` | 주간 백엔드 인턴/신입/대외활동 브리핑 |
 | Mark PS Solved | `.github/workflows/mark-ps-solved.yml` | PS 풀이 진행도 기록 |
 
-초기 범위에 포함하지 않는 항목은 상시 실행 서버, Discord Gateway Bot, Slash Command, 데이터베이스, 웹 대시보드입니다.
+## 자동 실행 시간
+
+| 경로 | 실행 시간 |
+| --- | --- |
+| Daily Backend Brief | 평일 08:47 KST |
+| Weekly Backend Career Brief | 월요일 09:07 KST |
+| Mark PS Solved | 자동 실행 없음, 수동 실행 |
 
 ## Daily Backend Brief
 
@@ -34,8 +38,6 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 - `reports/candidates/kr-ai-tech-news.json`
 - `reports/candidates/backend-practical-knowledge.json`
 
-브리핑은 Spring Boot/JVM 학습, Programmers 주차별 PS 루틴, Spring OSS 기여 후보, 한국 최신 개발/AI 뉴스, 주니어 백엔드 실무지식으로 구성합니다. Programmers PS 루틴은 `configs/programmers-ps-curriculum.json`과 `data/ps-progress.json`만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않습니다.
-
 ## Weekly Backend Career Brief
 
 - workflow: `.github/workflows/kr-backend-career-weekly.yml`
@@ -53,13 +55,12 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 - `reports/candidates/kr-backend-career-activities.json`
 - `reports/candidates/kr-backend-company-watchlist.json`
 
-브리핑은 백엔드 인턴, 신입/주니어 공고, 해커톤, 공모전, 경진대회만 선별합니다. 상세 공고 URL과 마감 품질이 낮은 항목은 validator가 막습니다.
-
 ## Mark PS Solved
 
 - workflow: `.github/workflows/mark-ps-solved.yml`
 - progress file: `data/ps-progress.json`
-- local command: `python3 scripts/update-ps-progress.py --mark-solved <problem_id> --notes "<memo>"`
+- 실행 방식: 수동 실행
+- local command: `python3 scripts/update-ps-progress.py --problem-id <problem_id> --note "<memo>"`
 
 현재 상태 확인:
 
@@ -69,19 +70,33 @@ python3 scripts/update-ps-progress.py --status
 
 ## 필요한 Secrets
 
-GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에 다음 Secrets를 등록합니다.
+필수:
 
-| Secret | 설명 |
-| --- | --- |
-| `OPENAI_API_KEY` | Codex 편집에 사용하는 OpenAI API Key |
-| `NAVER_CLIENT_ID` | Naver News Search API 후보 수집용 |
-| `NAVER_CLIENT_SECRET` | Naver News Search API 후보 수집용 |
-| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Daily Backend Brief 전송용 Discord Webhook URL |
-| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Weekly Backend Career Brief 전송용 Discord Webhook URL |
+- `OPENAI_API_KEY`
+- `DISCORD_WEBHOOK_KR_TECH_DAILY`
+- `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
 
-Naver Secrets가 없으면 RSS, 공식 URL, 정적 config 중심으로만 후보를 만들기 때문에 후보 품질이 낮아질 수 있습니다.
+권장:
+
+- `NAVER_CLIENT_ID`
+- `NAVER_CLIENT_SECRET`
+
+OpenAI/Discord secrets는 실행 필수입니다. Naver secrets는 한국 뉴스/채용 후보 품질 향상용입니다. Naver secrets가 없으면 fallback 후보만 사용되어 품질이 낮을 수 있습니다.
 
 Secret 값, API Key, Webhook URL은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
+
+## 최초 운영 체크리스트
+
+1. `Settings > Secrets and variables > Actions`에 필수 secrets를 등록합니다.
+2. `Settings > Actions > General`에서 Actions 실행을 허용합니다.
+3. `Workflow permissions`는 `Read and write permissions`로 설정합니다.
+4. `Actions > Daily Korea Tech Brief`에서 workflow가 disabled 상태라면 `Enable workflow`를 누릅니다.
+5. `Run workflow`로 Daily를 1회 수동 실행합니다.
+6. Discord에 Daily 메시지가 도착했는지 확인합니다.
+7. `Actions > Weekly Backend Career Brief`에서 workflow가 disabled 상태라면 `Enable workflow`를 누릅니다.
+8. `Run workflow`로 Weekly를 1회 수동 실행합니다.
+9. Discord에 Weekly 메시지가 도착했는지 확인합니다.
+10. `Mark PS Solved`는 문제 풀이 후 `problem_id`를 넣어 수동 실행합니다.
 
 ## 로컬 검증
 
@@ -93,8 +108,6 @@ python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-w
 ./scripts/validate.sh
 git diff --check
 ```
-
-실제 Discord 전송은 workflow 또는 `scripts/send-discord.py`를 명시적으로 실행할 때만 수행합니다.
 
 ## 디렉터리 구조
 
