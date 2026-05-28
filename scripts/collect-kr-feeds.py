@@ -32,6 +32,7 @@ TITLE_LIMIT = 240
 DEFAULT_DISPLAY = 10
 MAX_DISPLAY = 20
 DEFAULT_MAX_CANDIDATES = 30
+OSS_REPOSITORIES_CONFIG_PATH = Path("configs/oss-repositories.json")
 USER_AGENT = "career-feed-kr-collector"
 SUPPORTED_FEED_TYPES = {"rss", "atom"}
 OSS_CATEGORY_ID = "kr-oss-contribution-opportunities"
@@ -91,6 +92,43 @@ SECURITY_ACTION_KEYWORDS = ["취약점", "cve", "보안 업데이트", "패치",
 EXPIRED_DEADLINE_KEYWORDS = ["마감 종료", "접수 종료", "모집 종료", "지원 종료", "마감됨"]
 SENIOR_ONLY_KEYWORDS = ["시니어", "senior", "경력 3년", "경력 5년", "3년 이상", "5년 이상"]
 FRONTEND_MARKETING_KEYWORDS = ["프론트엔드", "frontend", "디자인", "마케팅", "기획자"]
+OSS_BEGINNER_KEYWORDS = [
+    "documentation",
+    "docs",
+    "sample",
+    "example",
+    "test",
+    "reproducer",
+]
+OSS_DIRECT_SPRING_KEYWORDS = [
+    "Spring Boot",
+    "JPA",
+    "JDBC",
+    "Spring Security",
+    "Spring AI",
+    "Spring Framework",
+    "Spring Data",
+    "PetClinic",
+    "spring-boot",
+    "spring-framework",
+    "spring-data-jpa",
+    "spring-data-relational",
+    "spring-data-commons",
+    "spring-security",
+    "spring-ai",
+    "spring-petclinic",
+]
+OSS_SECURITY_KEYWORDS = ["security vulnerability", "CVE"]
+OSS_RELEASE_BLOCKER_KEYWORDS = ["release blocker"]
+OSS_DEEP_INTERNALS_KEYWORDS = [
+    "deep internals",
+    "compiler",
+    "runtime internals",
+    "compiler backend",
+    "IR backend",
+]
+OSS_DESIGN_KEYWORDS = ["design proposal", "RFC", "epic", "requires design"]
+OSS_DUPLICATE_KEYWORDS = ["duplicate", "invalid", "superseded"]
 
 
 @dataclass(frozen=True)
@@ -143,6 +181,10 @@ class OssIssueCandidate:
     first_pr_potential_score: int
     risk_score: int
     exclude_reason: str
+    difficulty_band: str
+    why_beginner_friendly: str
+    first_30_min_action: str
+    risk_reason: str
     score: int
 
 
@@ -311,11 +353,41 @@ def get_github_token() -> str | None:
     return None
 
 
+def load_oss_repositories_config(path: Path = OSS_REPOSITORIES_CONFIG_PATH) -> dict[str, object]:
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise RuntimeError("configs/oss-repositories.json must contain a JSON object.")
+    return data
+
+
 def category_values(category: dict[str, object], key: str) -> list[str]:
     raw_values = category.get(key, [])
     if not isinstance(raw_values, list):
         return []
     return [str(value).strip() for value in raw_values if str(value).strip()]
+
+
+def configured_repositories(
+    category: dict[str, object],
+    oss_config: dict[str, object],
+) -> list[str]:
+    repositories = category_values(oss_config, "repositories")
+    if repositories:
+        return repositories
+    return category_values(category, "github_repositories")
+
+
+def difficulty_model_values(
+    difficulty_model: dict[str, object],
+    band: str,
+    key: str,
+) -> list[str]:
+    model = difficulty_model.get(band, {})
+    if not isinstance(model, dict):
+        return []
+    return category_values(model, key)
 
 
 def text_contains_any(text: str, keywords: list[str]) -> bool:
@@ -915,9 +987,52 @@ def infer_contribution_type(text: str) -> str:
     return "triage"
 
 
+def difficulty_model_matches(
+    difficulty_model: dict[str, object],
+    band: str,
+    labels: list[str],
+    searchable: str,
+) -> bool:
+    label_text = " ".join(labels)
+    return text_contains_any(
+        label_text,
+        difficulty_model_values(difficulty_model, band, "positive_labels"),
+    ) or text_contains_any(
+        searchable,
+        difficulty_model_values(difficulty_model, band, "positive_keywords"),
+    )
+
+
+def beginner_reason_for_band(difficulty_band: str, contribution_type: str) -> str:
+    if difficulty_band == "p5_like":
+        return "문서, 예제, 테스트, 재현처럼 첫 기여 범위가 작은 작업입니다."
+    if difficulty_band == "p4_like":
+        return "작은 개선 또는 명확한 버그로 주니어가 범위를 제한해 도전할 수 있습니다."
+    if difficulty_band == "too_hard":
+        return "보안, 릴리스, 내부 구현, 설계 논의 성격이 있어 첫 기여로 부적합합니다."
+    if contribution_type != "triage":
+        return "작업 유형은 보이지만 초보 친화 label 또는 난이도 근거가 부족합니다."
+    return "초보 친화 근거가 부족합니다."
+
+
+def first_action_for_contribution_type(contribution_type: str) -> str:
+    if contribution_type == "docs":
+        return "관련 문서 위치를 찾고 오탈자, 설명 누락, 예제 실행 여부를 확인한다."
+    if contribution_type == "sample":
+        return "예제 프로젝트를 실행하고 README 절차와 실제 동작 차이를 기록한다."
+    if contribution_type == "test":
+        return "관련 테스트 위치를 찾고 재현 가능한 최소 테스트 케이스를 확인한다."
+    if contribution_type == "bug-repro":
+        return "이슈 본문 기준으로 최소 재현 프로젝트나 실패 테스트를 만들 수 있는지 확인한다."
+    if contribution_type == "small-enhancement":
+        return "관련 설정, AutoConfiguration, 기존 테스트 경로를 먼저 추적한다."
+    return "이슈 본문, label, 관련 파일 위치를 읽고 30분 안에 재현 가능성을 판단한다."
+
+
 def oss_issue_scores(
     category: dict[str, object],
     *,
+    difficulty_model: dict[str, object],
     text: str,
     labels: list[str],
     assignees_count: int,
@@ -926,97 +1041,161 @@ def oss_issue_scores(
     current_time: datetime,
     state: str,
     is_pull_request: bool,
-) -> tuple[int, int, int, int, int, str, int]:
+) -> tuple[int, int, int, int, int, str, str, str, str, str, int]:
     label_text = " ".join(labels)
     searchable = f"{label_text} {text}"
     positive_labels = category_values(category, "positive_labels")
     negative_keywords = category_values(category, "negative_keywords")
 
-    label_score = 30 if text_contains_any(label_text, positive_labels) else 0
-    contribution_keywords = [
-        "documentation",
-        "docs",
-        "sample",
-        "example",
-        "test",
-        "reproducer",
-        "getting started",
-    ]
-    contribution_score = 25 if text_contains_any(searchable, contribution_keywords) else 0
-    stack_score = 25 if text_contains_any(
-        searchable, ["Spring Boot", "Spring", "Kotlin", "Java", "Gradle", "JVM"]
-    ) else 0
-    assignee_score = 15 if assignees_count == 0 else -30
+    status_score = 50 if text_contains_any(label_text, ["status: ideal-for-contribution"]) else 0
+    docs_label_score = 40 if text_contains_any(label_text, ["type: documentation", "in: docs"]) else 0
+    beginner_keyword_score = 35 if text_contains_any(searchable, OSS_BEGINNER_KEYWORDS) else 0
+    good_first_score = 30 if text_contains_any(label_text, ["good first issue", "help wanted"]) else 0
+    p5_match = difficulty_model_matches(difficulty_model, "p5_like", labels, searchable)
+    p4_match = difficulty_model_matches(difficulty_model, "p4_like", labels, searchable)
+    p5_score = 30 if p5_match else 0
+    p4_score = 20 if p4_match else 0
+    legacy_label_score = 15 if text_contains_any(label_text, positive_labels) else 0
+    direct_spring_score = 15 if text_contains_any(searchable, OSS_DIRECT_SPRING_KEYWORDS) else 0
+    assignee_score = 20 if assignees_count == 0 else -40
     recent_score = 0
     stale_penalty = 0
     if updated_at:
         age = current_time - updated_at
-        if age <= timedelta(days=30):
+        if age <= timedelta(days=90):
             recent_score = 15
-        elif age > timedelta(days=90):
-            stale_penalty = -30
-    comments_score = 10 if comments <= 10 else 0
-    clarity_score = 10 if text_contains_any(
-        searchable,
-        ["steps", "reproducer", "reproduce", "expected", "actual", "documentation", "docs", "test"],
-    ) else 0
+        elif age > timedelta(days=180):
+            stale_penalty = -40
+    comments_score = 15 if comments <= 10 else 0
+    comments_penalty = -40 if comments >= 30 else 0
 
-    risk_score = 0
-    exclude_reasons = []
+    risk_penalty = 0
+    risk_reasons = []
     if state != "open" or is_pull_request:
-        risk_score += 50
-        exclude_reasons.append("not-open-issue")
-    if text_contains_any(searchable, ["security vulnerability", "CVE"]):
-        risk_score += 50
-        exclude_reasons.append("security-vulnerability")
-    if text_contains_any(searchable, ["compiler backend", "IR backend"]):
-        risk_score += 50
-        exclude_reasons.append("high-complexity-internals")
-    if text_contains_any(
-        searchable,
-        ["release blocker", "requires design", "RFC", "epic", "needs team decision"],
-    ):
-        risk_score += 40
-        exclude_reasons.append("needs-maintainer-design")
-    if text_contains_any(searchable, negative_keywords):
-        risk_score += 10
+        risk_penalty += 70
+        risk_reasons.append("not-open-issue")
+    if text_contains_any(searchable, OSS_SECURITY_KEYWORDS):
+        risk_penalty += 70
+        risk_reasons.append("security-vulnerability")
+    if text_contains_any(searchable, OSS_RELEASE_BLOCKER_KEYWORDS):
+        risk_penalty += 60
+        risk_reasons.append("release-blocker")
+    if text_contains_any(searchable, OSS_DEEP_INTERNALS_KEYWORDS):
+        risk_penalty += 60
+        risk_reasons.append("deep-internals")
+    if text_contains_any(searchable, OSS_DESIGN_KEYWORDS):
+        risk_penalty += 50
+        risk_reasons.append("design-or-epic")
+    if assignees_count > 0:
+        risk_reasons.append("assigned")
+    if comments >= 30:
+        risk_reasons.append("many-comments")
     if stale_penalty:
-        exclude_reasons.append("stale-over-90-days")
+        risk_reasons.append("stale-over-180-days")
+    if text_contains_any(searchable, ["dependency upgrade", "dependency updates", "upgrade dependency"]) and not text_contains_any(
+        searchable,
+        ["test", "tests", "testing", "coverage"],
+    ):
+        risk_penalty += 30
+        risk_reasons.append("dependency-upgrade-unclear-test-scope")
+    if text_contains_any(searchable, OSS_DUPLICATE_KEYWORDS):
+        risk_penalty += 30
+        risk_reasons.append("duplicate-invalid-or-superseded")
+    if text_contains_any(searchable, negative_keywords):
+        risk_penalty += 10
 
+    contribution_type = infer_contribution_type(searchable)
+    hard_exclusion = any(
+        reason in risk_reasons
+        for reason in ("security-vulnerability", "release-blocker", "deep-internals")
+    )
+    if hard_exclusion or "design-or-epic" in risk_reasons:
+        difficulty_band = "too_hard"
+    elif p5_match:
+        difficulty_band = "p5_like"
+    elif p4_match:
+        difficulty_band = "p4_like"
+    else:
+        difficulty_band = "unclear"
+
+    positive_score = (
+        status_score
+        + docs_label_score
+        + beginner_keyword_score
+        + good_first_score
+        + p5_score
+        + p4_score
+        + legacy_label_score
+        + max(assignee_score, 0)
+        + recent_score
+        + comments_score
+        + direct_spring_score
+    )
+    penalty_score = (
+        risk_penalty
+        + max(-assignee_score, 0)
+        + max(-comments_penalty, 0)
+        + max(-stale_penalty, 0)
+    )
     junior_fit_score = max(
-        min(label_score + contribution_score + max(assignee_score, 0) + comments_score + clarity_score, 100),
+        min(
+            status_score
+            + docs_label_score
+            + beginner_keyword_score
+            + good_first_score
+            + p5_score
+            + max(assignee_score, 0)
+            + comments_score,
+            100,
+        ),
         0,
     )
     backend_fit_score = 25 if text_contains_any(searchable, BACKEND_KEYWORDS) else 0
-    kotlin_spring_fit_score = stack_score
+    kotlin_spring_fit_score = 25 if text_contains_any(searchable, OSS_DIRECT_SPRING_KEYWORDS) else 0
     first_pr_potential_score = max(
-        min(label_score + contribution_score + max(assignee_score, 0) + comments_score, 100),
+        min(
+            status_score
+            + docs_label_score
+            + beginner_keyword_score
+            + good_first_score
+            + p5_score
+            + p4_score
+            + max(assignee_score, 0)
+            + comments_score,
+            100,
+        ),
         0,
     )
-    score = (
-        label_score
-        + contribution_score
-        + stack_score
-        + assignee_score
-        + recent_score
-        + comments_score
-        + clarity_score
-        + stale_penalty
-        - risk_score
-    )
+    score = positive_score - penalty_score
+    exclude_reasons = []
+    if difficulty_band not in {"p5_like", "p4_like"}:
+        exclude_reasons.append(difficulty_band)
+    if hard_exclusion:
+        exclude_reasons.extend(
+            reason
+            for reason in risk_reasons
+            if reason in {"security-vulnerability", "release-blocker", "deep-internals"}
+        )
+
+    risk_reason = ", ".join(dict.fromkeys(risk_reasons)) if risk_reasons else "low"
     return (
         junior_fit_score,
         backend_fit_score,
         kotlin_spring_fit_score,
         first_pr_potential_score,
-        risk_score,
+        penalty_score,
         ",".join(dict.fromkeys(exclude_reasons)),
+        difficulty_band,
+        beginner_reason_for_band(difficulty_band, contribution_type),
+        first_action_for_contribution_type(contribution_type),
+        risk_reason,
         score,
     )
 
 
 def build_oss_issue_candidate(
     category: dict[str, object],
+    difficulty_model: dict[str, object],
     repository: str,
     issue: dict[str, object],
     current_time: datetime,
@@ -1057,9 +1236,14 @@ def build_oss_issue_candidate(
         first_pr_potential_score,
         risk_score,
         exclude_reason,
+        difficulty_band,
+        why_beginner_friendly,
+        first_30_min_action,
+        risk_reason,
         score,
     ) = oss_issue_scores(
         category,
+        difficulty_model=difficulty_model,
         text=searchable,
         labels=labels,
         assignees_count=assignees_count,
@@ -1092,6 +1276,10 @@ def build_oss_issue_candidate(
         first_pr_potential_score=first_pr_potential_score,
         risk_score=risk_score,
         exclude_reason=exclude_reason,
+        difficulty_band=difficulty_band,
+        why_beginner_friendly=why_beginner_friendly,
+        first_30_min_action=first_30_min_action,
+        risk_reason=risk_reason,
         score=score,
     )
 
@@ -1100,7 +1288,11 @@ def collect_oss_issue_candidates(
     category: dict[str, object],
     current_time: datetime,
 ) -> list[OssIssueCandidate]:
-    repositories = category_values(category, "github_repositories")
+    oss_config = load_oss_repositories_config()
+    repositories = configured_repositories(category, oss_config)
+    difficulty_model = oss_config.get("difficulty_model", {})
+    if not isinstance(difficulty_model, dict):
+        difficulty_model = {}
     token = get_github_token()
     candidates: list[OssIssueCandidate] = []
 
@@ -1109,8 +1301,14 @@ def collect_oss_issue_candidates(
             print(f"Warning: invalid GitHub repository id: {repository}", file=sys.stderr)
             continue
         for issue in fetch_github_issues(repository, token):
-            candidate = build_oss_issue_candidate(category, repository, issue, current_time)
-            if candidate:
+            candidate = build_oss_issue_candidate(
+                category,
+                difficulty_model,
+                repository,
+                issue,
+                current_time,
+            )
+            if candidate and candidate.difficulty_band in {"p5_like", "p4_like"}:
                 candidates.append(candidate)
 
     try:
@@ -1121,6 +1319,7 @@ def collect_oss_issue_candidates(
     return sorted(
         candidates,
         key=lambda item: (
+            1 if item.difficulty_band == "p5_like" else 0,
             item.score,
             item.updated_at or datetime.min.replace(tzinfo=KST),
         ),
@@ -1199,6 +1398,10 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "first_pr_potential_score": candidate.first_pr_potential_score,
         "risk_score": candidate.risk_score,
         "exclude_reason": candidate.exclude_reason,
+        "difficulty_band": candidate.difficulty_band,
+        "why_beginner_friendly": candidate.why_beginner_friendly,
+        "first_30_min_action": candidate.first_30_min_action,
+        "risk_reason": candidate.risk_reason,
         "score": candidate.score,
     }
 

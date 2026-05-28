@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "source": "manual-curated-spring-github-issues",
+  "policy": {
+    "platform": "GitHub Issues",
+    "ecosystem": "Spring",
+    "no_openjdk_jbs_collection": true,
+    "no_issue_mutation": true
+  },
+  "repositories": [
+    "spring-projects/spring-boot",
+    "spring-projects/spring-framework",
+    "spring-projects/spring-security",
+    "spring-projects/spring-data-jpa",
+    "spring-projects/spring-data-relational",
+    "spring-projects/spring-data-commons",
+    "spring-projects/spring-ai",
+    "spring-projects/spring-ai-examples",
+    "spring-projects/spring-petclinic"
+  ],
+  "difficulty_model": {
+    "p5_like": {
+      "description": "첫 기여에 적합한 문서, 예제, 테스트, 재현, 작은 정리 작업",
+      "positive_labels": [
+        "status: ideal-for-contribution",
+        "good first issue",
+        "help wanted",
+        "type: documentation",
+        "in: docs"
+      ],
+      "positive_keywords": [
+        "documentation",
+        "docs",
+        "sample",
+        "example",
+        "test",
+        "reproducer",
+        "typo",
+        "clarify",
+        "getting started"
+      ]
+    },
+    "p4_like": {
+      "description": "주니어가 도전할 만한 작은 개선 또는 명확한 버그",
+      "positive_labels": [
+        "type: enhancement",
+        "type: bug",
+        "in: config",
+        "in: data",
+        "in: web",
+        "in: test"
+      ],
+      "positive_keywords": [
+        "Kotlin DSL",
+        "configuration",
+        "starter",
+        "JPA",
+        "JDBC",
+        "Spring Security",
+        "Spring AI",
+        "AutoConfiguration",
+        "test slice"
+      ]
+    }
+  }
+}
