@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-05-28 16:10:33 KST",
+  "updated_at": "2026-05-28 16:33:32 KST",
   "items": [
     {
       "url": "https://dacon.io/competitions/official/236647/overview/",
@@ -11,8 +11,8 @@
       "source_kind": "activity_platform_detail",
       "selection_tier": "portfolio_activity",
       "first_seen_at": "2026-05-28 16:06:07 KST",
-      "last_seen_at": "2026-05-28 16:10:33 KST",
-      "last_verified_at": "2026-05-28 16:10:33 KST",
+      "last_seen_at": "2026-05-28 16:33:32 KST",
+      "last_verified_at": "2026-05-28 16:33:32 KST",
       "deadline": "2026-11-24 KST",
       "deadline_text": "2026-11-24 KST",
       "deadline_status": "open",
