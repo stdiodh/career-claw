@@ -210,38 +210,50 @@ from pathlib import Path
 from subprocess import run
 from tempfile import TemporaryDirectory
 
-daily_valid = """# Career Feed - Korea Tech Daily
+daily_valid = """# Career Feed - Backend Daily
 기준시각: 2026-05-27 09:10 KST
 
-한 줄 요약:
-- 오늘은 국내 AI API와 Spring 운영 사례를 먼저 확인합니다.
+오늘의 방향:
+- Spring 설정 흐름을 익히고 해시 문제를 이어서 풉니다.
 
-## 1. 한국 AI 테크
+## 1. 오늘의 Spring Boot/JVM 학습
 
-### 1-1. 네이버클라우드 AI API 업데이트
-- 무슨 일: 국내 AI API 활용 후보가 확인됐습니다.
-- 왜 나에게 중요한가: 백엔드 포트폴리오에서 AI API 연동 주제를 고를 때 참고할 수 있습니다.
-- 백엔드 관점: 인증, 요청 제한, 장애 대응 설계를 함께 확인해야 합니다.
-- 내 액션: API 문서에서 Spring Boot 연동 가능성을 정리합니다.
-- 출처/시각: Naver Cloud / 2026-05-27 09:00 KST
-- 링크: [원문 보기](https://www.ncloud.com/product/aiService)
+### 주제: Spring Boot AutoConfiguration 흐름 읽기
+- 핵심 개념: starter가 어떤 조건에서 bean을 등록하는지 확인합니다.
+- 30분 실습: 작은 설정 클래스를 만들고 조건부 bean 등록을 테스트합니다.
+- 검색 키워드: Spring Boot AutoConfiguration condition test
+- 확장해서 볼 것: 테스트 slice와 설정 분리 방식
+- 참고 링크: [원문 보기](https://www.ncloud.com/product/aiService)
 
-## 2. 백엔드/개발자 기술
+## 2. 이번 주 PS 성장 루틴
+- 이번 주 주제: 해시
+- 이번 주 목표: Key-value 기반 조회와 빈도 처리를 익힙니다.
+- 현재 진행: 1/5
+- 오늘 문제: 전화번호 목록
+- 플랫폼: Programmers
+- 난이도: Level 2
+- 먼저 생각할 것: 정렬 후 인접한 번호의 접두어 관계를 확인합니다.
+- 오늘 목표: 정답 코드보다 조건을 먼저 말로 정리합니다.
+- 막히면 검색: 프로그래머스 전화번호 목록 Kotlin startsWith
+- 링크: [문제 보기](https://school.programmers.co.kr/learn/courses/30/lessons/42577)
 
-### 2-1. 카카오 기술 블로그 백엔드 사례
-- 무슨 일: 국내 대규모 서비스 운영 사례를 확인할 수 있습니다.
-- 왜 나에게 중요한가: 장애 대응과 API 설계 면접 소재로 활용할 수 있습니다.
-- Kotlin/Spring Boot 관련성: Spring 기반 API 서버 설계와 비교해 정리하기 좋습니다.
-- 내 액션: 아키텍처 선택 이유를 포트폴리오 메모로 남깁니다.
-- 출처/시각: Kakao Tech / 2026-05-27 09:00 KST
-- 링크: [원문 보기](https://tech.kakao.com/)
+## 3. 오픈소스 기여 후보
 
-## 오픈소스 기여 후보
 - 오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다.
 
+## 4. 한국 개발/AI 뉴스
+
+### 뉴스: 국내 개발자 플랫폼 업데이트
+- 제목: 카카오 기술 블로그 백엔드 사례
+- 핵심: 국내 대규모 서비스 운영 사례를 확인할 수 있습니다.
+- 공부로 연결할 점: API 장애 대응 기록을 학습 메모로 연결합니다.
+- 검색 키워드: Spring Boot API resilience
+- 링크: [원문 보기](https://tech.kakao.com/)
+
 ## 오늘 할 일
-- AI API 인증 방식을 정리합니다.
-- Spring 운영 사례 키워드를 기록합니다.
+1. AutoConfiguration 조건을 한 가지 테스트합니다.
+2. Programmers 해시 문제를 30분 안에 시도합니다.
+3. 풀었다면 Mark PS Solved workflow로 기록한다.
 """
 
 weekly_valid = """# Career Feed - Backend Career Weekly

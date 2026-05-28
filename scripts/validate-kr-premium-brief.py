@@ -20,9 +20,10 @@ LEGACY_SECTIONS = [
     "국내 인턴십/해커톤/공모전/경진대회",
 ]
 DAILY_SECTIONS = [
-    "한국 AI 테크",
-    "백엔드/개발자 기술",
+    "오늘의 Spring Boot/JVM 학습",
+    "이번 주 PS 성장 루틴",
     "오픈소스 기여 후보",
+    "한국 개발/AI 뉴스",
     "오늘 할 일",
 ]
 WEEKLY_SECTIONS = [
@@ -37,6 +38,7 @@ NO_ITEM_PHRASES = [
     "오늘 기준으로 포함할 만한 신뢰도 높은 후보를 찾지 못했습니다",
     "오늘은 긴급 체크 항목 없음",
     "오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다.",
+    "오늘은 학습으로 연결할 만한 개발/AI 뉴스가 없습니다.",
     "이번 주 마감 임박 항목 없음",
     "이번 주 추천 항목 없음",
 ]
@@ -61,16 +63,42 @@ LEGACY_CAREER_FIELDS = {
     "대상": re.compile(r"^\s*-\s*.*대상.*:", re.MULTILINE),
     "마감": re.compile(r"^\s*-\s*.*마감.*:", re.MULTILINE),
 }
-DAILY_REQUIRED_FIELDS = [
-    re.compile(r"^\s*-\s*무슨 일\s*:", re.MULTILINE),
-    re.compile(r"^\s*-\s*왜 나에게 중요한가\s*:", re.MULTILINE),
-    re.compile(r"^\s*-\s*내 액션\s*:", re.MULTILINE),
-    re.compile(r"^\s*-\s*.*출처.*:", re.MULTILINE),
-    re.compile(r"^\s*-\s*링크\s*:", re.MULTILINE),
+DAILY_FORBIDDEN_PATTERNS = [
+    r"\bBOJ\b",
+    r"acmicpc\.net",
+    r"백준",
+    r"매일\s*랜덤\s*문제",
+    r"정답\s*코드\s*제공",
+    r"왜 나에게 중요한가",
+    r"Kotlin/Spring Boot 관련성",
+    r"백엔드 관점",
+    r"긴급 체크",
 ]
-DAILY_RELEVANCE_FIELDS = [
-    re.compile(r"^\s*-\s*백엔드 관점\s*:", re.MULTILINE),
-    re.compile(r"^\s*-\s*Kotlin/Spring Boot 관련성\s*:", re.MULTILINE),
+DAILY_STUDY_FIELDS = [
+    "핵심 개념",
+    "30분 실습",
+    "검색 키워드",
+    "확장해서 볼 것",
+    "참고 링크",
+]
+DAILY_PS_FIELDS = [
+    "이번 주 주제",
+    "이번 주 목표",
+    "현재 진행",
+    "오늘 문제",
+    "플랫폼",
+    "난이도",
+    "먼저 생각할 것",
+    "오늘 목표",
+    "막히면 검색",
+    "링크",
+]
+DAILY_NEWS_FIELDS = [
+    "제목",
+    "핵심",
+    "공부로 연결할 점",
+    "검색 키워드",
+    "링크",
 ]
 WEEKLY_REQUIRED_FIELDS = [
     "유형",
@@ -82,10 +110,12 @@ WEEKLY_REQUIRED_FIELDS = [
     "링크",
 ]
 DAILY_OSS_FIELDS = [
+    "난이도 밴드",
     "저장소",
-    "왜 나에게 맞는가",
+    "기여 유형",
+    "왜 시도해볼 만한가",
     "첫 30분 액션",
-    "예상 난이도",
+    "확인할 파일/키워드",
     "주의할 점",
     "링크",
 ]
@@ -238,6 +268,19 @@ def validate_item_markdown_link(item: Item) -> None:
         fail(f"Item must include a Markdown link: {item.title}")
 
 
+def missing_bullet_fields(text: str, fields: list[str]) -> list[str]:
+    return [
+        field
+        for field in fields
+        if not re.search(rf"^\s*-\s*{re.escape(field)}\s*:", text, re.MULTILINE)
+    ]
+
+
+def require_markdown_link_in_text(text: str, context: str) -> None:
+    if not MARKDOWN_LINK_RE.search(text):
+        fail(f"Section must include a Markdown link: {context}")
+
+
 def validate_legacy(content: str) -> None:
     validate_common(content, min_links=2)
     sections = extract_sections(content)
@@ -278,21 +321,12 @@ def validate_legacy_item(section_title: str, item: Item) -> None:
 
 
 def validate_daily_tech(content: str) -> None:
-    if "Career Feed - Korea Tech Daily" not in content:
+    if (
+        "Career Feed - Backend Daily" not in content
+        and "Career Feed - Korea Tech Daily" not in content
+    ):
         fail("Missing daily tech title.")
-    if re.search(r"^##\s+긴급 체크\s*$", content, re.MULTILINE):
-        fail("Daily tech brief must not include 긴급 체크 section.")
-    forbidden_structure_phrases = [
-        "백엔드 개발자가 바로 확인해야 하는 보안/장애/패치",
-        "오늘은 긴급 체크 항목 없음",
-    ]
-    found_forbidden = [phrase for phrase in forbidden_structure_phrases if phrase in content]
-    if found_forbidden:
-        fail(
-            "Daily tech brief still contains security/emergency-check structure: "
-            + ", ".join(found_forbidden)
-        )
-
+    validate_daily_forbidden_text(content)
     sections = extract_sections(content)
     validate_common(content, min_links=2)
     require_sections(sections, DAILY_SECTIONS)
@@ -303,33 +337,49 @@ def validate_daily_tech(content: str) -> None:
     if any(keyword in content for keyword in ["주가", "관련주", "투자의견"]):
         warn("Daily tech brief may contain stock/investment-only wording.")
 
-    for title in ["한국 AI 테크", "백엔드/개발자 기술"]:
-        section = find_section(sections, title)
-        if section is None:
-            continue
-        items = extract_items(section)
-        if not items and not section_has_no_item_phrase(section):
-            fail(f"Section has no item and no empty-state phrase: {title}")
-        for item in items:
-            validate_daily_item(title, item)
-
+    validate_daily_study_section(sections)
+    validate_daily_ps_section(sections)
     validate_daily_oss_section(sections)
+    validate_daily_news_section(sections)
+    validate_daily_tasks_section(sections)
 
 
-def validate_daily_item(section_title: str, item: Item) -> None:
-    missing = [
-        pattern.pattern
-        for pattern in DAILY_REQUIRED_FIELDS
-        if not pattern.search(item.body)
+def validate_daily_forbidden_text(content: str) -> None:
+    found = [
+        pattern
+        for pattern in DAILY_FORBIDDEN_PATTERNS
+        if re.search(pattern, content, flags=re.IGNORECASE)
     ]
+    if found:
+        fail(f"Daily tech brief contains forbidden wording: {', '.join(found)}")
+
+
+def validate_daily_study_section(sections: list[Section]) -> None:
+    section = find_section(sections, "오늘의 Spring Boot/JVM 학습")
+    if section is None:
+        fail("Daily tech brief must include 오늘의 Spring Boot/JVM 학습 section.")
+
+    items = extract_items(section)
+    if len(items) != 1:
+        fail("Spring Boot/JVM study section must include exactly one topic.")
+    item = items[0]
+    missing = missing_bullet_fields(item.body, DAILY_STUDY_FIELDS)
     if missing:
-        fail(f"Daily item is missing required field(s): {section_title} / {item.title}")
-    if not any(pattern.search(item.body) for pattern in DAILY_RELEVANCE_FIELDS):
-        fail(
-            "Daily item must include either 백엔드 관점 or Kotlin/Spring Boot 관련성: "
-            f"{section_title} / {item.title}"
-        )
+        fail(f"Spring Boot/JVM study topic is missing field(s): {', '.join(missing)}")
     validate_item_markdown_link(item)
+
+
+def validate_daily_ps_section(sections: list[Section]) -> None:
+    section = find_section(sections, "이번 주 PS 성장 루틴")
+    if section is None:
+        fail("Daily tech brief must include 이번 주 PS 성장 루틴 section.")
+
+    missing = missing_bullet_fields(section.body, DAILY_PS_FIELDS)
+    if missing:
+        fail(f"PS routine section is missing field(s): {', '.join(missing)}")
+    if "Programmers" not in section.body and "school.programmers.co.kr" not in section.body:
+        fail("PS routine section must reference Programmers.")
+    require_markdown_link_in_text(section.body, "이번 주 PS 성장 루틴")
 
 
 def validate_daily_oss_section(sections: list[Section]) -> None:
@@ -354,17 +404,44 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
         fail("OSS section has no candidate and no required empty-state phrase.")
 
     item = items[0]
-    present_fields = [
-        field
-        for field in DAILY_OSS_FIELDS
-        if re.search(rf"^\s*-\s*{re.escape(field)}\s*:", item.body, re.MULTILINE)
-    ]
-    if len(present_fields) < 4:
-        fail(
-            "OSS candidate must include at least 4 required fields: "
-            f"{item.title} ({', '.join(present_fields) or 'none'})"
-        )
+    if not re.search(r"P[45]-like", item.body):
+        fail("OSS candidate must include P5-like or P4-like difficulty band.")
+    if re.search(r"too_hard|unclear", item.body, flags=re.IGNORECASE):
+        fail("OSS candidate must not recommend too_hard or unclear issues.")
+    missing = missing_bullet_fields(item.body, DAILY_OSS_FIELDS)
+    if missing:
+        fail(f"OSS candidate is missing field(s): {item.title} ({', '.join(missing)})")
     validate_item_markdown_link(item)
+
+
+def validate_daily_news_section(sections: list[Section]) -> None:
+    section = find_section(sections, "한국 개발/AI 뉴스")
+    if section is None:
+        fail("Daily tech brief must include 한국 개발/AI 뉴스 section.")
+
+    items = extract_items(section)
+    if len(items) > 1:
+        fail("Daily development/AI news section must include at most one item.")
+    if not items and section_has_no_item_phrase(section):
+        return
+
+    body = items[0].body if items else section.body
+    missing = missing_bullet_fields(body, DAILY_NEWS_FIELDS)
+    if missing:
+        fail(f"Daily development/AI news is missing field(s): {', '.join(missing)}")
+    require_markdown_link_in_text(body, "한국 개발/AI 뉴스")
+
+
+def validate_daily_tasks_section(sections: list[Section]) -> None:
+    section = find_section(sections, "오늘 할 일")
+    if section is None:
+        fail("Daily tech brief must include 오늘 할 일 section.")
+
+    tasks = re.findall(r"^\s*\d+\.\s+\S", section.body, flags=re.MULTILINE)
+    if len(tasks) < 3:
+        fail("오늘 할 일 section must include at least three numbered tasks.")
+    if "Mark PS Solved" not in section.body:
+        fail("오늘 할 일 must mention Mark PS Solved workflow.")
 
 
 def validate_weekly_career(content: str) -> None:

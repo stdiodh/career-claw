@@ -22,6 +22,7 @@ WEBHOOK_USERNAME = "Career Feed"
 USER_AGENT = "career-feed-discord-sender"
 CHUNK_HEADER_PREFIX = "Career Feed"
 SUPPRESS_EMBEDS_FLAG = 4
+REPORT_TITLE_RE = re.compile(r"^#\s+(.+?)\s*$", re.MULTILINE)
 
 
 def parse_args() -> argparse.Namespace:
@@ -147,34 +148,55 @@ def chunk_markdown(content: str, limit: int = MAX_CHUNK_LENGTH) -> list[str]:
     return chunks
 
 
-def format_chunk_header(chunk_index: int, total_chunks: int) -> str:
-    if total_chunks == 1:
+def chunk_header_prefix(chunks: list[str]) -> str:
+    if not chunks:
         return CHUNK_HEADER_PREFIX
 
-    return f"{CHUNK_HEADER_PREFIX} ({chunk_index}/{total_chunks})"
+    match = REPORT_TITLE_RE.search(chunks[0])
+    if not match:
+        return CHUNK_HEADER_PREFIX
+
+    title = " ".join(match.group(1).split())
+    return title or CHUNK_HEADER_PREFIX
+
+
+def format_chunk_header(prefix: str, chunk_index: int, total_chunks: int) -> str:
+    if total_chunks == 1:
+        return prefix
+
+    return f"{prefix} ({chunk_index}/{total_chunks})"
 
 
 def add_chunk_headers(chunks: list[str]) -> list[str]:
-    total_chunks = len(chunks)
-    formatted_chunks: list[str] = []
+    prefix = chunk_header_prefix(chunks)
+    raw_chunks = chunks[:]
 
-    for index, chunk in enumerate(chunks, start=1):
-        header = format_chunk_header(index, total_chunks)
-        available_length = MAX_CHUNK_LENGTH - len(header) - 2
-        if available_length <= 0:
-            raise RuntimeError("Chunk header leaves no room for Discord content.")
+    while True:
+        total_chunks = len(raw_chunks)
+        split_chunks: list[str] = []
+        changed = False
 
-        if len(chunk) <= available_length:
-            formatted_chunks.append(f"{header}\n\n{chunk}")
+        for index, chunk in enumerate(raw_chunks, start=1):
+            header = format_chunk_header(prefix, index, total_chunks)
+            available_length = MAX_CHUNK_LENGTH - len(header) - 2
+            if available_length <= 0:
+                raise RuntimeError("Chunk header leaves no room for Discord content.")
+
+            if len(chunk) <= available_length:
+                split_chunks.append(chunk)
+                continue
+
+            split_chunks.extend(chunk_markdown(chunk, available_length))
+            changed = True
+
+        if changed:
+            raw_chunks = split_chunks
             continue
 
-        for split_chunk in chunk_markdown(chunk, available_length):
-            formatted_chunks.append(split_chunk)
-
-    if len(formatted_chunks) != total_chunks:
-        return add_chunk_headers(formatted_chunks)
-
-    return formatted_chunks
+        return [
+            f"{format_chunk_header(prefix, index, total_chunks)}\n\n{chunk}"
+            for index, chunk in enumerate(raw_chunks, start=1)
+        ]
 
 
 def build_payload(content: str) -> bytes:
