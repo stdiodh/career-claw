@@ -1,0 +1,53 @@
+{
+  "companies": [
+    {
+      "name": "NAVER",
+      "source": "NAVER Careers",
+      "career_url": "https://recruit.navercorp.com/rcrt/list.do",
+      "positive_keywords": ["신입", "인턴", "채용연계형", "전환형 인턴", "Junior", "New Grad", "Backend", "Server", "Software Engineer", "Java", "Kotlin", "Spring", "Platform", "API"],
+      "negative_keywords": ["Senior", "Staff", "Principal", "Lead", "경력 3년 이상", "경력 5년 이상", "Tech Lead", "Manager", "프론트엔드", "마케팅", "디자인", "영업"]
+    },
+    {
+      "name": "Kakao",
+      "source": "Kakao Careers",
+      "career_url": "https://careers.kakao.com/jobs?company=ALL",
+      "positive_keywords": ["신입", "인턴", "채용연계형", "Junior", "New Grad", "Backend", "Server", "Software Engineer", "Java", "Kotlin", "Spring", "API"],
+      "negative_keywords": ["Senior", "Staff", "Principal", "Lead", "경력 3년 이상", "경력 5년 이상", "Tech Lead", "Manager", "프론트엔드", "마케팅", "디자인", "영업"]
+    },
+    {
+      "name": "LINE",
+      "source": "LINE Careers",
+      "career_url": "https://careers.linecorp.com/ko/jobs",
+      "positive_keywords": ["신입", "인턴", "채용연계형", "Junior", "New Grad", "Backend", "Server", "Software Engineer", "Java", "Kotlin", "Spring", "API"],
+      "negative_keywords": ["Senior", "Staff", "Principal", "Lead", "경력 3년 이상", "경력 5년 이상", "Tech Lead", "Manager", "프론트엔드", "마케팅", "디자인", "영업"]
+    },
+    {
+      "name": "Coupang",
+      "source": "Coupang Jobs",
+      "career_url": "https://www.coupang.jobs/en/jobs/",
+      "positive_keywords": ["신입", "인턴", "Junior", "New Grad", "Backend", "Server", "Software Engineer", "Java", "Kotlin", "Spring", "Platform", "API"],
+      "negative_keywords": ["Senior", "Staff", "Principal", "Lead", "경력 3년 이상", "경력 5년 이상", "Tech Lead", "Manager", "프론트엔드", "마케팅", "디자인", "영업"]
+    },
+    {
+      "name": "우아한형제들",
+      "source": "Woowa Careers",
+      "career_url": "https://career.woowahan.com/",
+      "positive_keywords": ["신입", "인턴", "채용연계형", "Junior", "New Grad", "Backend", "Server", "Software Engineer", "Java", "Kotlin", "Spring", "Platform", "API"],
+      "negative_keywords": ["Senior", "Staff", "Principal", "Lead", "경력 3년 이상", "경력 5년 이상", "Tech Lead", "Manager", "프론트엔드", "마케팅", "디자인", "영업"]
+    },
+    {
+      "name": "Toss",
+      "source": "Toss Careers",
+      "career_url": "https://toss.im/career",
+      "positive_keywords": ["신입", "인턴", "채용연계형", "Junior", "New Grad", "Backend", "Server", "Software Engineer", "Java", "Kotlin", "Spring", "Platform", "API"],
+      "negative_keywords": ["Senior", "Staff", "Principal", "Lead", "경력 3년 이상", "경력 5년 이상", "Tech Lead", "Manager", "프론트엔드", "마케팅", "디자인", "영업"]
+    },
+    {
+      "name": "당근",
+      "source": "Daangn Careers",
+      "career_url": "https://about.daangn.com/jobs/",
+      "positive_keywords": ["신입", "인턴", "채용연계형", "Junior", "New Grad", "Backend", "Server", "Software Engineer", "Java", "Kotlin", "Spring", "Platform", "API"],
+      "negative_keywords": ["Senior", "Staff", "Principal", "Lead", "경력 3년 이상", "경력 5년 이상", "Tech Lead", "Manager", "프론트엔드", "마케팅", "디자인", "영업"]
+    }
+  ]
+}

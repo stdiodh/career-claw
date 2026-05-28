@@ -1,250 +1,100 @@
 # Career Feed
 
-Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord Webhook으로 개발자 커리어 브리핑을 전송하는 자동화 프로젝트입니다.
+Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord Webhook으로 백엔드 학습/커리어 브리핑을 전송하는 자동화 프로젝트입니다.
 
-기본 자동 알림은 `KR_PREMIUM_MODE`의 v2 구조입니다.
+제품명과 문서명은 `Career Feed`로 통일합니다. 저장소 이름이나 로컬 경로명은 환경에 따라 다를 수 있습니다.
 
-- 평일 09:10 KST: `Daily Korea Tech Brief` (`Backend Daily Study Brief` 성격)
-- 월요일 09:30 KST: `Weekly Backend Career Brief`
+## 운영 경로
 
-기존 4섹션 통합 `Daily Korea Premium Brief`는 너무 넓어져서 manual legacy workflow로만 보존합니다. 무료 RSS/Atom 기반 `FREE_MODE`도 삭제하지 않고 수동 백업 workflow로 유지합니다.
+현재 운영 경로는 3개만 유지합니다.
 
-## 프로젝트 이름 정책
-
-- 제품명과 문서명은 `Career Feed`로 통일합니다.
-- 저장소 이름이나 로컬 경로명은 환경에 따라 다를 수 있으며, 제품명을 의미하지 않습니다.
-- 현재 기본 운영은 GitHub Actions, 한국 후보 수집, AI 편집, Markdown 검증, 분리된 Discord Webhook 전송으로 구성합니다.
-
-## 운영 모드
-
-| 모드 | 용도 | 기본 실행 여부 |
+| 경로 | Workflow | 목적 |
 | --- | --- | --- |
-| `KR_PREMIUM_MODE` v2 | 백엔드 daily 학습 루틴, 백엔드 커리어 weekly | 자동 |
-| Legacy KR Premium | 기존 4섹션 통합 브리핑 | 수동 백업 |
-| `FREE_MODE` | 무료 RSS/Atom 수집, 규칙 기반 요약 | 수동 백업 |
-| `AI_LIGHT_MODE` | 수집된 후보 JSON만 Codex가 짧게 정제, live web search 없음 | 수동 실행 |
-| `AI_SEARCH_MODE` | Codex live web search 기반 수동 고급 브리핑 | 수동 실행 |
+| Daily Backend Brief | `.github/workflows/kr-tech-daily.yml` | 평일 백엔드 학습/PS/OSS/뉴스/실무지식 브리핑 |
+| Weekly Backend Career Brief | `.github/workflows/kr-backend-career-weekly.yml` | 주간 백엔드 인턴/신입/대외활동 브리핑 |
+| Mark PS Solved | `.github/workflows/mark-ps-solved.yml` | PS 풀이 진행도 기록 |
 
-## 핵심 기능
+초기 범위에 포함하지 않는 항목은 상시 실행 서버, Discord Gateway Bot, Slash Command, 데이터베이스, 웹 대시보드입니다.
 
-- 25살 Kotlin/Spring Boot 백엔드 지망생 기준의 한국어 학습 액션 리스트 생성
-- Naver News Search API, RSS, 공식 페이지, GitHub Issues, 정적 PS config 기반 후보 pool 생성
-- Daily Tech: Spring Boot/JVM 학습 1개, Programmers 주차별 PS 루틴 1개, Spring OSS 기여 후보 최대 1개, 한국 개발/AI 뉴스 최대 1개를 선별
-- Weekly Career: 백엔드 인턴, 신입/주니어, 해커톤, 공모전, 경진대회만 선별
-- Daily Tech는 뉴스 브리핑보다 Backend Daily Study Brief에 가깝게 운영
-- Daily Tech는 Spring 생태계 GitHub issue 기반 오픈소스 기여 후보를 최대 1개 포함
-- Programmers PS 루틴은 curated config와 progress 파일만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않음
-- 보안 알림은 기본 daily 알림에서 제외하고 legacy/manual 백업으로만 유지
-- Codex Action의 `output-file`은 summary 파일로만 사용하고, 실제 브리핑 파일은 workspace에 직접 작성
-- Discord Webhook은 Daily Tech와 Weekly Career를 분리해 사용
+## Daily Backend Brief
 
-초기 범위에 포함하지 않는 항목은 다음과 같습니다.
+- workflow: `.github/workflows/kr-tech-daily.yml`
+- prompt: `.github/codex/prompts/kr-tech-daily-brief.md`
+- collector: `python3 scripts/collect-kr-feeds.py --mode daily-tech`
+- validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
+- report: `reports/briefs/kr-tech-daily.md`
+- Discord secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
 
-- 상시 실행 서버
-- Discord Gateway Bot
-- Slash Command
-- 데이터베이스 저장
-- 로그인/회원 기능
-- 웹 대시보드
-
-`app/`와 `infra/`는 현재 기본 오전 알림 운영 경로에서 사용하지 않습니다. 서버 또는 인프라 확장을 진행할 때 재검토합니다.
-
-## 기본 아키텍처
-
-```text
-GitHub Actions
-        |
-        v
-KR candidate collection
-Naver News Search API + RSS/official references
-Programmers curated config + Spring GitHub Issues
-        |
-        v
-reports/candidates/*.json
-        |
-        v
-Codex KR Premium v2 editor
-        |
-        v
-reports/briefs/*.md
-        |
-        v
-DISCORD_WEBHOOK_KR_TECH_DAILY
-DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY
-```
-
-Daily Tech 출력:
+후보 파일:
 
 - `reports/candidates/spring-study-topic.json`
 - `reports/candidates/ps-weekly-routine.json`
 - `reports/candidates/kr-oss-contribution-opportunities.json`
 - `reports/candidates/kr-dev-ai-news.json`
-- `reports/briefs/kr-tech-daily.md`
+- `reports/candidates/kr-ai-tech-news.json`
+- `reports/candidates/backend-practical-knowledge.json`
 
-Weekly Career 출력:
+브리핑은 Spring Boot/JVM 학습, Programmers 주차별 PS 루틴, Spring OSS 기여 후보, 한국 최신 개발/AI 뉴스, 주니어 백엔드 실무지식으로 구성합니다. Programmers PS 루틴은 `configs/programmers-ps-curriculum.json`과 `data/ps-progress.json`만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않습니다.
+
+## Weekly Backend Career Brief
+
+- workflow: `.github/workflows/kr-backend-career-weekly.yml`
+- prompt: `.github/codex/prompts/kr-backend-career-weekly.md`
+- collector: `python3 scripts/collect-kr-feeds.py --mode weekly-career`
+- validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career`
+- report: `reports/briefs/kr-backend-career-weekly.md`
+- Discord secret: `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
+
+후보 파일:
 
 - `reports/candidates/kr-backend-career-events.json`
-- `reports/briefs/kr-backend-career-weekly.md`
+- `reports/candidates/kr-backend-intern-jobs.json`
+- `reports/candidates/kr-backend-entry-jobs.json`
+- `reports/candidates/kr-backend-career-activities.json`
+- `reports/candidates/kr-backend-company-watchlist.json`
+
+브리핑은 백엔드 인턴, 신입/주니어 공고, 해커톤, 공모전, 경진대회만 선별합니다. 상세 공고 URL과 마감 품질이 낮은 항목은 validator가 막습니다.
+
+## Mark PS Solved
+
+- workflow: `.github/workflows/mark-ps-solved.yml`
+- progress file: `data/ps-progress.json`
+- local command: `python3 scripts/update-ps-progress.py --mark-solved <problem_id> --notes "<memo>"`
+
+현재 상태 확인:
+
+```bash
+python3 scripts/update-ps-progress.py --status
+```
 
 ## 필요한 Secrets
 
 GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에 다음 Secrets를 등록합니다.
-
-### 기본 운영 유지 Secrets
 
 | Secret | 설명 |
 | --- | --- |
 | `OPENAI_API_KEY` | Codex 편집에 사용하는 OpenAI API Key |
 | `NAVER_CLIENT_ID` | Naver News Search API 후보 수집용 |
 | `NAVER_CLIENT_SECRET` | Naver News Search API 후보 수집용 |
-| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Daily Korea Tech Brief를 전송할 Discord Webhook URL |
-| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Weekly Backend Career Brief를 전송할 Discord Webhook URL |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Daily Backend Brief 전송용 Discord Webhook URL |
+| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Weekly Backend Career Brief 전송용 Discord Webhook URL |
 
-Daily workflow의 필수 검사는 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_DAILY`를 대상으로 합니다. Weekly workflow의 필수 검사는 `OPENAI_API_KEY`, `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`를 대상으로 합니다. Naver Secrets가 없으면 RSS/공식 URL 후보만 수집하므로 품질이 낮아질 수 있습니다.
+Naver Secrets가 없으면 RSS, 공식 URL, 정적 config 중심으로만 후보를 만들기 때문에 후보 품질이 낮아질 수 있습니다.
 
-### Legacy/manual KR Premium용 선택 Secret
-
-| Secret | 설명 |
-| --- | --- |
-| `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF` | 기존 4섹션 통합 manual legacy 브리핑 전송이 필요할 때 |
-
-### Legacy/manual free RSS용 선택 Secrets
-
-| Secret | 설명 |
-| --- | --- |
-| `DISCORD_WEBHOOK_DAILY_OVERVIEW` | 수동 무료 RSS Daily Overview 전송이 필요할 때 |
-| `DISCORD_WEBHOOK_AI_NEWS` | 수동 무료 RSS AI News 전송이 필요할 때 |
-| `DISCORD_WEBHOOK_BACKEND_NEWS` | 수동 무료 RSS Backend News 전송이 필요할 때 |
-| `DISCORD_WEBHOOK_SECURITY_ALERTS` | 수동 무료 RSS Security Alerts 전송이 필요할 때 |
-| `DISCORD_WEBHOOK_BACKEND_TECH` | legacy Backend Tech 전송이 필요할 때 |
-| `DISCORD_WEBHOOK_JOB_FEED` | legacy Job Feed 전송이 필요할 때 |
-
-Secret 값은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
-
-## Workflow
-
-### Daily Korea Tech Brief
-
-`.github/workflows/kr-tech-daily.yml`
-
-- 평일 `00:10 UTC`, 즉 `09:10 Asia/Seoul` 실행 요청
-- `workflow_dispatch` 수동 실행 가능
-- 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-tech`
-- 입력 후보: `spring-study-topic.json`, `ps-weekly-routine.json`, `kr-oss-contribution-opportunities.json`, `kr-dev-ai-news.json`
-- prompt: `.github/codex/prompts/kr-tech-daily-brief.md`
-- 실제 report: `reports/briefs/kr-tech-daily.md`
-- Codex summary: `reports/briefs/kr-tech-daily-codex-summary.md`
-- 검증: `python3 scripts/validate-kr-premium-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
-- Discord Secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
-- Discord 전송 성공 후 `data/ps-progress.json`에 기록된 daily assignment 변경만 bot commit
-
-Daily Korea Tech Brief의 실제 메시지 구조:
-
-- `오늘의 Spring Boot/JVM 학습`: Spring Boot/JVM 학습 주제 1개
-- `이번 주 PS 성장 루틴`: Programmers 주차별 PS 루틴 1개
-- `오픈소스 기여 후보`: Spring OSS 기여 후보 최대 1개
-- `한국 개발/AI 뉴스`: 학습으로 연결할 수 있는 한국 개발/AI 뉴스 최대 1개
-
-### Programmers PS 루틴
-
-- PS 추천은 Programmers 중심으로 운영한다.
-- BOJ/acmicpc/백준은 기본 추천 소스로 사용하지 않는다.
-- Programmers 사이트를 크롤링하지 않고, 제출 결과도 자동 수집하지 않는다.
-- 문제 pool은 `configs/programmers-ps-curriculum.json`에서 수동 curated config로 관리한다.
-- 진행 상태는 `data/ps-progress.json`에 저장한다.
-- solved 기록은 `Mark PS Solved` workflow 또는 `python3 scripts/update-ps-progress.py --mark-solved <problem_id> --notes "<memo>"`로 남긴다.
-- 주제 전환은 solved 기록과 target level 조건을 참고하되, 자동 전환보다 추천/수동 전환을 우선한다.
-- 수동 전환은 `python3 scripts/update-ps-progress.py --advance-track <track_id>`로 수행한다.
-
-### Spring OSS 난이도 모델
-
-Spring OSS 후보는 OpenJDK JBS의 P4~P5 접근법을 참고한 난이도 모델로 점수화한다. OpenJDK/JBS 자체는 직접 수집하지 않는다.
-
-대상 저장소:
-
-- `spring-projects/spring-boot`
-- `spring-projects/spring-framework`
-- `spring-projects/spring-security`
-- `spring-projects/spring-data-jpa`
-- `spring-projects/spring-data-relational`
-- `spring-projects/spring-data-commons`
-- `spring-projects/spring-ai`
-- `spring-projects/spring-ai-examples`
-- `spring-projects/spring-petclinic`
-
-P5-like 후보:
-
-- docs, sample, example, test, reproducer, typo, clarify, getting started
-- 첫 기여에 적합한 문서/예제/테스트/재현/작은 정리 작업
-
-P4-like 후보:
-
-- small enhancement, config, starter, JPA/JDBC/Security/Spring AI 관련 명확한 issue
-- 주니어가 범위를 제한해 도전할 수 있는 작은 개선 또는 명확한 버그
-
-제외하거나 강하게 감점하는 후보:
-
-- CVE, security vulnerability
-- release blocker
-- deep internals, compiler/runtime internals
-- RFC, epic, design proposal
-- assigned issue
-- stale issue
-
-### Weekly Backend Career Brief
-
-`.github/workflows/kr-backend-career-weekly.yml`
-
-- 월요일 `00:30 UTC`, 즉 `09:30 Asia/Seoul` 실행 요청
-- `workflow_dispatch` 수동 실행 가능
-- 후보 수집: `python3 scripts/collect-kr-feeds.py --mode weekly-career`
-- 입력 후보: `kr-backend-career-events.json`
-- prompt: `.github/codex/prompts/kr-backend-career-weekly.md`
-- 실제 report: `reports/briefs/kr-backend-career-weekly.md`
-- Codex summary: `reports/briefs/kr-backend-career-weekly-codex-summary.md`
-- 검증: `python3 scripts/validate-kr-premium-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career`
-- Discord Secret: `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
-
-### Manual Legacy Korea Premium Brief
-
-`.github/workflows/kr-premium-brief.yml`
-
-- 기존 4섹션 통합 브리핑을 수동 백업으로 보존
-- 자동 schedule 없음
-- prompt: `.github/codex/prompts/kr-premium-brief.md`
-- 실제 report: `reports/briefs/kr-premium-daily.md`
-
-### Manual Free RSS Career Feed
-
-`.github/workflows/daily-feed.yml`
-
-- 수동 백업 workflow
-- 자동 schedule 없음
-- `OPENAI_API_KEY` 불필요
-- Codex Action과 live web search를 사용하지 않음
-
-### Manual AI Light / Search Brief
-
-- `.github/workflows/ai-brief-manual.yml`: 후보 JSON만 정제, `--search` 미사용
-- `.github/workflows/daily-news.yml`: live web search 기반 수동 고급 모드
+Secret 값, API Key, Webhook URL은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 
 ## 로컬 검증
 
-Secret 없이 파일 구조, Python 문법, 무료 브리핑 렌더링, validation fixture를 확인할 수 있습니다.
-
 ```bash
-./scripts/validate.sh
-```
-
-KR Premium v2 후보 JSON 스키마만 확인하려면 다음을 실행합니다.
-
-```bash
-python3 scripts/collect-kr-feeds.py --dry-run
 python3 scripts/collect-kr-feeds.py --mode daily-tech --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
+./scripts/validate.sh
+git diff --check
 ```
 
-실제 Discord 전송은 workflow 또는 전송 스크립트를 명시적으로 실행할 때만 수행합니다.
+실제 Discord 전송은 workflow 또는 `scripts/send-discord.py`를 명시적으로 실행할 때만 수행합니다.
 
 ## 디렉터리 구조
 
@@ -252,70 +102,41 @@ python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 repository-root/
 ├─ .github/
 │  ├─ codex/prompts/
-│  │  ├─ compact-brief.md
-│  │  ├─ daily-news.md
 │  │  ├─ kr-backend-career-weekly.md
-│  │  ├─ kr-premium-brief.md
 │  │  └─ kr-tech-daily-brief.md
 │  └─ workflows/
-│     ├─ ai-brief-manual.yml
-│     ├─ daily-feed.yml
-│     ├─ daily-news.yml
 │     ├─ kr-backend-career-weekly.yml
-│     ├─ kr-premium-brief.yml
-│     └─ kr-tech-daily.yml
+│     ├─ kr-tech-daily.yml
+│     └─ mark-ps-solved.yml
 ├─ configs/
 │  ├─ audience-profile.json
-│  ├─ channels.json
+│  ├─ backend-practical-knowledge-curriculum.json
+│  ├─ company-career-watchlist.json
 │  ├─ kr-sources.json
 │  ├─ oss-repositories.json
-│  ├─ programmers-ps-curriculum.json
-│  └─ sources.json
+│  └─ programmers-ps-curriculum.json
 ├─ data/
 │  └─ ps-progress.json
-├─ docs/
-├─ refs/categories/
 ├─ reports/
 │  ├─ briefs/
 │  └─ candidates/
-└─ scripts/
+├─ scripts/
+│  ├─ collect-kr-feeds.py
+│  ├─ select-ps-problem.py
+│  ├─ send-discord.py
+│  ├─ update-ps-progress.py
+│  ├─ validate-career-feed-brief.py
+│  └─ validate.sh
+└─ tests/fixtures/
+   ├─ kr-backend-career-weekly-valid.md
+   └─ kr-tech-daily-valid.md
 ```
 
 ## 운영 정책
 
-- `reports/` 산출물은 기본적으로 저장소에 커밋하지 않는다.
-- 원본 URL을 반드시 보존한다.
-- 긴 요약보다 원문 링크 접근성과 사용자의 다음 행동을 우선한다.
-- 기본 자동 알림은 KR Premium v2 Daily/Weekly workflow가 담당한다.
-- 기존 무료 RSS workflow와 legacy KR Premium workflow는 수동 백업으로만 사용한다.
-- 오픈소스 후보는 GitHub issue 기반으로 추천만 하며 자동 댓글, PR 생성, assign은 하지 않는다.
-- OpenJDK/JBS는 난이도 모델 참고로만 사용하고 직접 수집하지 않는다.
-- PS 추천은 Programmers curated config만 사용하고 사이트 크롤링이나 제출 결과 자동 수집을 하지 않는다.
-- 보안 알림은 기본 daily에 포함하지 않고 legacy/manual 백업으로만 다룬다.
-- 기사 전문, Secret 값, Webhook URL은 저장소와 로그에 남기지 않는다.
-
-## GitHub Secrets 정리
-
-남길 Secrets:
-
-```text
-OPENAI_API_KEY
-NAVER_CLIENT_ID
-NAVER_CLIENT_SECRET
-DISCORD_WEBHOOK_KR_TECH_DAILY
-DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY
-```
-
-legacy/manual로만 남길 수 있는 Secrets:
-
-```text
-DISCORD_WEBHOOK_KR_PREMIUM_BRIEF
-DISCORD_WEBHOOK_DAILY_OVERVIEW
-DISCORD_WEBHOOK_AI_NEWS
-DISCORD_WEBHOOK_BACKEND_NEWS
-DISCORD_WEBHOOK_SECURITY_ALERTS
-DISCORD_WEBHOOK_BACKEND_TECH
-DISCORD_WEBHOOK_JOB_FEED
-```
-
-실제 GitHub Secrets 삭제는 이 저장소에서 자동으로 수행하지 않습니다. 새 Daily/Weekly workflow의 Discord 도착을 확인한 뒤 GitHub UI에서 직접 정리합니다.
+- `reports/` 산출물은 기본적으로 저장소에 커밋하지 않습니다.
+- 원본 URL을 보존합니다.
+- 긴 요약보다 사용자의 다음 행동과 원문 접근성을 우선합니다.
+- Spring OSS 후보는 GitHub issue 기반으로 추천만 하며 자동 댓글, PR 생성, assign은 하지 않습니다.
+- OpenJDK/JBS는 난이도 모델 참고로만 사용하고 직접 수집하지 않습니다.
+- 기사 전문, Secret 값, Webhook URL은 저장소와 로그에 남기지 않습니다.

@@ -11,7 +11,7 @@
 - Programmers PS 루틴은 정적 config와 progress 파일만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않는다.
 - OpenJDK/JBS는 Spring OSS 난이도 모델의 참고로만 사용하고 직접 수집하지 않는다.
 - 제품명과 문서명은 `Career Feed`로 통일한다. 저장소 이름이나 로컬 경로명은 환경에 따라 다를 수 있다.
-- 현재 기본 운영 경로는 `KR_PREMIUM_MODE` v2 Daily/Weekly workflow다. `FREE_MODE`는 수동 백업으로 유지한다.
+- 현재 운영 경로는 Daily Backend Brief, Weekly Backend Career Brief, Mark PS Solved 3개뿐이다.
 
 ## 작업 원칙
 
@@ -22,6 +22,7 @@
 - GitHub Actions workflow는 사용자가 명시적으로 요청하기 전까지 생성하지 않는다.
 - 현재 단계에서 `app/`와 `infra/`는 수정하지 않는다.
 - 사용자가 명시적으로 요청하지 않는 한 서버, 배포 workflow, 인프라 설정을 변경하지 않는다.
+- `reports/` 산출물은 기본적으로 커밋하지 않는다.
 
 ## 문서와 코드 스타일
 
@@ -35,3 +36,4 @@
 - 파일을 추가하거나 수정한 뒤에는 존재 여부와 핵심 키워드를 확인한다.
 - 스크립트를 수정한 경우 가능한 범위에서 문법 검사를 수행한다.
 - 실행에 필요한 환경변수가 없을 때는 실패 메시지가 명확한지 확인한다.
+- 기본 검증 명령은 `./scripts/validate.sh`다.

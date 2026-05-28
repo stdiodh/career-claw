@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect Korean premium briefing candidates from Naver Search and RSS."""
+"""Collect Korean Career Feed candidates from Naver Search and RSS."""
 
 from __future__ import annotations
 
@@ -36,11 +36,34 @@ OSS_REPOSITORIES_CONFIG_PATH = Path("configs/oss-repositories.json")
 PS_CURRICULUM_PATH = Path("configs/programmers-ps-curriculum.json")
 PS_PROGRESS_PATH = Path("data/ps-progress.json")
 PS_ROUTINE_OUTPUT_PATH = Path("reports/candidates/ps-weekly-routine.json")
+COMPANY_CAREER_WATCHLIST_PATH = Path("configs/company-career-watchlist.json")
+BACKEND_PRACTICAL_CURRICULUM_PATH = Path(
+    "configs/backend-practical-knowledge-curriculum.json"
+)
+BACKEND_PRACTICAL_OUTPUT_PATH = Path(
+    "reports/candidates/backend-practical-knowledge.json"
+)
 USER_AGENT = "career-feed-kr-collector"
 SUPPORTED_FEED_TYPES = {"rss", "atom"}
 OSS_CATEGORY_ID = "kr-oss-contribution-opportunities"
 AI_TECH_CATEGORY_ID = "kr-ai-tech-news"
 BACKEND_TECH_CATEGORY_ID = "kr-backend-tech-news"
+WEEKLY_CAREER_CATEGORY_ID = "kr-backend-career-events"
+WEEKLY_CAREER_SPLIT_OUTPUTS = {
+    "intern_job": Path("reports/candidates/kr-backend-intern-jobs.json"),
+    "entry_job": Path("reports/candidates/kr-backend-entry-jobs.json"),
+    "junior_job": Path("reports/candidates/kr-backend-entry-jobs.json"),
+    "hackathon": Path("reports/candidates/kr-backend-career-activities.json"),
+    "contest": Path("reports/candidates/kr-backend-career-activities.json"),
+    "competition": Path("reports/candidates/kr-backend-career-activities.json"),
+    "company_watchlist": Path("reports/candidates/kr-backend-company-watchlist.json"),
+}
+WEEKLY_CAREER_EMPTY_OUTPUTS = [
+    Path("reports/candidates/kr-backend-intern-jobs.json"),
+    Path("reports/candidates/kr-backend-entry-jobs.json"),
+    Path("reports/candidates/kr-backend-career-activities.json"),
+    Path("reports/candidates/kr-backend-company-watchlist.json"),
+]
 DAILY_TECH_ALIAS_OUTPUTS = {
     AI_TECH_CATEGORY_ID: ("kr-dev-ai-news", Path("reports/candidates/kr-dev-ai-news.json")),
     BACKEND_TECH_CATEGORY_ID: (
@@ -57,7 +80,7 @@ RELIABILITY_SCORE = {
 }
 MODE_CATEGORY_IDS = {
     "daily-tech": {AI_TECH_CATEGORY_ID, BACKEND_TECH_CATEGORY_ID, OSS_CATEGORY_ID},
-    "weekly-career": {"kr-backend-career-events"},
+    "weekly-career": {WEEKLY_CAREER_CATEGORY_ID},
 }
 BACKEND_KEYWORDS = [
     "backend",
@@ -104,6 +127,68 @@ SECURITY_ACTION_KEYWORDS = ["취약점", "cve", "보안 업데이트", "패치",
 EXPIRED_DEADLINE_KEYWORDS = ["마감 종료", "접수 종료", "모집 종료", "지원 종료", "마감됨"]
 SENIOR_ONLY_KEYWORDS = ["시니어", "senior", "경력 3년", "경력 5년", "3년 이상", "5년 이상"]
 FRONTEND_MARKETING_KEYWORDS = ["프론트엔드", "frontend", "디자인", "마케팅", "기획자"]
+CAREER_EXCLUSION_KEYWORDS = [
+    "부트캠프",
+    "교육",
+    "강의",
+    "서포터즈",
+    "마케터",
+    "영업",
+    "pm",
+]
+CAREER_TECH_KEYWORDS = [
+    "Java",
+    "Kotlin",
+    "Spring Boot",
+    "Spring",
+    "REST API",
+    "API",
+    "DB",
+    "MySQL",
+    "PostgreSQL",
+    "Redis",
+    "Kafka",
+    "AWS",
+    "Docker",
+    "Kubernetes",
+    "AI API",
+    "LLM",
+    "Python",
+]
+PORTFOLIO_KEYWORDS = [
+    "github",
+    "깃허브",
+    "배포",
+    "결과물",
+    "발표",
+    "api",
+    "db",
+    "데이터",
+    "ai",
+    "서비스",
+    "해커톤",
+]
+GENERIC_CAREER_URLS = {
+    "https://www.wanted.co.kr",
+    "https://www.wanted.co.kr/",
+    "https://dacon.io/competitions",
+    "https://linkareer.com",
+    "https://linkareer.com/",
+    "https://www.saramin.co.kr",
+    "https://www.saramin.co.kr/",
+    "https://www.saramin.co.kr/zf_user",
+    "https://www.saramin.co.kr/zf_user/",
+    "https://www.jobkorea.co.kr",
+    "https://www.jobkorea.co.kr/",
+    "https://programmers.co.kr",
+    "https://programmers.co.kr/",
+    "https://aifactory.space",
+    "https://aifactory.space/",
+    "https://www.wevity.com",
+    "https://www.wevity.com/",
+    "https://www.all-con.co.kr",
+    "https://www.all-con.co.kr/",
+}
 OSS_BEGINNER_KEYWORDS = [
     "documentation",
     "docs",
@@ -202,7 +287,7 @@ class OssIssueCandidate:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Collect KR_PREMIUM_MODE candidates from Korean sources."
+        description="Collect Career Feed candidates from Korean sources."
     )
     parser.add_argument("--config", default="configs/kr-sources.json")
     parser.add_argument("--output-dir", default="reports/candidates")
@@ -213,9 +298,9 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=["all", "daily-tech", "weekly-career"],
-        default="all",
-        help="Collection mode for KR Premium v2 workflows.",
+        choices=["daily-tech", "weekly-career"],
+        default="daily-tech",
+        help="Collection mode for Career Feed workflows.",
     )
     parser.add_argument(
         "--dry-run",
@@ -311,7 +396,7 @@ def load_config(path: Path, category_filter: str, mode_filter: str) -> dict[str,
             continue
         if category_filter != "all" and category_id != category_filter:
             continue
-        if mode_filter != "all" and category_id not in mode_category_ids:
+        if category_id not in mode_category_ids:
             continue
         selected.append(category)
 
@@ -450,6 +535,436 @@ def domain_matches(domain: str, candidates: list[str]) -> bool:
     return any(domain == candidate or domain.endswith(f".{candidate}") for candidate in candidates)
 
 
+def career_text(candidate: Candidate) -> str:
+    return " ".join(
+        part
+        for part in (
+            candidate.title,
+            candidate.summary,
+            candidate.publisher,
+            candidate.source,
+            candidate.query,
+        )
+        if part
+    )
+
+
+def source_label_for_url(url: str, fallback: str) -> str:
+    domain = domain_from_url(url)
+    labels = {
+        "linkareer.com": "Linkareer",
+        "jobkorea.co.kr": "JobKorea",
+        "saramin.co.kr": "Saramin",
+        "wanted.co.kr": "Wanted",
+        "jumpit.co.kr": "Jumpit",
+        "yw.work24.go.kr": "Work24",
+        "zero-base.co.kr": "ZeroBase",
+        "dacon.io": "DACON",
+        "aifactory.space": "AI Factory",
+        "programmers.co.kr": "Programmers",
+        "school.programmers.co.kr": "Programmers",
+        "wevity.com": "Wevity",
+        "all-con.co.kr": "All-Con",
+        "recruit.navercorp.com": "NAVER Careers",
+        "careers.kakao.com": "Kakao Careers",
+        "careers.linecorp.com": "LINE Careers",
+        "coupang.jobs": "Coupang Jobs",
+        "career.woowahan.com": "Woowa Careers",
+        "toss.im": "Toss Careers",
+        "about.daangn.com": "Daangn Careers",
+    }
+    for candidate_domain, label in labels.items():
+        if domain_matches(domain, [candidate_domain]):
+            return label
+    return fallback or domain or "unknown"
+
+
+def is_generic_career_url(url: str) -> bool:
+    normalized = normalize_url(url)
+    if not normalized:
+        return True
+    if normalized.rstrip("/") in {item.rstrip("/") for item in GENERIC_CAREER_URLS}:
+        return True
+
+    parsed = urllib.parse.urlsplit(url)
+    domain = parsed.netloc.lower()
+    if domain.startswith("www."):
+        domain = domain[4:]
+    path = parsed.path.rstrip("/")
+    query = parsed.query.lower()
+
+    if path in {"", "/"}:
+        return True
+    if domain_matches(domain, ["wanted.co.kr"]) and path in {"", "/wdlist", "/search"}:
+        return True
+    if domain_matches(domain, ["dacon.io"]) and path == "/competitions":
+        return True
+    if domain_matches(domain, ["linkareer.com"]) and (
+        path in {"", "/list"} or path.startswith("/list/")
+    ):
+        return True
+    if domain_matches(domain, ["saramin.co.kr"]) and (
+        path in {"", "/zf_user"} or path.startswith("/zf_user/jobs/list")
+    ):
+        return True
+    if domain_matches(domain, ["jobkorea.co.kr"]) and (
+        path in {"", "/Recruit/List"} or path.startswith("/Recruit/List")
+    ):
+        return True
+    if domain_matches(domain, ["programmers.co.kr"]) and path in {"", "/"}:
+        return True
+    if domain_matches(domain, ["aifactory.space"]) and path in {"", "/competition"}:
+        return True
+    if domain_matches(domain, ["wevity.com", "all-con.co.kr", "jumpit.co.kr"]) and path in {
+        "",
+        "/",
+    }:
+        return True
+    if domain_matches(domain, ["yw.work24.go.kr"]) and "selectwkexprgmlist" in path.lower():
+        return True
+    if domain_matches(domain, ["careers.kakao.com"]) and path == "/jobs" and "jobid" not in query:
+        return True
+    if domain_matches(domain, ["recruit.navercorp.com"]) and path.lower().endswith("/list.do"):
+        return True
+    if domain_matches(domain, ["careers.linecorp.com"]) and path in {"/ko/jobs", "/en/jobs"}:
+        return True
+    if domain_matches(domain, ["coupang.jobs"]) and path in {"/en/jobs", "/ko/jobs", "/jobs"}:
+        return True
+    if domain_matches(domain, ["career.woowahan.com"]) and path in {"", "/", "/jobs"}:
+        return True
+    if domain_matches(domain, ["toss.im"]) and path in {"/career", "/career/"}:
+        return True
+    if domain_matches(domain, ["about.daangn.com"]) and path in {"/jobs", "/jobs/"}:
+        return True
+    return False
+
+
+def extract_deadline_time(text: str) -> tuple[int, int] | None:
+    match = re.search(r"(\d{1,2})\s*:\s*(\d{2})", text)
+    if match:
+        return int(match.group(1)), int(match.group(2))
+    match = re.search(r"(\d{1,2})\s*시(?:\s*(\d{1,2})\s*분)?", text)
+    if match:
+        return int(match.group(1)), int(match.group(2) or 0)
+    return None
+
+
+def deadline_payload_from_date(
+    year: int,
+    month: int,
+    day: int,
+    text: str,
+    current_time: datetime,
+) -> dict[str, object] | None:
+    try:
+        hour_minute = extract_deadline_time(text)
+        if hour_minute:
+            deadline = datetime(year, month, day, hour_minute[0], hour_minute[1], tzinfo=KST)
+            deadline_text = deadline.strftime("%Y-%m-%d %H:%M KST")
+            deadline_value = deadline.strftime("%Y-%m-%d %H:%M:%S KST")
+        else:
+            deadline = datetime(year, month, day, 23, 59, tzinfo=KST)
+            deadline_text = deadline.strftime("%Y-%m-%d KST")
+            deadline_value = deadline.strftime("%Y-%m-%d KST")
+    except ValueError:
+        return None
+
+    today = current_time.astimezone(KST).date()
+    days = (deadline.date() - today).days
+    status = "closed" if deadline < current_time.astimezone(KST) else "open"
+    return {
+        "deadline": deadline_value,
+        "deadline_text": deadline_text,
+        "deadline_status": status,
+        "days_until_deadline": days,
+    }
+
+
+def parse_korean_deadline(text: str, current_time: datetime) -> dict[str, object]:
+    searchable = strip_html(text)
+    lowered = searchable.lower()
+    if text_contains_any(searchable, EXPIRED_DEADLINE_KEYWORDS):
+        return {
+            "deadline": "",
+            "deadline_text": "마감 종료",
+            "deadline_status": "closed",
+            "days_until_deadline": None,
+        }
+    if text_contains_any(searchable, ["상시채용", "상시 모집", "상시지원", "상시 영입"]):
+        return {
+            "deadline": "상시채용",
+            "deadline_text": "상시채용",
+            "deadline_status": "rolling",
+            "days_until_deadline": None,
+        }
+    if text_contains_any(
+        searchable,
+        ["채용 시 마감", "채용시 마감", "영입종료시", "채용 완료 시", "채용 완료시"],
+    ):
+        return {
+            "deadline": "채용 시 마감",
+            "deadline_text": "채용 시 마감",
+            "deadline_status": "until_filled",
+            "days_until_deadline": None,
+        }
+
+    d_day = re.search(r"\bD\s*-\s*(\d{1,3})\b", searchable, flags=re.IGNORECASE)
+    if d_day:
+        days = int(d_day.group(1))
+        deadline = current_time.astimezone(KST) + timedelta(days=days)
+        return {
+            "deadline": deadline.strftime("%Y-%m-%d 23:59:00 KST"),
+            "deadline_text": deadline.strftime("%Y-%m-%d 23:59 KST"),
+            "deadline_status": "open",
+            "days_until_deadline": days,
+        }
+
+    full_date_patterns = [
+        r"(20\d{2})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})",
+        r"(20\d{2})(\d{2})(\d{2})",
+    ]
+    for pattern in full_date_patterns:
+        match = re.search(pattern, searchable)
+        if not match:
+            continue
+        parsed = deadline_payload_from_date(
+            int(match.group(1)),
+            int(match.group(2)),
+            int(match.group(3)),
+            searchable,
+            current_time,
+        )
+        if parsed:
+            return parsed
+
+    month_day_patterns = [
+        r"(?:~|마감|접수|지원|모집|까지|기간|일정)?\s*(\d{1,2})\s*[./]\s*(\d{1,2})",
+        r"(\d{1,2})\s*월\s*(\d{1,2})\s*일",
+    ]
+    for pattern in month_day_patterns:
+        match = re.search(pattern, searchable)
+        if not match:
+            continue
+        year = current_time.astimezone(KST).year
+        month = int(match.group(1))
+        day = int(match.group(2))
+        parsed = deadline_payload_from_date(year, month, day, searchable, current_time)
+        if parsed and parsed["deadline_status"] == "closed":
+            parsed = deadline_payload_from_date(year + 1, month, day, searchable, current_time)
+        if parsed:
+            return parsed
+
+    if "마감임박" in lowered:
+        return {
+            "deadline": "",
+            "deadline_text": "원문 확인 필요",
+            "deadline_status": "unknown",
+            "days_until_deadline": None,
+        }
+    return {
+        "deadline": "",
+        "deadline_text": "원문 확인 필요",
+        "deadline_status": "unknown",
+        "days_until_deadline": None,
+    }
+
+
+def infer_company_or_host(text: str, candidate: Candidate) -> str:
+    known_names = [
+        ("NAVER", ["naver", "네이버"]),
+        ("Kakao", ["kakao", "카카오"]),
+        ("LINE", ["line", "라인"]),
+        ("Coupang", ["coupang", "쿠팡"]),
+        ("우아한형제들", ["우아한형제들", "배달의민족", "woowa"]),
+        ("Toss", ["toss", "토스"]),
+        ("당근", ["daangn", "당근"]),
+        ("DACON", ["dacon", "데이콘"]),
+        ("AI Factory", ["aifactory", "인공지능팩토리", "ai factory"]),
+        ("Programmers", ["programmers", "프로그래머스"]),
+        ("Linkareer", ["linkareer", "링커리어"]),
+        ("ZeroBase", ["zerobase", "zero intern", "제로베이스"]),
+    ]
+    lowered = text.lower()
+    for label, keywords in known_names:
+        if any(keyword.lower() in lowered for keyword in keywords):
+            return label
+    if candidate.publisher and "." not in candidate.publisher:
+        return candidate.publisher
+    source_label = source_label_for_url(candidate.url, candidate.source)
+    return source_label if source_label != "Naver News Search" else candidate.publisher
+
+
+def classify_career_sub_category(candidate: Candidate) -> str:
+    text = career_text(candidate)
+    lowered = text.lower()
+    if candidate.query == "company_watchlist":
+        return "company_watchlist"
+    if text_contains_any(text, ["해커톤", "hackathon"]):
+        return "hackathon"
+    if text_contains_any(text, ["경진대회", "competition", "데이터 대회", "ai 대회"]):
+        return "competition"
+    if text_contains_any(text, ["공모전", "contest"]):
+        return "contest"
+    if text_contains_any(text, ["인턴", "intern", "채용연계형", "전환형", "zero intern"]):
+        return "intern_job"
+    if text_contains_any(text, ["주니어", "junior"]):
+        return "junior_job"
+    if text_contains_any(text, ["신입", "new grad", "entry"]):
+        return "entry_job"
+    if "recruit" in lowered or "career" in lowered:
+        return "company_watchlist"
+    return "entry_job"
+
+
+def career_type_for_sub_category(sub_category: str) -> str:
+    return {
+        "intern_job": "인턴",
+        "entry_job": "신입",
+        "junior_job": "주니어",
+        "hackathon": "해커톤",
+        "contest": "공모전",
+        "competition": "경진대회",
+        "company_watchlist": "신입",
+    }.get(sub_category, "신입")
+
+
+def infer_career_role(text: str, career_type: str) -> str:
+    if career_type in {"해커톤", "공모전", "경진대회"}:
+        if text_contains_any(text, ["ai", "인공지능", "llm"]):
+            return "AI 서비스 백엔드"
+        if text_contains_any(text, ["데이터", "data"]):
+            return "데이터 수집/API 서버 개발"
+        return "API 서버 개발"
+    if text_contains_any(text, ["server", "서버"]):
+        return "서버 개발"
+    if text_contains_any(text, ["backend", "백엔드"]):
+        return "백엔드 개발"
+    return "백엔드 개발"
+
+
+def infer_target(text: str, career_type: str) -> str:
+    if text_contains_any(text, ["졸업예정", "졸업 예정"]):
+        return "졸업예정자 가능"
+    if text_contains_any(text, ["대학생", "재학생"]):
+        return "대학생 참여 가능"
+    if text_contains_any(text, ["신입", "new grad", "entry"]):
+        return "신입 지원 가능"
+    if text_contains_any(text, ["인턴", "intern"]):
+        return "인턴 가능"
+    if career_type in {"해커톤", "공모전", "경진대회"}:
+        return "팀 참가 가능"
+    return "원문에서 지원 조건 확인"
+
+
+def infer_process_or_deliverable(text: str, career_type: str) -> list[str]:
+    if career_type in {"해커톤", "공모전", "경진대회"}:
+        deliverables = []
+        if text_contains_any(text, ["github", "깃허브"]):
+            deliverables.append("GitHub")
+        if text_contains_any(text, ["발표", "ppt"]):
+            deliverables.append("발표자료")
+        if text_contains_any(text, ["url", "배포", "서비스", "결과물"]):
+            deliverables.append("결과물 URL")
+        return deliverables or ["기획서", "GitHub", "발표자료"]
+
+    process = []
+    if text_contains_any(text, ["서류", "이력서", "resume"]):
+        process.append("서류")
+    if text_contains_any(text, ["코딩테스트", "coding test", "과제"]):
+        process.append("코딩테스트" if "과제" not in text else "과제")
+    if text_contains_any(text, ["면접", "interview"]):
+        process.append("면접")
+    return process or ["원문에서 전형 확인"]
+
+
+def infer_tech_keywords(text: str) -> list[str]:
+    matched = []
+    for keyword in CAREER_TECH_KEYWORDS:
+        if keyword.lower() in text.lower() and keyword not in matched:
+            matched.append(keyword)
+    if matched:
+        return matched[:6]
+    if text_contains_any(text, ["백엔드", "backend", "서버", "api"]):
+        return ["백엔드", "API", "DB"]
+    return []
+
+
+def is_backend_career_candidate(candidate: Candidate) -> bool:
+    return text_contains_any(career_text(candidate), BACKEND_KEYWORDS)
+
+
+def is_entry_or_intern_candidate(candidate: Candidate) -> bool:
+    return text_contains_any(career_text(candidate), STUDENT_KEYWORDS + ["new grad", "entry"])
+
+
+def is_portfolio_activity_candidate(candidate: Candidate) -> bool:
+    text = career_text(candidate)
+    return text_contains_any(text, ["해커톤", "공모전", "경진대회", "competition"]) and text_contains_any(
+        text,
+        PORTFOLIO_KEYWORDS,
+    )
+
+
+def career_deadline_scores(deadline: dict[str, object]) -> tuple[int, int]:
+    status = str(deadline.get("deadline_status", "unknown"))
+    days = deadline.get("days_until_deadline")
+    clarity_score = 30 if status == "open" else 20 if status in {"rolling", "until_filled"} else 0
+    available_score = 30 if status in {"open", "rolling", "until_filled"} else 0
+    if isinstance(days, int) and 1 <= days <= 14:
+        available_score += 15
+    elif isinstance(days, int) and days == 0:
+        available_score += 10
+    return clarity_score, available_score
+
+
+def score_career_candidate(candidate: Candidate, current_time: datetime) -> dict[str, int]:
+    text = career_text(candidate)
+    sub_category = classify_career_sub_category(candidate)
+    career_type = career_type_for_sub_category(sub_category)
+    deadline = parse_korean_deadline(text, current_time)
+    deadline_clarity_score, deadline_available_score = career_deadline_scores(deadline)
+    backend_fit_score = 25 if is_backend_career_candidate(candidate) else 0
+    entry_fit_score = 25 if is_entry_or_intern_candidate(candidate) else 0
+    portfolio_fit_score = 10 if is_portfolio_activity_candidate(candidate) else 0
+    tech_score = 10 if infer_tech_keywords(text) else 0
+    source_reliability_score = 10 if candidate.source_reliability in {"official", "platform"} else 0
+    process_score = 5 if infer_process_or_deliverable(text, career_type) else 0
+    actionability_score = candidate.actionability_score
+
+    score = (
+        deadline_clarity_score
+        + deadline_available_score
+        + backend_fit_score
+        + entry_fit_score
+        + portfolio_fit_score
+        + tech_score
+        + source_reliability_score
+        + process_score
+        + actionability_score
+    )
+
+    if is_generic_career_url(candidate.url):
+        score -= 40
+    if deadline["deadline_status"] == "unknown":
+        score -= 30
+    if not infer_company_or_host(text, candidate):
+        score -= 15
+    if re.fullmatch(r".*(백엔드|서버).*(인턴|채용|신입).*", candidate.title) and len(candidate.title) < 16:
+        score -= 20
+    if deadline["deadline_status"] == "closed" or candidate.exclude_reason:
+        score -= 100
+
+    return {
+        "score": score,
+        "deadline_clarity_score": deadline_clarity_score,
+        "backend_fit_score": backend_fit_score,
+        "entry_fit_score": entry_fit_score,
+        "portfolio_fit_score": portfolio_fit_score,
+        "source_reliability_score": source_reliability_score,
+        "actionability_score": max(actionability_score, 0),
+    }
+
+
 def classify_reliability(
     url: str,
     configured: str,
@@ -507,13 +1022,17 @@ def infer_exclude_reason(category_id: str, text: str) -> str:
         return "expired-deadline"
     if text_contains_any(text, SENIOR_ONLY_KEYWORDS):
         return "senior-only"
-    if category_id == "kr-backend-career-events" and text_contains_any(
+    if category_id == WEEKLY_CAREER_CATEGORY_ID and text_contains_any(
         text, FRONTEND_MARKETING_KEYWORDS
     ):
         return "frontend-or-marketing-focused"
+    if category_id == WEEKLY_CAREER_CATEGORY_ID and text_contains_any(
+        text, CAREER_EXCLUSION_KEYWORDS
+    ):
+        return "education-or-non-developer-focused"
     if text_contains_any(text, ["주가", "급등", "급락", "목표가", "투자의견", "관련주"]):
         return "stock-or-investment-only"
-    if category_id == "kr-backend-career-events" and not text_contains_any(
+    if category_id == WEEKLY_CAREER_CATEGORY_ID and not text_contains_any(
         text, BACKEND_KEYWORDS + STUDENT_KEYWORDS
     ):
         return "unclear-backend-student-fit"
@@ -523,7 +1042,7 @@ def infer_exclude_reason(category_id: str, text: str) -> str:
 def deadline_urgency_score_for(category_id: str, text: str, exclude_reason: str) -> int:
     if exclude_reason == "expired-deadline":
         return -50
-    if category_id != "kr-backend-career-events":
+    if category_id != WEEKLY_CAREER_CATEGORY_ID:
         return 0
     if text_contains_any(text, ["오늘", "내일", "이번 주", "7일", "마감"]):
         return 20
@@ -534,7 +1053,7 @@ def deadline_urgency_score_for(category_id: str, text: str, exclude_reason: str)
 
 def actionability_score_for(category_id: str, text: str) -> int:
     score = keyword_fit_score(text, ACTION_KEYWORDS, 5, 20)
-    if category_id == "kr-backend-career-events" and text_contains_any(
+    if category_id == WEEKLY_CAREER_CATEGORY_ID and text_contains_any(
         text, ["공식", "채용", "대회", "공모전", "해커톤"]
     ):
         score += 10
@@ -921,12 +1440,13 @@ def collect_reference_candidates(
             continue
         configured_reliability = str(page.get("source_reliability", "")).strip()
         reliability = classify_reliability(url, configured_reliability, reliability_domains)
+        category_id = str(category.get("id", "")).strip()
         candidate = build_candidate(
             category=category,
             title=name,
             url=url,
             source_url=url,
-            source="Official reference page",
+            source=name if category_id == WEEKLY_CAREER_CATEGORY_ID else "Official reference page",
             publisher=domain_from_url(url) or name,
             published_at=None,
             summary="공식 페이지 후보입니다. 최신 공고, 발표, 마감 여부는 AI 편집 단계에서 확인해야 합니다.",
@@ -1204,6 +1724,63 @@ def write_ps_routine_output(
         print("Dry-run: PS assignment was not recorded.")
 
 
+def load_backend_practical_curriculum(
+    path: Path = BACKEND_PRACTICAL_CURRICULUM_PATH,
+) -> dict[str, object]:
+    curriculum = load_required_json(path)
+    lessons = curriculum.get("lessons", [])
+    if not isinstance(lessons, list) or not lessons:
+        raise RuntimeError(
+            "configs/backend-practical-knowledge-curriculum.json must contain lessons."
+        )
+    return curriculum
+
+
+def select_backend_practical_lesson(
+    curriculum: dict[str, object],
+    current_time: datetime,
+) -> dict[str, object]:
+    lessons = curriculum.get("lessons", [])
+    if not isinstance(lessons, list) or not lessons:
+        raise RuntimeError("Backend practical curriculum lessons must not be empty.")
+
+    selection_policy = curriculum.get("selection_policy", {})
+    if not isinstance(selection_policy, dict):
+        raise RuntimeError("Backend practical curriculum selection_policy is required.")
+    if str(selection_policy.get("type", "")).strip() != "date_rotation":
+        raise RuntimeError("Backend practical curriculum must use date_rotation policy.")
+    if str(selection_policy.get("timezone", "")).strip() != "Asia/Seoul":
+        raise RuntimeError("Backend practical curriculum timezone must be Asia/Seoul.")
+
+    start_date_value = str(selection_policy.get("start_date", "")).strip()
+    try:
+        start_date = datetime.strptime(start_date_value, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise RuntimeError(
+            "Backend practical curriculum start_date must use YYYY-MM-DD."
+        ) from exc
+
+    today = current_time.astimezone(KST).date()
+    days_since_start = max((today - start_date).days, 0)
+    selected = lessons[days_since_start % len(lessons)]
+    if not isinstance(selected, dict):
+        raise RuntimeError("Selected backend practical lesson must be an object.")
+    return selected
+
+
+def write_backend_practical_candidate(current_time: datetime) -> None:
+    curriculum = load_backend_practical_curriculum()
+    selected = select_backend_practical_lesson(curriculum, current_time)
+    payload = {
+        "category": "backend-practical-knowledge",
+        "generated_at": format_kst(current_time),
+        "selection_policy": "date_rotation",
+        "today": selected,
+    }
+    write_json_file(BACKEND_PRACTICAL_OUTPUT_PATH, payload)
+    print(f"Wrote backend practical knowledge: {BACKEND_PRACTICAL_OUTPUT_PATH}")
+
+
 def difficulty_model_matches(
     difficulty_model: dict[str, object],
     band: str,
@@ -1272,7 +1849,7 @@ def oss_issue_scores(
     p4_match = difficulty_model_matches(difficulty_model, "p4_like", labels, searchable)
     p5_score = 30 if p5_match else 0
     p4_score = 20 if p4_match else 0
-    legacy_label_score = 15 if text_contains_any(label_text, positive_labels) else 0
+    category_label_score = 15 if text_contains_any(label_text, positive_labels) else 0
     direct_spring_score = 15 if text_contains_any(searchable, OSS_DIRECT_SPRING_KEYWORDS) else 0
     assignee_score = 20 if assignees_count == 0 else -40
     recent_score = 0
@@ -1342,7 +1919,7 @@ def oss_issue_scores(
         + good_first_score
         + p5_score
         + p4_score
-        + legacy_label_score
+        + category_label_score
         + max(assignee_score, 0)
         + recent_score
         + comments_score
@@ -1577,11 +2154,23 @@ def dedupe_candidates(candidates: list[Candidate]) -> list[Candidate]:
 def sort_and_limit(
     category: dict[str, object],
     candidates: list[Candidate],
+    current_time: datetime,
 ) -> list[Candidate]:
     try:
         max_candidates = int(category.get("max_candidates", DEFAULT_MAX_CANDIDATES))
     except (TypeError, ValueError):
         max_candidates = DEFAULT_MAX_CANDIDATES
+
+    category_id = str(category.get("id", "")).strip()
+    if category_id == WEEKLY_CAREER_CATEGORY_ID:
+        return sorted(
+            dedupe_candidates(candidates),
+            key=lambda item: (
+                score_career_candidate(item, current_time)["score"],
+                item.published_at or datetime.min.replace(tzinfo=KST),
+            ),
+            reverse=True,
+        )[:max(max_candidates, 0)]
 
     return sorted(
         dedupe_candidates(candidates),
@@ -1653,6 +2242,95 @@ def serialize_candidate(candidate: Candidate | OssIssueCandidate) -> dict[str, o
     }
 
 
+def standardize_weekly_career_candidate(
+    candidate: Candidate,
+    generated_at: datetime,
+) -> dict[str, object]:
+    text = career_text(candidate)
+    sub_category = classify_career_sub_category(candidate)
+    career_type = career_type_for_sub_category(sub_category)
+    deadline = parse_korean_deadline(text, generated_at)
+    score_payload = score_career_candidate(candidate, generated_at)
+    company_or_host = infer_company_or_host(text, candidate)
+    exclude_reasons = []
+    if candidate.exclude_reason:
+        exclude_reasons.append(candidate.exclude_reason)
+    if is_generic_career_url(candidate.url):
+        exclude_reasons.append("generic-url")
+    if deadline["deadline_status"] == "closed":
+        exclude_reasons.append("expired-deadline")
+
+    source = candidate.source
+    if source in {"Official reference page", "Naver News Search"}:
+        source = source_label_for_url(candidate.url, source)
+    elif source.startswith("http"):
+        source = source_label_for_url(candidate.url, source)
+
+    return {
+        "category": WEEKLY_CAREER_CATEGORY_ID,
+        "sub_category": sub_category,
+        "title": candidate.title,
+        "url": candidate.url,
+        "source_url": candidate.source_url,
+        "source": source,
+        "company_or_host": company_or_host,
+        "type": career_type,
+        "role": infer_career_role(text, career_type),
+        "deadline": deadline["deadline"],
+        "deadline_text": deadline["deadline_text"],
+        "deadline_status": deadline["deadline_status"],
+        "days_until_deadline": deadline["days_until_deadline"],
+        "target": infer_target(text, career_type),
+        "tech_keywords": infer_tech_keywords(text),
+        "process_or_deliverable": infer_process_or_deliverable(text, career_type),
+        "summary": candidate.summary,
+        "published_at": format_kst(candidate.published_at) if candidate.published_at else "",
+        "query": candidate.query,
+        "score": score_payload["score"],
+        "deadline_clarity_score": score_payload["deadline_clarity_score"],
+        "backend_fit_score": score_payload["backend_fit_score"],
+        "entry_fit_score": score_payload["entry_fit_score"],
+        "portfolio_fit_score": score_payload["portfolio_fit_score"],
+        "source_reliability_score": score_payload["source_reliability_score"],
+        "actionability_score": score_payload["actionability_score"],
+        "exclude_reason": ",".join(dict.fromkeys(exclude_reasons)),
+    }
+
+
+def dedupe_weekly_career_items(items: list[dict[str, object]]) -> list[dict[str, object]]:
+    deduped: list[dict[str, object]] = []
+    seen_urls: set[str] = set()
+    seen_keys: set[tuple[str, str, str]] = set()
+    for item in sorted(items, key=lambda value: int(value.get("score", 0)), reverse=True):
+        normalized_url = normalize_url(str(item.get("url", "")))
+        if normalized_url and normalized_url in seen_urls:
+            continue
+        key = (
+            normalize_title(str(item.get("title", ""))),
+            normalize_title(str(item.get("company_or_host", ""))),
+            str(item.get("deadline_text", "")),
+        )
+        if key in seen_keys:
+            continue
+        if normalized_url:
+            seen_urls.add(normalized_url)
+        seen_keys.add(key)
+        deduped.append(item)
+    return deduped
+
+
+def build_weekly_career_payload(
+    category_id: str,
+    generated_at: datetime,
+    items: list[dict[str, object]],
+) -> dict[str, object]:
+    return {
+        "category": category_id,
+        "generated_at": format_kst(generated_at),
+        "items": dedupe_weekly_career_items(items),
+    }
+
+
 def output_path_for_category(
     output_dir: Path,
     category: dict[str, object],
@@ -1673,11 +2351,19 @@ def write_category_output(
     category_id = str(category.get("id", "")).strip()
     output_path = output_path_for_category(output_dir, category)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    payload = {
-        "category": category_id,
-        "generated_at": format_kst(generated_at),
-        "items": [serialize_candidate(candidate) for candidate in candidates],
-    }
+    if category_id == WEEKLY_CAREER_CATEGORY_ID:
+        weekly_items = [
+            standardize_weekly_career_candidate(candidate, generated_at)
+            for candidate in candidates
+            if isinstance(candidate, Candidate)
+        ]
+        payload = build_weekly_career_payload(category_id, generated_at, weekly_items)
+    else:
+        payload = {
+            "category": category_id,
+            "generated_at": format_kst(generated_at),
+            "items": [serialize_candidate(candidate) for candidate in candidates],
+        }
     write_json_file(output_path, payload)
     print(f"Wrote {len(candidates)} candidate(s): {output_path}")
 
@@ -1696,6 +2382,92 @@ def write_daily_tech_alias_outputs(
         }
         write_json_file(output_path, payload)
         print(f"Wrote {len(candidates)} candidate(s): {output_path}")
+
+
+def write_weekly_career_split_outputs(
+    generated_at: datetime,
+    candidates: list[Candidate] | list[OssIssueCandidate],
+) -> None:
+    weekly_items = [
+        standardize_weekly_career_candidate(candidate, generated_at)
+        for candidate in candidates
+        if isinstance(candidate, Candidate)
+    ]
+    grouped: dict[Path, list[dict[str, object]]] = {
+        output_path: [] for output_path in WEEKLY_CAREER_EMPTY_OUTPUTS
+    }
+    for item in weekly_items:
+        sub_category = str(item.get("sub_category", ""))
+        output_path = WEEKLY_CAREER_SPLIT_OUTPUTS.get(sub_category)
+        if output_path is None:
+            continue
+        grouped.setdefault(output_path, []).append(item)
+
+    category_by_path = {
+        Path("reports/candidates/kr-backend-intern-jobs.json"): "kr-backend-intern-jobs",
+        Path("reports/candidates/kr-backend-entry-jobs.json"): "kr-backend-entry-jobs",
+        Path("reports/candidates/kr-backend-career-activities.json"): (
+            "kr-backend-career-activities"
+        ),
+        Path("reports/candidates/kr-backend-company-watchlist.json"): (
+            "kr-backend-company-watchlist"
+        ),
+    }
+    for output_path, items in grouped.items():
+        payload = build_weekly_career_payload(
+            category_by_path.get(output_path, output_path.stem),
+            generated_at,
+            items,
+        )
+        write_json_file(output_path, payload)
+        print(f"Wrote {len(payload['items'])} candidate(s): {output_path}")
+
+
+def load_company_watchlist(path: Path = COMPANY_CAREER_WATCHLIST_PATH) -> list[dict[str, object]]:
+    if not path.exists():
+        return []
+    data = load_required_json(path)
+    companies = data.get("companies", [])
+    if not isinstance(companies, list):
+        raise RuntimeError("configs/company-career-watchlist.json must contain companies.")
+    return [company for company in companies if isinstance(company, dict)]
+
+
+def collect_company_watchlist_candidates(
+    category: dict[str, object],
+    current_time: datetime,
+    penalty_keywords: list[str],
+) -> list[Candidate]:
+    candidates: list[Candidate] = []
+    for company in load_company_watchlist():
+        name = str(company.get("name", "")).strip()
+        source = str(company.get("source", "")).strip() or f"{name} Careers"
+        url = str(company.get("career_url", "")).strip()
+        if not name or not url:
+            continue
+        positive = " ".join(str(item) for item in company.get("positive_keywords", []) if item)
+        summary = (
+            f"{name} 공식 채용 watchlist 후보입니다. "
+            f"백엔드 인턴, 신입, 주니어, 서버 개발 공고를 확인합니다. "
+            f"positive_keywords: {positive}."
+        )
+        candidate = build_candidate(
+            category=category,
+            title=f"{source} official backend entry/intern watchlist",
+            url=url,
+            source_url=url,
+            source=source,
+            publisher=name,
+            published_at=None,
+            summary=summary,
+            query="company_watchlist",
+            source_reliability="official",
+            current_time=current_time,
+            penalty_keywords=penalty_keywords,
+        )
+        if candidate:
+            candidates.append(candidate)
+    return candidates
 
 
 def collect_category(
@@ -1717,6 +2489,10 @@ def collect_category(
     candidates.extend(
         collect_reference_candidates(config, category, current_time, penalty_keywords)
     )
+    if category_id == WEEKLY_CAREER_CATEGORY_ID:
+        candidates.extend(
+            collect_company_watchlist_candidates(category, current_time, penalty_keywords)
+        )
     if credentials:
         candidates.extend(
             collect_naver_candidates(
@@ -1727,7 +2503,7 @@ def collect_category(
                 penalty_keywords,
             )
         )
-    return sort_and_limit(category, candidates)
+    return sort_and_limit(category, candidates, current_time)
 
 
 def main() -> int:
@@ -1737,6 +2513,9 @@ def main() -> int:
     current_time = now_kst()
 
     try:
+        if args.mode == "daily-tech":
+            write_backend_practical_candidate(current_time)
+
         config = load_config(config_path, args.category, args.mode)
         credentials = get_naver_credentials(args.dry_run)
         penalty_keywords = [
@@ -1771,6 +2550,11 @@ def main() -> int:
                 current_time,
                 dry_run=args.dry_run,
                 record_assignment=True,
+            )
+        if args.mode == "weekly-career":
+            write_weekly_career_split_outputs(
+                current_time,
+                candidates_by_category.get(WEEKLY_CAREER_CATEGORY_ID, []),
             )
     except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
         print(f"Failed to collect KR candidates: {exc}", file=sys.stderr)

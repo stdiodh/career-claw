@@ -86,10 +86,15 @@ jobs:
           runtime += "- `reports/candidates/ps-weekly-routine.json`\n"
           runtime += "- `reports/candidates/kr-oss-contribution-opportunities.json`\n"
           runtime += "- `reports/candidates/kr-dev-ai-news.json`\n"
+          runtime += "- `reports/candidates/kr-ai-tech-news.json`\n"
+          runtime += "- `reports/candidates/backend-practical-knowledge.json`\n"
           runtime += "- `configs/audience-profile.json`\n"
           runtime += "\n`ps-weekly-routine.json`을 알고리즘 루틴의 primary 후보로 사용한다.\n"
-          runtime += "`kr-dev-ai-news.json`과 `spring-study-topic.json`을 daily tech primary 후보로 사용한다.\n"
-          runtime += "오늘 할 일에는 가능하면 Programmers 루틴 문제 1개를 행동 항목으로 포함한다.\n"
+          runtime += "`spring-study-topic.json`은 1번 Spring Boot/JVM 학습 섹션에만 사용한다.\n"
+          runtime += "`kr-dev-ai-news.json` 또는 `kr-ai-tech-news.json`에서만 4번 한국 최신 개발/AI 뉴스를 고른다.\n"
+          runtime += "4번 뉴스에는 Spring 공식 문서, GitHub issue, Programmers 링크를 사용하지 않는다.\n"
+          runtime += "`backend-practical-knowledge.json`을 5번 주니어 백엔드 실무지식의 primary 후보로 사용한다.\n"
+          runtime += "`## 오늘 할 일` 섹션은 출력하지 않는다.\n"
           runtime += "\n## Runtime output\n\n"
           runtime += "- 최종 Markdown은 `reports/briefs/kr-tech-daily.md`에만 작성한다.\n"
           runtime += "- 후보 JSON, progress, config, workflow, script 파일은 수정하지 않는다.\n"
@@ -119,7 +124,7 @@ jobs:
           REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
         run: |
           set -euo pipefail
-          python3 scripts/validate-kr-premium-brief.py "${REPORT_FILE}" --type daily-tech
+          python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type daily-tech
 
       - name: Send Korea tech daily brief to Discord
         shell: bash
@@ -156,6 +161,8 @@ jobs:
             reports/candidates/ps-weekly-routine.json
             reports/candidates/kr-oss-contribution-opportunities.json
             reports/candidates/kr-dev-ai-news.json
+            reports/candidates/kr-ai-tech-news.json
+            reports/candidates/backend-practical-knowledge.json
             reports/briefs/kr-tech-daily.md
             reports/briefs/kr-tech-daily-codex-summary.md
           if-no-files-found: warn

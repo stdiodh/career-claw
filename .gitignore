@@ -39,7 +39,7 @@ app/build/
 *.ipr
 .vscode/
 
-# Legacy local infrastructure state
+# Local infrastructure state
 infra/certbot/
 infra/nginx/certs/
 infra/openclaw/runtime/

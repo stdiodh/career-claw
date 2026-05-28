@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate KR Premium Markdown brief quality."""
+"""Validate Career Feed Markdown brief quality."""
 
 from __future__ import annotations
 
@@ -10,26 +10,20 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-DEFAULT_REPORT = "reports/briefs/kr-premium-daily.md"
+DEFAULT_REPORT = "reports/briefs/kr-tech-daily.md"
 MAX_WARNING_CHARS = 6500
 
-LEGACY_SECTIONS = [
-    "한국 AI 뉴스",
-    "한국 백엔드/개발자 기술 뉴스",
-    "한국 보안/취약점 알림",
-    "국내 인턴십/해커톤/공모전/경진대회",
-]
 DAILY_SECTIONS = [
     "오늘의 Spring Boot/JVM 학습",
     "이번 주 PS 성장 루틴",
     "오픈소스 기여 후보",
-    "한국 개발/AI 뉴스",
-    "오늘 할 일",
+    "한국 최신 개발/AI 뉴스",
+    "주니어 백엔드 실무지식",
 ]
 WEEKLY_SECTIONS = [
-    "이번 주 추천",
+    "이번 주 백엔드 커리어 기회 TOP 5",
     "마감 임박",
-    "포트폴리오 관점 추천",
+    "포트폴리오로 남기기 좋은 대외활동",
 ]
 
 NO_ITEM_PHRASES = [
@@ -38,9 +32,12 @@ NO_ITEM_PHRASES = [
     "오늘 기준으로 포함할 만한 신뢰도 높은 후보를 찾지 못했습니다",
     "오늘은 긴급 체크 항목 없음",
     "오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다.",
-    "오늘은 학습으로 연결할 만한 개발/AI 뉴스가 없습니다.",
+    "오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다.",
     "이번 주 마감 임박 항목 없음",
     "이번 주 추천 항목 없음",
+    "이번 주 기준을 만족하는 백엔드 커리어 기회가 없습니다.",
+    "이번 주 마감 임박 항목은 없습니다.",
+    "이번 주 포트폴리오용 대외활동 후보는 없습니다.",
 ]
 
 GENERIC_PHRASES = [
@@ -49,21 +46,10 @@ GENERIC_PHRASES = [
     "패치 또는 영향 범위 확인이 필요합니다.",
 ]
 
-LEGACY_ITEM_FIELDS = {
-    "무슨 일": re.compile(r"^\s*-\s*무슨 일\s*:", re.MULTILINE),
-    "왜 봐야 함": re.compile(r"^\s*-\s*왜 봐야 함\s*:", re.MULTILINE),
-    "내 액션": re.compile(r"^\s*-\s*내 액션\s*:", re.MULTILINE),
-    "출처": re.compile(r"^\s*-\s*.*출처.*:", re.MULTILINE),
-    "시각": re.compile(r"^\s*-\s*.*(?:시각|게시|마감).*:", re.MULTILINE),
-    "신뢰도": re.compile(r"^\s*-\s*.*신뢰도.*:", re.MULTILINE),
-    "링크": re.compile(r"^\s*-\s*링크\s*:", re.MULTILINE),
-}
-LEGACY_CAREER_FIELDS = {
-    "유형": re.compile(r"^\s*-\s*.*유형.*:", re.MULTILINE),
-    "대상": re.compile(r"^\s*-\s*.*대상.*:", re.MULTILINE),
-    "마감": re.compile(r"^\s*-\s*.*마감.*:", re.MULTILINE),
-}
 DAILY_FORBIDDEN_PATTERNS = [
+    r"##\s*오늘 할 일",
+    r"오늘 할 일",
+    r"Mark PS Solved workflow",
     r"\bBOJ\b",
     r"acmicpc\.net",
     r"백준",
@@ -77,7 +63,7 @@ DAILY_FORBIDDEN_PATTERNS = [
 DAILY_STUDY_FIELDS = [
     "핵심 개념",
     "30분 실습",
-    "검색 키워드",
+    "완료 기준",
     "확장해서 볼 것",
     "참고 링크",
 ]
@@ -89,26 +75,101 @@ DAILY_PS_FIELDS = [
     "플랫폼",
     "난이도",
     "먼저 생각할 것",
-    "오늘 목표",
+    "풀이 후 점검",
     "막히면 검색",
     "링크",
 ]
 DAILY_NEWS_FIELDS = [
     "제목",
+    "출처/게시",
     "핵심",
-    "공부로 연결할 점",
+    "실무 연결",
     "검색 키워드",
     "링크",
 ]
+DAILY_PRACTICAL_FIELDS = [
+    "큰 흐름",
+    "핵심 개념",
+    "30분 실습",
+    "현업 체크 질문",
+    "검색 키워드",
+]
+DAILY_NEWS_EMPTY_STATE = "오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다."
+DAILY_OSS_EMPTY_STATE = "오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다."
+DAILY_NEWS_FORBIDDEN_PATTERNS = [
+    r"docs\.spring\.io",
+    r"(?<!docs\.)\bspring\.io",
+    r"github\.com",
+    r"kotlinlang\.org",
+    r"docs\.oracle\.com",
+    r"programmers\.co\.kr",
+    r"school\.programmers\.co\.kr",
+    r"Official reference page",
+    r"reference_page",
+    r"Spring Boot Reference",
+    r"Spring Framework Reference",
+    r"공식 문서",
+    r"Issue 보기",
+    r"공부로 연결할 점",
+]
 WEEKLY_REQUIRED_FIELDS = [
     "유형",
-    "대상 적합성",
-    "백엔드 적합성",
     "마감",
-    "왜 나에게 맞는가",
-    "내 액션",
+    "회사/주최",
+    "직무/역할",
+    "지원 조건",
+    "기술 키워드",
+    "전형/제출물",
+    "이번 주 액션",
+    "출처",
     "링크",
 ]
+WEEKLY_FORBIDDEN_FIELDS = [
+    "대상 적합성",
+    "백엔드 적합성",
+    "Kotlin/Spring Boot 관련성",
+    "왜 나에게 맞는가",
+    "내 액션",
+]
+WEEKLY_FORBIDDEN_DEADLINE_VALUES = [
+    "원문 확인 필요",
+    "확인 필요",
+    "미정",
+    "알 수 없음",
+]
+WEEKLY_TOP_EMPTY_STATE = "이번 주 기준을 만족하는 백엔드 커리어 기회가 없습니다."
+WEEKLY_URGENT_EMPTY_STATE = "이번 주 마감 임박 항목은 없습니다."
+WEEKLY_PORTFOLIO_EMPTY_STATE = "이번 주 포트폴리오용 대외활동 후보는 없습니다."
+WEEKLY_PORTFOLIO_FIELDS = [
+    "유형",
+    "마감",
+    "주최",
+    "만들 수 있는 백엔드 산출물",
+    "기술 키워드",
+    "이번 주 액션",
+    "링크",
+]
+WEEKLY_GENERIC_URLS = {
+    "https://www.wanted.co.kr",
+    "https://www.wanted.co.kr/",
+    "https://dacon.io/competitions",
+    "https://linkareer.com",
+    "https://linkareer.com/",
+    "https://www.saramin.co.kr",
+    "https://www.saramin.co.kr/",
+    "https://www.saramin.co.kr/zf_user",
+    "https://www.saramin.co.kr/zf_user/",
+    "https://www.jobkorea.co.kr",
+    "https://www.jobkorea.co.kr/",
+    "https://programmers.co.kr",
+    "https://programmers.co.kr/",
+    "https://aifactory.space",
+    "https://aifactory.space/",
+    "https://www.wevity.com",
+    "https://www.wevity.com/",
+    "https://www.all-con.co.kr",
+    "https://www.all-con.co.kr/",
+}
 DAILY_OSS_FIELDS = [
     "난이도 밴드",
     "저장소",
@@ -144,12 +205,12 @@ class Item:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate KR Premium Markdown brief.")
+    parser = argparse.ArgumentParser(description="Validate Career Feed Markdown brief.")
     parser.add_argument("path", nargs="?", default=DEFAULT_REPORT)
     parser.add_argument(
         "--type",
-        choices=["legacy", "daily-tech", "weekly-career"],
-        default="legacy",
+        choices=["daily-tech", "weekly-career"],
+        default="daily-tech",
         help="Brief type to validate.",
     )
     return parser.parse_args()
@@ -220,10 +281,15 @@ def section_has_no_item_phrase(section: Section) -> bool:
     return any(phrase in section.body for phrase in NO_ITEM_PHRASES)
 
 
-def validate_common(content: str, min_links: int = 2) -> None:
+def validate_common(
+    content: str,
+    min_links: int = 2,
+    *,
+    allow_duplicate_links: bool = False,
+) -> None:
     validate_timestamp(content)
     validate_secret_leaks(content)
-    validate_links(content, min_links)
+    validate_links(content, min_links, allow_duplicate_links=allow_duplicate_links)
     validate_generic_phrases(content)
     validate_missing_source_link_phrases(content)
     validate_no_tables(content)
@@ -236,12 +302,17 @@ def validate_secret_leaks(content: str) -> None:
         fail("Secret, API key, or webhook-like value found in Markdown.")
 
 
-def validate_links(content: str, min_links: int) -> None:
+def validate_links(
+    content: str,
+    min_links: int,
+    *,
+    allow_duplicate_links: bool = False,
+) -> None:
     links = LINK_RE.findall(content)
     if len(links) < min_links:
         fail(f"Expected at least {min_links} links, found {len(links)}.")
     duplicated = sorted({link for link in links if links.count(link) > 1})
-    if duplicated:
+    if duplicated and not allow_duplicate_links:
         fail(f"Duplicate links found: {', '.join(duplicated[:3])}")
 
 
@@ -260,7 +331,7 @@ def validate_missing_source_link_phrases(content: str) -> None:
 
 def validate_no_tables(content: str) -> None:
     if any(line.strip().startswith("|") for line in content.splitlines()):
-        fail("Markdown tables are not allowed in KR Premium brief.")
+        fail("Markdown tables are not allowed in Career Feed briefs.")
 
 
 def validate_item_markdown_link(item: Item) -> None:
@@ -281,43 +352,46 @@ def require_markdown_link_in_text(text: str, context: str) -> None:
         fail(f"Section must include a Markdown link: {context}")
 
 
-def validate_legacy(content: str) -> None:
-    validate_common(content, min_links=2)
-    sections = extract_sections(content)
-    require_sections(sections, LEGACY_SECTIONS)
-    for title in LEGACY_SECTIONS:
-        section = find_section(sections, title)
-        if section is None:
-            continue
-        items = extract_items(section)
-        if not items:
-            if section_has_no_item_phrase(section):
-                continue
-            fail(f"Section has no item and no empty-state phrase: {title}")
-        for item in items:
-            validate_legacy_item(title, item)
+def bullet_field_value(text: str, field: str) -> str:
+    match = re.search(
+        rf"^\s*-\s*{re.escape(field)}\s*:\s*(.+?)\s*$",
+        text,
+        flags=re.MULTILINE,
+    )
+    return match.group(1).strip() if match else ""
 
 
-def validate_legacy_item(section_title: str, item: Item) -> None:
-    bullet_lines = [line for line in item.body.splitlines() if line.strip().startswith("- ")]
-    if len(bullet_lines) > 5:
-        fail(f"Item has more than 5 bullet lines: {section_title} / {item.title}")
+def markdown_link_urls(text: str) -> list[str]:
+    return re.findall(r"\[[^\]]+\]\((https?://[^)]+)\)", text)
 
-    fields = [name for name, pattern in LEGACY_ITEM_FIELDS.items() if pattern.search(item.body)]
-    if len(fields) < 4:
-        fail(
-            f"Item has fewer than 4 required fields: "
-            f"{section_title} / {item.title} ({', '.join(fields) or 'none'})"
-        )
 
-    if "국내 인턴십/해커톤/공모전/경진대회" in section_title:
-        career_fields = [
-            name for name, pattern in LEGACY_CAREER_FIELDS.items() if pattern.search(item.body)
-        ]
-        if len(career_fields) < 2:
-            fail(f"Career event item must include at least 2 of 유형/대상/마감: {item.title}")
+def normalize_validation_url(url: str) -> str:
+    return url.strip().rstrip("/")
 
-    validate_item_markdown_link(item)
+
+def is_generic_weekly_url(url: str) -> bool:
+    normalized = normalize_validation_url(url)
+    generic = {normalize_validation_url(item) for item in WEEKLY_GENERIC_URLS}
+    return normalized in generic
+
+
+def validate_weekly_deadline_value(value: str, context: str) -> None:
+    if any(forbidden in value for forbidden in WEEKLY_FORBIDDEN_DEADLINE_VALUES):
+        fail(f"Weekly career deadline is not actionable: {context}")
+    if value in {"상시채용", "채용 시 마감"}:
+        return
+    if re.fullmatch(r"20\d{2}-\d{2}-\d{2}(?: \d{2}:\d{2})? KST \(D-\d+\)", value):
+        return
+    fail(f"Weekly career deadline has invalid format: {context} ({value})")
+
+
+def validate_weekly_item_links(text: str, context: str) -> None:
+    urls = markdown_link_urls(text)
+    if not urls:
+        fail(f"Item must include a Markdown link: {context}")
+    generic_urls = [url for url in urls if is_generic_weekly_url(url)]
+    if generic_urls:
+        fail(f"Weekly career item uses generic URL: {context} ({generic_urls[0]})")
 
 
 def validate_daily_tech(content: str) -> None:
@@ -341,7 +415,7 @@ def validate_daily_tech(content: str) -> None:
     validate_daily_ps_section(sections)
     validate_daily_oss_section(sections)
     validate_daily_news_section(sections)
-    validate_daily_tasks_section(sections)
+    validate_daily_practical_section(sections)
 
 
 def validate_daily_forbidden_text(content: str) -> None:
@@ -366,6 +440,8 @@ def validate_daily_study_section(sections: list[Section]) -> None:
     missing = missing_bullet_fields(item.body, DAILY_STUDY_FIELDS)
     if missing:
         fail(f"Spring Boot/JVM study topic is missing field(s): {', '.join(missing)}")
+    if re.search(r"^\s*-\s*검색 키워드\s*:", item.body, re.MULTILINE):
+        fail("Spring Boot/JVM study section must use 완료 기준, not 검색 키워드.")
     validate_item_markdown_link(item)
 
 
@@ -377,6 +453,8 @@ def validate_daily_ps_section(sections: list[Section]) -> None:
     missing = missing_bullet_fields(section.body, DAILY_PS_FIELDS)
     if missing:
         fail(f"PS routine section is missing field(s): {', '.join(missing)}")
+    if re.search(r"^\s*-\s*오늘 목표\s*:", section.body, re.MULTILINE):
+        fail("PS routine section must use 풀이 후 점검, not 오늘 목표.")
     if "Programmers" not in section.body and "school.programmers.co.kr" not in section.body:
         fail("PS routine section must reference Programmers.")
     require_markdown_link_in_text(section.body, "이번 주 PS 성장 루틴")
@@ -387,19 +465,18 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
     if section is None:
         fail("Daily tech brief must include 오픈소스 기여 후보 section.")
 
-    no_item_phrase = "오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다."
     has_issue_link = bool(
         re.search(r"\[Issue 보기\]\(https://github\.com/[^)]+/issues/\d+\)", section.body)
         or re.search(r"https://github\.com/[^\s)]+/issues/\d+", section.body)
     )
-    if no_item_phrase not in section.body and not has_issue_link:
+    if DAILY_OSS_EMPTY_STATE not in section.body and not has_issue_link:
         fail("OSS section must include an Issue 보기 link or the required empty-state phrase.")
 
     items = extract_items(section)
     if len(items) > 1:
         fail("OSS section must include at most one candidate.")
     if not items:
-        if no_item_phrase in section.body:
+        if DAILY_OSS_EMPTY_STATE in section.body:
             return
         fail("OSS section has no candidate and no required empty-state phrase.")
 
@@ -415,62 +492,92 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
 
 
 def validate_daily_news_section(sections: list[Section]) -> None:
-    section = find_section(sections, "한국 개발/AI 뉴스")
+    section = find_section(sections, "한국 최신 개발/AI 뉴스")
     if section is None:
-        fail("Daily tech brief must include 한국 개발/AI 뉴스 section.")
+        fail("Daily tech brief must include 한국 최신 개발/AI 뉴스 section.")
+
+    found_forbidden = [
+        pattern
+        for pattern in DAILY_NEWS_FORBIDDEN_PATTERNS
+        if re.search(pattern, section.body, flags=re.IGNORECASE)
+    ]
+    if found_forbidden:
+        fail(f"Daily news section contains forbidden source or field: {', '.join(found_forbidden)}")
 
     items = extract_items(section)
     if len(items) > 1:
         fail("Daily development/AI news section must include at most one item.")
-    if not items and section_has_no_item_phrase(section):
+    if not items and DAILY_NEWS_EMPTY_STATE in section.body:
         return
 
     body = items[0].body if items else section.body
     missing = missing_bullet_fields(body, DAILY_NEWS_FIELDS)
     if missing:
         fail(f"Daily development/AI news is missing field(s): {', '.join(missing)}")
-    require_markdown_link_in_text(body, "한국 개발/AI 뉴스")
+    require_markdown_link_in_text(body, "한국 최신 개발/AI 뉴스")
 
 
-def validate_daily_tasks_section(sections: list[Section]) -> None:
-    section = find_section(sections, "오늘 할 일")
+def validate_daily_practical_section(sections: list[Section]) -> None:
+    section = find_section(sections, "주니어 백엔드 실무지식")
     if section is None:
-        fail("Daily tech brief must include 오늘 할 일 section.")
+        fail("Daily tech brief must include 주니어 백엔드 실무지식 section.")
 
-    tasks = re.findall(r"^\s*\d+\.\s+\S", section.body, flags=re.MULTILINE)
-    if len(tasks) < 3:
-        fail("오늘 할 일 section must include at least three numbered tasks.")
-    if "Mark PS Solved" not in section.body:
-        fail("오늘 할 일 must mention Mark PS Solved workflow.")
+    items = extract_items(section)
+    if len(items) != 1:
+        fail("Backend practical knowledge section must include exactly one topic.")
+    item = items[0]
+    if not item.title.startswith("주제:"):
+        fail("Backend practical knowledge topic must use a 주제 heading.")
+    missing = missing_bullet_fields(item.body, DAILY_PRACTICAL_FIELDS)
+    if missing:
+        fail(f"Backend practical knowledge topic is missing field(s): {', '.join(missing)}")
+    if len(section.body) > 1200:
+        warn("Backend practical knowledge section may be too long for daily reading.")
 
 
 def validate_weekly_career(content: str) -> None:
     if "Career Feed - Backend Career Weekly" not in content:
         fail("Missing weekly career title.")
+    validate_weekly_forbidden_text(content)
     sections = extract_sections(content)
-    validate_common(content, min_links=2)
+    validate_common(content, min_links=0, allow_duplicate_links=True)
     require_sections(sections, WEEKLY_SECTIONS)
 
-    top_section = find_section(sections, "이번 주 추천")
+    top_section = find_section(sections, "이번 주 백엔드 커리어 기회 TOP 5")
     if top_section is None:
         return
     top_items = extract_items(top_section)
-    if not top_items and not section_has_no_item_phrase(top_section):
+    if not top_items and WEEKLY_TOP_EMPTY_STATE not in top_section.body:
         fail("Weekly career recommendations are missing.")
+    if len(top_items) > 5:
+        fail("Weekly career TOP 5 must include at most five items.")
     for item in top_items:
         validate_weekly_item(item)
         validate_weekly_recommended_text(item)
 
+    validate_weekly_urgent_section(sections)
+    validate_weekly_portfolio_section(sections)
+
+
+def validate_weekly_forbidden_text(content: str) -> None:
+    if re.search(r"^##\s+.*제외한 후보", content, flags=re.MULTILINE):
+        fail("Weekly career brief must not include 제외한 후보 section.")
+    found_fields = [
+        field
+        for field in WEEKLY_FORBIDDEN_FIELDS
+        if re.search(rf"^\s*-\s*{re.escape(field)}\s*:", content, flags=re.MULTILINE)
+    ]
+    if found_fields:
+        fail(f"Weekly career brief contains forbidden field(s): {', '.join(found_fields)}")
+
 
 def validate_weekly_item(item: Item) -> None:
-    missing = [
-        field
-        for field in WEEKLY_REQUIRED_FIELDS
-        if not re.search(rf"^\s*-\s*{re.escape(field)}\s*:", item.body, re.MULTILINE)
-    ]
+    missing = missing_bullet_fields(item.body, WEEKLY_REQUIRED_FIELDS)
     if missing:
         fail(f"Weekly career item is missing field(s): {item.title} ({', '.join(missing)})")
-    validate_item_markdown_link(item)
+    deadline = bullet_field_value(item.body, "마감")
+    validate_weekly_deadline_value(deadline, item.title)
+    validate_weekly_item_links(item.body, item.title)
 
 
 def validate_weekly_recommended_text(item: Item) -> None:
@@ -478,17 +585,49 @@ def validate_weekly_recommended_text(item: Item) -> None:
         r"마감\s*(?:지남|지난|종료)",
         r"시니어|senior|경력\s*(?:3|5)년|3년 이상|5년 이상",
         r"프론트엔드\s*중심|디자인\s*중심|마케팅\s*중심",
-        r"대상 적합성\s*:\s*(?:없음|불명확)",
+        r"원문 확인 필요|확인 필요|미정|알 수 없음",
     ]
     for pattern in forbidden_patterns:
         if re.search(pattern, item.body, flags=re.IGNORECASE):
             fail(f"Weekly career recommendation contains forbidden wording: {item.title}")
 
 
+def validate_weekly_urgent_section(sections: list[Section]) -> None:
+    section = find_section(sections, "마감 임박")
+    if section is None:
+        fail("Weekly career brief must include 마감 임박 section.")
+    if WEEKLY_URGENT_EMPTY_STATE in section.body:
+        return
+    lines = [line.strip() for line in section.body.splitlines() if line.strip().startswith("- ")]
+    if not lines:
+        fail("마감 임박 section must include candidates or the required empty-state phrase.")
+    for line in lines:
+        match = re.search(r"\[D-(\d+)\]", line)
+        if not match:
+            fail("마감 임박 item must include D-n notation.")
+        if int(match.group(1)) > 7:
+            fail("마감 임박 section must only include items within D-7.")
+        validate_weekly_item_links(line, "마감 임박")
+
+
+def validate_weekly_portfolio_section(sections: list[Section]) -> None:
+    section = find_section(sections, "포트폴리오로 남기기 좋은 대외활동")
+    if section is None:
+        fail("Weekly career brief must include 포트폴리오로 남기기 좋은 대외활동 section.")
+    items = extract_items(section)
+    if not items:
+        if WEEKLY_PORTFOLIO_EMPTY_STATE in section.body:
+            return
+        fail("Portfolio section must include candidates or the required empty-state phrase.")
+    for item in items:
+        missing = missing_bullet_fields(item.body, WEEKLY_PORTFOLIO_FIELDS)
+        if missing:
+            fail(f"Portfolio activity is missing field(s): {item.title} ({', '.join(missing)})")
+        validate_weekly_item_links(item.body, item.title)
+
+
 def validate(content: str, report_type: str) -> None:
-    if report_type == "legacy":
-        validate_legacy(content)
-    elif report_type == "daily-tech":
+    if report_type == "daily-tech":
         validate_daily_tech(content)
     elif report_type == "weekly-career":
         validate_weekly_career(content)
@@ -502,10 +641,10 @@ def main() -> int:
         content = read_report(Path(args.path))
         validate(content, args.type)
     except (OSError, UnicodeDecodeError, RuntimeError) as exc:
-        print(f"KR Premium brief validation failed: {exc}", file=sys.stderr)
+        print(f"Career Feed brief validation failed: {exc}", file=sys.stderr)
         return 1
 
-    print(f"KR Premium brief validation passed: {args.path} ({args.type})")
+    print(f"Career Feed brief validation passed: {args.path} ({args.type})")
     return 0
 
 

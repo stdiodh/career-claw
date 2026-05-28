@@ -82,10 +82,18 @@ jobs:
           runtime = prompt + "\n\n## Runtime candidate files\n\n"
           runtime += "아래 후보 JSON 파일과 사용자 프로필을 읽고 최종 브리핑을 작성한다.\n\n"
           runtime += "- `reports/candidates/kr-backend-career-events.json`\n"
+          runtime += "- `reports/candidates/kr-backend-intern-jobs.json`\n"
+          runtime += "- `reports/candidates/kr-backend-entry-jobs.json`\n"
+          runtime += "- `reports/candidates/kr-backend-career-activities.json`\n"
+          runtime += "- `reports/candidates/kr-backend-company-watchlist.json`\n"
           runtime += "- `configs/audience-profile.json`\n"
           runtime += "\n## Runtime output\n\n"
           runtime += "- 최종 Markdown은 `reports/briefs/kr-backend-career-weekly.md`에만 작성한다.\n"
-          runtime += "- 후보 JSON, config, workflow, script 파일은 수정하지 않는다.\n"
+          runtime += "- TOP 5에는 상세 공고/상세 활동 URL만 사용한다.\n"
+          runtime += "- generic 메인/목록 URL은 TOP 5에 사용하지 않는다.\n"
+          runtime += "- `대상 적합성`, `백엔드 적합성`, `Kotlin/Spring Boot 관련성`, `왜 나에게 맞는가`, `제외한 후보`는 출력하지 않는다.\n"
+          runtime += "- `마감: 원문 확인 필요` 항목은 TOP 5에 넣지 않는다.\n"
+          runtime += "- 후보 JSON, config, workflow, script 파일은 runtime Codex 생성 단계에서 수정하지 않는다.\n"
           runtime += "- Secret 값이나 Webhook URL은 출력하지 않는다.\n"
           destination.write_text(runtime, encoding="utf-8")
           PY
@@ -112,7 +120,7 @@ jobs:
           REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
         run: |
           set -euo pipefail
-          python3 scripts/validate-kr-premium-brief.py "${REPORT_FILE}" --type weekly-career
+          python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type weekly-career
 
       - name: Send backend career weekly brief to Discord
         shell: bash
@@ -129,6 +137,10 @@ jobs:
         with:
           name: career-feed-kr-backend-career-weekly-${{ github.run_id }}
           path: |
+            reports/candidates/kr-backend-intern-jobs.json
+            reports/candidates/kr-backend-entry-jobs.json
+            reports/candidates/kr-backend-career-activities.json
+            reports/candidates/kr-backend-company-watchlist.json
             reports/candidates/kr-backend-career-events.json
             reports/briefs/kr-backend-career-weekly.md
             reports/briefs/kr-backend-career-weekly-codex-summary.md

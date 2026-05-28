@@ -1,5 +1,5 @@
 {
-  "mode": "KR_PREMIUM_V2",
+  "mode": "CAREER_FEED",
   "naver": {
     "endpoint": "https://openapi.naver.com/v1/search/news.json",
     "display": 10,
@@ -23,7 +23,14 @@
       "d2.naver.com",
       "techblog.woowahan.com",
       "toss.tech",
-      "engineering.linecorp.com"
+      "engineering.linecorp.com",
+      "recruit.navercorp.com",
+      "careers.kakao.com",
+      "careers.linecorp.com",
+      "coupang.jobs",
+      "career.woowahan.com",
+      "toss.im",
+      "about.daangn.com"
     ],
     "major_media": [
       "etnews.com",
@@ -43,7 +50,10 @@
       "all-con.co.kr",
       "wanted.co.kr",
       "jumpit.co.kr",
-      "saramin.co.kr"
+      "saramin.co.kr",
+      "jobkorea.co.kr",
+      "yw.work24.go.kr",
+      "zero-base.co.kr"
     ],
     "aggregator": [
       "naver.com",
@@ -257,27 +267,112 @@
       "max_candidates": 30,
       "tags": ["backend", "internship", "hackathon", "contest"],
       "naver_queries": [
-        "백엔드 인턴 Kotlin",
         "백엔드 인턴 Spring Boot",
-        "서버 개발 인턴",
-        "Java 백엔드 인턴",
-        "Kotlin 백엔드 채용연계형 인턴",
-        "신입 백엔드 개발자",
-        "주니어 백엔드 개발자",
-        "개발자 해커톤 백엔드",
-        "AI 해커톤 개발자",
-        "데이터 경진대회 백엔드",
-        "Spring Boot 공모전",
-        "대학생 개발 공모전",
-        "프로그래머스 백엔드 데브코스",
+        "서버 개발 인턴 Java",
+        "Kotlin 백엔드 인턴",
+        "채용연계형 백엔드 인턴",
+        "전환형 서버 개발 인턴",
+        "신입 백엔드 개발자 채용",
+        "주니어 백엔드 개발자 채용",
+        "Backend Engineer Intern Korea",
+        "Software Engineer Backend Intern Korea",
+        "네이버 백엔드 인턴",
+        "네이버 신입 서버 개발자",
+        "카카오 백엔드 인턴",
+        "카카오 신입 서버 개발자",
+        "라인 백엔드 인턴",
+        "라인 신입 서버 개발자",
+        "쿠팡 백엔드 인턴",
+        "쿠팡 신입 서버 개발자",
+        "우아한형제들 백엔드 인턴",
+        "우아한형제들 신입 서버 개발자",
+        "토스 서버 개발 인턴",
+        "토스 신입 서버 개발자",
+        "당근 백엔드 인턴",
+        "당근 서버 개발자 신입",
+        "백엔드 해커톤",
+        "Spring Boot 해커톤",
+        "AI 서비스 해커톤",
+        "대학생 개발 해커톤",
+        "개발자 공모전 API 서버",
+        "AI 공모전 백엔드",
+        "데이터 경진대회 API",
         "데이콘 AI 경진대회",
-        "Kakao 인턴 백엔드",
-        "Naver 인턴 백엔드",
-        "우아한형제들 인턴 백엔드",
-        "토스 인턴 서버 개발"
+        "AI Factory 해커톤",
+        "프로그래머스 개발자 대회"
       ],
       "rss_sources": [],
       "reference_pages": [
+        {
+          "name": "Linkareer Intern",
+          "url": "https://linkareer.com/list/intern?filterBy_activityTypeID=5&filterBy_jobTypes=INTERN&filterBy_status=OPEN&orderBy_direction=DESC&orderBy_field=RECENT&page=1",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "JobKorea",
+          "url": "https://www.jobkorea.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Saramin",
+          "url": "https://www.saramin.co.kr/zf_user/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Wanted",
+          "url": "https://www.wanted.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Work24 Youth Work Experience",
+          "url": "https://yw.work24.go.kr/d/a/selectWkexPrgmList.do",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "ZeroBase Zero Intern",
+          "url": "https://zero-base.co.kr/event/zero_intern",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Jumpit",
+          "url": "https://www.jumpit.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "NAVER Careers",
+          "url": "https://recruit.navercorp.com/rcrt/list.do",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kakao Careers",
+          "url": "https://careers.kakao.com/jobs?company=ALL",
+          "source_reliability": "official"
+        },
+        {
+          "name": "LINE Careers",
+          "url": "https://careers.linecorp.com/ko/jobs",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Coupang Jobs",
+          "url": "https://www.coupang.jobs/en/jobs/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Woowa Careers",
+          "url": "https://career.woowahan.com/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Toss Careers",
+          "url": "https://toss.im/career",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Daangn Careers",
+          "url": "https://about.daangn.com/jobs/",
+          "source_reliability": "official"
+        },
         {
           "name": "DACON Competitions",
           "url": "https://dacon.io/competitions",
@@ -294,6 +389,11 @@
           "source_reliability": "platform"
         },
         {
+          "name": "Linkareer Activities",
+          "url": "https://linkareer.com/list/activity?filterBy_status=OPEN&orderBy_direction=DESC&orderBy_field=RECENT&page=1",
+          "source_reliability": "platform"
+        },
+        {
           "name": "Linkareer",
           "url": "https://linkareer.com/",
           "source_reliability": "platform"
@@ -306,21 +406,6 @@
         {
           "name": "All-Con",
           "url": "https://www.all-con.co.kr/",
-          "source_reliability": "platform"
-        },
-        {
-          "name": "Wanted",
-          "url": "https://www.wanted.co.kr/",
-          "source_reliability": "platform"
-        },
-        {
-          "name": "Jumpit",
-          "url": "https://www.jumpit.co.kr/",
-          "source_reliability": "platform"
-        },
-        {
-          "name": "Saramin",
-          "url": "https://www.saramin.co.kr/",
           "source_reliability": "platform"
         }
       ],
@@ -342,22 +427,42 @@
         "올콘",
         "원티드",
         "점핏",
-        "사람인"
+        "사람인",
+        "잡코리아",
+        "워크24",
+        "제로베이스",
+        "네이버",
+        "카카오",
+        "라인",
+        "쿠팡",
+        "우아한형제들",
+        "토스",
+        "당근"
       ],
       "developer_keywords": [
         "백엔드 인턴",
         "서버 개발 인턴",
+        "Backend Engineer Intern",
+        "Software Engineer Backend Intern",
         "Spring Boot",
         "Kotlin",
         "Java",
+        "REST API",
+        "DB",
+        "MySQL",
+        "PostgreSQL",
         "신입 개발자",
         "주니어 개발자",
+        "New Grad",
         "해커톤",
         "공모전",
         "경진대회",
         "데이터 경진대회",
+        "AI 서비스",
+        "API 서버",
         "대학생",
         "채용연계형",
+        "전환형",
         "지원",
         "모집"
       ]
@@ -416,79 +521,6 @@
         "blocked",
         "needs team decision",
         "assigned"
-      ]
-    },
-    {
-      "id": "kr-security-alerts",
-      "name": "한국 보안/취약점 알림",
-      "output_file": "reports/candidates/kr-security-alerts.json",
-      "max_candidates": 20,
-      "tags": ["security", "legacy", "manual"],
-      "naver_queries": [
-        "보안 업데이트",
-        "취약점",
-        "CVE",
-        "KISA 보안공지",
-        "KrCERT",
-        "공급망 공격",
-        "랜섬웨어",
-        "개발자 보안",
-        "오픈소스 보안"
-      ],
-      "rss_sources": [
-        {
-          "name": "ETNews Security RSS",
-          "url": "http://rss.etnews.com/04045.xml",
-          "type": "rss",
-          "source_reliability": "major_media"
-        },
-        {
-          "name": "Boho Security Notice RSS",
-          "url": "https://www.boho.or.kr/kr/rss.do?bbsId=B0000133",
-          "type": "rss",
-          "source_reliability": "official"
-        },
-        {
-          "name": "Boho Vulnerability RSS",
-          "url": "https://www.boho.or.kr/kr/rss.do?bbsId=B0000302",
-          "type": "rss",
-          "source_reliability": "official"
-        }
-      ],
-      "reference_pages": [
-        {
-          "name": "KISA Boho Security Notice",
-          "url": "https://www.boho.or.kr/kr/bbs/list.do?bbsId=B0000133",
-          "source_reliability": "official"
-        },
-        {
-          "name": "KISA Boho Vulnerability Info",
-          "url": "https://www.boho.or.kr/kr/bbs/list.do?bbsId=B0000302",
-          "source_reliability": "official"
-        }
-      ],
-      "korea_keywords": [
-        "한국",
-        "국내",
-        "KISA",
-        "한국인터넷진흥원",
-        "보호나라",
-        "KrCERT",
-        "과기정통부",
-        "개인정보위"
-      ],
-      "developer_keywords": [
-        "취약점",
-        "CVE",
-        "보안 업데이트",
-        "패치",
-        "공급망",
-        "랜섬웨어",
-        "오픈소스",
-        "컨테이너",
-        "클라우드",
-        "인증",
-        "권한"
       ]
     }
   ]
