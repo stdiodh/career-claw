@@ -26,7 +26,7 @@
 
 ## 3. 오픈소스 기여 후보
 ### 후보: Support java.util.Pattern for LIKE query method predicates
-- 상태 확인: maintainer가 연 이슈이고, 담당자 없음, 연결 PR 없음, 작업 의사 댓글 없음이 확인되었습니다.
+- 상태 확인: maintainer가 연 이슈이고, 담당자 없음, 연결 PR/branch 없음, 작업 claim 댓글 없음이 확인되었습니다.
 - 난이도 밴드: P5-like
 - 저장소: spring-projects/spring-data-commons
 - 기여 유형: docs

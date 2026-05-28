@@ -250,6 +250,7 @@ OSS_BLOCKED_LABEL_TITLE_KEYWORDS = [
 OSS_CLAIM_KEYWORDS = [
     "I'll take this",
     "I will take this",
+    "I'm working on this",
     "I am working on this",
     "working on this",
     "I can work on this",
@@ -258,6 +259,7 @@ OSS_CLAIM_KEYWORDS = [
     "제가 해보겠습니다",
     "작업하겠습니다",
     "제가 맡겠습니다",
+    "제가 진행해보겠습니다",
 ]
 OSS_PREFERRED_CONTRIBUTION_TYPES = {"docs", "test", "bug-repro", "sample"}
 
@@ -314,6 +316,7 @@ class OssIssueCandidate:
     linked_branches_count: int
     linked_work_check: str
     has_linked_work: bool
+    comments_checked_count: int
     created_at: datetime | None
     updated_at: datetime | None
     summary: str
@@ -328,6 +331,8 @@ class OssIssueCandidate:
     why_beginner_friendly: str
     first_30_min_action: str
     pre_contribution_etiquette: str
+    claim_comment_author: str
+    safe_to_recommend: bool
     status_check: str
     risk_reason: str
     score: int
@@ -1678,14 +1683,17 @@ def is_maintainer_triaged(labels: list[str]) -> bool:
     return text_contains_any(" ".join(labels), OSS_BEGINNER_TRIAGE_LABELS)
 
 
-def comments_have_claim(comments: list[dict[str, object]] | None) -> bool:
+def claim_comment_author(comments: list[dict[str, object]] | None) -> str:
     if comments is None:
-        return False
+        return ""
     for comment in comments:
         body = strip_html(str(comment.get("body") or ""))
         if text_contains_any(body, OSS_CLAIM_KEYWORDS):
-            return True
-    return False
+            user = comment.get("user", {})
+            if isinstance(user, dict):
+                return str(user.get("login", "")).strip()
+            return "unknown"
+    return ""
 
 
 def infer_contribution_type(text: str) -> str:
@@ -2026,12 +2034,12 @@ def status_check_for_issue(
     if not has_assignee:
         checks.append("담당자 없음")
     if linked_work_check != "unknown" and linked_prs_count == 0:
-        checks.append("연결 PR 없음")
+        checks.append("연결 PR/branch 없음")
     if comments_count == 0:
-        checks.append("댓글 없음")
+        checks.append("claim 댓글 없음")
     elif not has_claim_comment:
-        checks.append("작업 의사 댓글 없음")
-    return ", ".join(checks)
+        checks.append("작업 claim 댓글 없음")
+    return "이고, ".join(checks) + "입니다." if checks else ""
 
 
 def oss_issue_scores(
@@ -2319,8 +2327,11 @@ def build_oss_issue_candidate(
     ):
         return None
 
+    contribution_type = infer_contribution_type(searchable)
     comments_payload: list[dict[str, object]] | None = []
     claim_comment_check = "checked"
+    comments_checked_count = 0
+    claim_author = ""
     if comments_count > 0:
         comments_payload = fetch_github_issue_comments(
             repository,
@@ -2330,17 +2341,30 @@ def build_oss_issue_candidate(
         )
         if comments_payload is None:
             claim_comment_check = "unknown"
-        elif comments_have_claim(comments_payload):
+        else:
+            comments_checked_count = len(comments_payload)
+            claim_author = claim_comment_author(comments_payload)
+        if claim_author:
             return None
     linked_prs_result = fetch_github_open_pr_reference_count(repository, issue_number, token)
-    linked_work_check = "best_effort" if linked_prs_result is not None else "unknown"
     linked_prs_count = linked_prs_result if linked_prs_result is not None else 0
-    linked_branches_count = 0
+    linked_branches_count = -1
+    linked_work_check = "unknown"
     has_linked_work = linked_prs_count > 0 or linked_branches_count > 0
-    if has_linked_work or linked_work_check == "unknown" or claim_comment_check == "unknown":
+    safe_to_recommend = (
+        state == "open"
+        and maintainer_authored
+        and not has_assignee
+        and linked_prs_count == 0
+        and linked_branches_count == 0
+        and linked_work_check == "verified"
+        and claim_comment_check == "checked"
+        and not claim_author
+        and contribution_type in OSS_PREFERRED_CONTRIBUTION_TYPES
+    )
+    if has_linked_work or not safe_to_recommend:
         return None
 
-    contribution_type = infer_contribution_type(searchable)
     body_is_clear = len(raw_body) >= 80 or text_contains_any(
         searchable,
         ["src/", ".java", ".kt", ".adoc", ".md", "documentation", "docs", "test"],
@@ -2401,6 +2425,7 @@ def build_oss_issue_candidate(
         linked_branches_count=linked_branches_count,
         linked_work_check=linked_work_check,
         has_linked_work=has_linked_work,
+        comments_checked_count=comments_checked_count,
         created_at=created_at,
         updated_at=updated_at,
         summary=summary,
@@ -2415,6 +2440,8 @@ def build_oss_issue_candidate(
         why_beginner_friendly=why_beginner_friendly,
         first_30_min_action=first_action_for_issue(repository, contribution_type, searchable),
         pre_contribution_etiquette=pre_contribution_etiquette_for_issue(),
+        claim_comment_author=claim_author,
+        safe_to_recommend=safe_to_recommend,
         status_check=status_check_for_issue(
             maintainer_authored=maintainer_authored,
             maintainer_triaged=maintainer_triaged,
@@ -2558,8 +2585,10 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "has_assignee": candidate.has_assignee,
         "comments": candidate.comments,
         "comments_count": candidate.comments_count,
+        "comments_checked_count": candidate.comments_checked_count,
         "has_claim_comment": candidate.has_claim_comment,
         "claim_comment_check": candidate.claim_comment_check,
+        "claim_comment_author": candidate.claim_comment_author,
         "linked_prs_count": candidate.linked_prs_count,
         "linked_branches_count": candidate.linked_branches_count,
         "linked_work_check": candidate.linked_work_check,
@@ -2579,6 +2608,7 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "first_30_min_action": candidate.first_30_min_action,
         "first_30m_action": candidate.first_30_min_action,
         "pre_contribution_etiquette": candidate.pre_contribution_etiquette,
+        "safe_to_recommend": candidate.safe_to_recommend,
         "status_check": candidate.status_check,
         "risk_reason": candidate.risk_reason,
         "score": candidate.score,
@@ -2731,6 +2761,23 @@ def write_category_output(
             if isinstance(candidate, Candidate)
         ]
         payload = build_weekly_career_payload(category_id, generated_at, weekly_items)
+    elif category_id == OSS_CATEGORY_ID:
+        payload = {
+            "schema_version": 2,
+            "category": category_id,
+            "generated_at": format_kst(generated_at),
+            "verification_policy": (
+                "Only safe_to_recommend=true issues are included in items. "
+                "Maintainer authorship, assignee absence, linked work absence, "
+                "and claim comment absence must all be verified."
+            ),
+            "items": [
+                serialize_oss_issue_candidate(candidate)
+                for candidate in candidates
+                if isinstance(candidate, OssIssueCandidate) and candidate.safe_to_recommend
+            ],
+            "excluded": [],
+        }
     else:
         payload = {
             "category": category_id,

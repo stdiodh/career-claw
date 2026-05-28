@@ -6,6 +6,7 @@ cd "${ROOT_DIR}"
 
 echo "==> Checking Python syntax"
 python3 -m py_compile \
+  scripts/check-workflow-schedules.py \
   scripts/collect-kr-feeds.py \
   scripts/select-ps-problem.py \
   scripts/send-discord.py \
@@ -74,6 +75,9 @@ if [ "${prompt_count}" != "2" ]; then
   exit 1
 fi
 
+echo "==> Checking workflow schedules"
+python3 scripts/check-workflow-schedules.py
+
 echo "==> Checking removed scripts"
 removed_scripts=(
   "scripts/build-ai-input.py"
@@ -98,6 +102,7 @@ required_files=(
   "configs/oss-repositories.json"
   "configs/programmers-ps-curriculum.json"
   "data/ps-progress.json"
+  "scripts/check-workflow-schedules.py"
   "scripts/collect-kr-feeds.py"
   "scripts/select-ps-problem.py"
   "scripts/send-discord.py"

@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Check Career Feed workflow trigger and schedule guards."""
+
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+
+
+DAILY_WORKFLOW = Path(".github/workflows/kr-tech-daily.yml")
+WEEKLY_WORKFLOW = Path(".github/workflows/kr-backend-career-weekly.yml")
+MARK_PS_WORKFLOW = Path(".github/workflows/mark-ps-solved.yml")
+
+REMOVED_WORKFLOWS = [
+    Path(".github/workflows/ai-brief-" "manual.yml"),
+    Path(".github/workflows/daily-" "feed.yml"),
+    Path(".github/workflows/daily-" "news.yml"),
+    Path(".github/workflows/kr-" "premium-brief.yml"),
+]
+
+
+def fail(message: str) -> None:
+    raise RuntimeError(message)
+
+
+def read_required(path: Path) -> str:
+    if not path.exists():
+        fail(f"missing workflow file: {path}")
+    return path.read_text(encoding="utf-8")
+
+
+def has_quoted_value(text: str, key: str, value: str) -> bool:
+    pattern = rf"{re.escape(key)}\s*:\s*(['\"]){re.escape(value)}\1"
+    return bool(re.search(pattern, text))
+
+
+def require_contains(text: str, needle: str, path: Path) -> None:
+    if needle not in text:
+        fail(f"{path}: missing required text: {needle}")
+
+
+def require_absent(text: str, needle: str, path: Path) -> None:
+    if needle in text:
+        fail(f"{path}: forbidden text found: {needle}")
+
+
+def check_scheduled_workflow(
+    path: Path,
+    *,
+    label: str,
+    cron: str,
+    secret: str,
+    concurrency_group: str,
+) -> None:
+    text = read_required(path)
+    if not has_quoted_value(text, "cron", cron):
+        fail(f"{path}: missing schedule cron: {cron}")
+    if not has_quoted_value(text, "timezone", "Asia/Seoul"):
+        fail(f"{path}: missing schedule timezone: Asia/Seoul")
+    require_contains(text, "workflow_dispatch:", path)
+    require_contains(text, secret, path)
+    require_contains(text, "validate-career-feed-brief.py", path)
+    require_contains(text, "Log workflow trigger context", path)
+    require_contains(text, "EVENT_NAME: ${{ github.event_name }}", path)
+    require_contains(text, "EVENT_SCHEDULE: ${{ github.event.schedule }}", path)
+    require_contains(text, "kst_now=$(TZ=Asia/Seoul date", path)
+    require_contains(text, "concurrency:", path)
+    require_contains(text, f"group: {concurrency_group}", path)
+    require_contains(text, "cancel-in-progress: false", path)
+    require_absent(text, "DISCORD_WEBHOOK_KR_" "PREMIUM_BRIEF", path)
+    require_absent(text, "validate-kr-" "premium-brief.py", path)
+    print(f"ok: {label} schedule = {cron} Asia/Seoul")
+
+
+def check_mark_ps_workflow() -> None:
+    text = read_required(MARK_PS_WORKFLOW)
+    require_contains(text, "workflow_dispatch:", MARK_PS_WORKFLOW)
+    require_absent(text, "schedule:", MARK_PS_WORKFLOW)
+    require_absent(text, "cron:", MARK_PS_WORKFLOW)
+    print("ok: Mark PS Solved has workflow_dispatch only")
+
+
+def check_removed_workflows_absent() -> None:
+    existing = [str(path) for path in REMOVED_WORKFLOWS if path.exists()]
+    if existing:
+        fail(f"removed workflow file(s) must not exist: {', '.join(existing)}")
+
+
+def main() -> int:
+    try:
+        check_removed_workflows_absent()
+        check_scheduled_workflow(
+            DAILY_WORKFLOW,
+            label="Daily Backend Brief",
+            cron="47 8 * * 1-5",
+            secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
+            concurrency_group="career-feed-kr-tech-daily-${{ github.ref }}",
+        )
+        check_scheduled_workflow(
+            WEEKLY_WORKFLOW,
+            label="Weekly Backend Career Brief",
+            cron="7 9 * * 1",
+            secret="DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY",
+            concurrency_group="career-feed-backend-career-weekly-${{ github.ref }}",
+        )
+        check_mark_ps_workflow()
+    except RuntimeError as exc:
+        print(f"schedule guard failed: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

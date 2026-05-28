@@ -42,6 +42,8 @@ Daily OSS 후보 정책:
 
 - OSS 후보는 maintainer/member/collaborator가 올렸거나 maintainer가 초보자용으로 분류한 open issue만 추천합니다.
 - assignee가 있거나 linked PR/branch가 있거나 누군가 댓글로 작업 의사를 밝힌 이슈는 추천하지 않습니다.
+- linked work 확인이 불완전하면 추천하지 않습니다.
+- 후보가 없으면 empty-state를 출력합니다.
 - 첫 30분 액션은 읽기, 재현, 문서 위치 확인, 로컬 빌드 확인처럼 PR 전 확인 행동으로 제한합니다.
 - 작업 전 issue에 짧게 확인 댓글을 남기는 것을 권장합니다.
 
@@ -92,22 +94,26 @@ OpenAI/Discord secrets는 실행 필수입니다. Naver secrets는 한국 뉴스
 
 Secret 값, API Key, Webhook URL은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 
-## 최초 운영 체크리스트
+## 자동 실행 체크리스트
 
 1. `Settings > Secrets and variables > Actions`에 필수 secrets를 등록합니다.
-2. `Settings > Actions > General`에서 Actions 실행을 허용합니다.
+2. `Settings > Actions > General`에서 Actions 실행이 허용되어 있는지 확인합니다.
 3. `Workflow permissions`는 `Read and write permissions`로 설정합니다.
-4. `Actions > Daily Korea Tech Brief`에서 workflow가 disabled 상태라면 `Enable workflow`를 누릅니다.
-5. `Run workflow`로 Daily를 1회 수동 실행합니다.
-6. Discord에 Daily 메시지가 도착했는지 확인합니다.
-7. `Actions > Weekly Backend Career Brief`에서 workflow가 disabled 상태라면 `Enable workflow`를 누릅니다.
-8. `Run workflow`로 Weekly를 1회 수동 실행합니다.
-9. Discord에 Weekly 메시지가 도착했는지 확인합니다.
-10. `Mark PS Solved`는 문제 풀이 후 `problem_id`를 넣어 수동 실행합니다.
+4. `Actions > Daily Korea Tech Brief`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
+5. `Actions > Weekly Backend Career Brief`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
+6. `Actions > Mark PS Solved`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
+7. Daily와 Weekly를 각각 `Run workflow`로 1회 수동 실행해 Discord 도착 여부를 확인합니다.
+8. 이후 Daily는 평일 08:47 KST, Weekly는 월요일 09:07 KST에 자동 실행됩니다.
+
+GitHub Actions scheduled workflow는 default branch의 최신 workflow 파일을 기준으로 실행됩니다.
+GitHub Actions 부하가 높은 시간대에는 scheduled workflow가 지연될 수 있고, 매우 높은 부하에서는 일부 queued job이 drop될 수 있습니다.
+그래서 이 저장소는 00분/30분을 피하고 08:47, 09:07 KST로 실행합니다.
+public repository는 장기간 활동이 없으면 scheduled workflow가 자동 비활성화될 수 있으므로 Actions 탭에서 workflow가 enabled 상태인지 확인합니다.
 
 ## 로컬 검증
 
 ```bash
+python3 scripts/check-workflow-schedules.py
 python3 scripts/collect-kr-feeds.py --mode daily-tech --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
@@ -141,6 +147,7 @@ repository-root/
 │  ├─ briefs/
 │  └─ candidates/
 ├─ scripts/
+│  ├─ check-workflow-schedules.py
 │  ├─ collect-kr-feeds.py
 │  ├─ select-ps-problem.py
 │  ├─ send-discord.py

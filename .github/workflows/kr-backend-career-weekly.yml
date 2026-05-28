@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: career-feed-backend-career-weekly-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   kr-backend-career-weekly:
     name: Generate and send backend career weekly brief
@@ -19,6 +23,17 @@ jobs:
         uses: actions/checkout@v5
         with:
           persist-credentials: false
+
+      - name: Log workflow trigger context
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          set -euo pipefail
+          echo "event_name=${EVENT_NAME}"
+          echo "event_schedule=${EVENT_SCHEDULE:-}"
+          echo "kst_now=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
 
       - name: Set up Python
         uses: actions/setup-python@v6

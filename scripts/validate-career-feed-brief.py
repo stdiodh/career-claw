@@ -189,12 +189,23 @@ DAILY_OSS_FORBIDDEN_PATTERNS = [
     r"바로\s*PR",
     r"바로\s*구현",
     r"전체\s*구조를\s*파악",
+    r"담당자\s*있음",
+    r"연결\s*PR\s*있음",
+    r"연결\s*branch\s*있음",
+    r"작업\s*중",
+    r"claim\s*있음",
     r"\bapprove\b",
     r"\breject\b",
     r"리뷰\s*승인",
-    r"담당자\s*있음",
-    r"연결\s*PR\s*있음",
-    r"작업\s*중",
+]
+DAILY_OSS_STATUS_CHECK_TERMS = [
+    r"maintainer",
+    r"메인테이너",
+    r"담당자\s*없음",
+    r"연결\s*PR",
+    r"연결\s*branch",
+    r"claim\s*댓글",
+    r"작업\s*claim",
 ]
 
 LINK_RE = re.compile(r"https?://[^\s)>\\\]]+")
@@ -513,10 +524,15 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
     if missing:
         fail(f"OSS candidate is missing field(s): {item.title} ({', '.join(missing)})")
     status_check = bullet_field_value(item.body, "상태 확인")
-    if not re.search(r"담당자\s*없음|연결\s*PR\s*없음", status_check):
-        fail("OSS 상태 확인 must mention 담당자 없음 or 연결 PR 없음.")
+    matched_status_terms = [
+        pattern
+        for pattern in DAILY_OSS_STATUS_CHECK_TERMS
+        if re.search(pattern, status_check, flags=re.IGNORECASE)
+    ]
+    if len(matched_status_terms) < 2:
+        fail("OSS 상태 확인 must include at least two verification signals.")
     first_action = bullet_field_value(item.body, "첫 30분 액션")
-    if re.match(r"`?(PR\s*생성|코드\s*수정)", first_action, flags=re.IGNORECASE):
+    if re.match(r"`?(PR\s*생성|코드\s*수정|구현)", first_action, flags=re.IGNORECASE):
         fail("OSS 첫 30분 액션 must not start with PR creation or code editing.")
     validate_item_markdown_link(item)
 
