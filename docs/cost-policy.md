@@ -6,8 +6,10 @@ Career Feed의 기본 오전 알림은 KR Premium v2로 운영한다. OpenAI API
 
 | 모드 | 용도 | 실행 방식 | 비용 기준 |
 | --- | --- | --- | --- |
-| KR Premium v2 Daily Tech | 한국 AI 테크 + 백엔드 기술 | 평일 자동 | OpenAI API 비용 발생 |
+| KR Premium v2 Daily Tech | Backend Daily Study Brief | 평일 자동 | OpenAI API 비용 발생 |
 | KR Premium v2 Weekly Career | 백엔드 인턴/공모전/해커톤/경진대회 | 월요일 자동 | OpenAI API 비용 발생 |
+| Programmers PS config/progress | 주차별 PS 루틴 상태 관리 | Daily 후보 생성/수동 기록 | OpenAI API 사용 안 함 |
+| Mark PS Solved | solved 상태 기록 | 수동 실행 | OpenAI API 사용 안 함 |
 | Legacy KR Premium | 기존 4섹션 통합 브리핑 | 수동 백업 | OpenAI API 비용 발생 |
 | `FREE_MODE` | 무료 RSS/Atom 기반 백업 알림 | 수동 실행 전용 | OpenAI API 사용 안 함 |
 | `AI_LIGHT_MODE` | 후보 JSON만 짧게 정제 | 수동 실행 전용 | 낮은 비용, live web search 없음 |
@@ -18,10 +20,13 @@ Career Feed의 기본 오전 알림은 KR Premium v2로 운영한다. OpenAI API
 - `--search`를 사용하지 않는다.
 - Naver News Search API, RSS, 공식 URL, GitHub Issues 후보 pool을 먼저 만든다.
 - OpenAI는 후보 JSON을 읽고 최종 Markdown을 편집/선별/요약하는 데만 사용한다.
+- Programmers PS config와 progress 파일은 정적 JSON이므로 비용이 없다.
+- Mark PS Solved workflow는 OpenAI와 Discord를 호출하지 않으므로 OpenAI 비용이 없다.
 - 모델은 기본적으로 `gpt-5.4-mini`, reasoning effort는 `low`를 사용한다.
 - Codex Action의 `output-file`은 summary 파일로만 사용한다.
 - 실제 report 파일은 Codex가 workspace의 지정 경로에 직접 작성한다.
 - 같은 날 `workflow_dispatch`를 반복 실행하지 않는다.
+- 비용 방지를 위해 workflow_dispatch 반복 실행을 피한다.
 - reports 산출물은 커밋하지 않는다.
 
 ## KR Premium v2 제한
@@ -31,7 +36,7 @@ Daily Tech:
 - workflow: `.github/workflows/kr-tech-daily.yml`
 - schedule: 평일 09:10 KST
 - 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-tech`
-- 입력 후보: AI 테크, 백엔드 기술, 오픈소스 기여 후보
+- 입력 후보: Spring Boot/JVM 학습, Programmers PS 루틴, Spring OSS 기여 후보, 한국 개발/AI 뉴스
 - 출력: `reports/briefs/kr-tech-daily.md`
 
 Weekly Career:
@@ -42,7 +47,9 @@ Weekly Career:
 - 입력 후보: 백엔드 커리어 이벤트
 - 출력: `reports/briefs/kr-backend-career-weekly.md`
 
-보안 뉴스는 기본 daily 섹션으로 운영하지 않는다. 보안 알림은 legacy/manual 백업으로만 유지한다. Daily Tech는 Spring Boot/Kotlin/JVM GitHub issue 기반 오픈소스 기여 후보를 최대 1개 포함하며, 자동 댓글, PR 생성, assign은 하지 않는다.
+보안 뉴스는 기본 daily 섹션으로 운영하지 않는다. 보안 알림은 legacy/manual 백업으로만 유지한다. Daily Tech는 Spring 생태계 GitHub issue 기반 오픈소스 기여 후보를 최대 1개 포함하며, 자동 댓글, PR 생성, assign은 하지 않는다.
+
+PS 루틴은 Programmers curated config를 읽을 뿐이며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않는다. BOJ/acmicpc/백준은 기본 추천 소스로 사용하지 않는다.
 
 ## 월 예상 비용
 

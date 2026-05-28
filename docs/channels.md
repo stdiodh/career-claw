@@ -14,6 +14,8 @@ KR Premium v2 기본 알림은 Daily Tech와 Weekly Career를 서로 다른 Disc
 - `#career-tech-daily`: `DISCORD_WEBHOOK_KR_TECH_DAILY`
 - `#career-backend-weekly`: `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
 
+`Daily Korea Tech Brief`는 현재 뉴스 브리핑보다 Backend Daily Study Brief에 가깝다. 매일 Spring Boot/JVM 학습, Programmers 주차별 PS 루틴, Spring OSS 기여 후보, 한국 개발/AI 뉴스가 같은 채널로 전송된다.
+
 `DISCORD_WEBHOOK_KR_PREMIUM_BRIEF`는 기존 4섹션 통합 브리핑을 수동으로 보낼 때만 쓰는 legacy/manual Secret으로 남긴다.
 
 ## Legacy/manual free RSS 채널
@@ -60,7 +62,10 @@ KR Premium v2 기본 알림은 Daily Tech와 Weekly Career를 서로 다른 Disc
 KR Premium v2 메시지는 Discord에서 바로 읽기 쉽게 짧은 Markdown으로 출력한다.
 
 - 원문 링크는 `[원문 보기](URL)` 형식을 사용한다.
+- Programmers 문제 링크는 `[문제 보기](URL)` 형식을 사용한다.
+- GitHub issue 링크는 `[Issue 보기](URL)` 형식을 사용한다.
 - `scripts/send-discord.py`는 Discord webhook payload에 `SUPPRESS_EMBEDS` flag를 설정한다.
+- 긴 메시지는 `Career Feed - Backend Daily (1/3)`처럼 report 제목 기반 chunk header를 붙인다.
 - Markdown 표는 사용하지 않는다.
 - 같은 URL을 한 항목 안에서 중복해서 쓰지 않는다.
 

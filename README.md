@@ -4,7 +4,7 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 
 기본 자동 알림은 `KR_PREMIUM_MODE`의 v2 구조입니다.
 
-- 평일 09:10 KST: `Daily Korea Tech Brief`
+- 평일 09:10 KST: `Daily Korea Tech Brief` (`Backend Daily Study Brief` 성격)
 - 월요일 09:30 KST: `Weekly Backend Career Brief`
 
 기존 4섹션 통합 `Daily Korea Premium Brief`는 너무 넓어져서 manual legacy workflow로만 보존합니다. 무료 RSS/Atom 기반 `FREE_MODE`도 삭제하지 않고 수동 백업 workflow로 유지합니다.
@@ -19,7 +19,7 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 
 | 모드 | 용도 | 기본 실행 여부 |
 | --- | --- | --- |
-| `KR_PREMIUM_MODE` v2 | 한국 AI 테크/백엔드 기술 daily, 백엔드 커리어 weekly | 자동 |
+| `KR_PREMIUM_MODE` v2 | 백엔드 daily 학습 루틴, 백엔드 커리어 weekly | 자동 |
 | Legacy KR Premium | 기존 4섹션 통합 브리핑 | 수동 백업 |
 | `FREE_MODE` | 무료 RSS/Atom 수집, 규칙 기반 요약 | 수동 백업 |
 | `AI_LIGHT_MODE` | 수집된 후보 JSON만 Codex가 짧게 정제, live web search 없음 | 수동 실행 |
@@ -27,11 +27,13 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 
 ## 핵심 기능
 
-- 25살 Kotlin/Spring Boot 백엔드 지망생 기준의 한국어 액션 리스트 생성
-- Naver News Search API, RSS, 공식 페이지, GitHub Issues 기반 후보 pool 생성
-- Daily Tech: 한국 AI 테크, 백엔드/개발자 기술, 오픈소스 기여 후보를 선별
+- 25살 Kotlin/Spring Boot 백엔드 지망생 기준의 한국어 학습 액션 리스트 생성
+- Naver News Search API, RSS, 공식 페이지, GitHub Issues, 정적 PS config 기반 후보 pool 생성
+- Daily Tech: Spring Boot/JVM 학습 1개, Programmers 주차별 PS 루틴 1개, Spring OSS 기여 후보 최대 1개, 한국 개발/AI 뉴스 최대 1개를 선별
 - Weekly Career: 백엔드 인턴, 신입/주니어, 해커톤, 공모전, 경진대회만 선별
-- Daily Tech는 Spring Boot/Kotlin/JVM GitHub issue 기반 오픈소스 기여 후보를 최대 1개 포함
+- Daily Tech는 뉴스 브리핑보다 Backend Daily Study Brief에 가깝게 운영
+- Daily Tech는 Spring 생태계 GitHub issue 기반 오픈소스 기여 후보를 최대 1개 포함
+- Programmers PS 루틴은 curated config와 progress 파일만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않음
 - 보안 알림은 기본 daily 알림에서 제외하고 legacy/manual 백업으로만 유지
 - Codex Action의 `output-file`은 summary 파일로만 사용하고, 실제 브리핑 파일은 workspace에 직접 작성
 - Discord Webhook은 Daily Tech와 Weekly Career를 분리해 사용
@@ -55,6 +57,7 @@ GitHub Actions
         v
 KR candidate collection
 Naver News Search API + RSS/official references
+Programmers curated config + Spring GitHub Issues
         |
         v
 reports/candidates/*.json
@@ -72,9 +75,10 @@ DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY
 
 Daily Tech 출력:
 
-- `reports/candidates/kr-ai-tech-news.json`
-- `reports/candidates/kr-backend-tech-news.json`
+- `reports/candidates/spring-study-topic.json`
+- `reports/candidates/ps-weekly-routine.json`
 - `reports/candidates/kr-oss-contribution-opportunities.json`
+- `reports/candidates/kr-dev-ai-news.json`
 - `reports/briefs/kr-tech-daily.md`
 
 Weekly Career 출력:
@@ -126,12 +130,66 @@ Secret 값은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 - 평일 `00:10 UTC`, 즉 `09:10 Asia/Seoul` 실행 요청
 - `workflow_dispatch` 수동 실행 가능
 - 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-tech`
-- 입력 후보: `kr-ai-tech-news.json`, `kr-backend-tech-news.json`, `kr-oss-contribution-opportunities.json`
+- 입력 후보: `spring-study-topic.json`, `ps-weekly-routine.json`, `kr-oss-contribution-opportunities.json`, `kr-dev-ai-news.json`
 - prompt: `.github/codex/prompts/kr-tech-daily-brief.md`
 - 실제 report: `reports/briefs/kr-tech-daily.md`
 - Codex summary: `reports/briefs/kr-tech-daily-codex-summary.md`
 - 검증: `python3 scripts/validate-kr-premium-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
 - Discord Secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
+- Discord 전송 성공 후 `data/ps-progress.json`에 기록된 daily assignment 변경만 bot commit
+
+Daily Korea Tech Brief의 실제 메시지 구조:
+
+- `오늘의 Spring Boot/JVM 학습`: Spring Boot/JVM 학습 주제 1개
+- `이번 주 PS 성장 루틴`: Programmers 주차별 PS 루틴 1개
+- `오픈소스 기여 후보`: Spring OSS 기여 후보 최대 1개
+- `한국 개발/AI 뉴스`: 학습으로 연결할 수 있는 한국 개발/AI 뉴스 최대 1개
+
+### Programmers PS 루틴
+
+- PS 추천은 Programmers 중심으로 운영한다.
+- BOJ/acmicpc/백준은 기본 추천 소스로 사용하지 않는다.
+- Programmers 사이트를 크롤링하지 않고, 제출 결과도 자동 수집하지 않는다.
+- 문제 pool은 `configs/programmers-ps-curriculum.json`에서 수동 curated config로 관리한다.
+- 진행 상태는 `data/ps-progress.json`에 저장한다.
+- solved 기록은 `Mark PS Solved` workflow 또는 `python3 scripts/update-ps-progress.py --mark-solved <problem_id> --notes "<memo>"`로 남긴다.
+- 주제 전환은 solved 기록과 target level 조건을 참고하되, 자동 전환보다 추천/수동 전환을 우선한다.
+- 수동 전환은 `python3 scripts/update-ps-progress.py --advance-track <track_id>`로 수행한다.
+
+### Spring OSS 난이도 모델
+
+Spring OSS 후보는 OpenJDK JBS의 P4~P5 접근법을 참고한 난이도 모델로 점수화한다. OpenJDK/JBS 자체는 직접 수집하지 않는다.
+
+대상 저장소:
+
+- `spring-projects/spring-boot`
+- `spring-projects/spring-framework`
+- `spring-projects/spring-security`
+- `spring-projects/spring-data-jpa`
+- `spring-projects/spring-data-relational`
+- `spring-projects/spring-data-commons`
+- `spring-projects/spring-ai`
+- `spring-projects/spring-ai-examples`
+- `spring-projects/spring-petclinic`
+
+P5-like 후보:
+
+- docs, sample, example, test, reproducer, typo, clarify, getting started
+- 첫 기여에 적합한 문서/예제/테스트/재현/작은 정리 작업
+
+P4-like 후보:
+
+- small enhancement, config, starter, JPA/JDBC/Security/Spring AI 관련 명확한 issue
+- 주니어가 범위를 제한해 도전할 수 있는 작은 개선 또는 명확한 버그
+
+제외하거나 강하게 감점하는 후보:
+
+- CVE, security vulnerability
+- release blocker
+- deep internals, compiler/runtime internals
+- RFC, epic, design proposal
+- assigned issue
+- stale issue
 
 ### Weekly Backend Career Brief
 
@@ -210,7 +268,11 @@ repository-root/
 │  ├─ audience-profile.json
 │  ├─ channels.json
 │  ├─ kr-sources.json
+│  ├─ oss-repositories.json
+│  ├─ programmers-ps-curriculum.json
 │  └─ sources.json
+├─ data/
+│  └─ ps-progress.json
 ├─ docs/
 ├─ refs/categories/
 ├─ reports/
@@ -227,6 +289,8 @@ repository-root/
 - 기본 자동 알림은 KR Premium v2 Daily/Weekly workflow가 담당한다.
 - 기존 무료 RSS workflow와 legacy KR Premium workflow는 수동 백업으로만 사용한다.
 - 오픈소스 후보는 GitHub issue 기반으로 추천만 하며 자동 댓글, PR 생성, assign은 하지 않는다.
+- OpenJDK/JBS는 난이도 모델 참고로만 사용하고 직접 수집하지 않는다.
+- PS 추천은 Programmers curated config만 사용하고 사이트 크롤링이나 제출 결과 자동 수집을 하지 않는다.
 - 보안 알림은 기본 daily에 포함하지 않고 legacy/manual 백업으로만 다룬다.
 - 기사 전문, Secret 값, Webhook URL은 저장소와 로그에 남기지 않는다.
 
