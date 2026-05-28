@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: career-feed-backend-career-weekly-${{ github.ref }}
@@ -21,8 +21,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-        with:
-          persist-credentials: true
 
       - name: Log workflow trigger context
         shell: bash
@@ -67,28 +65,11 @@ jobs:
           set -euo pipefail
           mkdir -p reports/candidates reports/briefs
 
-      - name: Collect backend career candidates
+      - name: Collect backend career site radar
         shell: bash
-        env:
-          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
-          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
         run: |
           set -euo pipefail
           python3 scripts/collect-kr-feeds.py --mode weekly-career
-
-      - name: Commit weekly career cache update
-        shell: bash
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- data/weekly-career-candidate-cache.json; then
-            echo "No weekly career cache changes."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/weekly-career-candidate-cache.json
-          git commit -m "chore: update weekly career candidate cache [skip ci]"
-          git push
 
       - name: Prepare KST runtime prompt
         id: prepare
@@ -109,24 +90,15 @@ jobs:
           prompt = source.read_text(encoding="utf-8")
           prompt = prompt.replace("{{KST_NOW}}", os.environ["KST_NOW"])
           runtime = prompt + "\n\n## Runtime candidate files\n\n"
-          runtime += "아래 후보 JSON 파일과 사용자 프로필을 읽고 최종 브리핑을 작성한다.\n\n"
-          runtime += "- `reports/candidates/kr-backend-career-events.json`\n"
-          runtime += "- `reports/candidates/kr-backend-jobs.json`\n"
-          runtime += "- `reports/candidates/kr-backend-interns.json`\n"
-          runtime += "- `reports/candidates/kr-backend-hackathons.json`\n"
-          runtime += "- `reports/candidates/kr-backend-contests.json`\n"
-          runtime += "- `reports/candidates/kr-backend-competitions.json`\n"
-          runtime += "- `reports/candidates/kr-backend-intern-jobs.json`\n"
-          runtime += "- `reports/candidates/kr-backend-entry-jobs.json`\n"
-          runtime += "- `reports/candidates/kr-backend-career-activities.json`\n"
-          runtime += "- `reports/candidates/kr-backend-company-watchlist.json`\n"
+          runtime += "아래 site radar JSON과 사용자 프로필만 읽고 최종 브리핑을 작성한다.\n\n"
+          runtime += "- `reports/candidates/weekly-career-site-radar.json`\n"
           runtime += "- `configs/audience-profile.json`\n"
           runtime += "\n## Runtime output\n\n"
           runtime += "- 최종 Markdown은 `reports/briefs/kr-backend-career-weekly.md`에만 작성한다.\n"
-          runtime += "- `selected_by_category`를 우선 사용하고 상세 공고/상세 활동 URL만 사용한다.\n"
-          runtime += "- generic 메인/목록 URL은 본문 후보로 사용하지 않는다.\n"
-          runtime += "- `대상 " "적합성`, `백엔드 " "적합성`, `Kotlin/Spring Boot " "관련성`, `왜 나에게 " "맞는가`, `제외한 " "후보`는 출력하지 않는다.\n"
-          runtime += "- `마감: 원문 확인 필요` 항목은 본문 후보로 넣지 않는다.\n"
+          runtime += "- `weekly-career-site-radar.json`에 없는 사이트와 URL은 추가하지 않는다.\n"
+          runtime += "- 후보 제목, 마감일, 회사/주최, 직무/역할, 주최기관, 지원 조건을 생성하지 않는다.\n"
+          runtime += "- 뉴스 검색 결과, 뉴스 기사, 과거 기사, 수상 기사, 종료된 대회를 사용하지 않는다.\n"
+          runtime += "- 링크는 `[사이트 보기](URL)` 형식만 사용한다.\n"
           runtime += "- 후보 JSON, config, workflow, script 파일은 runtime Codex 생성 단계에서 수정하지 않는다.\n"
           runtime += "- Secret 값이나 Webhook URL은 출력하지 않는다.\n"
           destination.write_text(runtime, encoding="utf-8")
@@ -171,6 +143,7 @@ jobs:
         with:
           name: career-feed-kr-backend-career-weekly-${{ github.run_id }}
           path: |
+            reports/candidates/weekly-career-site-radar.json
             reports/candidates/kr-backend-jobs.json
             reports/candidates/kr-backend-interns.json
             reports/candidates/kr-backend-hackathons.json

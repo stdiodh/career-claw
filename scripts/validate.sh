@@ -100,10 +100,10 @@ required_files=(
 	  "configs/backend-practical-knowledge-curriculum.json"
 	  "configs/company-career-watchlist.json"
 	  "configs/weekly-career-coverage.json"
+	  "configs/weekly-career-site-radar.json"
 	  "configs/oss-repositories.json"
 	  "configs/programmers-ps-curriculum.json"
 	  "data/ps-progress.json"
-	  "data/weekly-career-candidate-cache.json"
   "scripts/check-workflow-schedules.py"
   "scripts/collect-kr-feeds.py"
   "scripts/select-ps-problem.py"
@@ -133,42 +133,32 @@ import json
 from pathlib import Path
 
 required = {"job", "intern", "hackathon", "contest", "competition"}
-path = Path("reports/candidates/kr-backend-career-events.json")
+path = Path("reports/candidates/weekly-career-site-radar.json")
 data = json.loads(path.read_text(encoding="utf-8"))
 
-selected = data.get("selected_by_category", {})
-if set(selected) != required:
-    missing = sorted(required - set(selected))
-    extra = sorted(set(selected) - required)
-    raise SystemExit(f"selected_by_category key mismatch: missing={missing} extra={extra}")
-
-coverage = data.get("diagnostics", {}).get("coverage", {})
-if set(coverage) != required:
-    missing = sorted(required - set(coverage))
-    extra = sorted(set(coverage) - required)
-    raise SystemExit(f"diagnostics.coverage key mismatch: missing={missing} extra={extra}")
-
-company_watchlist = data.get("diagnostics", {}).get("company_watchlist", {})
-checked = company_watchlist.get("checked", [])
-expected_sources = {
-    "NAVER Careers",
-    "Kakao Careers",
-    "LINE Careers",
-    "Coupang Jobs",
-    "Woowa Careers",
-    "Toss Careers",
-    "Daangn Careers",
+sections = data.get("sections", [])
+if not isinstance(sections, list):
+    raise SystemExit("weekly career site radar sections must be a list")
+section_ids = {
+    str(section.get("id", ""))
+    for section in sections
+    if isinstance(section, dict)
 }
-actual_sources = {
-    str(item.get("source", ""))
-    for item in checked
-    if isinstance(item, dict)
-}
-if not expected_sources.issubset(actual_sources):
-    missing = sorted(expected_sources - actual_sources)
-    raise SystemExit(f"company watchlist diagnostics missing source(s): {missing}")
+if section_ids != required:
+    missing = sorted(required - section_ids)
+    extra = sorted(section_ids - required)
+    raise SystemExit(f"site radar section id mismatch: missing={missing} extra={extra}")
 
-print("weekly career candidate smoke check passed")
+for section in sections:
+    sites = section.get("sites", []) if isinstance(section, dict) else []
+    if not isinstance(sites, list) or len(sites) < 3:
+        raise SystemExit(f"site radar section has too few sites: {section}")
+
+compat = json.loads(Path("reports/candidates/kr-backend-career-events.json").read_text(encoding="utf-8"))
+if compat.get("items") != [] or compat.get("diagnostics", {}).get("status") != "disabled":
+    raise SystemExit("weekly career compat candidate payload must be disabled")
+
+print("weekly career site radar smoke check passed")
 PY
 
 echo "==> Checking fixtures"

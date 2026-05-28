@@ -9,7 +9,7 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 | 경로 | Workflow | 목적 |
 | --- | --- | --- |
 | Daily Backend Brief | `.github/workflows/kr-tech-daily.yml` | 평일 백엔드 학습/PS/OSS/뉴스/실무지식 브리핑 |
-| Weekly Backend Career Brief | `.github/workflows/kr-backend-career-weekly.yml` | 주간 백엔드 인턴/신입/대외활동 브리핑 |
+| Weekly Backend Career Brief | `.github/workflows/kr-backend-career-weekly.yml` | 주간 백엔드 커리어 사이트 레이더 |
 | Mark PS Solved | `.github/workflows/mark-ps-solved.yml` | PS 풀이 진행도 기록 |
 
 ## 자동 실행 시간
@@ -56,7 +56,12 @@ Daily OSS 후보 정책:
 - report: `reports/briefs/kr-backend-career-weekly.md`
 - Discord secret: `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
 
-후보 파일:
+Primary 입력 파일:
+
+- `reports/candidates/weekly-career-site-radar.json`
+- `configs/audience-profile.json`
+
+호환용 후보 파일:
 
 - `reports/candidates/kr-backend-career-events.json`
 - `reports/candidates/kr-backend-jobs.json`
@@ -71,21 +76,14 @@ Daily OSS 후보 정책:
 
 Weekly Career 후보 정책:
 
-- 뉴스 검색 결과는 최종 추천 후보로 사용하지 않습니다.
-- 목록 페이지는 discovery source로만 사용하고 최종 추천 후보로 사용하지 않습니다.
-- Weekly는 매주 채용, 인턴, 해커톤, 공모전, 경진대회 5개 유형을 따로 확인합니다.
-- 각 유형은 fresh 상세 URL 후보를 우선 사용합니다.
-- fresh 후보가 없으면 `data/weekly-career-candidate-cache.json`에 남은 지난 후보를 오늘 다시 fetch해 유효할 때만 backfill합니다.
-- cache backfill 후보는 Discord 본문에서 `지난 후보를 오늘 다시 확인했고 아직 유효합니다.`처럼 표시됩니다.
-- 최종 추천은 채용, 인턴, 해커톤, 공모전, 경진대회 상세 URL을 fetch해 파싱한 후보만 사용합니다.
-- 뉴스 기사, 보도자료, 수상 기사, 개최 완료 기사, 결과 발표 기사, 종료된 행사는 제외합니다.
-- generic 목록 URL은 최종 후보로 사용하지 않습니다.
-- 마감일과 회사/주최는 원문에서 확인된 경우에만 출력합니다.
-- 마감일이나 회사/주최를 모르면 만들지 않고 해당 필드를 생략합니다.
-- 백엔드 직접 공고가 없으면 IT/시스템개발/응용프로그램개발/API/데이터/AI 서비스처럼 백엔드로 연결 가능한 인턴/활동까지 보수적으로 허용합니다.
-- 후보가 없는 유형은 empty-state로 표시합니다.
-- 후보가 0개일 때는 artifact의 `diagnostics.coverage`에서 어떤 유형이 왜 비었는지 확인합니다.
-- Naver News Search는 Weekly Career 최종 후보 source로 쓰지 않습니다.
+- Weekly Career는 자동 추천이 아니라 사이트 레이더입니다.
+- 채용/대외활동 사이트는 JS 렌더링과 마감 파싱 오류가 많아 자동 추천 신뢰도가 낮기 때문에, 매주 직접 확인할 사이트와 검색 기준만 보냅니다.
+- 채용, 인턴, 해커톤, 공모전, 경진대회 5개 유형을 항상 같은 구조로 출력합니다.
+- 마감, 회사/주최, 직무/역할, 지원 조건은 생성하지 않습니다. 사용자가 원문 사이트에서 직접 확인합니다.
+- 뉴스 검색 결과, 뉴스 기사, 과거 기사, 수상 기사, 종료된 대회는 Weekly Career에 사용하지 않습니다.
+- 자동 추천 후보 JSON은 더 이상 본문 생성에 쓰지 않습니다.
+- 호환용 후보 파일은 `items: []`와 `diagnostics.status: disabled`만 담습니다.
+- `data/weekly-career-candidate-cache.json`은 삭제되었고 workflow에서 업데이트하거나 commit하지 않습니다.
 - Daily 한국 개발/AI 뉴스와 Weekly Career 후보 수집은 별도 정책으로 관리합니다.
 
 ## Mark PS Solved
@@ -114,7 +112,7 @@ python3 scripts/update-ps-progress.py --status
 - `NAVER_CLIENT_ID`
 - `NAVER_CLIENT_SECRET`
 
-OpenAI/Discord secrets는 실행 필수입니다. Naver secrets는 Daily 한국 개발/AI 뉴스 수집용입니다. Weekly Career 최종 후보에는 Naver News Search 결과를 사용하지 않습니다.
+OpenAI/Discord secrets는 실행 필수입니다. Naver secrets는 Daily 한국 개발/AI 뉴스 수집용입니다. Weekly Career에는 Naver News Search 결과를 사용하지 않습니다.
 
 Secret 값, API Key, Webhook URL은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 
@@ -164,7 +162,8 @@ repository-root/
 │  ├─ company-career-watchlist.json
 │  ├─ kr-sources.json
 │  ├─ oss-repositories.json
-│  └─ programmers-ps-curriculum.json
+│  ├─ programmers-ps-curriculum.json
+│  └─ weekly-career-site-radar.json
 ├─ data/
 │  └─ ps-progress.json
 ├─ reports/

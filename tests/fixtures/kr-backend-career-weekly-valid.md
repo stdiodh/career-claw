@@ -1,49 +1,46 @@
 # Career Feed - Backend Career Weekly
-기준시각: 2026-05-28 14:23:54 KST
+기준시각: 2026-05-28 09:07:00 KST
 
-이번 주 요약:
-- 이번 주 실제 지원/참가 가능한 백엔드 커리어 후보를 5개 유형별로 확인합니다.
+이번 주 방향:
+- 자동 추천 대신, 직접 확인할 백엔드 커리어 사이트를 5개 유형별로 점검합니다.
 
-## 1. 이번 주 유형별 백엔드 커리어 후보
+## 1. 채용 확인
+- NAVER Careers: Tech > Backend, New hire, Intern 필터를 확인합니다. [사이트 보기](https://recruit.navercorp.com/rcrt/list.do)
+- Kakao Careers: Backend, Server, Java, Kotlin, Spring 키워드로 확인합니다. [사이트 보기](https://careers.kakao.com/jobs?company=ALL)
+- LINE Careers: Backend, Server, New Grad, Intern 키워드로 확인합니다. [사이트 보기](https://careers.linecorp.com/ko/jobs)
+- Coupang Jobs: Backend, Software Engineer, New Grad, Intern 키워드로 확인합니다. [사이트 보기](https://www.coupang.jobs/en/jobs/)
+- 우아한형제들 인재영입: 서버, 백엔드, 신입, 인턴 키워드로 확인합니다. [사이트 보기](https://career.woowahan.com/)
+- Toss Careers: Server, Backend, Core, Platform, Junior 키워드로 확인합니다. [사이트 보기](https://toss.im/career)
+- 당근 팀 채용: Backend, Server, Platform, Intern 키워드로 확인합니다. [사이트 보기](https://about.daangn.com/jobs/)
+- 이번 주 확인 기준: 신입, 주니어, 인턴, 채용연계형, Java/Kotlin/Spring/API/DB 키워드만 우선 봅니다.
 
-### 1. 채용
-#### 후보: 예시테크 신입 백엔드 개발자
-- 유형: 채용
-- 마감: 2026-06-03 KST
-- 회사/주최: 예시테크
-- 직무/역할: 백엔드 개발자
-- 지원/참가 조건: 신입 지원 가능
-- 기술/산출물 키워드: Java, Spring Boot, REST API, MySQL
-- 전형/제출물: 서류, 코딩테스트, 면접
-- 확인 상태: 이번 주 새로 발견한 상세 페이지 후보입니다.
-- 이번 주 액션: 이력서의 프로젝트 1개를 백엔드 역할 중심으로 정리합니다.
-- 출처: Linkareer
-- 링크: [원문 보기](https://linkareer.com/activity/320853)
+## 2. 인턴 확인
+- Linkareer 인턴: 채용연계형/체험형 인턴 중 IT, 서버, 백엔드, 데이터, 시스템개발 키워드를 확인합니다. [사이트 보기](https://linkareer.com/list/intern?filterBy_activityTypeID=5&filterBy_jobTypes=INTERN&filterBy_status=OPEN&orderBy_direction=DESC&orderBy_field=RECENT&page=1)
+- Work24 청년일경험: 인턴형/프로젝트형 중 IT·SW 직무를 확인합니다. [사이트 보기](https://yw.work24.go.kr/d/a/selectWkexPrgmList.do)
+- ZeroBase Zero Intern: 백엔드 또는 서버 프로젝트로 연결 가능한 트랙을 확인합니다. [사이트 보기](https://zero-base.co.kr/event/zero_intern)
+- Saramin 신입·인턴: 백엔드, 서버, Java, Spring, 신입, 인턴 키워드로 확인합니다. [사이트 보기](https://www.saramin.co.kr/zf_user/)
+- JobKorea 신입·인턴: 백엔드, 서버, 신입, 인턴, Java, Spring 키워드로 확인합니다. [사이트 보기](https://www.jobkorea.co.kr/)
+- 이번 주 확인 기준: 마케팅/디자인/영업 단독 인턴은 제외하고, 개발 산출물이 남는 인턴만 봅니다.
 
-### 2. 인턴
-- 이번 주 기준을 만족하는 인턴 후보가 없습니다.
+## 3. 해커톤 확인
+- Linkareer 대외활동: 해커톤, 개발, AI 서비스, API 키워드로 확인합니다. [사이트 보기](https://linkareer.com/list/activity)
+- Programmers 대회/이벤트: 개발 대회, 해커톤, 챌린지형 이벤트를 확인합니다. [사이트 보기](https://programmers.co.kr/)
+- AI Factory: AI 서비스나 데이터 활용 해커톤을 확인합니다. [사이트 보기](https://aifactory.space/competition)
+- DACON: 서비스화하거나 API 서버를 붙일 수 있는 대회를 확인합니다. [사이트 보기](https://dacon.io/competitions)
+- 이번 주 확인 기준: API 서버, DB, 인증, GitHub, 배포 URL을 결과물로 남길 수 있는 활동만 봅니다.
 
-### 3. 해커톤
-#### 후보: 예시 AI 서비스 해커톤
-- 유형: 해커톤
-- 회사/주최: DACON
-- 직무/역할: API 서버 개발
-- 지원/참가 조건: 대학생/주니어 팀 참가 가능
-- 기술/산출물 키워드: Spring Boot, PostgreSQL, AI API, GitHub
-- 만들 수 있는 백엔드 산출물: Spring Boot API 서버, PostgreSQL 저장 구조, 외부 AI API 연동
-- 확인 상태: 공식/플랫폼 상세 페이지에서 확인했습니다.
-- 이번 주 액션: 팀에서 백엔드 역할과 API 범위를 먼저 정합니다.
-- 출처: DACON
-- 링크: [원문 보기](https://dacon.io/competitions/official/123456/overview/description)
+## 4. 공모전 확인
+- Linkareer 공모전: SW, AI, 데이터, 서비스 개발 공모전을 확인합니다. [사이트 보기](https://linkareer.com/list/contest)
+- Wevity: IT/SW/AI/데이터 공모전을 확인합니다. [사이트 보기](https://www.wevity.com/)
+- All-Con: 개발, 데이터, AI 관련 공모전을 확인합니다. [사이트 보기](https://www.all-con.co.kr/)
+- DACON: 결과물을 포트폴리오로 설명할 수 있는 공모형 대회를 확인합니다. [사이트 보기](https://dacon.io/competitions)
+- 이번 주 확인 기준: 단순 아이디어, 마케팅, 콘텐츠 제작 공모전은 제외합니다.
 
-### 4. 공모전
-- 이번 주 기준을 만족하는 공모전 후보가 없습니다.
+## 5. 경진대회 확인
+- DACON: 접수 중 또는 진행 중인 AI/데이터 경진대회를 직접 확인합니다. [사이트 보기](https://dacon.io/competitions)
+- AI Factory: 진행 중인 AI/데이터 경진대회를 직접 확인합니다. [사이트 보기](https://aifactory.space/competition)
+- Programmers: 개발 챌린지와 코딩/데이터 대회를 확인합니다. [사이트 보기](https://programmers.co.kr/)
+- 이번 주 확인 기준: 이미 종료된 대회는 제외하고, 백엔드 포트폴리오로 연결할 수 있는 데이터 수집/API/대시보드 아이디어가 있는지 봅니다.
 
-### 5. 경진대회
-- 이번 주 기준을 만족하는 경진대회 후보가 없습니다.
-
-## 2. 마감 임박
-- [D-6] 예시테크 신입 백엔드 개발자 - 2026-06-03 KST - [원문 보기](https://linkareer.com/activity/320853)
-
-## 3. 다음 주에도 추적할 후보
-- 다음 주로 넘겨 추적할 후보는 없습니다.
+## 이번 주 30분 액션
+- 공식 채용 2곳, 인턴 사이트 2곳, 대외활동/대회 사이트 2곳만 열어보고 지원/참가 가능성이 있는 링크를 직접 북마크합니다.

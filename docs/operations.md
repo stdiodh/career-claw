@@ -19,7 +19,7 @@
 ## Weekly Backend Career Brief
 
 - workflow: `.github/workflows/kr-backend-career-weekly.yml`
-- 후보 수집: `python3 scripts/collect-kr-feeds.py --mode weekly-career`
+- site radar 생성: `python3 scripts/collect-kr-feeds.py --mode weekly-career`
 - prompt: `.github/codex/prompts/kr-backend-career-weekly.md`
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career`
 - Discord secret: `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`

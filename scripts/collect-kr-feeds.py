@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Collect Korean Career Feed candidates from Naver Search and RSS."""
+"""Collect Korean Career Feed candidates and Weekly Career site radar data."""
 
 from __future__ import annotations
 
@@ -43,7 +43,11 @@ PS_ROUTINE_OUTPUT_PATH = Path("reports/candidates/ps-weekly-routine.json")
 COMPANY_CAREER_WATCHLIST_PATH = Path("configs/company-career-watchlist.json")
 WEEKLY_CAREER_SOURCES_CONFIG_PATH = Path("configs/weekly-career-sources.json")
 WEEKLY_CAREER_COVERAGE_CONFIG_PATH = Path("configs/weekly-career-coverage.json")
-WEEKLY_CAREER_CACHE_PATH = Path("data/weekly-career-candidate-cache.json")
+WEEKLY_CAREER_SITE_RADAR_CONFIG_PATH = Path("configs/weekly-career-site-radar.json")
+WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH = Path(
+    "reports/candidates/weekly-career-site-radar.json"
+)
+WEEKLY_CAREER_BRIEF_OUTPUT_PATH = Path("reports/briefs/kr-backend-career-weekly.md")
 BACKEND_PRACTICAL_CURRICULUM_PATH = Path(
     "configs/backend-practical-knowledge-curriculum.json"
 )
@@ -96,6 +100,21 @@ WEEKLY_COMPAT_EMPTY_OUTPUTS = [
     Path("reports/candidates/kr-backend-company-watchlist.json"),
 ]
 WEEKLY_CAREER_EMPTY_OUTPUTS = WEEKLY_COMPAT_EMPTY_OUTPUTS + list(WEEKLY_CATEGORY_OUTPUTS.values())
+WEEKLY_CAREER_COMPAT_OUTPUT_CATEGORIES = {
+    Path("reports/candidates/kr-backend-intern-jobs.json"): "kr-backend-intern-jobs",
+    Path("reports/candidates/kr-backend-entry-jobs.json"): "kr-backend-entry-jobs",
+    Path("reports/candidates/kr-backend-career-activities.json"): (
+        "kr-backend-career-activities"
+    ),
+    Path("reports/candidates/kr-backend-company-watchlist.json"): (
+        "kr-backend-company-watchlist"
+    ),
+    Path("reports/candidates/kr-backend-jobs.json"): "kr-backend-jobs",
+    Path("reports/candidates/kr-backend-interns.json"): "kr-backend-interns",
+    Path("reports/candidates/kr-backend-hackathons.json"): "kr-backend-hackathons",
+    Path("reports/candidates/kr-backend-contests.json"): "kr-backend-contests",
+    Path("reports/candidates/kr-backend-competitions.json"): "kr-backend-competitions",
+}
 WEEKLY_CATEGORY_DISCOVERY_BUDGETS = {
     "job": {"listing_pages": 12, "detail_urls": 80, "detail_pages": 30},
     "intern": {"listing_pages": 10, "detail_urls": 80, "detail_pages": 30},
@@ -103,7 +122,6 @@ WEEKLY_CATEGORY_DISCOVERY_BUDGETS = {
     "contest": {"listing_pages": 8, "detail_urls": 50, "detail_pages": 20},
     "competition": {"listing_pages": 8, "detail_urls": 50, "detail_pages": 20},
 }
-WEEKLY_CACHE_MAX_ITEMS = 200
 WEEKLY_CATEGORY_CACHE_MAX_AGE_DAYS = {
     "job": 45,
     "intern": 45,
@@ -783,6 +801,143 @@ def load_required_json(path: Path) -> dict[str, object]:
     if not isinstance(data, dict):
         raise RuntimeError(f"JSON root must be an object: {path}")
     return data
+
+
+def load_weekly_career_site_radar_config(
+    path: Path = WEEKLY_CAREER_SITE_RADAR_CONFIG_PATH,
+) -> dict[str, object]:
+    data = load_required_json(path)
+    sections = data.get("sections", [])
+    if not isinstance(sections, list) or not sections:
+        raise RuntimeError("configs/weekly-career-site-radar.json must contain sections.")
+
+    seen_ids: set[str] = set()
+    for section in sections:
+        if not isinstance(section, dict):
+            raise RuntimeError("Every weekly career radar section must be an object.")
+        section_id = str(section.get("id", "")).strip()
+        label = str(section.get("label", "")).strip()
+        check_rule = str(section.get("check_rule", "")).strip()
+        sites = section.get("sites", [])
+        if not section_id or not label or not check_rule:
+            raise RuntimeError("Every weekly career radar section needs id, label, and check_rule.")
+        if section_id in seen_ids:
+            raise RuntimeError(f"Duplicate weekly career radar section id: {section_id}")
+        seen_ids.add(section_id)
+        if not isinstance(sites, list) or not sites:
+            raise RuntimeError(f"Weekly career radar section has no sites: {section_id}")
+        for site in sites:
+            if not isinstance(site, dict):
+                raise RuntimeError(f"Weekly career radar site must be an object: {section_id}")
+            for field in (
+                "name",
+                "url",
+                "how_to_check",
+                "keywords",
+                "exclude_keywords",
+                "backend_portfolio_angle",
+            ):
+                if field not in site:
+                    raise RuntimeError(
+                        f"Weekly career radar site is missing {field}: {section_id}"
+                    )
+            if not str(site.get("name", "")).strip() or not str(site.get("url", "")).strip():
+                raise RuntimeError(f"Weekly career radar site needs name and url: {section_id}")
+
+    required_ids = set(WEEKLY_CATEGORY_ORDER)
+    if seen_ids != required_ids:
+        missing = sorted(required_ids - seen_ids)
+        extra = sorted(seen_ids - required_ids)
+        raise RuntimeError(
+            "Weekly career radar section id mismatch: "
+            f"missing={missing} extra={extra}"
+        )
+    return data
+
+
+def build_weekly_career_site_radar_payload(generated_at: datetime) -> dict[str, object]:
+    config = load_weekly_career_site_radar_config()
+    return {
+        "category": "weekly-career-site-radar",
+        "generated_at": format_kst(generated_at),
+        "schema_version": int(config.get("schema_version", 1) or 1),
+        "timezone": str(config.get("timezone", "Asia/Seoul")),
+        "audience": str(config.get("audience", "")),
+        "sections": config["sections"],
+    }
+
+
+def build_disabled_weekly_career_compat_payload(
+    category: str,
+    generated_at: datetime,
+) -> dict[str, object]:
+    return {
+        "category": category,
+        "generated_at": format_kst(generated_at),
+        "items": [],
+        "selected_by_category": {},
+        "diagnostics": {
+            "status": "disabled",
+            "reason": (
+                "Weekly Career now uses curated site radar to avoid unreliable "
+                "automated candidate extraction."
+            ),
+        },
+    }
+
+
+def render_weekly_career_site_radar_markdown(payload: dict[str, object]) -> str:
+    lines = [
+        "# Career Feed - Backend Career Weekly",
+        f"기준시각: {payload['generated_at']}",
+        "",
+        "이번 주 방향:",
+        "- 자동 추천 대신, 직접 확인할 백엔드 커리어 사이트를 5개 유형별로 점검합니다.",
+        "",
+    ]
+
+    sections = payload.get("sections", [])
+    if not isinstance(sections, list):
+        raise RuntimeError("Weekly career radar payload sections must be a list.")
+    for index, section in enumerate(sections, start=1):
+        if not isinstance(section, dict):
+            continue
+        lines.append(f"## {index}. {section.get('label', '')}")
+        sites = section.get("sites", [])
+        if not isinstance(sites, list):
+            sites = []
+        for site in sites:
+            if not isinstance(site, dict):
+                continue
+            name = str(site.get("name", "")).strip()
+            url = str(site.get("url", "")).strip()
+            how_to_check = str(site.get("how_to_check", "")).strip()
+            lines.append(f"- {name}: {how_to_check} [사이트 보기]({url})")
+        lines.append(f"- 이번 주 확인 기준: {section.get('check_rule', '')}")
+        lines.append("")
+
+    lines.extend(
+        [
+            "## 이번 주 30분 액션",
+            "- 공식 채용 2곳, 인턴 사이트 2곳, 대외활동/대회 사이트 2곳만 열어보고 지원/참가 가능성이 있는 링크를 직접 북마크합니다.",
+            "",
+        ]
+    )
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def write_weekly_career_site_radar_report(
+    generated_at: datetime,
+    payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    radar_payload = payload or build_weekly_career_site_radar_payload(generated_at)
+    write_json_file(WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH, radar_payload)
+    WEEKLY_CAREER_BRIEF_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    WEEKLY_CAREER_BRIEF_OUTPUT_PATH.write_text(
+        render_weekly_career_site_radar_markdown(radar_payload),
+        encoding="utf-8",
+    )
+    return radar_payload
 
 
 def text_contains_any(text: str, keywords: list[str]) -> bool:
@@ -4012,209 +4167,6 @@ def dedupe_weekly_career_items(items: list[dict[str, object]]) -> list[dict[str,
     return deduped
 
 
-def parse_kst_timestamp(value: str) -> datetime | None:
-    cleaned = (value or "").strip()
-    if not cleaned:
-        return None
-    if cleaned.endswith(" KST"):
-        cleaned = cleaned[:-4]
-    try:
-        return datetime.strptime(cleaned, "%Y-%m-%d %H:%M:%S").replace(tzinfo=KST)
-    except ValueError:
-        return None
-
-
-def weekly_category_max_cache_age_days(
-    weekly_category: str,
-    coverage_config: dict[str, object] | None = None,
-) -> int:
-    category_config = weekly_category_config(weekly_category, coverage_config)
-    try:
-        return int(category_config.get("max_cache_age_days", WEEKLY_CATEGORY_CACHE_MAX_AGE_DAYS[weekly_category]))
-    except (KeyError, TypeError, ValueError):
-        return WEEKLY_CATEGORY_CACHE_MAX_AGE_DAYS.get(weekly_category, 45)
-
-
-def is_weekly_cache_item_safe(item: dict[str, object]) -> bool:
-    url = str(item.get("url", "")).strip()
-    if not url:
-        return False
-    if str(item.get("source", "")).strip() == "Naver News Search":
-        return False
-    if is_weekly_career_news_article(url):
-        return False
-    if is_weekly_career_generic_url(url):
-        return False
-    if not is_weekly_career_detail_url(url):
-        return False
-    weekly_category = str(item.get("weekly_category", "")).strip()
-    return weekly_category in WEEKLY_CATEGORY_ORDER
-
-
-def load_weekly_career_candidate_cache(
-    path: Path = WEEKLY_CAREER_CACHE_PATH,
-) -> dict[str, object]:
-    if not path.exists():
-        return {"schema_version": 1, "updated_at": "", "items": []}
-    data = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(data, dict):
-        return {"schema_version": 1, "updated_at": "", "items": []}
-    items = data.get("items", [])
-    if not isinstance(items, list):
-        data["items"] = []
-    return data
-
-
-def weekly_cache_item_is_expired(
-    item: dict[str, object],
-    now_kst: datetime,
-    coverage_config: dict[str, object] | None = None,
-) -> bool:
-    weekly_category = str(item.get("weekly_category", "")).strip()
-    max_age_days = weekly_category_max_cache_age_days(weekly_category, coverage_config)
-    timestamp = parse_kst_timestamp(
-        str(item.get("last_verified_at", "") or item.get("last_seen_at", "") or item.get("first_seen_at", ""))
-    )
-    if timestamp is None:
-        return True
-    return now_kst.astimezone(KST) - timestamp.astimezone(KST) > timedelta(days=max_age_days)
-
-
-def weekly_cache_item_from_candidate(item: dict[str, object], now_kst: datetime) -> dict[str, object]:
-    return {
-        "url": str(item.get("url", "")),
-        "title": str(item.get("title", "")),
-        "weekly_category": str(item.get("weekly_category", "")),
-        "category_label": str(item.get("category_label", "")),
-        "source": str(item.get("source", "")),
-        "source_kind": str(item.get("source_kind", "")),
-        "selection_tier": str(item.get("selection_tier", "")),
-        "first_seen_at": str(item.get("first_seen_at", "")) or format_kst(now_kst),
-        "last_seen_at": format_kst(now_kst),
-        "last_verified_at": format_kst(now_kst),
-        "deadline": str(item.get("deadline", "")),
-        "deadline_text": str(item.get("deadline_text", "")),
-        "deadline_status": str(item.get("deadline_status", "unknown")),
-        "deadline_confidence": str(item.get("deadline_confidence", "none")),
-        "days_until_deadline": (
-            item.get("days_until_deadline") if isinstance(item.get("days_until_deadline"), int) else None
-        ),
-        "company_or_host": str(item.get("company_or_host", "")),
-        "role": str(item.get("role", "")),
-        "target": str(item.get("target", "")),
-        "tech_or_output_keywords": (
-            item.get("tech_or_output_keywords")
-            if isinstance(item.get("tech_or_output_keywords"), list)
-            else []
-        ),
-        "summary": str(item.get("summary", "")),
-        "verification_status": str(item.get("verification_status", "verified_active")),
-    }
-
-
-def upsert_weekly_career_candidate_cache(
-    cache_items: list[dict[str, object]],
-    final_items: list[dict[str, object]],
-    now_kst: datetime,
-    coverage_config: dict[str, object],
-) -> tuple[list[dict[str, object]], int]:
-    by_url: dict[str, dict[str, object]] = {}
-    removed = 0
-    for item in cache_items:
-        if not isinstance(item, dict) or not is_weekly_cache_item_safe(item):
-            removed += 1
-            continue
-        if weekly_cache_item_is_expired(item, now_kst, coverage_config):
-            removed += 1
-            continue
-        by_url[normalize_url(str(item.get("url", "")))] = dict(item)
-
-    for item in final_items:
-        if str(item.get("exclude_reason", "")):
-            continue
-        if str(item.get("verification_status", "")) != "verified_active":
-            continue
-        if not is_weekly_cache_item_safe(item):
-            continue
-        key = normalize_url(str(item.get("url", "")))
-        existing = by_url.get(key, {})
-        cached = weekly_cache_item_from_candidate(item, now_kst)
-        cached["first_seen_at"] = str(existing.get("first_seen_at", "")) or cached["first_seen_at"]
-        by_url[key] = cached
-
-    sorted_items = sorted(
-        by_url.values(),
-        key=lambda item: parse_kst_timestamp(str(item.get("last_verified_at", "")))
-        or datetime.min.replace(tzinfo=KST),
-        reverse=True,
-    )
-    return sorted_items[:WEEKLY_CACHE_MAX_ITEMS], removed
-
-
-def revalidate_weekly_career_cache(
-    cache_items: list[dict[str, object]],
-    category: dict[str, object],
-    now_kst: datetime,
-    penalty_keywords: list[str],
-    categories_to_backfill: set[str],
-    coverage_config: dict[str, object] | None = None,
-) -> tuple[list[dict[str, object]], dict[str, int]]:
-    diagnostics = {
-        "loaded": len(cache_items),
-        "revalidated": 0,
-        "used_for_backfill": 0,
-        "expired_removed": 0,
-    }
-    revalidated: list[dict[str, object]] = []
-    if not categories_to_backfill:
-        return revalidated, diagnostics
-
-    for cached in cache_items:
-        if not isinstance(cached, dict) or not is_weekly_cache_item_safe(cached):
-            diagnostics["expired_removed"] += 1
-            continue
-        weekly_category = str(cached.get("weekly_category", "")).strip()
-        if weekly_category not in categories_to_backfill:
-            continue
-        if weekly_cache_item_is_expired(cached, now_kst, coverage_config):
-            diagnostics["expired_removed"] += 1
-            continue
-        url = str(cached.get("url", "")).strip()
-        try:
-            detail_html = fetch_weekly_career_detail_page(url)
-        except (OSError, UnicodeDecodeError, urllib.error.URLError, TimeoutError):
-            continue
-        diagnostics["revalidated"] += 1
-        discovered = WeeklyDiscoveredUrl(
-            url=url,
-            source=str(cached.get("source", "")) or source_label_for_url(url, "cache"),
-            listing_url=str(cached.get("source_url", "")) or url,
-        )
-        candidate = parse_weekly_career_detail_page(
-            url,
-            detail_html,
-            category,
-            discovered,
-            now_kst,
-            penalty_keywords,
-        )
-        if candidate is None:
-            continue
-        item = normalize_weekly_career_candidate(candidate, now_kst)
-        if str(item.get("weekly_category", "")) != weekly_category:
-            continue
-        if str(item.get("exclude_reason", "")):
-            continue
-        item["freshness_tier"] = "cached_revalidated"
-        item["first_seen_at"] = str(cached.get("first_seen_at", "")) or format_kst(now_kst)
-        item["last_seen_at"] = format_kst(now_kst)
-        item["last_verified_at"] = format_kst(now_kst)
-        item["verification_status"] = "verified_active"
-        item["coverage_reason"] = "cache-backfill-revalidated"
-        revalidated.append(item)
-    return dedupe_weekly_career_items(revalidated), diagnostics
-
-
 def weekly_selection_rank(item: dict[str, object], coverage_config: dict[str, object]) -> tuple[int, int, int, int, int, int, int]:
     weekly_category = str(item.get("weekly_category", ""))
     tier = str(item.get("selection_tier", ""))
@@ -4420,64 +4372,18 @@ def build_weekly_career_payload(
     penalty_keywords: list[str] | None = None,
     update_cache: bool = True,
 ) -> dict[str, object]:
+    del category_config, penalty_keywords, update_cache
     coverage_config = load_weekly_career_coverage_config()
     fresh_items = dedupe_weekly_career_items(items)
     deduped_excluded = dedupe_weekly_career_items(excluded or [])
     selected = select_weekly_career_by_category(fresh_items, [], coverage_config, generated_at)
-    missing_categories = {
-        weekly_category
-        for weekly_category, value in selected.items()
-        if value is None
-        and bool(weekly_category_config(weekly_category, coverage_config).get("allow_cache_backfill", True))
-    }
     cache_diagnostics = {
         "loaded": 0,
         "revalidated": 0,
         "used_for_backfill": 0,
         "expired_removed": 0,
     }
-    cache_revalidated: list[dict[str, object]] = []
-    if update_cache and category_id == WEEKLY_CAREER_CATEGORY_ID:
-        cache_payload = load_weekly_career_candidate_cache()
-        raw_cache_items = [
-            item for item in cache_payload.get("items", []) if isinstance(item, dict)
-        ] if isinstance(cache_payload.get("items", []), list) else []
-        cache_revalidated, cache_diagnostics = revalidate_weekly_career_cache(
-            raw_cache_items,
-            category_config or {"id": WEEKLY_CAREER_CATEGORY_ID},
-            generated_at,
-            penalty_keywords or [],
-            missing_categories,
-            coverage_config,
-        )
-        selected = select_weekly_career_by_category(
-            fresh_items,
-            cache_revalidated,
-            coverage_config,
-            generated_at,
-        )
-        cache_diagnostics["used_for_backfill"] = sum(
-            1
-            for value in selected.values()
-            if value and str(value.get("freshness_tier", "")) == "cached_revalidated"
-        )
-        merged_cache_items, removed = upsert_weekly_career_candidate_cache(
-            raw_cache_items,
-            fresh_items + cache_revalidated,
-            generated_at,
-            coverage_config,
-        )
-        cache_diagnostics["expired_removed"] += removed
-        write_json_file(
-            WEEKLY_CAREER_CACHE_PATH,
-            {
-                "schema_version": 1,
-                "updated_at": format_kst(generated_at),
-                "items": merged_cache_items,
-            },
-        )
-
-    deduped_items = dedupe_weekly_career_items(fresh_items + cache_revalidated)
+    deduped_items = fresh_items
     return {
         "schema_version": 4,
         "category": category_id,
@@ -4520,21 +4426,9 @@ def write_category_output(
     output_path = output_path_for_category(output_dir, category)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     if category_id == WEEKLY_CAREER_CATEGORY_ID:
-        weekly_candidates = [
-            candidate
-            for candidate in candidates
-            if isinstance(candidate, Candidate)
-        ]
-        weekly_items, excluded = filter_weekly_career_candidates(weekly_candidates, generated_at)
-        payload = build_weekly_career_payload(
-            category_id,
-            generated_at,
-            weekly_items,
-            excluded,
-            category_config=category,
-            penalty_keywords=penalty_keywords or [],
-            update_cache=update_cache,
-        )
+        del candidates, penalty_keywords, update_cache
+        radar_payload = write_weekly_career_site_radar_report(generated_at)
+        payload = build_disabled_weekly_career_compat_payload(category_id, generated_at)
         WEEKLY_CAREER_LAST_PAYLOAD = payload
     elif category_id == OSS_CATEGORY_ID:
         payload = {
@@ -4562,9 +4456,11 @@ def write_category_output(
     write_json_file(output_path, payload)
     if category_id == WEEKLY_CAREER_CATEGORY_ID:
         print(
-            f"Wrote {len(payload['items'])} candidate(s), "
-            f"excluded {len(payload['excluded'])}: {output_path}"
+            "Wrote weekly career site radar "
+            f"({len(radar_payload['sections'])} section(s)): "
+            f"{WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH}"
         )
+        print(f"Wrote disabled weekly career candidate payload: {output_path}")
         return
     print(f"Wrote {len(candidates)} candidate(s): {output_path}")
 
@@ -4613,113 +4509,12 @@ def write_weekly_career_split_outputs(
 ) -> None:
     del candidates
     global WEEKLY_CAREER_LAST_CATEGORY_PAYLOADS
-    if WEEKLY_CAREER_LAST_PAYLOAD is None:
-        weekly_items: list[dict[str, object]] = []
-        excluded_items: list[dict[str, object]] = []
-        selected_by_category: dict[str, dict[str, object] | None] = {
-            weekly_category: None for weekly_category in WEEKLY_CATEGORY_ORDER
-        }
-        diagnostics: dict[str, object] = build_weekly_career_diagnostics(
-            WEEKLY_CAREER_DISCOVERY_DIAGNOSTICS,
-            [],
-            [],
-            selected_by_category,
-        )
-    else:
-        weekly_items = [
-            item for item in WEEKLY_CAREER_LAST_PAYLOAD.get("items", []) if isinstance(item, dict)
-        ]
-        excluded_items = [
-            item for item in WEEKLY_CAREER_LAST_PAYLOAD.get("excluded", []) if isinstance(item, dict)
-        ]
-        selected_by_category = {
-            str(key): value if isinstance(value, dict) else None
-            for key, value in dict(WEEKLY_CAREER_LAST_PAYLOAD.get("selected_by_category", {})).items()
-        }
-        diagnostics = dict(WEEKLY_CAREER_LAST_PAYLOAD.get("diagnostics", {}))
-    grouped: dict[Path, list[dict[str, object]]] = {
-        output_path: [] for output_path in WEEKLY_CAREER_EMPTY_OUTPUTS
-    }
-    excluded_grouped: dict[Path, list[dict[str, object]]] = {
-        output_path: [] for output_path in WEEKLY_CAREER_EMPTY_OUTPUTS
-    }
-    for item in weekly_items:
-        sub_category = str(item.get("sub_category", ""))
-        compat_output_path = WEEKLY_CAREER_SPLIT_OUTPUTS.get(sub_category)
-        if compat_output_path is not None:
-            grouped.setdefault(compat_output_path, []).append(item)
-        weekly_category = str(item.get("weekly_category", ""))
-        output_path = WEEKLY_CATEGORY_OUTPUTS.get(weekly_category)
-        if output_path is not None:
-            grouped.setdefault(output_path, []).append(item)
-    for item in excluded_items:
-        sub_category = str(item.get("sub_category", ""))
-        compat_output_path = WEEKLY_CAREER_SPLIT_OUTPUTS.get(sub_category)
-        if compat_output_path is not None:
-            excluded_grouped.setdefault(compat_output_path, []).append(item)
-        weekly_category = str(item.get("weekly_category", ""))
-        output_path = WEEKLY_CATEGORY_OUTPUTS.get(weekly_category)
-        if output_path is not None:
-            excluded_grouped.setdefault(output_path, []).append(item)
-
-    category_by_path = {
-        Path("reports/candidates/kr-backend-intern-jobs.json"): "kr-backend-intern-jobs",
-        Path("reports/candidates/kr-backend-entry-jobs.json"): "kr-backend-entry-jobs",
-        Path("reports/candidates/kr-backend-career-activities.json"): (
-            "kr-backend-career-activities"
-        ),
-        Path("reports/candidates/kr-backend-company-watchlist.json"): (
-            "kr-backend-company-watchlist"
-        ),
-        Path("reports/candidates/kr-backend-jobs.json"): "kr-backend-jobs",
-        Path("reports/candidates/kr-backend-interns.json"): "kr-backend-interns",
-        Path("reports/candidates/kr-backend-hackathons.json"): "kr-backend-hackathons",
-        Path("reports/candidates/kr-backend-contests.json"): "kr-backend-contests",
-        Path("reports/candidates/kr-backend-competitions.json"): "kr-backend-competitions",
-    }
-    weekly_category_by_path = {
-        Path("reports/candidates/kr-backend-jobs.json"): "job",
-        Path("reports/candidates/kr-backend-interns.json"): "intern",
-        Path("reports/candidates/kr-backend-hackathons.json"): "hackathon",
-        Path("reports/candidates/kr-backend-contests.json"): "contest",
-        Path("reports/candidates/kr-backend-competitions.json"): "competition",
-    }
     WEEKLY_CAREER_LAST_CATEGORY_PAYLOADS = {}
-    for output_path, items in grouped.items():
-        weekly_category = weekly_category_by_path.get(output_path)
-        if weekly_category:
-            selected = selected_by_category.get(weekly_category)
-            coverage = diagnostics.get("coverage", {}) if isinstance(diagnostics, dict) else {}
-            split_diagnostics = (
-                dict(coverage.get(weekly_category, {}))
-                if isinstance(coverage, dict) and isinstance(coverage.get(weekly_category), dict)
-                else {}
-            )
-            payload = {
-                "schema_version": 1,
-                "category": category_by_path.get(output_path, output_path.stem),
-                "weekly_category": weekly_category,
-                "label": WEEKLY_CATEGORY_LABELS[weekly_category],
-                "generated_at": format_kst(generated_at),
-                "items": dedupe_weekly_career_items(items),
-                "selected": selected,
-                "excluded": dedupe_weekly_career_items(excluded_grouped.get(output_path, [])),
-                "diagnostics": split_diagnostics,
-            }
-        else:
-            payload = build_weekly_career_payload(
-                category_by_path.get(output_path, output_path.stem),
-                generated_at,
-                items,
-                excluded_grouped.get(output_path, []),
-                update_cache=False,
-            )
+    for output_path, category in WEEKLY_CAREER_COMPAT_OUTPUT_CATEGORIES.items():
+        payload = build_disabled_weekly_career_compat_payload(category, generated_at)
         WEEKLY_CAREER_LAST_CATEGORY_PAYLOADS[str(output_path)] = payload
         write_json_file(output_path, payload)
-        print(
-            f"Wrote {len(payload['items'])} candidate(s), "
-            f"excluded {len(payload['excluded'])}: {output_path}"
-        )
+        print(f"Wrote disabled weekly career candidate payload: {output_path}")
 
 
 def load_company_watchlist(path: Path = COMPANY_CAREER_WATCHLIST_PATH) -> list[dict[str, object]]:
@@ -5077,9 +4872,7 @@ def collect_category(
     if category_id == OSS_CATEGORY_ID:
         return collect_oss_issue_candidates(category, current_time)
     if category_id == WEEKLY_CAREER_CATEGORY_ID:
-        if dry_run:
-            return []
-        return collect_weekly_career_candidates(category, current_time, penalty_keywords)
+        return []
 
     candidates = collect_feed_candidates(config, category, current_time, penalty_keywords)
     candidates.extend(
@@ -5113,7 +4906,7 @@ def main() -> int:
             write_backend_practical_candidate(current_time)
 
         config = load_config(config_path, args.category, args.mode)
-        credentials = get_naver_credentials(args.dry_run)
+        credentials = None if args.mode == "weekly-career" else get_naver_credentials(args.dry_run)
         penalty_keywords = [
             str(keyword).strip()
             for keyword in config.get("penalty_keywords", [])
