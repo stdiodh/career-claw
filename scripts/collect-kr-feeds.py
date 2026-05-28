@@ -15,8 +15,10 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
+from collections import Counter
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -29,6 +31,8 @@ REQUEST_TIMEOUT_SECONDS = 20
 SUMMARY_LIMIT = 240
 OSS_SUMMARY_LIMIT = 300
 TITLE_LIMIT = 240
+WEEKLY_MAX_DETAIL_LINKS_PER_SOURCE = 24
+WEEKLY_MAX_DETAIL_PAGES = 80
 DEFAULT_DISPLAY = 10
 MAX_DISPLAY = 20
 DEFAULT_MAX_CANDIDATES = 30
@@ -99,6 +103,59 @@ BACKEND_KEYWORDS = [
     "kubernetes",
     "msa",
 ]
+WEEKLY_BACKEND_DIRECT_KEYWORDS = BACKEND_KEYWORDS + [
+    "rest api",
+    "spring boot",
+    "database",
+    "데이터베이스",
+    "mysql",
+    "postgresql",
+    "redis",
+    "클라우드",
+    "aws",
+    "인프라",
+    "devops",
+    "웹서비스 개발",
+]
+WEEKLY_BACKEND_ADJACENT_KEYWORDS = [
+    "시스템개발",
+    "시스템 개발",
+    "응용프로그램개발",
+    "응용프로그램 개발",
+    "it/인터넷",
+    "it·인터넷",
+    "it 인터넷",
+    "erp/시스템개발",
+    "데이터",
+    "ai 서비스",
+    "llm",
+    "플랫폼",
+    "웹서비스 개발",
+]
+WEEKLY_NON_DEVELOPER_ONLY_KEYWORDS = [
+    "마케팅",
+    "광고",
+    "홍보",
+    "디자인",
+    "영업",
+    "경영",
+    "사무",
+    "콘텐츠",
+    "미디어",
+    "기획",
+    "pm",
+]
+WEEKLY_DISCOVERY_SOURCE_PRIORITY = {
+    "Linkareer Intern": 0,
+    "Linkareer Activities": 1,
+    "DACON Competitions": 2,
+    "AI Factory": 3,
+    "Programmers": 4,
+    "Wanted": 5,
+    "JobKorea": 6,
+    "Jumpit": 7,
+    "Saramin": 8,
+}
 KOTLIN_SPRING_KEYWORDS = ["kotlin", "spring", "spring boot", "java"]
 STUDENT_KEYWORDS = [
     "인턴",
@@ -148,7 +205,6 @@ WEEKLY_PAST_EVENT_KEYWORDS = [
     "2등 수상",
     "대상 수상",
     "개최했다",
-    "개최",
     "성료",
     "마무리",
     "결과 발표",
@@ -234,6 +290,7 @@ GENERIC_CAREER_URLS = {
     "https://www.all-con.co.kr/",
 }
 WEEKLY_CAREER_SOURCE_POLICY_CACHE: dict[str, object] | None = None
+WEEKLY_CAREER_DISCOVERY_DIAGNOSTICS: dict[str, object] = {}
 OSS_BEGINNER_KEYWORDS = [
     "documentation",
     "docs",
@@ -354,6 +411,13 @@ class FieldWithConfidence:
 
 
 @dataclass(frozen=True)
+class WeeklyDiscoveredUrl:
+    url: str
+    source: str
+    listing_url: str
+
+
+@dataclass(frozen=True)
 class OssIssueCandidate:
     category: str
     title: str
@@ -437,6 +501,47 @@ def strip_html(value: str) -> str:
     unescaped = html.unescape(value or "")
     without_tags = re.sub(r"<[^>]+>", " ", unescaped)
     return " ".join(without_tags.split())
+
+
+class LinkExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.links: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag.lower() != "a":
+            return
+        for name, value in attrs:
+            if name.lower() == "href" and value:
+                self.links.append(value)
+
+
+class VisibleTextExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+        self.skip_depth = 0
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag.lower() in {"script", "style", "noscript"}:
+            self.skip_depth += 1
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() in {"script", "style", "noscript"} and self.skip_depth:
+            self.skip_depth -= 1
+
+    def handle_data(self, data: str) -> None:
+        if not self.skip_depth and data.strip():
+            self.parts.append(data.strip())
+
+    def text(self) -> str:
+        return " ".join(" ".join(self.parts).split())
+
+
+def html_to_visible_text(value: str) -> str:
+    parser = VisibleTextExtractor()
+    parser.feed(value or "")
+    return parser.text()
 
 
 def truncate_text(value: str, limit: int) -> str:
@@ -708,6 +813,38 @@ def weekly_url_parts(url: str) -> tuple[str, str, str]:
     return domain, path.rstrip("/") if path != "/" else "/", signature
 
 
+def is_weekly_career_static_asset_url(url: str) -> bool:
+    path = urllib.parse.urlsplit(url or "").path.lower()
+    return bool(
+        re.search(
+            r"\.(?:png|jpg|jpeg|gif|svg|webp|ico|css|js|woff2?|ttf|map)$",
+            path,
+        )
+    )
+
+
+def is_weekly_company_watchlist_detail_url(url: str) -> bool:
+    domain, path, signature = weekly_url_parts(url)
+    lowered_signature = signature.lower()
+    if is_weekly_career_static_asset_url(url):
+        return False
+    if domain_matches(domain, ["recruit.navercorp.com"]):
+        return "/rcrt/view.do" in lowered_signature
+    if domain_matches(domain, ["careers.kakao.com"]):
+        return path.startswith("/jobs/") or ("jobid=" in lowered_signature and path == "/jobs")
+    if domain_matches(domain, ["careers.linecorp.com"]):
+        return bool(re.search(r"^/(?:ko|en)/jobs/\d+", path))
+    if domain_matches(domain, ["coupang.jobs"]):
+        return bool(re.search(r"^/(?:en|ko/)?jobs/\d+", path))
+    if domain_matches(domain, ["career.woowahan.com"]):
+        return bool(re.search(r"^/jobs/\d+", path))
+    if domain_matches(domain, ["toss.im"]):
+        return path.startswith("/career/job-detail") or "job_id=" in lowered_signature
+    if domain_matches(domain, ["about.daangn.com", "team.daangn.com"]):
+        return bool(re.search(r"/jobs/\d+", path))
+    return False
+
+
 def weekly_pattern_matches(
     path: str,
     signature: str,
@@ -733,6 +870,8 @@ def weekly_pattern_matches(
 
 
 def is_weekly_career_generic_url(url: str) -> bool:
+    if is_weekly_career_static_asset_url(url):
+        return True
     if is_generic_career_url(url):
         return True
     domain, path, signature = weekly_url_parts(url)
@@ -785,8 +924,17 @@ def is_weekly_career_detail_url(url: str) -> bool:
             domain,
             [str(item).strip().lower() for item in domains if str(item).strip()],
         ):
-            return path not in {"", "/"}
+            return is_weekly_company_watchlist_detail_url(url)
     return False
+
+
+def weekly_source_policy_for_url(url: str) -> dict[str, object] | None:
+    domain = domain_from_url(url)
+    for source in weekly_policy_list("allowed_final_sources"):
+        source_domain = str(source.get("domain", "")).strip().lower()
+        if source_domain and domain_matches(domain, [source_domain]):
+            return source
+    return None
 
 
 def is_weekly_career_news_article(candidate_or_url: Candidate | str) -> bool:
@@ -820,6 +968,156 @@ def infer_weekly_source_kind(url: str, source: str) -> str:
         ):
             return str(company.get("source_kind", "official_company_career_detail"))
     return "unknown"
+
+
+def clean_weekly_discovery_url(url: str, base_url: str) -> str:
+    absolute = urllib.parse.urljoin(base_url, html.unescape(url or ""))
+    absolute, _fragment = urllib.parse.urldefrag(absolute)
+    parsed = urllib.parse.urlsplit(absolute)
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        return ""
+    query_pairs = urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+    cleaned_pairs = [
+        (key, value)
+        for key, value in query_pairs
+        if not (
+            key.lower().startswith("utm_")
+            or key.lower() in {"fbclid", "gclid", "igshid", "trk", "source"}
+        )
+    ]
+    query = urllib.parse.urlencode(cleaned_pairs, doseq=True)
+    return urllib.parse.urlunsplit(
+        (parsed.scheme.lower(), parsed.netloc.lower(), parsed.path, query, "")
+    )
+
+
+def extract_links_from_listing_page(
+    html_body: str,
+    base_url: str,
+    source_policy: dict[str, object] | None = None,
+) -> list[str]:
+    parser = LinkExtractor()
+    parser.feed(html_body or "")
+    raw_links = list(parser.links)
+    raw_links.extend(
+        match.group(1)
+        for match in re.finditer(
+            r"""["']((?:https?:)?//[^"']+|/[^"']*(?:activity|competitions|competition|position|Recruit|zf_user/jobs|wd)[^"']*)["']""",
+            html_body or "",
+            flags=re.IGNORECASE,
+        )
+    )
+
+    links: list[str] = []
+    seen: set[str] = set()
+    for raw_link in raw_links:
+        cleaned = clean_weekly_discovery_url(raw_link, base_url)
+        if not cleaned or cleaned in seen:
+            continue
+        if not is_allowed_weekly_career_final_domain(cleaned):
+            continue
+        if is_weekly_career_generic_url(cleaned):
+            continue
+        if not is_weekly_career_detail_url(cleaned):
+            continue
+        seen.add(cleaned)
+        links.append(cleaned)
+    return links
+
+
+def fetch_weekly_career_detail_page(url: str) -> str:
+    request = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 career-feed-kr-collector",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+        content_type = response.headers.get_content_charset() or "utf-8"
+        return response.read().decode(content_type, errors="replace")
+
+
+def empty_weekly_career_diagnostics() -> dict[str, object]:
+    return {
+        "reference_pages_total": 0,
+        "reference_pages_fetched": 0,
+        "detail_urls_discovered": 0,
+        "detail_urls_after_dedup": 0,
+        "detail_pages_fetched": 0,
+        "detail_candidates_parsed": 0,
+        "final_items": 0,
+        "excluded_by_reason": {},
+        "source_counts": {},
+    }
+
+
+def discover_weekly_career_detail_urls(
+    reference_pages: list[dict[str, object]],
+    source_policy: dict[str, object],
+    max_links_per_source: int = WEEKLY_MAX_DETAIL_LINKS_PER_SOURCE,
+) -> tuple[list[WeeklyDiscoveredUrl], dict[str, object]]:
+    diagnostics = empty_weekly_career_diagnostics()
+    diagnostics["reference_pages_total"] = len(reference_pages)
+    source_counts: dict[str, dict[str, object]] = {}
+    discovered: list[WeeklyDiscoveredUrl] = []
+    seen: set[str] = set()
+
+    for page in reference_pages:
+        name = str(page.get("name", "")).strip() or "Weekly source"
+        url = str(page.get("url", "")).strip()
+        if not url:
+            continue
+        source_counts.setdefault(
+            name,
+            {
+                "listing_fetched": 0,
+                "listing_fetch_failed": 0,
+                "detail_urls_discovered": 0,
+                "detail_pages_fetched": 0,
+                "final_items": 0,
+            },
+        )
+
+        if is_weekly_career_detail_url(url):
+            cleaned = clean_weekly_discovery_url(url, url)
+            if cleaned and cleaned not in seen:
+                seen.add(cleaned)
+                discovered.append(WeeklyDiscoveredUrl(cleaned, name, url))
+                source_counts[name]["detail_urls_discovered"] = (
+                    int(source_counts[name]["detail_urls_discovered"]) + 1
+                )
+            continue
+
+        try:
+            listing_html = fetch_weekly_career_detail_page(url)
+        except (OSError, UnicodeDecodeError, urllib.error.URLError, TimeoutError) as exc:
+            source_counts[name]["listing_fetch_failed"] = (
+                int(source_counts[name]["listing_fetch_failed"]) + 1
+            )
+            source_counts[name]["last_error"] = str(exc)[:160]
+            continue
+
+        diagnostics["reference_pages_fetched"] = int(diagnostics["reference_pages_fetched"]) + 1
+        source_counts[name]["listing_fetched"] = int(source_counts[name]["listing_fetched"]) + 1
+        detail_urls = extract_links_from_listing_page(
+            listing_html,
+            url,
+            weekly_source_policy_for_url(url),
+        )[:max_links_per_source]
+        source_counts[name]["detail_urls_discovered"] = len(detail_urls)
+        for detail_url in detail_urls:
+            if detail_url in seen:
+                continue
+            seen.add(detail_url)
+            discovered.append(WeeklyDiscoveredUrl(detail_url, name, url))
+
+    diagnostics["detail_urls_discovered"] = sum(
+        int(value.get("detail_urls_discovered", 0)) for value in source_counts.values()
+    )
+    diagnostics["detail_urls_after_dedup"] = len(discovered)
+    diagnostics["source_counts"] = source_counts
+    return discovered, diagnostics
 
 
 def source_label_for_url(url: str, fallback: str) -> str:
@@ -1151,6 +1449,7 @@ def extract_company_or_host_from_text_or_url(text: str, url: str) -> FieldWithCo
             return FieldWithConfidence(str(company.get("name", "")).strip(), "high", "domain")
 
     for pattern in [
+        r"(?:회사|기업|주최|주관|운영기관|기관)\s*[:：]\s*(.+?)(?=\s+(?:마감일|채용형태|모집직무|지원자격|상태|유형|직무)|$)",
         r"(?:회사|기업|주최|주관|운영기관|기관)\s*[:：]\s*([^\n,;/|]{2,40})",
         r"(?:host|company|organizer)\s*[:：]\s*([^\n,;/|]{2,40})",
     ]:
@@ -1182,6 +1481,188 @@ def extract_company_or_host_from_text_or_url(text: str, url: str) -> FieldWithCo
                 return FieldWithConfidence("", "none", "")
             return FieldWithConfidence(label, "medium", "text")
     return FieldWithConfidence("", "none", "")
+
+
+def extract_meta_content(html_body: str, key: str) -> str:
+    patterns = [
+        rf'<meta[^>]+property=["\']{re.escape(key)}["\'][^>]+content=["\']([^"\']+)["\']',
+        rf'<meta[^>]+name=["\']{re.escape(key)}["\'][^>]+content=["\']([^"\']+)["\']',
+        rf'<meta[^>]+content=["\']([^"\']+)["\'][^>]+(?:property|name)=["\']{re.escape(key)}["\']',
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, html_body, flags=re.IGNORECASE)
+        if match:
+            return strip_html(match.group(1))
+    return ""
+
+
+def extract_html_title(html_body: str) -> str:
+    meta_title = extract_meta_content(html_body, "og:title")
+    if meta_title:
+        return meta_title.split("|", 1)[0].strip()
+    match = re.search(r"<title[^>]*>(.*?)</title>", html_body, flags=re.IGNORECASE | re.DOTALL)
+    if match:
+        return strip_html(match.group(1)).split("|", 1)[0].strip()
+    return ""
+
+
+def extract_json_ld_objects(html_body: str) -> list[dict[str, object]]:
+    objects: list[dict[str, object]] = []
+    for match in re.finditer(
+        r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        html_body or "",
+        flags=re.IGNORECASE | re.DOTALL,
+    ):
+        raw = html.unescape(match.group(1)).strip()
+        try:
+            parsed = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(parsed, dict):
+            objects.append(parsed)
+        elif isinstance(parsed, list):
+            objects.extend(item for item in parsed if isinstance(item, dict))
+    return objects
+
+
+def extract_linkareer_field(html_body: str, field_name: str) -> str:
+    pattern = (
+        rf"<dt[^>]*>\s*{re.escape(field_name)}\s*</dt>\s*"
+        r"<dd[^>]*>(.*?)</dd>"
+    )
+    match = re.search(pattern, html_body, flags=re.IGNORECASE | re.DOTALL)
+    return strip_html(match.group(1)) if match else ""
+
+
+def deadline_info_from_datetime(value: str, now_kst: datetime, source: str) -> DeadlineInfo:
+    parsed = parse_datetime(value)
+    if parsed is None:
+        return empty_deadline_info(source)
+    parsed = parsed.astimezone(KST)
+    days = (parsed.date() - now_kst.astimezone(KST).date()).days
+    return DeadlineInfo(
+        deadline=parsed.strftime("%Y-%m-%d %H:%M:%S KST"),
+        deadline_text=parsed.strftime("%Y-%m-%d %H:%M KST"),
+        deadline_status="closed" if parsed < now_kst.astimezone(KST) else "open",
+        deadline_confidence="high",
+        deadline_source=source,
+        days_until_deadline=days,
+    )
+
+
+def weekly_role_is_non_developer_only(text: str) -> bool:
+    if not text:
+        return False
+    lowered = text.lower()
+    has_non_developer = any(
+        keyword.lower() in lowered for keyword in WEEKLY_NON_DEVELOPER_ONLY_KEYWORDS
+    )
+    has_developer = any(
+        keyword.lower() in lowered
+        for keyword in WEEKLY_BACKEND_DIRECT_KEYWORDS + WEEKLY_BACKEND_ADJACENT_KEYWORDS
+    )
+    return has_non_developer and not has_developer
+
+
+def weekly_selection_tier_for_text(text: str, career_type: str) -> str:
+    if weekly_role_is_non_developer_only(text):
+        return ""
+    if text_contains_any(text, WEEKLY_BACKEND_DIRECT_KEYWORDS):
+        return "backend_direct"
+    if career_type in {"인턴", "신입", "주니어"} and text_contains_any(
+        text,
+        WEEKLY_BACKEND_ADJACENT_KEYWORDS,
+    ):
+        return "backend_adjacent"
+    if career_type in {"해커톤", "공모전", "경진대회"} and text_contains_any(
+        text,
+        PORTFOLIO_KEYWORDS + WEEKLY_BACKEND_ADJACENT_KEYWORDS + ["ai api", "데이터 파이프라인"],
+    ):
+        return "portfolio_activity"
+    return ""
+
+
+def parse_weekly_career_detail_page(
+    url: str,
+    html_body: str,
+    category: dict[str, object],
+    discovered: WeeklyDiscoveredUrl,
+    now_kst: datetime,
+    penalty_keywords: list[str],
+) -> Candidate | None:
+    source = source_label_for_url(url, discovered.source)
+    visible_text = html_to_visible_text(html_body)
+    json_ld_objects = extract_json_ld_objects(html_body)
+    job_posting = next(
+        (
+            item
+            for item in json_ld_objects
+            if str(item.get("@type", "")).lower() == "jobposting"
+        ),
+        {},
+    )
+
+    title = str(job_posting.get("title", "")).strip() or extract_html_title(html_body)
+    if not title:
+        return None
+
+    company = ""
+    hiring_org = job_posting.get("hiringOrganization")
+    if isinstance(hiring_org, dict):
+        company = str(hiring_org.get("name", "")).strip()
+
+    description = str(job_posting.get("description", "")).strip()
+    role = extract_linkareer_field(html_body, "모집직무")
+    if not role:
+        role_match = re.search(r"모집직무\s*[:：]\s*([^\n]+)", description)
+        role = role_match.group(1).strip() if role_match else ""
+    employment = extract_linkareer_field(html_body, "채용형태")
+    if not employment:
+        employment_type = job_posting.get("employmentType")
+        if isinstance(employment_type, list):
+            employment = " ".join(str(item) for item in employment_type)
+        else:
+            employment = str(employment_type or "")
+    target = ""
+    requirements = job_posting.get("experienceRequirements")
+    if isinstance(requirements, list):
+        target = " ".join(str(item) for item in requirements)
+    else:
+        target = str(requirements or "")
+
+    deadline = empty_deadline_info()
+    valid_through = str(job_posting.get("validThrough", "")).strip()
+    if valid_through:
+        deadline = deadline_info_from_datetime(valid_through, now_kst, "json-ld-validThrough")
+    if deadline.deadline_confidence != "high":
+        deadline = extract_deadline_from_text(visible_text, now_kst)
+
+    summary_parts = [
+        f"회사: {company}" if company else "",
+        f"마감일 {deadline.deadline_text}" if deadline.deadline_text else "",
+        f"채용형태: {employment}" if employment else "",
+        f"모집직무: {role}" if role else "",
+        f"지원자격: {target}" if target else "",
+        "상태: 모집 중",
+        truncate_text(description or visible_text, 500),
+    ]
+    summary = " ".join(part for part in summary_parts if part)
+
+    candidate = build_candidate(
+        category=category,
+        title=title,
+        url=url,
+        source_url=discovered.listing_url,
+        source=source,
+        publisher=company or domain_from_url(url) or source,
+        published_at=parse_datetime(str(job_posting.get("datePosted", ""))),
+        summary=summary,
+        query="weekly_detail",
+        source_reliability="platform",
+        current_time=now_kst,
+        penalty_keywords=penalty_keywords,
+    )
+    return candidate
 
 
 def is_expired_or_past_event(text: str, now_kst: datetime) -> bool:
@@ -1257,10 +1738,21 @@ def career_type_for_sub_category(sub_category: str) -> str:
 def infer_career_role(text: str, career_type: str) -> str:
     if career_type in {"해커톤", "공모전", "경진대회"}:
         if text_contains_any(text, ["ai", "인공지능", "llm"]):
-            return "AI 서비스 백엔드"
+            return "AI 서비스 API 역할"
         if text_contains_any(text, ["데이터", "data"]):
             return "데이터 수집/API 서버 개발"
         return "API 서버 개발"
+    if not text_contains_any(text, WEEKLY_BACKEND_DIRECT_KEYWORDS):
+        if text_contains_any(text, ["erp/시스템개발", "시스템개발", "시스템 개발"]):
+            return "IT/시스템개발 인턴"
+        if text_contains_any(text, ["응용프로그램개발", "응용프로그램 개발"]):
+            return "응용프로그램개발 인턴"
+        if text_contains_any(text, ["데이터"]):
+            return "데이터/플랫폼 개발 인턴"
+        if text_contains_any(text, ["ai 서비스", "llm"]):
+            return "AI 서비스 개발 인턴"
+        if text_contains_any(text, ["it/인터넷", "it·인터넷", "it 인터넷"]):
+            return "IT/인터넷 인턴"
     if text_contains_any(text, ["server", "서버"]):
         return "서버 개발"
     if text_contains_any(text, ["backend", "백엔드"]):
@@ -1310,6 +1802,21 @@ def infer_tech_keywords(text: str) -> list[str]:
             matched.append(keyword)
     if matched:
         return matched[:6]
+    adjacent = [
+        keyword
+        for keyword in [
+            "시스템개발",
+            "응용프로그램개발",
+            "IT/인터넷",
+            "데이터",
+            "AI 서비스",
+            "플랫폼",
+            "웹서비스 개발",
+        ]
+        if keyword.lower() in text.lower()
+    ]
+    if adjacent:
+        return adjacent[:6]
     if text_contains_any(text, ["백엔드", "backend", "서버", "api"]):
         return ["백엔드", "API", "DB"]
     return []
@@ -2923,7 +3430,10 @@ def sort_and_limit(
         return sorted(
             dedupe_candidates(candidates),
             key=lambda item: (
-                score_career_candidate(item, current_time)["score"],
+                max(
+                    score_career_candidate(item, current_time)["score"],
+                    score_weekly_career_detail_candidate(item, current_time),
+                ),
                 item.published_at or datetime.min.replace(tzinfo=KST),
             ),
             reverse=True,
@@ -3026,6 +3536,25 @@ def weekly_source_confidence(source_kind: str, is_detail_url: bool) -> str:
     return "none"
 
 
+def score_weekly_career_detail_candidate(candidate: Candidate, now_kst: datetime) -> int:
+    text = career_text(candidate)
+    career_type = career_type_for_sub_category(classify_career_sub_category(candidate))
+    selection_tier = weekly_selection_tier_for_text(text, career_type)
+    score = {
+        "backend_direct": 90,
+        "backend_adjacent": 70,
+        "portfolio_activity": 60,
+    }.get(selection_tier, 0)
+    deadline = extract_deadline_from_text(text, now_kst)
+    if deadline.deadline_status == "open":
+        score += 15
+    if isinstance(deadline.days_until_deadline, int) and 0 <= deadline.days_until_deadline <= 14:
+        score += 10
+    if extract_company_or_host_from_text_or_url(text, candidate.url).confidence == "high":
+        score += 5
+    return score
+
+
 def is_weekly_candidate_active(text: str, deadline: DeadlineInfo, now_kst: datetime) -> bool:
     if is_expired_or_past_event(text, now_kst):
         return False
@@ -3062,6 +3591,7 @@ def normalize_weekly_career_candidate(
     is_news_article = is_weekly_career_news_article(candidate)
     source_kind = infer_weekly_source_kind(candidate.url, candidate.source)
     is_active = is_weekly_candidate_active(text, deadline, now_kst)
+    selection_tier = weekly_selection_tier_for_text(text, career_type)
     exclude_reasons = []
     if candidate.exclude_reason:
         exclude_reasons.append(candidate.exclude_reason)
@@ -3081,6 +3611,10 @@ def normalize_weekly_career_candidate(
         exclude_reasons.append("expired-or-past-event")
     if not is_active:
         exclude_reasons.append("not-confirmed-active")
+    if weekly_role_is_non_developer_only(text):
+        exclude_reasons.append("non-developer-role")
+    if not selection_tier:
+        exclude_reasons.append("not_backend_related")
 
     source = candidate.source
     if source in {"Official reference page", "Naver News Search"}:
@@ -3104,6 +3638,7 @@ def normalize_weekly_career_candidate(
         "is_generic_url": is_generic_url,
         "is_news_article": is_news_article,
         "is_active": is_active,
+        "selection_tier": selection_tier,
         "company_or_host": company_or_host.value,
         "company_or_host_confidence": company_or_host.confidence,
         "company_or_host_source": company_or_host.source,
@@ -3122,7 +3657,7 @@ def normalize_weekly_career_candidate(
         "published_at": format_kst(candidate.published_at) if candidate.published_at else "",
         "collected_at": format_kst(now_kst),
         "query": candidate.query,
-        "score": score_payload["score"],
+        "score": max(score_payload["score"], score_weekly_career_detail_candidate(candidate, now_kst)),
         "deadline_clarity_score": score_payload["deadline_clarity_score"],
         "backend_fit_score": score_payload["backend_fit_score"],
         "entry_fit_score": score_payload["entry_fit_score"],
@@ -3145,8 +3680,25 @@ def filter_weekly_career_candidates(
     now_kst: datetime,
 ) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
     normalized = [normalize_weekly_career_candidate(candidate, now_kst) for candidate in candidates]
-    items = [item for item in normalized if not str(item.get("exclude_reason", ""))]
+    eligible = [item for item in normalized if not str(item.get("exclude_reason", ""))]
+    selected_tier = ""
+    for tier in ("backend_direct", "backend_adjacent", "portfolio_activity"):
+        if any(str(item.get("selection_tier", "")) == tier for item in eligible):
+            selected_tier = tier
+            break
+
+    items = [
+        item
+        for item in eligible
+        if not selected_tier or str(item.get("selection_tier", "")) == selected_tier
+    ]
     excluded = [item for item in normalized if str(item.get("exclude_reason", ""))]
+    for item in eligible:
+        if item in items:
+            continue
+        copied = dict(item)
+        copied["exclude_reason"] = "fallback-tier-not-used"
+        excluded.append(copied)
     return dedupe_weekly_career_items(items), dedupe_weekly_career_items(excluded)
 
 
@@ -3172,18 +3724,59 @@ def dedupe_weekly_career_items(items: list[dict[str, object]]) -> list[dict[str,
     return deduped
 
 
+def build_weekly_career_diagnostics(
+    base_diagnostics: dict[str, object],
+    final_items: list[dict[str, object]],
+    excluded: list[dict[str, object]],
+) -> dict[str, object]:
+    diagnostics = dict(empty_weekly_career_diagnostics())
+    diagnostics.update(base_diagnostics or {})
+    reason_counts: Counter[str] = Counter()
+    for item in excluded:
+        reasons = [
+            reason.strip()
+            for reason in str(item.get("exclude_reason", "")).split(",")
+            if reason.strip()
+        ]
+        reason_counts.update(reasons or ["unknown"])
+    diagnostics["final_items"] = len(final_items)
+    diagnostics["excluded_by_reason"] = dict(sorted(reason_counts.items()))
+
+    source_counts = diagnostics.get("source_counts", {})
+    if not isinstance(source_counts, dict):
+        source_counts = {}
+    source_counts = {
+        str(name): dict(value) if isinstance(value, dict) else {}
+        for name, value in source_counts.items()
+    }
+    for item in final_items:
+        source = str(item.get("source", "unknown")) or "unknown"
+        source_counts.setdefault(source, {})
+        source_counts[source]["final_items"] = int(source_counts[source].get("final_items", 0)) + 1
+    diagnostics["source_counts"] = source_counts
+    return diagnostics
+
+
 def build_weekly_career_payload(
     category_id: str,
     generated_at: datetime,
     items: list[dict[str, object]],
     excluded: list[dict[str, object]] | None = None,
+    diagnostics: dict[str, object] | None = None,
 ) -> dict[str, object]:
+    deduped_items = dedupe_weekly_career_items(items)
+    deduped_excluded = dedupe_weekly_career_items(excluded or [])
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "category": category_id,
         "generated_at": format_kst(generated_at),
-        "items": dedupe_weekly_career_items(items),
-        "excluded": dedupe_weekly_career_items(excluded or []),
+        "items": deduped_items,
+        "excluded": deduped_excluded,
+        "diagnostics": build_weekly_career_diagnostics(
+            diagnostics or WEEKLY_CAREER_DISCOVERY_DIAGNOSTICS,
+            deduped_items,
+            deduped_excluded,
+        ),
     }
 
 
@@ -3389,6 +3982,101 @@ def collect_company_watchlist_candidates(
     return candidates
 
 
+def weekly_reference_pages_for_discovery(category: dict[str, object]) -> list[dict[str, object]]:
+    pages = [
+        page
+        for page in category.get("reference_pages", [])
+        if isinstance(page, dict)
+    ]
+    existing_urls = {str(page.get("url", "")).strip() for page in pages}
+    for company in load_company_watchlist():
+        name = str(company.get("name", "")).strip()
+        url = str(company.get("career_url", "")).strip()
+        if not name or not url or url in existing_urls:
+            continue
+        pages.append(
+            {
+                "name": str(company.get("source", "")).strip() or f"{name} Careers",
+                "url": url,
+                "source_reliability": "official",
+            }
+        )
+        existing_urls.add(url)
+    return pages
+
+
+def collect_weekly_career_candidates(
+    category: dict[str, object],
+    current_time: datetime,
+    penalty_keywords: list[str],
+) -> list[Candidate]:
+    global WEEKLY_CAREER_DISCOVERY_DIAGNOSTICS
+    source_policy = load_weekly_career_source_policy()
+    discovered, diagnostics = discover_weekly_career_detail_urls(
+        weekly_reference_pages_for_discovery(category),
+        source_policy,
+        WEEKLY_MAX_DETAIL_LINKS_PER_SOURCE,
+    )
+    discovered = sorted(
+        discovered,
+        key=lambda item: (
+            WEEKLY_DISCOVERY_SOURCE_PRIORITY.get(item.source, 100),
+            item.url,
+        ),
+    )
+    source_counts = diagnostics.get("source_counts", {})
+    if not isinstance(source_counts, dict):
+        source_counts = {}
+
+    candidates: list[Candidate] = []
+    excluded_by_reason: Counter[str] = Counter()
+    for discovered_url in discovered[:WEEKLY_MAX_DETAIL_PAGES]:
+        source_count = source_counts.setdefault(discovered_url.source, {})
+        if not isinstance(source_count, dict):
+            source_count = {}
+            source_counts[discovered_url.source] = source_count
+        try:
+            detail_html = fetch_weekly_career_detail_page(discovered_url.url)
+        except (OSError, UnicodeDecodeError, urllib.error.URLError, TimeoutError) as exc:
+            excluded_by_reason.update(["detail_page_fetch_failed"])
+            source_count["detail_fetch_failed"] = int(source_count.get("detail_fetch_failed", 0)) + 1
+            source_count["last_error"] = str(exc)[:160]
+            continue
+        diagnostics["detail_pages_fetched"] = int(diagnostics["detail_pages_fetched"]) + 1
+        source_count["detail_pages_fetched"] = int(source_count.get("detail_pages_fetched", 0)) + 1
+
+        candidate = parse_weekly_career_detail_page(
+            discovered_url.url,
+            detail_html,
+            category,
+            discovered_url,
+            current_time,
+            penalty_keywords,
+        )
+        if candidate is None:
+            excluded_by_reason.update(["detail_page_unparseable"])
+            source_count["detail_page_unparseable"] = (
+                int(source_count.get("detail_page_unparseable", 0)) + 1
+            )
+            continue
+        candidates.append(candidate)
+        diagnostics["detail_candidates_parsed"] = int(diagnostics["detail_candidates_parsed"]) + 1
+
+    existing_reason_counts = diagnostics.get("excluded_by_reason", {})
+    if isinstance(existing_reason_counts, dict):
+        excluded_by_reason.update(
+            {
+                str(reason): int(count)
+                for reason, count in existing_reason_counts.items()
+                if isinstance(count, int)
+            }
+        )
+    diagnostics["excluded_by_reason"] = dict(sorted(excluded_by_reason.items()))
+    diagnostics["source_counts"] = source_counts
+    WEEKLY_CAREER_DISCOVERY_DIAGNOSTICS = diagnostics
+    return candidates
+
+
 def collect_category(
     config: dict[str, object],
     category: dict[str, object],
@@ -3403,6 +4091,10 @@ def collect_category(
     category_id = str(category.get("id", "")).strip()
     if category_id == OSS_CATEGORY_ID:
         return collect_oss_issue_candidates(category, current_time)
+    if category_id == WEEKLY_CAREER_CATEGORY_ID:
+        if dry_run:
+            return []
+        return collect_weekly_career_candidates(category, current_time, penalty_keywords)
 
     candidates = collect_feed_candidates(config, category, current_time, penalty_keywords)
     candidates.extend(

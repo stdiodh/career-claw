@@ -26,7 +26,7 @@ workflow는 `{{KST_NOW}}`를 현재 Asia/Seoul 기준시각으로 치환한다. 
 - `reports/candidates/kr-backend-company-watchlist.json`
 - `configs/audience-profile.json`
 
-후보의 `title`, `url`, `source_url`, `source`, `source_kind`, `source_confidence`, `is_detail_url`, `is_generic_url`, `is_news_article`, `is_active`, `company_or_host`, `company_or_host_confidence`, `type`, `role`, `deadline_text`, `deadline_status`, `deadline_confidence`, `days_until_deadline`, `target`, `tech_or_output_keywords`, `process_or_deliverable`, `summary`, `score`, `exclude_reason`을 참고한다.
+후보의 `title`, `url`, `source_url`, `source`, `source_kind`, `source_confidence`, `is_detail_url`, `is_generic_url`, `is_news_article`, `is_active`, `selection_tier`, `company_or_host`, `company_or_host_confidence`, `type`, `role`, `deadline_text`, `deadline_status`, `deadline_confidence`, `days_until_deadline`, `target`, `tech_or_output_keywords`, `process_or_deliverable`, `summary`, `score`, `exclude_reason`을 참고한다.
 
 ## 출력 파일
 
@@ -92,6 +92,8 @@ TOP 5 후보가 없으면 `## 1. 이번 주 백엔드 커리어 기회 TOP 5` �
 - 후보가 0개면 empty-state를 출력하고, 1개면 1개만 출력한다. TOP 5를 억지로 채우지 않는다.
 - 최종 추천은 실제 공고/활동 상세 URL만 허용한다.
 - `source_kind`는 `official_company_career_detail`, `job_platform_detail`, `activity_platform_detail`, `government_program_detail` 중 하나여야 한다.
+- `selection_tier`가 `backend_direct`, `backend_adjacent`, `portfolio_activity` 중 하나인 후보를 사용할 수 있다.
+- `backend_adjacent` 후보는 원문을 과장하지 말고 `IT/시스템개발`, `응용프로그램개발`, `AI 서비스 API 역할`처럼 표현한다.
 - `is_detail_url: true`, `is_news_article: false`, `is_active: true`, `exclude_reason` 없음인 후보만 추천한다.
 - 현재 KST 날짜 기준으로 종료되지 않은 후보만 추천한다.
 - 플랫폼 메인, 목록, 검색 URL은 TOP 5와 포트폴리오 섹션에 넣지 않는다.

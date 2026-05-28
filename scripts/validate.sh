@@ -130,6 +130,7 @@ python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 echo "==> Checking fixtures"
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
+python3 tests/test_weekly_career_collector.py
 
 echo "==> Checking PS progress status"
 python3 scripts/update-ps-progress.py --status >/dev/null
