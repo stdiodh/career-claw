@@ -2,39 +2,48 @@
 기준시각: 2026-05-28 14:23:54 KST
 
 이번 주 요약:
-- 이번 주는 실제 상세 공고 URL이 있는 백엔드 인턴/신입 후보와 포트폴리오형 대외활동만 확인합니다.
+- 이번 주 실제 지원/참가 가능한 백엔드 커리어 후보를 5개 유형별로 확인합니다.
 
-## 1. 이번 주 백엔드 커리어 기회 TOP 5
+## 1. 이번 주 유형별 백엔드 커리어 후보
 
-### 1. 예시테크 백엔드 개발 인턴
-- 유형: 인턴
-- 마감: 2026-06-07 KST (D-10)
+### 1. 채용
+#### 후보: 예시테크 신입 백엔드 개발자
+- 유형: 채용
+- 마감: 2026-06-03 KST (D-6)
 - 회사/주최: 예시테크
-- 직무/역할: 백엔드 개발 인턴
-- 지원/참가 조건: 신입/졸업예정자 지원 가능
+- 직무/역할: 백엔드 개발자
+- 지원/참가 조건: 신입 지원 가능
 - 기술/산출물 키워드: Java, Spring Boot, REST API, MySQL
 - 전형/제출물: 서류, 코딩테스트, 면접
+- 확인 상태: 이번 주 새로 발견한 상세 페이지 후보입니다.
 - 이번 주 액션: 이력서의 프로젝트 1개를 백엔드 역할 중심으로 정리합니다.
 - 출처: Linkareer
-- 링크: [원문 보기](https://linkareer.com/activity/example-backend-intern-123)
+- 링크: [원문 보기](https://linkareer.com/activity/320853)
 
-### 2. 예시 AI 서비스 해커톤
+### 2. 인턴
+- 이번 주 기준을 만족하는 인턴 후보가 없습니다.
+
+### 3. 해커톤
+#### 후보: 예시 AI 서비스 해커톤
 - 유형: 해커톤
+- 회사/주최: DACON
 - 직무/역할: API 서버 개발
 - 지원/참가 조건: 대학생/주니어 팀 참가 가능
 - 기술/산출물 키워드: Spring Boot, PostgreSQL, AI API, GitHub
+- 만들 수 있는 백엔드 산출물: Spring Boot API 서버, PostgreSQL 저장 구조, 외부 AI API 연동
+- 확인 상태: 공식/플랫폼 상세 페이지에서 확인했습니다.
 - 이번 주 액션: 팀에서 백엔드 역할과 API 범위를 먼저 정합니다.
 - 출처: DACON
-- 링크: [원문 보기](https://dacon.io/competitions/official/example-ai-hackathon/overview/description)
+- 링크: [원문 보기](https://dacon.io/competitions/official/123456/overview/description)
+
+### 4. 공모전
+- 이번 주 기준을 만족하는 공모전 후보가 없습니다.
+
+### 5. 경진대회
+- 이번 주 기준을 만족하는 경진대회 후보가 없습니다.
 
 ## 2. 마감 임박
-- 이번 주 마감 임박 항목은 없습니다.
+- [D-6] 예시테크 신입 백엔드 개발자 - 2026-06-03 KST - [원문 보기](https://linkareer.com/activity/320853)
 
-## 3. 포트폴리오로 남기기 좋은 대외활동
-
-### 예시 AI 서비스 해커톤
-- 유형: 해커톤
-- 만들 수 있는 백엔드 산출물: Spring Boot API 서버, PostgreSQL 저장 구조, 외부 AI API 연동, 배포 URL
-- 기술/산출물 키워드: Spring Boot, PostgreSQL, AI API, GitHub
-- 이번 주 액션: 제출물 형식을 확인하고 API 서버 범위를 3개 endpoint로 줄입니다.
-- 링크: [원문 보기](https://dacon.io/competitions/official/example-ai-hackathon/overview/description)
+## 3. 다음 주에도 추적할 후보
+- 다음 주로 넘겨 추적할 후보는 없습니다.

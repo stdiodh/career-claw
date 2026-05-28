@@ -59,6 +59,11 @@ Daily OSS 후보 정책:
 후보 파일:
 
 - `reports/candidates/kr-backend-career-events.json`
+- `reports/candidates/kr-backend-jobs.json`
+- `reports/candidates/kr-backend-interns.json`
+- `reports/candidates/kr-backend-hackathons.json`
+- `reports/candidates/kr-backend-contests.json`
+- `reports/candidates/kr-backend-competitions.json`
 - `reports/candidates/kr-backend-intern-jobs.json`
 - `reports/candidates/kr-backend-entry-jobs.json`
 - `reports/candidates/kr-backend-career-activities.json`
@@ -68,13 +73,18 @@ Weekly Career 후보 정책:
 
 - 뉴스 검색 결과는 최종 추천 후보로 사용하지 않습니다.
 - 목록 페이지는 discovery source로만 사용하고 최종 추천 후보로 사용하지 않습니다.
+- Weekly는 매주 채용, 인턴, 해커톤, 공모전, 경진대회 5개 유형을 따로 확인합니다.
+- 각 유형은 fresh 상세 URL 후보를 우선 사용합니다.
+- fresh 후보가 없으면 `data/weekly-career-candidate-cache.json`에 남은 지난 후보를 오늘 다시 fetch해 유효할 때만 backfill합니다.
+- cache backfill 후보는 Discord 본문에서 `지난 후보를 오늘 다시 확인했고 아직 유효합니다.`처럼 표시됩니다.
 - 최종 추천은 채용, 인턴, 해커톤, 공모전, 경진대회 상세 URL을 fetch해 파싱한 후보만 사용합니다.
 - 뉴스 기사, 보도자료, 수상 기사, 개최 완료 기사, 결과 발표 기사, 종료된 행사는 제외합니다.
+- generic 목록 URL은 최종 후보로 사용하지 않습니다.
 - 마감일과 회사/주최는 원문에서 확인된 경우에만 출력합니다.
 - 마감일이나 회사/주최를 모르면 만들지 않고 해당 필드를 생략합니다.
 - 백엔드 직접 공고가 없으면 IT/시스템개발/응용프로그램개발/API/데이터/AI 서비스처럼 백엔드로 연결 가능한 인턴/활동까지 보수적으로 허용합니다.
-- 후보가 부족하면 TOP 5를 억지로 채우지 않고 empty-state를 출력합니다.
-- 후보가 0개일 때는 artifact의 `diagnostics`에서 어느 단계에서 후보가 줄었는지 확인합니다.
+- 후보가 없는 유형은 empty-state로 표시합니다.
+- 후보가 0개일 때는 artifact의 `diagnostics.coverage`에서 어떤 유형이 왜 비었는지 확인합니다.
 - Naver News Search는 Weekly Career 최종 후보 source로 쓰지 않습니다.
 - Daily 한국 개발/AI 뉴스와 Weekly Career 후보 수집은 별도 정책으로 관리합니다.
 

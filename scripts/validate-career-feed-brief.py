@@ -27,10 +27,18 @@ DAILY_SECTIONS = [
     "주니어 백엔드 실무지식",
 ]
 WEEKLY_SECTIONS = [
-    "이번 주 백엔드 커리어 기회 TOP 5",
+    "이번 주 유형별 백엔드 커리어 후보",
     "마감 임박",
-    "포트폴리오로 남기기 좋은 대외활동",
+    "다음 주에도 추적할 후보",
 ]
+WEEKLY_CATEGORY_LABELS = ["채용", "인턴", "해커톤", "공모전", "경진대회"]
+WEEKLY_CATEGORY_EMPTY_STATES = {
+    "채용": "이번 주 기준을 만족하는 채용 후보가 없습니다.",
+    "인턴": "이번 주 기준을 만족하는 인턴 후보가 없습니다.",
+    "해커톤": "이번 주 기준을 만족하는 해커톤 후보가 없습니다.",
+    "공모전": "이번 주 기준을 만족하는 공모전 후보가 없습니다.",
+    "경진대회": "이번 주 기준을 만족하는 경진대회 후보가 없습니다.",
+}
 
 NO_ITEM_PHRASES = [
     "오늘 확인된 주요 항목 없음",
@@ -42,8 +50,14 @@ NO_ITEM_PHRASES = [
     "이번 주 마감 임박 항목 없음",
     "이번 주 추천 항목 없음",
     "이번 주 기준을 만족하는 백엔드 커리어 기회가 없습니다.",
+    "이번 주 기준을 만족하는 채용 후보가 없습니다.",
+    "이번 주 기준을 만족하는 인턴 후보가 없습니다.",
+    "이번 주 기준을 만족하는 해커톤 후보가 없습니다.",
+    "이번 주 기준을 만족하는 공모전 후보가 없습니다.",
+    "이번 주 기준을 만족하는 경진대회 후보가 없습니다.",
     "이번 주 마감 임박 항목은 없습니다.",
     "이번 주 포트폴리오용 대외활동 후보는 없습니다.",
+    "다음 주로 넘겨 추적할 후보는 없습니다.",
 ]
 
 GENERIC_PHRASES = [
@@ -122,6 +136,7 @@ WEEKLY_REQUIRED_FIELDS = [
     "직무/역할",
     "지원/참가 조건",
     "기술/산출물 키워드",
+    "확인 상태",
     "이번 주 액션",
     "출처",
     "링크",
@@ -152,13 +167,13 @@ WEEKLY_FORBIDDEN_TEXT_PATTERNS = [
     r"수상",
     r"2등 수상",
     r"개최했다",
-    r"개최",
+    r"개최 완료",
     r"성료",
     r"결과 발표",
 ]
 WEEKLY_TOP_EMPTY_STATE = "이번 주 기준을 만족하는 백엔드 커리어 기회가 없습니다."
 WEEKLY_URGENT_EMPTY_STATE = "이번 주 마감 임박 항목은 없습니다."
-WEEKLY_PORTFOLIO_EMPTY_STATE = "이번 주 포트폴리오용 대외활동 후보는 없습니다."
+WEEKLY_TRACKING_EMPTY_STATE = "다음 주로 넘겨 추적할 후보는 없습니다."
 WEEKLY_PORTFOLIO_FIELDS = [
     "유형",
     "만들 수 있는 백엔드 산출물",
@@ -244,6 +259,8 @@ LINK_RE = re.compile(r"https?://[^\s)>\\\]]+")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(https?://[^)]+\)")
 SECTION_HEADING_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
 ITEM_HEADING_RE = re.compile(r"^###\s+(.+?)\s*$", re.MULTILINE)
+WEEKLY_CATEGORY_HEADING_RE = re.compile(r"^###\s+\d+\.\s+(.+?)\s*$", re.MULTILINE)
+WEEKLY_CANDIDATE_HEADING_RE = re.compile(r"^####\s+후보\s*:\s*(.+?)\s*$", re.MULTILINE)
 SECRET_RE = re.compile(
     r"(OPENAI_API_KEY|DISCORD_WEBHOOK|NAVER_CLIENT_SECRET|"
     r"https://(?:discord(?:app)?\.com/api/webhooks|hooks\.slack\.com)/|"
@@ -444,6 +461,50 @@ def is_blocked_weekly_domain(url: str) -> bool:
     return any(domain == blocked or domain.endswith(f".{blocked}") for blocked in WEEKLY_BLOCKED_DOMAINS)
 
 
+def is_allowed_weekly_detail_url(url: str) -> bool:
+    parsed = urllib.parse.urlsplit(url)
+    domain = validation_domain(url)
+    path = parsed.path.rstrip("/") or "/"
+    query = parsed.query.lower()
+    if domain == "linkareer.com" and re.fullmatch(r"/activity/\d+", path):
+        return True
+    if domain == "dacon.io" and path.startswith("/competitions/official/"):
+        return True
+    if domain == "aifactory.space" and path.startswith("/competition/detail/"):
+        return True
+    if domain == "wanted.co.kr" and path.startswith("/wd/"):
+        return True
+    if domain == "jumpit.co.kr" and path.startswith("/position/"):
+        return True
+    if domain == "saramin.co.kr" and path.startswith("/zf_user/jobs/"):
+        return True
+    if domain == "jobkorea.co.kr" and path.startswith("/Recruit/GI_Read"):
+        return True
+    if domain in {"programmers.co.kr", "school.programmers.co.kr"} and (
+        path.startswith("/competitions/") or path.startswith("/pages/")
+    ):
+        return True
+    if domain == "wevity.com" and "c=find" in query:
+        return True
+    if domain == "all-con.co.kr" and path.startswith("/view/contest/"):
+        return True
+    if domain == "recruit.navercorp.com" and "/rcrt/view.do" in path:
+        return True
+    if domain == "careers.kakao.com" and (path.startswith("/jobs/") or "jobid=" in query):
+        return True
+    if domain == "careers.linecorp.com" and re.fullmatch(r"/(?:ko|en)/jobs/\d+", path):
+        return True
+    if domain == "coupang.jobs" and re.fullmatch(r"/(?:en/|ko/)?jobs/\d+", path):
+        return True
+    if domain == "career.woowahan.com" and path.startswith("/jobs/"):
+        return True
+    if domain == "toss.im" and (path.startswith("/career/job-detail") or "job_id=" in query):
+        return True
+    if domain in {"about.daangn.com", "team.daangn.com"} and re.search(r"/jobs/\d+", path):
+        return True
+    return False
+
+
 def validate_weekly_deadline_value(value: str, context: str) -> None:
     if any(forbidden in value for forbidden in WEEKLY_FORBIDDEN_DEADLINE_VALUES):
         fail(f"Weekly career deadline is not actionable: {context}")
@@ -464,6 +525,9 @@ def validate_weekly_item_links(text: str, context: str) -> None:
     blocked_urls = [url for url in urls if is_blocked_weekly_domain(url)]
     if blocked_urls:
         fail(f"Weekly career item uses news URL: {context} ({blocked_urls[0]})")
+    invalid_urls = [url for url in urls if not is_allowed_weekly_detail_url(url)]
+    if invalid_urls:
+        fail(f"Weekly career item uses unsupported detail URL: {context} ({invalid_urls[0]})")
 
 
 def validate_weekly_naver_host_policy(text: str, context: str) -> None:
@@ -646,20 +710,47 @@ def validate_weekly_career(content: str) -> None:
     validate_common(content, min_links=0, allow_duplicate_links=True)
     require_sections(sections, WEEKLY_SECTIONS)
 
-    top_section = find_section(sections, "이번 주 백엔드 커리어 기회 TOP 5")
-    if top_section is None:
-        return
-    top_items = extract_items(top_section)
-    if not top_items and WEEKLY_TOP_EMPTY_STATE not in top_section.body:
-        fail("Weekly career recommendations are missing.")
-    if len(top_items) > 5:
-        fail("Weekly career TOP 5 must include at most five items.")
-    for item in top_items:
-        validate_weekly_item(item)
-        validate_weekly_recommended_text(item)
+    category_section = find_section(sections, "이번 주 유형별 백엔드 커리어 후보")
+    if category_section is None:
+        fail("Weekly career brief must include type coverage section.")
+    validate_weekly_category_section(category_section)
 
     validate_weekly_urgent_section(sections)
-    validate_weekly_portfolio_section(sections)
+    validate_weekly_tracking_section(sections)
+
+
+def extract_weekly_category_blocks(section: Section) -> dict[str, str]:
+    matches = list(WEEKLY_CATEGORY_HEADING_RE.finditer(section.body))
+    blocks: dict[str, str] = {}
+    for index, match in enumerate(matches):
+        label = match.group(1).strip()
+        start = match.end()
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(section.body)
+        blocks[label] = section.body[start:end].strip()
+    return blocks
+
+
+def validate_weekly_category_section(section: Section) -> None:
+    blocks = extract_weekly_category_blocks(section)
+    missing = [label for label in WEEKLY_CATEGORY_LABELS if label not in blocks]
+    if missing:
+        fail(f"Weekly career type section is missing category subsection(s): {', '.join(missing)}")
+    for label in WEEKLY_CATEGORY_LABELS:
+        body = blocks[label]
+        empty_state = WEEKLY_CATEGORY_EMPTY_STATES[label]
+        candidate_matches = list(WEEKLY_CANDIDATE_HEADING_RE.finditer(body))
+        if not candidate_matches:
+            if empty_state not in body:
+                fail(f"Weekly career {label} subsection has no candidate and no empty-state.")
+            continue
+        if empty_state in body:
+            fail(f"Weekly career {label} subsection has both candidate and empty-state.")
+        if len(candidate_matches) > 1:
+            fail(f"Weekly career {label} subsection must include at most one candidate.")
+        match = candidate_matches[0]
+        item = Item(title=match.group(1).strip(), body=body[match.end() :].strip())
+        validate_weekly_item(item)
+        validate_weekly_recommended_text(item)
 
 
 def validate_weekly_forbidden_text(content: str) -> None:
@@ -730,24 +821,19 @@ def validate_weekly_urgent_section(sections: list[Section]) -> None:
         validate_weekly_item_links(line, "마감 임박")
 
 
-def validate_weekly_portfolio_section(sections: list[Section]) -> None:
-    section = find_section(sections, "포트폴리오로 남기기 좋은 대외활동")
+def validate_weekly_tracking_section(sections: list[Section]) -> None:
+    section = find_section(sections, "다음 주에도 추적할 후보")
     if section is None:
-        fail("Weekly career brief must include 포트폴리오로 남기기 좋은 대외활동 section.")
-    items = extract_items(section)
-    if not items:
-        if WEEKLY_PORTFOLIO_EMPTY_STATE in section.body:
-            return
-        fail("Portfolio section must include candidates or the required empty-state phrase.")
-    for item in items:
-        missing = missing_bullet_fields(item.body, WEEKLY_PORTFOLIO_FIELDS)
-        if missing:
-            fail(f"Portfolio activity is missing field(s): {item.title} ({', '.join(missing)})")
-        deadline = bullet_field_value(item.body, "마감")
-        if deadline:
-            validate_weekly_deadline_value(deadline, item.title)
-        validate_weekly_item_links(item.body, item.title)
-        validate_weekly_naver_host_policy(item.body, item.title)
+        fail("Weekly career brief must include 다음 주에도 추적할 후보 section.")
+    if WEEKLY_TRACKING_EMPTY_STATE in section.body:
+        return
+    lines = [line.strip() for line in section.body.splitlines() if line.strip().startswith("- ")]
+    if not lines:
+        fail("다음 주에도 추적할 후보 section must include cache candidates or the required empty-state phrase.")
+    for line in lines:
+        if "지난 후보" not in line and "다시 확인" not in line:
+            fail("Tracking section must only include revalidated cache candidates.")
+        validate_weekly_item_links(line, "다음 주에도 추적할 후보")
 
 
 def validate(content: str, report_type: str) -> None:

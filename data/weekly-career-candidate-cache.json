@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-05-28 16:10:33 KST",
+  "items": [
+    {
+      "url": "https://dacon.io/competitions/official/236647/overview/",
+      "title": "Track1 알고리즘 부문 : K리그-서울시립대 공개 AI 경진대회",
+      "weekly_category": "competition",
+      "category_label": "경진대회",
+      "source": "DACON",
+      "source_kind": "activity_platform_detail",
+      "selection_tier": "portfolio_activity",
+      "first_seen_at": "2026-05-28 16:06:07 KST",
+      "last_seen_at": "2026-05-28 16:10:33 KST",
+      "last_verified_at": "2026-05-28 16:10:33 KST",
+      "deadline": "2026-11-24 KST",
+      "deadline_text": "2026-11-24 KST",
+      "deadline_status": "open",
+      "deadline_confidence": "high",
+      "days_until_deadline": 180,
+      "company_or_host": "DACON",
+      "role": "AI 서비스 API 역할",
+      "target": "팀 참가 가능",
+      "tech_or_output_keywords": [],
+      "summary": "마감일 2026-11-24 KST 상태: 모집 중 출처 : DACON - Data Science Competition",
+      "verification_status": "verified_active"
+    }
+  ]
+}

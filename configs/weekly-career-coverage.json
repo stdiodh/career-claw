@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "timezone": "Asia/Seoul",
+  "weekly_categories": [
+    {
+      "id": "job",
+      "label": "채용",
+      "target_min": 1,
+      "target_max": 1,
+      "fresh_first": true,
+      "allow_cache_backfill": true,
+      "max_cache_age_days": 45,
+      "source_priority": ["NAVER Careers", "Kakao Careers", "LINE Careers", "Coupang Jobs", "Woowa Careers", "Toss Careers", "Daangn Careers", "Wanted", "Jumpit", "Saramin", "JobKorea"]
+    },
+    {
+      "id": "intern",
+      "label": "인턴",
+      "target_min": 1,
+      "target_max": 1,
+      "fresh_first": true,
+      "allow_cache_backfill": true,
+      "max_cache_age_days": 45,
+      "source_priority": ["Linkareer Intern", "Work24", "ZeroBase Zero Intern", "Saramin", "JobKorea", "Wanted"]
+    },
+    {
+      "id": "hackathon",
+      "label": "해커톤",
+      "target_min": 1,
+      "target_max": 1,
+      "fresh_first": true,
+      "allow_cache_backfill": true,
+      "max_cache_age_days": 60,
+      "source_priority": ["Linkareer Activities", "Programmers", "AI Factory", "DACON", "Wevity", "All-Con"]
+    },
+    {
+      "id": "contest",
+      "label": "공모전",
+      "target_min": 1,
+      "target_max": 1,
+      "fresh_first": true,
+      "allow_cache_backfill": true,
+      "max_cache_age_days": 60,
+      "source_priority": ["Linkareer Activities", "Wevity", "All-Con", "DACON", "Programmers", "AI Factory"]
+    },
+    {
+      "id": "competition",
+      "label": "경진대회",
+      "target_min": 1,
+      "target_max": 1,
+      "fresh_first": true,
+      "allow_cache_backfill": true,
+      "max_cache_age_days": 60,
+      "source_priority": ["DACON", "AI Factory", "Programmers", "Linkareer Activities", "Wevity", "All-Con"]
+    }
+  ]
+}

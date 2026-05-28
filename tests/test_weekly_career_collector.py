@@ -77,6 +77,35 @@ def parse_detail(html: str, url: str = "https://linkareer.com/activity/320853"):
     return collector.normalize_weekly_career_candidate(candidate, NOW)
 
 
+def weekly_item(
+    weekly_category: str,
+    selection_tier: str,
+    *,
+    title: str = "후보",
+    freshness_tier: str = "fresh_this_week",
+    score: int = 100,
+    url: str = "https://linkareer.com/activity/320853",
+) -> dict[str, object]:
+    return {
+        "title": title,
+        "url": url,
+        "source": "Linkareer",
+        "source_kind": "job_platform_detail",
+        "is_detail_url": True,
+        "is_generic_url": False,
+        "is_news_article": False,
+        "is_active": True,
+        "weekly_category": weekly_category,
+        "category_label": collector.WEEKLY_CATEGORY_LABELS[weekly_category],
+        "selection_tier": selection_tier,
+        "freshness_tier": freshness_tier,
+        "verification_status": "verified_active",
+        "exclude_reason": "",
+        "deadline_confidence": "high",
+        "score": score,
+    }
+
+
 def test_listing_extracts_linkareer_detail() -> None:
     html = '<a href="/activity/320853">상세</a><a href="/list/intern">목록</a>'
     assert collector.extract_links_from_listing_page(
@@ -162,6 +191,189 @@ def test_deadline_unknown_active_detail_can_pass() -> None:
 def test_expired_deadline_is_excluded() -> None:
     item = parse_detail(build_detail_html(valid_through="2026-05-01T14:59:59.999Z"))
     assert "expired-or-past-event" in item["exclude_reason"]
+
+
+def test_weekly_category_classifier() -> None:
+    assert collector.classify_weekly_category_from_text("신입 백엔드 개발자") == "job"
+    assert collector.classify_weekly_category_from_text("채용연계형 인턴") == "intern"
+    assert collector.classify_weekly_category_from_text("AI 서비스 해커톤") == "hackathon"
+    assert collector.classify_weekly_category_from_text("SW 개발 공모전") == "contest"
+    assert collector.classify_weekly_category_from_text("데이터 AI 경진대회") == "competition"
+
+
+def test_selected_by_category_picks_one_each() -> None:
+    coverage = collector.default_weekly_career_coverage_config()
+    items = [
+        weekly_item("job", "backend_direct", title="채용"),
+        weekly_item("intern", "backend_adjacent", title="인턴"),
+        weekly_item("hackathon", "portfolio_activity", title="해커톤"),
+        weekly_item("contest", "portfolio_activity", title="공모전"),
+        weekly_item("competition", "portfolio_activity", title="경진대회"),
+    ]
+    selected = collector.select_weekly_career_by_category(items, [], coverage, NOW)
+    assert set(selected) == set(collector.WEEKLY_CATEGORY_ORDER)
+    assert all(selected[key] is not None for key in collector.WEEKLY_CATEGORY_ORDER)
+
+
+def test_selection_prefers_fresh_and_stronger_tier() -> None:
+    coverage = collector.default_weekly_career_coverage_config()
+    cached = weekly_item(
+        "job",
+        "backend_direct",
+        title="캐시 채용",
+        freshness_tier="cached_revalidated",
+        score=200,
+        url="https://linkareer.com/activity/320854",
+    )
+    fresh_adjacent = weekly_item("job", "backend_adjacent", title="fresh 채용", score=10)
+    selected = collector.select_weekly_career_by_category([fresh_adjacent], [cached], coverage, NOW)
+    assert selected["job"]["title"] == "fresh 채용"
+
+    direct = weekly_item("job", "backend_direct", title="direct", score=10)
+    adjacent = weekly_item(
+        "job",
+        "backend_adjacent",
+        title="adjacent",
+        score=200,
+        url="https://linkareer.com/activity/320855",
+    )
+    selected = collector.select_weekly_career_by_category([adjacent, direct], [], coverage, NOW)
+    assert selected["job"]["title"] == "direct"
+
+
+def test_portfolio_activity_is_allowed_for_activity_categories() -> None:
+    coverage = collector.default_weekly_career_coverage_config()
+    portfolio = weekly_item("hackathon", "portfolio_activity", title="포트폴리오 해커톤")
+    selected = collector.select_weekly_career_by_category([portfolio], [], coverage, NOW)
+    assert selected["hackathon"]["title"] == "포트폴리오 해커톤"
+
+
+def test_cache_revalidation_uses_active_detail(monkeypatch=None) -> None:
+    original_fetch = collector.fetch_weekly_career_detail_page
+
+    def fake_fetch(url: str) -> str:
+        assert url == "https://linkareer.com/activity/320853"
+        return build_detail_html(title="예시테크 채용연계형 인턴")
+
+    collector.fetch_weekly_career_detail_page = fake_fetch
+    try:
+        items, diagnostics = collector.revalidate_weekly_career_cache(
+            [
+                {
+                    "url": "https://linkareer.com/activity/320853",
+                    "title": "예시테크 채용연계형 인턴",
+                    "weekly_category": "intern",
+                    "category_label": "인턴",
+                    "source": "Linkareer",
+                    "source_kind": "job_platform_detail",
+                    "selection_tier": "backend_adjacent",
+                    "first_seen_at": "2026-05-20 00:00:00 KST",
+                    "last_seen_at": "2026-05-20 00:00:00 KST",
+                    "last_verified_at": "2026-05-20 00:00:00 KST",
+                    "verification_status": "verified_active",
+                }
+            ],
+            CATEGORY,
+            NOW,
+            [],
+            {"intern"},
+            collector.default_weekly_career_coverage_config(),
+        )
+    finally:
+        collector.fetch_weekly_career_detail_page = original_fetch
+    assert diagnostics["revalidated"] == 1
+    assert items[0]["freshness_tier"] == "cached_revalidated"
+    assert items[0]["weekly_category"] == "intern"
+
+
+def test_cache_revalidation_excludes_expired_generic_and_news() -> None:
+    calls = {"count": 0}
+    original_fetch = collector.fetch_weekly_career_detail_page
+
+    def fake_fetch(url: str) -> str:
+        calls["count"] += 1
+        return build_detail_html(valid_through="2026-05-01T14:59:59.999Z")
+
+    collector.fetch_weekly_career_detail_page = fake_fetch
+    try:
+        items, diagnostics = collector.revalidate_weekly_career_cache(
+            [
+                {
+                    "url": "https://linkareer.com/activity/320853",
+                    "title": "만료 인턴",
+                    "weekly_category": "intern",
+                    "category_label": "인턴",
+                    "source": "Linkareer",
+                    "last_verified_at": "2026-05-20 00:00:00 KST",
+                },
+                {
+                    "url": "https://linkareer.com/list/intern",
+                    "title": "목록",
+                    "weekly_category": "intern",
+                    "source": "Linkareer",
+                    "last_verified_at": "2026-05-20 00:00:00 KST",
+                },
+                {
+                    "url": "https://news.naver.com/main/read.naver?oid=001&aid=1",
+                    "title": "뉴스",
+                    "weekly_category": "intern",
+                    "source": "Naver News Search",
+                    "last_verified_at": "2026-05-20 00:00:00 KST",
+                },
+            ],
+            CATEGORY,
+            NOW,
+            [],
+            {"intern"},
+            collector.default_weekly_career_coverage_config(),
+        )
+    finally:
+        collector.fetch_weekly_career_detail_page = original_fetch
+    assert calls["count"] == 1
+    assert diagnostics["revalidated"] == 1
+    assert items == []
+
+
+def test_coverage_diagnostics_include_all_categories() -> None:
+    coverage = collector.default_weekly_career_coverage_config()
+    payload = collector.build_weekly_career_payload(
+        collector.WEEKLY_CAREER_CATEGORY_ID,
+        NOW,
+        [weekly_item("job", "backend_direct", title="채용")],
+        [],
+        diagnostics={"coverage": {"job": {"sources": {"Linkareer": {"discovered": 1}}}}},
+        update_cache=False,
+    )
+    coverage_diagnostics = payload["diagnostics"]["coverage"]
+    assert set(coverage_diagnostics) == set(collector.WEEKLY_CATEGORY_ORDER)
+    assert coverage_diagnostics["intern"]["why_empty"]
+    assert "sources" in coverage_diagnostics["job"]
+    assert payload["diagnostics"]["empty_categories"]
+
+
+def test_prompt_safe_selected_output() -> None:
+    coverage = collector.default_weekly_career_coverage_config()
+    selected = collector.select_weekly_career_by_category(
+        [
+            weekly_item("job", "backend_direct", title="safe"),
+            {
+                **weekly_item("intern", "backend_adjacent", title="bad"),
+                "url": "https://linkareer.com/list/intern",
+                "is_generic_url": True,
+            },
+            {
+                **weekly_item("contest", "portfolio_activity", title="excluded"),
+                "exclude_reason": "generic-url",
+            },
+        ],
+        [],
+        coverage,
+        NOW,
+    )
+    assert selected["job"]["source"] != "Naver News Search"
+    assert selected["job"]["exclude_reason"] == ""
+    assert selected["intern"] is None
+    assert selected["contest"] is None
 
 
 def main() -> int:
