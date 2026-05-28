@@ -177,6 +177,7 @@ PS 루틴 후보는 current_track, today_problem, advance_recommendation을 참�
 
 - 4번 뉴스는 `kr-dev-ai-news.json` 또는 `kr-ai-tech-news.json`의 실제 후보 item에서만 고른다.
 - `spring-study-topic.json`, `kr-backend-tech-news.json`, Spring/JVM 학습 후보, 공식 reference page를 뉴스로 재사용하지 않는다.
+- 4번 뉴스 링크는 1번 Spring 학습의 참고 링크와 같으면 제외하고, 다른 후보가 없으면 지정된 없음 문장만 쓴다.
 - 후보에 없는 뉴스를 임의로 만들지 않는다.
 - 기사 제목은 후보의 title을 왜곡하지 않는다.
 - `핵심`과 `실무 연결`만 짧게 재작성한다.

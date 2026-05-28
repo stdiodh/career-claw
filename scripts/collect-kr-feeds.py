@@ -2792,8 +2792,21 @@ def write_daily_tech_alias_outputs(
     generated_at: datetime,
     candidates_by_category: dict[str, list[Candidate] | list[OssIssueCandidate]],
 ) -> None:
+    spring_candidates = candidates_by_category.get(BACKEND_TECH_CATEGORY_ID, [])
+    spring_urls = {
+        normalize_url(candidate.url)
+        for candidate in spring_candidates
+        if isinstance(candidate, Candidate)
+    }
     for source_category_id, (alias_category_id, output_path) in DAILY_TECH_ALIAS_OUTPUTS.items():
         candidates = candidates_by_category.get(source_category_id, [])
+        if source_category_id == AI_TECH_CATEGORY_ID:
+            candidates = [
+                candidate
+                for candidate in candidates
+                if not isinstance(candidate, Candidate)
+                or normalize_url(candidate.url) not in spring_urls
+            ]
         payload = {
             "category": alias_category_id,
             "generated_at": format_kst(generated_at),
@@ -2802,6 +2815,15 @@ def write_daily_tech_alias_outputs(
         }
         write_json_file(output_path, payload)
         print(f"Wrote {len(candidates)} candidate(s): {output_path}")
+        if source_category_id == AI_TECH_CATEGORY_ID:
+            ai_payload = {
+                "category": source_category_id,
+                "generated_at": format_kst(generated_at),
+                "items": [serialize_candidate(candidate) for candidate in candidates],
+            }
+            ai_output_path = Path("reports/candidates/kr-ai-tech-news.json")
+            write_json_file(ai_output_path, ai_payload)
+            print(f"Wrote {len(candidates)} candidate(s): {ai_output_path}")
 
 
 def write_weekly_career_split_outputs(
