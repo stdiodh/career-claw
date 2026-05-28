@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   kr-tech-daily:
@@ -18,7 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
         with:
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -82,13 +82,17 @@ jobs:
           prompt = prompt.replace("{{KST_NOW}}", os.environ["KST_NOW"])
           runtime = prompt + "\n\n## Runtime candidate files\n\n"
           runtime += "아래 후보 JSON 파일과 사용자 프로필을 읽고 최종 브리핑을 작성한다.\n\n"
-          runtime += "- `reports/candidates/kr-ai-tech-news.json`\n"
-          runtime += "- `reports/candidates/kr-backend-tech-news.json`\n"
+          runtime += "- `reports/candidates/spring-study-topic.json`\n"
+          runtime += "- `reports/candidates/ps-weekly-routine.json`\n"
           runtime += "- `reports/candidates/kr-oss-contribution-opportunities.json`\n"
+          runtime += "- `reports/candidates/kr-dev-ai-news.json`\n"
           runtime += "- `configs/audience-profile.json`\n"
+          runtime += "\n`ps-weekly-routine.json`을 알고리즘 루틴의 primary 후보로 사용한다.\n"
+          runtime += "`kr-dev-ai-news.json`과 `spring-study-topic.json`을 daily tech primary 후보로 사용한다.\n"
+          runtime += "오늘 할 일에는 가능하면 Programmers 루틴 문제 1개를 행동 항목으로 포함한다.\n"
           runtime += "\n## Runtime output\n\n"
           runtime += "- 최종 Markdown은 `reports/briefs/kr-tech-daily.md`에만 작성한다.\n"
-          runtime += "- 후보 JSON, config, workflow, script 파일은 수정하지 않는다.\n"
+          runtime += "- 후보 JSON, progress, config, workflow, script 파일은 수정하지 않는다.\n"
           runtime += "- Secret 값이나 Webhook URL은 출력하지 않는다.\n"
           destination.write_text(runtime, encoding="utf-8")
           PY
@@ -126,15 +130,32 @@ jobs:
           set -euo pipefail
           python3 scripts/send-discord.py "${REPORT_FILE}"
 
+      - name: Commit Programmers assignment progress
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- data/ps-progress.json; then
+            echo "No PS progress changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ps-progress.json
+          git commit -m "chore(ps): record daily Programmers assignment"
+          git push
+
       - name: Upload Korea tech daily artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: career-feed-kr-tech-daily-${{ github.run_id }}
           path: |
-            reports/candidates/kr-ai-tech-news.json
-            reports/candidates/kr-backend-tech-news.json
+            reports/candidates/spring-study-topic.json
+            reports/candidates/ps-weekly-routine.json
             reports/candidates/kr-oss-contribution-opportunities.json
+            reports/candidates/kr-dev-ai-news.json
             reports/briefs/kr-tech-daily.md
             reports/briefs/kr-tech-daily-codex-summary.md
           if-no-files-found: warn

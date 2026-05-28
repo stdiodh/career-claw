@@ -33,9 +33,21 @@ DEFAULT_DISPLAY = 10
 MAX_DISPLAY = 20
 DEFAULT_MAX_CANDIDATES = 30
 OSS_REPOSITORIES_CONFIG_PATH = Path("configs/oss-repositories.json")
+PS_CURRICULUM_PATH = Path("configs/programmers-ps-curriculum.json")
+PS_PROGRESS_PATH = Path("data/ps-progress.json")
+PS_ROUTINE_OUTPUT_PATH = Path("reports/candidates/ps-weekly-routine.json")
 USER_AGENT = "career-feed-kr-collector"
 SUPPORTED_FEED_TYPES = {"rss", "atom"}
 OSS_CATEGORY_ID = "kr-oss-contribution-opportunities"
+AI_TECH_CATEGORY_ID = "kr-ai-tech-news"
+BACKEND_TECH_CATEGORY_ID = "kr-backend-tech-news"
+DAILY_TECH_ALIAS_OUTPUTS = {
+    AI_TECH_CATEGORY_ID: ("kr-dev-ai-news", Path("reports/candidates/kr-dev-ai-news.json")),
+    BACKEND_TECH_CATEGORY_ID: (
+        "spring-study-topic",
+        Path("reports/candidates/spring-study-topic.json"),
+    ),
+}
 RELIABILITY_SCORE = {
     "official": 20,
     "major_media": 12,
@@ -44,7 +56,7 @@ RELIABILITY_SCORE = {
     "unknown": 0,
 }
 MODE_CATEGORY_IDS = {
-    "daily-tech": {"kr-ai-tech-news", "kr-backend-tech-news", OSS_CATEGORY_ID},
+    "daily-tech": {AI_TECH_CATEGORY_ID, BACKEND_TECH_CATEGORY_ID, OSS_CATEGORY_ID},
     "weekly-career": {"kr-backend-career-events"},
 }
 BACKEND_KEYWORDS = [
@@ -388,6 +400,25 @@ def difficulty_model_values(
     if not isinstance(model, dict):
         return []
     return category_values(model, key)
+
+
+def write_json_file(path: Path, payload: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = path.with_suffix(f"{path.suffix}.tmp")
+    temp_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    temp_path.replace(path)
+
+
+def load_required_json(path: Path) -> dict[str, object]:
+    if not path.exists():
+        raise RuntimeError(f"Required file not found: {path}")
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise RuntimeError(f"JSON root must be an object: {path}")
+    return data
 
 
 def text_contains_any(text: str, keywords: list[str]) -> bool:
@@ -987,6 +1018,192 @@ def infer_contribution_type(text: str) -> str:
     return "triage"
 
 
+def ps_tracks(curriculum: dict[str, object]) -> list[dict[str, object]]:
+    tracks = curriculum.get("tracks", [])
+    if not isinstance(tracks, list):
+        raise RuntimeError("configs/programmers-ps-curriculum.json must contain tracks.")
+    return [track for track in tracks if isinstance(track, dict)]
+
+
+def ps_track(curriculum: dict[str, object], track_id: str) -> dict[str, object]:
+    for track in ps_tracks(curriculum):
+        if str(track.get("id", "")).strip() == track_id:
+            return track
+    raise RuntimeError(f"Unknown current_track in progress: {track_id}")
+
+
+def ps_problems(track: dict[str, object]) -> list[dict[str, object]]:
+    problems = track.get("problems", [])
+    if not isinstance(problems, list):
+        raise RuntimeError(f"Track must contain a problems array: {track.get('id')}")
+    return [problem for problem in problems if isinstance(problem, dict)]
+
+
+def ps_problem_ids(entries: object) -> set[str]:
+    if not isinstance(entries, list):
+        return set()
+
+    ids = set()
+    for entry in entries:
+        if isinstance(entry, dict):
+            problem_id = str(entry.get("problem_id", "")).strip()
+        else:
+            problem_id = str(entry).strip()
+        if problem_id:
+            ids.add(problem_id)
+    return ids
+
+
+def ps_problem_level(problem: dict[str, object]) -> int:
+    try:
+        return int(problem.get("level", 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def select_ps_problem(
+    track: dict[str, object],
+    progress: dict[str, object],
+) -> dict[str, object] | None:
+    solved_ids = ps_problem_ids(progress.get("solved", []))
+    candidates = [
+        (index, problem)
+        for index, problem in enumerate(ps_problems(track))
+        if str(problem.get("id", "")).strip() not in solved_ids
+    ]
+    if not candidates:
+        return None
+    _, selected = min(candidates, key=lambda item: (ps_problem_level(item[1]), item[0]))
+    return selected
+
+
+def build_ps_advance_recommendation(
+    track: dict[str, object],
+    progress: dict[str, object],
+) -> dict[str, object]:
+    solved_ids = ps_problem_ids(progress.get("solved", []))
+    solved_problems = [
+        problem
+        for problem in ps_problems(track)
+        if str(problem.get("id", "")).strip() in solved_ids
+    ]
+    rule = track.get("advance_rule", {})
+    if not isinstance(rule, dict):
+        rule = {}
+
+    min_solved = int(rule.get("min_solved", 0) or 0)
+    target_level_count = int(rule.get("max_level_solved", 0) or 0)
+    target_level = int(progress.get("target_level") or track.get("default_target_level") or 0)
+    target_level_solved = [
+        problem for problem in solved_problems if ps_problem_level(problem) >= target_level
+    ]
+
+    if bool(progress.get("manual_advance_requested")) and bool(
+        rule.get("allow_manual_advance", False)
+    ):
+        return {
+            "can_advance": True,
+            "reason": "수동 track 이동 요청이 설정되어 있습니다.",
+        }
+    if len(target_level_solved) < target_level_count:
+        return {
+            "can_advance": False,
+            "reason": "target_level 문제를 아직 충분히 풀지 않았습니다.",
+        }
+    if len(solved_problems) < min_solved:
+        return {
+            "can_advance": False,
+            "reason": "현재 track에서 해결한 문제가 아직 충분하지 않습니다.",
+        }
+    return {
+        "can_advance": True,
+        "reason": "현재 track의 최소 진행 조건을 충족했습니다.",
+    }
+
+
+def build_ps_routine_output(
+    track: dict[str, object],
+    progress: dict[str, object],
+    selected: dict[str, object] | None,
+    generated_at: datetime,
+) -> dict[str, object]:
+    problems = ps_problems(track)
+    solved_ids = ps_problem_ids(progress.get("solved", []))
+    solved_count = sum(
+        1 for problem in problems if str(problem.get("id", "")).strip() in solved_ids
+    )
+    target_level = int(progress.get("target_level") or track.get("default_target_level") or 0)
+
+    return {
+        "category": "ps-weekly-routine",
+        "generated_at": format_kst(generated_at),
+        "current_track": {
+            "id": str(track.get("id", "")).strip(),
+            "name": str(track.get("name", "")).strip(),
+            "goal": str(track.get("goal", "")).strip(),
+            "week_started_at": str(progress.get("week_started_at", "")).strip(),
+            "target_level": target_level,
+            "progress": f"{solved_count}/{len(problems)}",
+        },
+        "today_problem": selected,
+        "advance_recommendation": build_ps_advance_recommendation(track, progress),
+    }
+
+
+def record_ps_assignment(
+    progress: dict[str, object],
+    selected: dict[str, object] | None,
+    current_time: datetime,
+) -> None:
+    if selected is None:
+        return
+
+    assigned = progress.setdefault("assigned", [])
+    if not isinstance(assigned, list):
+        raise RuntimeError("data/ps-progress.json assigned must be an array.")
+
+    problem_id = str(selected.get("id", "")).strip()
+    assigned.append(
+        {
+            "date": current_time.strftime("%Y-%m-%d"),
+            "problem_id": problem_id,
+        }
+    )
+    progress["last_recommended_problem_id"] = problem_id
+
+
+def write_ps_routine_output(
+    current_time: datetime,
+    *,
+    dry_run: bool,
+    record_assignment: bool,
+) -> None:
+    curriculum = load_required_json(PS_CURRICULUM_PATH)
+    progress = load_required_json(PS_PROGRESS_PATH)
+    current_track = str(progress.get("current_track", "")).strip()
+    if not current_track:
+        raise RuntimeError("data/ps-progress.json current_track is required.")
+
+    track = ps_track(curriculum, current_track)
+    selected = select_ps_problem(track, progress)
+    payload = build_ps_routine_output(track, progress, selected, current_time)
+    write_json_file(PS_ROUTINE_OUTPUT_PATH, payload)
+
+    if record_assignment and not dry_run:
+        record_ps_assignment(progress, selected, current_time)
+        write_json_file(PS_PROGRESS_PATH, progress)
+
+    if selected is None:
+        print(f"Wrote PS routine with no remaining problem: {PS_ROUTINE_OUTPUT_PATH}")
+    else:
+        print(
+            "Wrote PS routine: "
+            f"{selected.get('id')} / {selected.get('title')} -> {PS_ROUTINE_OUTPUT_PATH}"
+        )
+    if record_assignment and dry_run:
+        print("Dry-run: PS assignment was not recorded.")
+
+
 def difficulty_model_matches(
     difficulty_model: dict[str, object],
     band: str,
@@ -1461,11 +1678,24 @@ def write_category_output(
         "generated_at": format_kst(generated_at),
         "items": [serialize_candidate(candidate) for candidate in candidates],
     }
-    output_path.write_text(
-        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    write_json_file(output_path, payload)
     print(f"Wrote {len(candidates)} candidate(s): {output_path}")
+
+
+def write_daily_tech_alias_outputs(
+    generated_at: datetime,
+    candidates_by_category: dict[str, list[Candidate] | list[OssIssueCandidate]],
+) -> None:
+    for source_category_id, (alias_category_id, output_path) in DAILY_TECH_ALIAS_OUTPUTS.items():
+        candidates = candidates_by_category.get(source_category_id, [])
+        payload = {
+            "category": alias_category_id,
+            "generated_at": format_kst(generated_at),
+            "source_category": source_category_id,
+            "items": [serialize_candidate(candidate) for candidate in candidates],
+        }
+        write_json_file(output_path, payload)
+        print(f"Wrote {len(candidates)} candidate(s): {output_path}")
 
 
 def collect_category(
@@ -1518,6 +1748,7 @@ def main() -> int:
         if not isinstance(categories, list):
             raise RuntimeError("configs/kr-sources.json must contain a categories array.")
 
+        candidates_by_category: dict[str, list[Candidate] | list[OssIssueCandidate]] = {}
         for category in categories:
             if not isinstance(category, dict):
                 continue
@@ -1529,7 +1760,18 @@ def main() -> int:
                 penalty_keywords,
                 args.dry_run,
             )
+            category_id = str(category.get("id", "")).strip()
+            if category_id:
+                candidates_by_category[category_id] = candidates
             write_category_output(output_dir, category, current_time, candidates)
+
+        if args.mode == "daily-tech":
+            write_daily_tech_alias_outputs(current_time, candidates_by_category)
+            write_ps_routine_output(
+                current_time,
+                dry_run=args.dry_run,
+                record_assignment=True,
+            )
     except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
         print(f"Failed to collect KR candidates: {exc}", file=sys.stderr)
         return 1
