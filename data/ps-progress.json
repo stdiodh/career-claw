@@ -4,9 +4,14 @@
   "week_started_at": "",
   "target_level": 2,
   "max_target_level": 3,
-  "assigned": [],
+  "assigned": [
+    {
+      "date": "2026-05-28",
+      "problem_id": "programmers-1845"
+    }
+  ],
   "solved": [],
   "completed_tracks": [],
   "manual_advance_requested": false,
-  "last_recommended_problem_id": ""
+  "last_recommended_problem_id": "programmers-1845"
 }
