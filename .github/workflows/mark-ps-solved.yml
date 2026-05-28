@@ -1,0 +1,58 @@
+name: Mark PS Solved
+
+on:
+  workflow_dispatch:
+    inputs:
+      problem_id:
+        description: "Programmers problem id, for example programmers-42577"
+        required: true
+        type: string
+      notes:
+        description: "Optional solve notes"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  mark-ps-solved:
+    name: Mark Programmers PS problem solved
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Mark solved
+        shell: bash
+        env:
+          PROBLEM_ID: ${{ inputs.problem_id }}
+          NOTES: ${{ inputs.notes }}
+        run: |
+          set -euo pipefail
+          python3 scripts/update-ps-progress.py --mark-solved "${PROBLEM_ID}" --notes "${NOTES}"
+
+      - name: Commit progress update
+        shell: bash
+        env:
+          PROBLEM_ID: ${{ inputs.problem_id }}
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- data/ps-progress.json; then
+            echo "No PS progress changes to commit."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ps-progress.json
+          git commit -m "chore(ps): mark ${PROBLEM_ID} solved"
+          git push
