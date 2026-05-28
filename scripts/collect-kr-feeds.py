@@ -1094,6 +1094,11 @@ def is_weekly_career_generic_url(url: str) -> bool:
     return False
 
 
+def is_weekly_reference_material_url(url: str) -> bool:
+    domain, path, _signature = weekly_url_parts(url)
+    return domain_matches(domain, ["linkareer.com"]) and path.startswith("/cover-letter/")
+
+
 def is_allowed_weekly_career_final_domain(url: str) -> bool:
     domain = domain_from_url(url)
     if not domain or domain_matches(domain, weekly_blocked_domains()):
@@ -1113,6 +1118,8 @@ def is_allowed_weekly_career_final_domain(url: str) -> bool:
 
 
 def is_weekly_career_detail_url(url: str) -> bool:
+    if is_weekly_reference_material_url(url):
+        return False
     if not is_allowed_weekly_career_final_domain(url) or is_weekly_career_generic_url(url):
         return False
     domain, path, signature = weekly_url_parts(url)
@@ -3870,6 +3877,7 @@ def normalize_weekly_career_candidate(
     is_detail_url = is_weekly_career_detail_url(candidate.url)
     is_generic_url = is_weekly_career_generic_url(candidate.url)
     is_news_article = is_weekly_career_news_article(candidate)
+    is_reference_material = is_weekly_reference_material_url(candidate.url)
     source_kind = infer_weekly_source_kind(candidate.url, candidate.source)
     is_active = is_weekly_candidate_active(text, deadline, now_kst)
     selection_tier = weekly_selection_tier_for_text(text, career_type)
@@ -3880,6 +3888,8 @@ def normalize_weekly_career_candidate(
         exclude_reasons.append("naver-news-not-career-source")
     if is_news_article:
         exclude_reasons.append("news-article-not-career-detail")
+    if is_reference_material:
+        exclude_reasons.append("reference-material-not-career-opportunity")
     if not is_allowed_weekly_career_final_domain(candidate.url):
         exclude_reasons.append("domain-not-allowed")
     if source_kind not in WEEKLY_ALLOWED_SOURCE_KINDS:
@@ -4265,6 +4275,31 @@ def select_weekly_career_by_category(
     return selected
 
 
+def weekly_company_watchlist_diagnostics(source_counts: dict[str, object]) -> dict[str, object]:
+    checked = []
+    for company in load_company_watchlist():
+        source = str(company.get("source", "")).strip()
+        name = str(company.get("name", "")).strip()
+        career_url = str(company.get("career_url", "")).strip()
+        if not source or not career_url:
+            continue
+        source_payload = source_counts.get(source, {})
+        checked.append(
+            {
+                "name": name,
+                "source": source,
+                "career_url": career_url,
+                "checked": isinstance(source_payload, dict) and bool(source_payload),
+            }
+        )
+    return {
+        "checked": checked,
+        "checked_sources": [
+            item["source"] for item in checked if bool(item.get("checked"))
+        ],
+    }
+
+
 def build_weekly_career_diagnostics(
     base_diagnostics: dict[str, object],
     final_items: list[dict[str, object]],
@@ -4298,6 +4333,7 @@ def build_weekly_career_diagnostics(
         source_counts.setdefault(source, {})
         source_counts[source]["final_items"] = int(source_counts[source].get("final_items", 0)) + 1
     diagnostics["source_counts"] = source_counts
+    diagnostics["company_watchlist"] = weekly_company_watchlist_diagnostics(source_counts)
 
     coverage_source = diagnostics.get("coverage", {})
     coverage: dict[str, dict[str, object]] = {}

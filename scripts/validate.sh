@@ -128,6 +128,48 @@ fi
 echo "==> Checking collector dry-runs"
 python3 scripts/collect-kr-feeds.py --mode daily-tech --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+required = {"job", "intern", "hackathon", "contest", "competition"}
+path = Path("reports/candidates/kr-backend-career-events.json")
+data = json.loads(path.read_text(encoding="utf-8"))
+
+selected = data.get("selected_by_category", {})
+if set(selected) != required:
+    missing = sorted(required - set(selected))
+    extra = sorted(set(selected) - required)
+    raise SystemExit(f"selected_by_category key mismatch: missing={missing} extra={extra}")
+
+coverage = data.get("diagnostics", {}).get("coverage", {})
+if set(coverage) != required:
+    missing = sorted(required - set(coverage))
+    extra = sorted(set(coverage) - required)
+    raise SystemExit(f"diagnostics.coverage key mismatch: missing={missing} extra={extra}")
+
+company_watchlist = data.get("diagnostics", {}).get("company_watchlist", {})
+checked = company_watchlist.get("checked", [])
+expected_sources = {
+    "NAVER Careers",
+    "Kakao Careers",
+    "LINE Careers",
+    "Coupang Jobs",
+    "Woowa Careers",
+    "Toss Careers",
+    "Daangn Careers",
+}
+actual_sources = {
+    str(item.get("source", ""))
+    for item in checked
+    if isinstance(item, dict)
+}
+if not expected_sources.issubset(actual_sources):
+    missing = sorted(expected_sources - actual_sources)
+    raise SystemExit(f"company watchlist diagnostics missing source(s): {missing}")
+
+print("weekly career candidate smoke check passed")
+PY
 
 echo "==> Checking fixtures"
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech

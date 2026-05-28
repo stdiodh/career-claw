@@ -4,7 +4,7 @@
       "name": "Linkareer",
       "domain": "linkareer.com",
       "source_kind": "job_platform_detail",
-      "detail_url_patterns": ["/activity/", "/cover-letter/", "/contest/"],
+      "detail_url_patterns": ["/activity/", "/contest/"],
       "generic_url_patterns": ["/", "/list", "/list/intern"]
     },
     {

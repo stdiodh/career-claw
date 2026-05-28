@@ -181,6 +181,27 @@ def test_generic_url_is_excluded() -> None:
     assert "generic-url" in item["exclude_reason"]
 
 
+def test_linkareer_cover_letter_url_is_excluded() -> None:
+    candidate = collector.build_candidate(
+        category=CATEGORY,
+        title="합격 자기소개서 백엔드 인턴",
+        url="https://linkareer.com/cover-letter/12345",
+        source_url="https://linkareer.com/cover-letter/12345",
+        source="Linkareer",
+        publisher="Linkareer",
+        published_at=None,
+        summary="백엔드 인턴 자기소개서 참고자료입니다. 상태: 모집 중",
+        query="reference_page",
+        source_reliability="platform",
+        current_time=NOW,
+        penalty_keywords=[],
+    )
+    assert candidate is not None
+    item = collector.normalize_weekly_career_candidate(candidate, NOW)
+    assert item["is_detail_url"] is False
+    assert "reference-material-not-career-opportunity" in item["exclude_reason"]
+
+
 def test_deadline_unknown_active_detail_can_pass() -> None:
     item = parse_detail(build_detail_html(valid_through=""))
     assert item["deadline_confidence"] == "none"
@@ -213,6 +234,17 @@ def test_selected_by_category_picks_one_each() -> None:
     selected = collector.select_weekly_career_by_category(items, [], coverage, NOW)
     assert set(selected) == set(collector.WEEKLY_CATEGORY_ORDER)
     assert all(selected[key] is not None for key in collector.WEEKLY_CATEGORY_ORDER)
+
+
+def test_selected_by_category_in_payload_has_all_categories() -> None:
+    payload = collector.build_weekly_career_payload(
+        collector.WEEKLY_CAREER_CATEGORY_ID,
+        NOW,
+        [],
+        [],
+        update_cache=False,
+    )
+    assert set(payload["selected_by_category"]) == set(collector.WEEKLY_CATEGORY_ORDER)
 
 
 def test_selection_prefers_fresh_and_stronger_tier() -> None:
@@ -335,7 +367,6 @@ def test_cache_revalidation_excludes_expired_generic_and_news() -> None:
 
 
 def test_coverage_diagnostics_include_all_categories() -> None:
-    coverage = collector.default_weekly_career_coverage_config()
     payload = collector.build_weekly_career_payload(
         collector.WEEKLY_CAREER_CATEGORY_ID,
         NOW,
@@ -349,6 +380,32 @@ def test_coverage_diagnostics_include_all_categories() -> None:
     assert coverage_diagnostics["intern"]["why_empty"]
     assert "sources" in coverage_diagnostics["job"]
     assert payload["diagnostics"]["empty_categories"]
+
+
+def test_company_watchlist_config_contains_required_companies() -> None:
+    names = {str(company.get("name", "")) for company in collector.load_company_watchlist()}
+    assert {"NAVER", "Kakao", "LINE", "Coupang", "우아한형제들", "Toss", "당근"}.issubset(names)
+
+
+def test_company_watchlist_diagnostics_include_required_sources() -> None:
+    diagnostics = collector.build_weekly_career_payload(
+        collector.WEEKLY_CAREER_CATEGORY_ID,
+        NOW,
+        [],
+        [],
+        update_cache=False,
+    )["diagnostics"]
+    checked = diagnostics["company_watchlist"]["checked"]
+    sources = {str(item.get("source", "")) for item in checked}
+    assert {
+        "NAVER Careers",
+        "Kakao Careers",
+        "LINE Careers",
+        "Coupang Jobs",
+        "Woowa Careers",
+        "Toss Careers",
+        "Daangn Careers",
+    }.issubset(sources)
 
 
 def test_prompt_safe_selected_output() -> None:
