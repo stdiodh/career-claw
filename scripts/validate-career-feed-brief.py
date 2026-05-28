@@ -6,7 +6,9 @@ from __future__ import annotations
 import argparse
 import re
 import sys
+import urllib.parse
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 
@@ -117,12 +119,9 @@ DAILY_NEWS_FORBIDDEN_PATTERNS = [
 ]
 WEEKLY_REQUIRED_FIELDS = [
     "유형",
-    "마감",
-    "회사/주최",
     "직무/역할",
-    "지원 조건",
-    "기술 키워드",
-    "전형/제출물",
+    "지원/참가 조건",
+    "기술/산출물 키워드",
     "이번 주 액션",
     "출처",
     "링크",
@@ -140,15 +139,30 @@ WEEKLY_FORBIDDEN_DEADLINE_VALUES = [
     "미정",
     "알 수 없음",
 ]
+WEEKLY_FORBIDDEN_TEXT_PATTERNS = [
+    r"Naver News Search",
+    r"출처\s*:\s*NAVER\b",
+    r"출처\s*:\s*Naver\b",
+    r"출처\s*:\s*Naver News Search\b",
+    r"원문 확인 필요",
+    r"확인 필요",
+    r"미정",
+    r"알 수 없음",
+    r"뉴스브리핑",
+    r"수상",
+    r"2등 수상",
+    r"개최했다",
+    r"개최",
+    r"성료",
+    r"결과 발표",
+]
 WEEKLY_TOP_EMPTY_STATE = "이번 주 기준을 만족하는 백엔드 커리어 기회가 없습니다."
 WEEKLY_URGENT_EMPTY_STATE = "이번 주 마감 임박 항목은 없습니다."
 WEEKLY_PORTFOLIO_EMPTY_STATE = "이번 주 포트폴리오용 대외활동 후보는 없습니다."
 WEEKLY_PORTFOLIO_FIELDS = [
     "유형",
-    "마감",
-    "주최",
     "만들 수 있는 백엔드 산출물",
-    "기술 키워드",
+    "기술/산출물 키워드",
     "이번 주 액션",
     "링크",
 ]
@@ -158,6 +172,7 @@ WEEKLY_GENERIC_URLS = {
     "https://dacon.io/competitions",
     "https://linkareer.com",
     "https://linkareer.com/",
+    "https://linkareer.com/list/intern",
     "https://www.saramin.co.kr",
     "https://www.saramin.co.kr/",
     "https://www.saramin.co.kr/zf_user",
@@ -172,6 +187,23 @@ WEEKLY_GENERIC_URLS = {
     "https://www.wevity.com/",
     "https://www.all-con.co.kr",
     "https://www.all-con.co.kr/",
+}
+WEEKLY_BLOCKED_DOMAINS = {
+    "news.naver.com",
+    "n.news.naver.com",
+    "etnews.com",
+    "zdnet.co.kr",
+    "bloter.net",
+    "aitimes.com",
+    "itworld.co.kr",
+    "ciokorea.com",
+    "ddaily.co.kr",
+    "hankyung.com",
+    "chosun.com",
+    "joongang.co.kr",
+    "donga.com",
+    "yna.co.kr",
+    "newsis.com",
 }
 DAILY_OSS_FIELDS = [
     "상태 확인",
@@ -396,10 +428,20 @@ def normalize_validation_url(url: str) -> str:
     return url.strip().rstrip("/")
 
 
+def validation_domain(url: str) -> str:
+    domain = urllib.parse.urlsplit(url).netloc.lower()
+    return domain[4:] if domain.startswith("www.") else domain
+
+
 def is_generic_weekly_url(url: str) -> bool:
     normalized = normalize_validation_url(url)
     generic = {normalize_validation_url(item) for item in WEEKLY_GENERIC_URLS}
     return normalized in generic
+
+
+def is_blocked_weekly_domain(url: str) -> bool:
+    domain = validation_domain(url)
+    return any(domain == blocked or domain.endswith(f".{blocked}") for blocked in WEEKLY_BLOCKED_DOMAINS)
 
 
 def validate_weekly_deadline_value(value: str, context: str) -> None:
@@ -419,6 +461,21 @@ def validate_weekly_item_links(text: str, context: str) -> None:
     generic_urls = [url for url in urls if is_generic_weekly_url(url)]
     if generic_urls:
         fail(f"Weekly career item uses generic URL: {context} ({generic_urls[0]})")
+    blocked_urls = [url for url in urls if is_blocked_weekly_domain(url)]
+    if blocked_urls:
+        fail(f"Weekly career item uses news URL: {context} ({blocked_urls[0]})")
+
+
+def validate_weekly_naver_host_policy(text: str, context: str) -> None:
+    for field in ("회사/주최", "주최"):
+        value = bullet_field_value(text, field)
+        if value != "NAVER":
+            continue
+        urls = markdown_link_urls(text)
+        if not urls or not any(
+            validation_domain(url) == "recruit.navercorp.com" for url in urls
+        ):
+            fail(f"Weekly career item uses NAVER as host without official NAVER career URL: {context}")
 
 
 def validate_daily_tech(content: str) -> None:
@@ -616,6 +673,20 @@ def validate_weekly_forbidden_text(content: str) -> None:
     ]
     if found_fields:
         fail(f"Weekly career brief contains forbidden field(s): {', '.join(found_fields)}")
+    found_text = [
+        pattern
+        for pattern in WEEKLY_FORBIDDEN_TEXT_PATTERNS
+        if re.search(pattern, content, flags=re.IGNORECASE)
+    ]
+    current_year = datetime.now().year
+    past_years = [
+        str(year)
+        for year in range(2022, current_year)
+        if re.search(rf"\b{year}\b", content)
+    ]
+    if found_text or past_years:
+        values = found_text + past_years
+        fail(f"Weekly career brief contains forbidden wording: {', '.join(values)}")
 
 
 def validate_weekly_item(item: Item) -> None:
@@ -623,8 +694,10 @@ def validate_weekly_item(item: Item) -> None:
     if missing:
         fail(f"Weekly career item is missing field(s): {item.title} ({', '.join(missing)})")
     deadline = bullet_field_value(item.body, "마감")
-    validate_weekly_deadline_value(deadline, item.title)
+    if deadline:
+        validate_weekly_deadline_value(deadline, item.title)
     validate_weekly_item_links(item.body, item.title)
+    validate_weekly_naver_host_policy(item.body, item.title)
 
 
 def validate_weekly_recommended_text(item: Item) -> None:
@@ -670,7 +743,11 @@ def validate_weekly_portfolio_section(sections: list[Section]) -> None:
         missing = missing_bullet_fields(item.body, WEEKLY_PORTFOLIO_FIELDS)
         if missing:
             fail(f"Portfolio activity is missing field(s): {item.title} ({', '.join(missing)})")
+        deadline = bullet_field_value(item.body, "마감")
+        if deadline:
+            validate_weekly_deadline_value(deadline, item.title)
         validate_weekly_item_links(item.body, item.title)
+        validate_weekly_naver_host_policy(item.body, item.title)
 
 
 def validate(content: str, report_type: str) -> None:

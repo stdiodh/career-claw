@@ -1,0 +1,142 @@
+{
+  "allowed_final_sources": [
+    {
+      "name": "Linkareer",
+      "domain": "linkareer.com",
+      "source_kind": "job_platform_detail",
+      "detail_url_patterns": ["/activity/", "/cover-letter/", "/contest/"],
+      "generic_url_patterns": ["/", "/list", "/list/intern"]
+    },
+    {
+      "name": "Wanted",
+      "domain": "wanted.co.kr",
+      "source_kind": "job_platform_detail",
+      "detail_url_patterns": ["/wd/"],
+      "generic_url_patterns": ["/"]
+    },
+    {
+      "name": "Saramin",
+      "domain": "saramin.co.kr",
+      "source_kind": "job_platform_detail",
+      "detail_url_patterns": ["/zf_user/jobs/relay/view", "/zf_user/jobs/view"],
+      "generic_url_patterns": ["/zf_user/", "/"]
+    },
+    {
+      "name": "JobKorea",
+      "domain": "jobkorea.co.kr",
+      "source_kind": "job_platform_detail",
+      "detail_url_patterns": ["/Recruit/GI_Read/", "/Recruit/GI_Read"],
+      "generic_url_patterns": ["/"]
+    },
+    {
+      "name": "Jumpit",
+      "domain": "jumpit.co.kr",
+      "source_kind": "job_platform_detail",
+      "detail_url_patterns": ["/position/"],
+      "generic_url_patterns": ["/"]
+    },
+    {
+      "name": "Work24 Youth Work Experience",
+      "domain": "yw.work24.go.kr",
+      "source_kind": "government_program_detail",
+      "detail_url_patterns": ["/d/a/"],
+      "generic_url_patterns": ["/d/a/selectWkexPrgmList.do"]
+    },
+    {
+      "name": "ZeroBase Zero Intern",
+      "domain": "zero-base.co.kr",
+      "source_kind": "government_program_detail",
+      "detail_url_patterns": ["/event/zero_intern"],
+      "generic_url_patterns": []
+    },
+    {
+      "name": "DACON",
+      "domain": "dacon.io",
+      "source_kind": "activity_platform_detail",
+      "detail_url_patterns": ["/competitions/official/"],
+      "generic_url_patterns": ["/competitions"]
+    },
+    {
+      "name": "AI Factory",
+      "domain": "aifactory.space",
+      "source_kind": "activity_platform_detail",
+      "detail_url_patterns": ["/competition/detail/"],
+      "generic_url_patterns": ["/"]
+    },
+    {
+      "name": "Programmers",
+      "domain": "programmers.co.kr",
+      "source_kind": "activity_platform_detail",
+      "detail_url_patterns": ["/competitions/", "/pages/"],
+      "generic_url_patterns": ["/"]
+    },
+    {
+      "name": "Wevity",
+      "domain": "wevity.com",
+      "source_kind": "activity_platform_detail",
+      "detail_url_patterns": ["/?c=find", "/index_university.php?c=find"],
+      "generic_url_patterns": ["/"]
+    },
+    {
+      "name": "All-Con",
+      "domain": "all-con.co.kr",
+      "source_kind": "activity_platform_detail",
+      "detail_url_patterns": ["/view/contest/"],
+      "generic_url_patterns": ["/"]
+    }
+  ],
+  "company_watchlist": [
+    {
+      "name": "NAVER",
+      "domains": ["recruit.navercorp.com"],
+      "source_kind": "official_company_career_detail"
+    },
+    {
+      "name": "Kakao",
+      "domains": ["careers.kakao.com"],
+      "source_kind": "official_company_career_detail"
+    },
+    {
+      "name": "LINE",
+      "domains": ["careers.linecorp.com"],
+      "source_kind": "official_company_career_detail"
+    },
+    {
+      "name": "Coupang",
+      "domains": ["coupang.jobs"],
+      "source_kind": "official_company_career_detail"
+    },
+    {
+      "name": "Woowa Brothers",
+      "domains": ["career.woowahan.com"],
+      "source_kind": "official_company_career_detail"
+    },
+    {
+      "name": "Toss",
+      "domains": ["toss.im"],
+      "source_kind": "official_company_career_detail"
+    },
+    {
+      "name": "Daangn",
+      "domains": ["team.daangn.com", "about.daangn.com"],
+      "source_kind": "official_company_career_detail"
+    }
+  ],
+  "blocked_final_domains": [
+    "news.naver.com",
+    "n.news.naver.com",
+    "etnews.com",
+    "zdnet.co.kr",
+    "bloter.net",
+    "aitimes.com",
+    "itworld.co.kr",
+    "ciokorea.com",
+    "ddaily.co.kr",
+    "hankyung.com",
+    "chosun.com",
+    "joongang.co.kr",
+    "donga.com",
+    "yna.co.kr",
+    "newsis.com"
+  ]
+}

@@ -37,6 +37,7 @@ PS_CURRICULUM_PATH = Path("configs/programmers-ps-curriculum.json")
 PS_PROGRESS_PATH = Path("data/ps-progress.json")
 PS_ROUTINE_OUTPUT_PATH = Path("reports/candidates/ps-weekly-routine.json")
 COMPANY_CAREER_WATCHLIST_PATH = Path("configs/company-career-watchlist.json")
+WEEKLY_CAREER_SOURCES_CONFIG_PATH = Path("configs/weekly-career-sources.json")
 BACKEND_PRACTICAL_CURRICULUM_PATH = Path(
     "configs/backend-practical-knowledge-curriculum.json"
 )
@@ -136,6 +137,49 @@ CAREER_EXCLUSION_KEYWORDS = [
     "영업",
     "pm",
 ]
+WEEKLY_ALLOWED_SOURCE_KINDS = {
+    "official_company_career_detail",
+    "job_platform_detail",
+    "activity_platform_detail",
+    "government_program_detail",
+}
+WEEKLY_PAST_EVENT_KEYWORDS = [
+    "수상",
+    "2등 수상",
+    "대상 수상",
+    "개최했다",
+    "개최",
+    "성료",
+    "마무리",
+    "결과 발표",
+    "선정",
+    "후기",
+    "리뷰",
+    "참가 후기",
+    "지난",
+    "종료",
+    "마감 종료",
+    "접수 종료",
+    "모집 종료",
+    "지원 종료",
+    "발표했다",
+    "뉴스브리핑",
+    "리뉴얼",
+    "출시",
+    "보도자료",
+]
+WEEKLY_DEADLINE_CONTEXT_KEYWORDS = [
+    "마감",
+    "접수",
+    "지원",
+    "모집",
+    "신청",
+    "참가",
+    "서류",
+    "기간",
+    "까지",
+    "~",
+]
 CAREER_TECH_KEYWORDS = [
     "Java",
     "Kotlin",
@@ -189,6 +233,7 @@ GENERIC_CAREER_URLS = {
     "https://www.all-con.co.kr",
     "https://www.all-con.co.kr/",
 }
+WEEKLY_CAREER_SOURCE_POLICY_CACHE: dict[str, object] | None = None
 OSS_BEGINNER_KEYWORDS = [
     "documentation",
     "docs",
@@ -289,6 +334,23 @@ class Candidate:
     security_action_required: bool
     exclude_reason: str
     score: int
+
+
+@dataclass(frozen=True)
+class DeadlineInfo:
+    deadline: str
+    deadline_text: str
+    deadline_status: str
+    deadline_confidence: str
+    deadline_source: str
+    days_until_deadline: int | None
+
+
+@dataclass(frozen=True)
+class FieldWithConfidence:
+    value: str
+    confidence: str
+    source: str
 
 
 @dataclass(frozen=True)
@@ -602,6 +664,164 @@ def career_text(candidate: Candidate) -> str:
     )
 
 
+def load_weekly_career_source_policy(
+    path: Path = WEEKLY_CAREER_SOURCES_CONFIG_PATH,
+) -> dict[str, object]:
+    global WEEKLY_CAREER_SOURCE_POLICY_CACHE
+    if WEEKLY_CAREER_SOURCE_POLICY_CACHE is not None:
+        return WEEKLY_CAREER_SOURCE_POLICY_CACHE
+    if not path.exists():
+        WEEKLY_CAREER_SOURCE_POLICY_CACHE = {
+            "allowed_final_sources": [],
+            "company_watchlist": [],
+            "blocked_final_domains": [],
+        }
+        return WEEKLY_CAREER_SOURCE_POLICY_CACHE
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise RuntimeError("configs/weekly-career-sources.json must contain a JSON object.")
+    WEEKLY_CAREER_SOURCE_POLICY_CACHE = data
+    return data
+
+
+def weekly_policy_list(key: str) -> list[dict[str, object]]:
+    values = load_weekly_career_source_policy().get(key, [])
+    return [value for value in values if isinstance(value, dict)] if isinstance(values, list) else []
+
+
+def weekly_blocked_domains() -> list[str]:
+    values = load_weekly_career_source_policy().get("blocked_final_domains", [])
+    if not isinstance(values, list):
+        return []
+    return [str(value).strip().lower() for value in values if str(value).strip()]
+
+
+def weekly_url_parts(url: str) -> tuple[str, str, str]:
+    parsed = urllib.parse.urlsplit(url or "")
+    domain = parsed.netloc.lower()
+    if domain.startswith("www."):
+        domain = domain[4:]
+    path = parsed.path or "/"
+    signature = path.rstrip("/") if path != "/" else "/"
+    if parsed.query:
+        signature = f"{signature}?{parsed.query}"
+    return domain, path.rstrip("/") if path != "/" else "/", signature
+
+
+def weekly_pattern_matches(
+    path: str,
+    signature: str,
+    pattern: str,
+    *,
+    allow_prefix: bool = True,
+) -> bool:
+    cleaned = pattern.strip()
+    if not cleaned:
+        return False
+    if cleaned == "/":
+        return path in {"", "/"} and signature in {"", "/"}
+    if "?" in cleaned:
+        return signature == cleaned or signature.startswith(f"{cleaned}&")
+    normalized = cleaned.rstrip("/")
+    if not allow_prefix:
+        return path == normalized or signature.startswith(f"{normalized}?")
+    return (
+        path == normalized
+        or path.startswith(f"{normalized}/")
+        or signature.startswith(f"{normalized}?")
+    )
+
+
+def is_weekly_career_generic_url(url: str) -> bool:
+    if is_generic_career_url(url):
+        return True
+    domain, path, signature = weekly_url_parts(url)
+    for source in weekly_policy_list("allowed_final_sources"):
+        source_domain = str(source.get("domain", "")).strip().lower()
+        if not source_domain or not domain_matches(domain, [source_domain]):
+            continue
+        patterns = source.get("generic_url_patterns", [])
+        if isinstance(patterns, list) and any(
+            weekly_pattern_matches(path, signature, str(pattern), allow_prefix=False)
+            for pattern in patterns
+        ):
+            return True
+    return False
+
+
+def is_allowed_weekly_career_final_domain(url: str) -> bool:
+    domain = domain_from_url(url)
+    if not domain or domain_matches(domain, weekly_blocked_domains()):
+        return False
+    for source in weekly_policy_list("allowed_final_sources"):
+        source_domain = str(source.get("domain", "")).strip().lower()
+        if source_domain and domain_matches(domain, [source_domain]):
+            return True
+    for company in weekly_policy_list("company_watchlist"):
+        domains = company.get("domains", [])
+        if isinstance(domains, list) and domain_matches(
+            domain,
+            [str(item).strip().lower() for item in domains if str(item).strip()],
+        ):
+            return True
+    return False
+
+
+def is_weekly_career_detail_url(url: str) -> bool:
+    if not is_allowed_weekly_career_final_domain(url) or is_weekly_career_generic_url(url):
+        return False
+    domain, path, signature = weekly_url_parts(url)
+    for source in weekly_policy_list("allowed_final_sources"):
+        source_domain = str(source.get("domain", "")).strip().lower()
+        if not source_domain or not domain_matches(domain, [source_domain]):
+            continue
+        patterns = source.get("detail_url_patterns", [])
+        return isinstance(patterns, list) and any(
+            weekly_pattern_matches(path, signature, str(pattern)) for pattern in patterns
+        )
+    for company in weekly_policy_list("company_watchlist"):
+        domains = company.get("domains", [])
+        if isinstance(domains, list) and domain_matches(
+            domain,
+            [str(item).strip().lower() for item in domains if str(item).strip()],
+        ):
+            return path not in {"", "/"}
+    return False
+
+
+def is_weekly_career_news_article(candidate_or_url: Candidate | str) -> bool:
+    if isinstance(candidate_or_url, Candidate):
+        source = candidate_or_url.source
+        url = candidate_or_url.url
+    else:
+        source = ""
+        url = str(candidate_or_url)
+    domain = domain_from_url(url)
+    if source == "Naver News Search":
+        return True
+    return domain_matches(domain, weekly_blocked_domains())
+
+
+def infer_weekly_source_kind(url: str, source: str) -> str:
+    if source == "Naver News Search" or is_weekly_career_news_article(url):
+        return "news_article"
+    if is_weekly_career_generic_url(url):
+        return "generic_listing"
+    domain = domain_from_url(url)
+    for allowed in weekly_policy_list("allowed_final_sources"):
+        source_domain = str(allowed.get("domain", "")).strip().lower()
+        if source_domain and domain_matches(domain, [source_domain]) and is_weekly_career_detail_url(url):
+            return str(allowed.get("source_kind", "unknown")).strip() or "unknown"
+    for company in weekly_policy_list("company_watchlist"):
+        domains = company.get("domains", [])
+        if isinstance(domains, list) and domain_matches(
+            domain,
+            [str(item).strip().lower() for item in domains if str(item).strip()],
+        ):
+            return str(company.get("source_kind", "official_company_career_detail"))
+    return "unknown"
+
+
 def source_label_for_url(url: str, fallback: str) -> str:
     domain = domain_from_url(url)
     labels = {
@@ -822,6 +1042,159 @@ def parse_korean_deadline(text: str, current_time: datetime) -> dict[str, object
     }
 
 
+def empty_deadline_info(source: str = "") -> DeadlineInfo:
+    return DeadlineInfo(
+        deadline="",
+        deadline_text="",
+        deadline_status="unknown",
+        deadline_confidence="none",
+        deadline_source=source,
+        days_until_deadline=None,
+    )
+
+
+def deadline_info_from_payload(
+    payload: dict[str, object],
+    confidence: str,
+    source: str,
+) -> DeadlineInfo:
+    return DeadlineInfo(
+        deadline=str(payload.get("deadline", "")),
+        deadline_text=str(payload.get("deadline_text", "")),
+        deadline_status=str(payload.get("deadline_status", "unknown")),
+        deadline_confidence=confidence,
+        deadline_source=source,
+        days_until_deadline=(
+            payload.get("days_until_deadline")
+            if isinstance(payload.get("days_until_deadline"), int)
+            else None
+        ),
+    )
+
+
+def has_deadline_context(text: str, start: int, end: int) -> bool:
+    window = text[max(0, start - 28) : min(len(text), end + 28)]
+    return text_contains_any(window, WEEKLY_DEADLINE_CONTEXT_KEYWORDS)
+
+
+def extract_deadline_from_text(text: str, now_kst: datetime) -> DeadlineInfo:
+    searchable = strip_html(text)
+    if not searchable:
+        return empty_deadline_info()
+    if text_contains_any(searchable, EXPIRED_DEADLINE_KEYWORDS):
+        return DeadlineInfo("", "", "closed", "high", "expired-keyword", None)
+    if text_contains_any(searchable, ["상시채용", "상시 모집", "상시지원", "상시 영입"]):
+        return DeadlineInfo("상시채용", "상시채용", "rolling", "high", "text", None)
+    if text_contains_any(
+        searchable,
+        ["채용 시 마감", "채용시 마감", "영입종료시", "채용 완료 시", "채용 완료시"],
+    ):
+        return DeadlineInfo("채용 시 마감", "채용 시 마감", "until_filled", "high", "text", None)
+
+    d_day = re.search(r"\bD\s*-\s*(\d{1,3})\b", searchable, flags=re.IGNORECASE)
+    if d_day and has_deadline_context(searchable, d_day.start(), d_day.end()):
+        days = int(d_day.group(1))
+        deadline = now_kst.astimezone(KST) + timedelta(days=days)
+        return DeadlineInfo(
+            deadline.strftime("%Y-%m-%d 23:59:00 KST"),
+            deadline.strftime("%Y-%m-%d 23:59 KST"),
+            "open",
+            "high",
+            "d-day-text",
+            days,
+        )
+
+    full_date_patterns = [
+        r"(20\d{2})\s*[.\-/년]\s*(\d{1,2})\s*[.\-/월]\s*(\d{1,2})",
+        r"(20\d{2})(\d{2})(\d{2})",
+    ]
+    for pattern in full_date_patterns:
+        for match in re.finditer(pattern, searchable):
+            if not has_deadline_context(searchable, match.start(), match.end()):
+                continue
+            parsed = deadline_payload_from_date(
+                int(match.group(1)),
+                int(match.group(2)),
+                int(match.group(3)),
+                searchable,
+                now_kst,
+            )
+            if parsed:
+                return deadline_info_from_payload(parsed, "high", "deadline-text")
+
+    month_day_patterns = [
+        r"(?:~|마감|접수|지원|모집|까지|기간|일정)\s*(\d{1,2})\s*[./]\s*(\d{1,2})",
+        r"(?:~|마감|접수|지원|모집|까지|기간|일정)\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일",
+    ]
+    for pattern in month_day_patterns:
+        for match in re.finditer(pattern, searchable):
+            year = now_kst.astimezone(KST).year
+            month = int(match.group(1))
+            day = int(match.group(2))
+            parsed = deadline_payload_from_date(year, month, day, searchable, now_kst)
+            if parsed and parsed["deadline_status"] != "closed":
+                return deadline_info_from_payload(parsed, "high", "deadline-text")
+
+    return empty_deadline_info()
+
+
+def extract_company_or_host_from_text_or_url(text: str, url: str) -> FieldWithConfidence:
+    if is_weekly_career_news_article(url):
+        return FieldWithConfidence("", "none", "")
+    domain = domain_from_url(url)
+    for company in weekly_policy_list("company_watchlist"):
+        domains = company.get("domains", [])
+        if isinstance(domains, list) and domain_matches(
+            domain,
+            [str(item).strip().lower() for item in domains if str(item).strip()],
+        ):
+            return FieldWithConfidence(str(company.get("name", "")).strip(), "high", "domain")
+
+    for pattern in [
+        r"(?:회사|기업|주최|주관|운영기관|기관)\s*[:：]\s*([^\n,;/|]{2,40})",
+        r"(?:host|company|organizer)\s*[:：]\s*([^\n,;/|]{2,40})",
+    ]:
+        match = re.search(pattern, strip_html(text), flags=re.IGNORECASE)
+        if not match:
+            continue
+        value = re.sub(r"\s+", " ", match.group(1)).strip(" -")
+        if value == "NAVER" and not domain_matches(domain, ["recruit.navercorp.com"]):
+            return FieldWithConfidence("", "none", "")
+        return FieldWithConfidence(value, "high", "text")
+
+    known_names = [
+        ("NAVER", ["naver", "네이버"]),
+        ("Kakao", ["kakao", "카카오"]),
+        ("LINE", ["line", "라인"]),
+        ("Coupang", ["coupang", "쿠팡"]),
+        ("우아한형제들", ["우아한형제들", "배달의민족", "woowa"]),
+        ("Toss", ["toss", "토스"]),
+        ("당근", ["daangn", "당근"]),
+        ("DACON", ["dacon", "데이콘"]),
+        ("AI Factory", ["aifactory", "인공지능팩토리", "ai factory"]),
+        ("Programmers", ["programmers", "프로그래머스"]),
+        ("ZeroBase", ["zerobase", "zero intern", "제로베이스"]),
+    ]
+    lowered = text.lower()
+    for label, keywords in known_names:
+        if any(keyword.lower() in lowered for keyword in keywords):
+            if label == "NAVER" and not domain_matches(domain, ["recruit.navercorp.com"]):
+                return FieldWithConfidence("", "none", "")
+            return FieldWithConfidence(label, "medium", "text")
+    return FieldWithConfidence("", "none", "")
+
+
+def is_expired_or_past_event(text: str, now_kst: datetime) -> bool:
+    searchable = strip_html(text)
+    if text_contains_any(searchable, WEEKLY_PAST_EVENT_KEYWORDS):
+        return True
+    current_year = now_kst.astimezone(KST).year
+    years = [int(match.group(0)) for match in re.finditer(r"\b20\d{2}\b", searchable)]
+    if any(year < current_year for year in years):
+        return True
+    return extract_deadline_from_text(searchable, now_kst).deadline_status == "closed"
+
+
 def infer_company_or_host(text: str, candidate: Candidate) -> str:
     known_names = [
         ("NAVER", ["naver", "네이버"]),
@@ -906,7 +1279,7 @@ def infer_target(text: str, career_type: str) -> str:
         return "인턴 가능"
     if career_type in {"해커톤", "공모전", "경진대회"}:
         return "팀 참가 가능"
-    return "원문에서 지원 조건 확인"
+    return "상세 페이지 기준 지원/참가 조건 확인"
 
 
 def infer_process_or_deliverable(text: str, career_type: str) -> list[str]:
@@ -918,7 +1291,7 @@ def infer_process_or_deliverable(text: str, career_type: str) -> list[str]:
             deliverables.append("발표자료")
         if text_contains_any(text, ["url", "배포", "서비스", "결과물"]):
             deliverables.append("결과물 URL")
-        return deliverables or ["기획서", "GitHub", "발표자료"]
+        return deliverables
 
     process = []
     if text_contains_any(text, ["서류", "이력서", "resume"]):
@@ -927,7 +1300,7 @@ def infer_process_or_deliverable(text: str, career_type: str) -> list[str]:
         process.append("코딩테스트" if "과제" not in text else "과제")
     if text_contains_any(text, ["면접", "interview"]):
         process.append("면접")
-    return process or ["원문에서 전형 확인"]
+    return process
 
 
 def infer_tech_keywords(text: str) -> list[str]:
@@ -2645,29 +3018,77 @@ def serialize_candidate(candidate: Candidate | OssIssueCandidate) -> dict[str, o
     }
 
 
-def standardize_weekly_career_candidate(
+def weekly_source_confidence(source_kind: str, is_detail_url: bool) -> str:
+    if source_kind in WEEKLY_ALLOWED_SOURCE_KINDS and is_detail_url:
+        return "high"
+    if source_kind in {"generic_listing", "search_result"}:
+        return "low"
+    return "none"
+
+
+def is_weekly_candidate_active(text: str, deadline: DeadlineInfo, now_kst: datetime) -> bool:
+    if is_expired_or_past_event(text, now_kst):
+        return False
+    if deadline.deadline_status in {"open", "rolling", "until_filled"}:
+        return True
+    return text_contains_any(
+        text,
+        [
+            "모집 중",
+            "모집중",
+            "접수 중",
+            "접수중",
+            "지원 가능",
+            "참가 가능",
+            "채용 중",
+            "채용중",
+            "open",
+        ],
+    )
+
+
+def normalize_weekly_career_candidate(
     candidate: Candidate,
-    generated_at: datetime,
+    now_kst: datetime,
 ) -> dict[str, object]:
     text = career_text(candidate)
     sub_category = classify_career_sub_category(candidate)
     career_type = career_type_for_sub_category(sub_category)
-    deadline = parse_korean_deadline(text, generated_at)
-    score_payload = score_career_candidate(candidate, generated_at)
-    company_or_host = infer_company_or_host(text, candidate)
+    deadline = extract_deadline_from_text(text, now_kst)
+    score_payload = score_career_candidate(candidate, now_kst)
+    company_or_host = extract_company_or_host_from_text_or_url(text, candidate.url)
+    is_detail_url = is_weekly_career_detail_url(candidate.url)
+    is_generic_url = is_weekly_career_generic_url(candidate.url)
+    is_news_article = is_weekly_career_news_article(candidate)
+    source_kind = infer_weekly_source_kind(candidate.url, candidate.source)
+    is_active = is_weekly_candidate_active(text, deadline, now_kst)
     exclude_reasons = []
     if candidate.exclude_reason:
         exclude_reasons.append(candidate.exclude_reason)
-    if is_generic_career_url(candidate.url):
+    if candidate.source == "Naver News Search":
+        exclude_reasons.append("naver-news-not-career-source")
+    if is_news_article:
+        exclude_reasons.append("news-article-not-career-detail")
+    if not is_allowed_weekly_career_final_domain(candidate.url):
+        exclude_reasons.append("domain-not-allowed")
+    if source_kind not in WEEKLY_ALLOWED_SOURCE_KINDS:
+        exclude_reasons.append(f"source-kind-{source_kind}")
+    if is_generic_url:
         exclude_reasons.append("generic-url")
-    if deadline["deadline_status"] == "closed":
-        exclude_reasons.append("expired-deadline")
+    if not is_detail_url:
+        exclude_reasons.append("not-detail-url")
+    if is_expired_or_past_event(text, now_kst):
+        exclude_reasons.append("expired-or-past-event")
+    if not is_active:
+        exclude_reasons.append("not-confirmed-active")
 
     source = candidate.source
     if source in {"Official reference page", "Naver News Search"}:
         source = source_label_for_url(candidate.url, source)
     elif source.startswith("http"):
         source = source_label_for_url(candidate.url, source)
+    if source == "Naver News Search":
+        source = domain_from_url(candidate.url) or "unknown"
 
     return {
         "category": WEEKLY_CAREER_CATEGORY_ID,
@@ -2676,18 +3097,30 @@ def standardize_weekly_career_candidate(
         "url": candidate.url,
         "source_url": candidate.source_url,
         "source": source,
-        "company_or_host": company_or_host,
+        "source_kind": source_kind,
+        "source_confidence": weekly_source_confidence(source_kind, is_detail_url),
+        "discovered_via": "naver_news_search" if candidate.source == "Naver News Search" else "",
+        "is_detail_url": is_detail_url,
+        "is_generic_url": is_generic_url,
+        "is_news_article": is_news_article,
+        "is_active": is_active,
+        "company_or_host": company_or_host.value,
+        "company_or_host_confidence": company_or_host.confidence,
+        "company_or_host_source": company_or_host.source,
         "type": career_type,
         "role": infer_career_role(text, career_type),
-        "deadline": deadline["deadline"],
-        "deadline_text": deadline["deadline_text"],
-        "deadline_status": deadline["deadline_status"],
-        "days_until_deadline": deadline["days_until_deadline"],
+        "deadline": deadline.deadline,
+        "deadline_text": deadline.deadline_text,
+        "deadline_status": deadline.deadline_status,
+        "deadline_confidence": deadline.deadline_confidence,
+        "deadline_source": deadline.deadline_source,
+        "days_until_deadline": deadline.days_until_deadline,
         "target": infer_target(text, career_type),
-        "tech_keywords": infer_tech_keywords(text),
+        "tech_or_output_keywords": infer_tech_keywords(text),
         "process_or_deliverable": infer_process_or_deliverable(text, career_type),
         "summary": candidate.summary,
         "published_at": format_kst(candidate.published_at) if candidate.published_at else "",
+        "collected_at": format_kst(now_kst),
         "query": candidate.query,
         "score": score_payload["score"],
         "deadline_clarity_score": score_payload["deadline_clarity_score"],
@@ -2698,6 +3131,23 @@ def standardize_weekly_career_candidate(
         "actionability_score": score_payload["actionability_score"],
         "exclude_reason": ",".join(dict.fromkeys(exclude_reasons)),
     }
+
+
+def standardize_weekly_career_candidate(
+    candidate: Candidate,
+    generated_at: datetime,
+) -> dict[str, object]:
+    return normalize_weekly_career_candidate(candidate, generated_at)
+
+
+def filter_weekly_career_candidates(
+    candidates: list[Candidate],
+    now_kst: datetime,
+) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
+    normalized = [normalize_weekly_career_candidate(candidate, now_kst) for candidate in candidates]
+    items = [item for item in normalized if not str(item.get("exclude_reason", ""))]
+    excluded = [item for item in normalized if str(item.get("exclude_reason", ""))]
+    return dedupe_weekly_career_items(items), dedupe_weekly_career_items(excluded)
 
 
 def dedupe_weekly_career_items(items: list[dict[str, object]]) -> list[dict[str, object]]:
@@ -2726,11 +3176,14 @@ def build_weekly_career_payload(
     category_id: str,
     generated_at: datetime,
     items: list[dict[str, object]],
+    excluded: list[dict[str, object]] | None = None,
 ) -> dict[str, object]:
     return {
+        "schema_version": 2,
         "category": category_id,
         "generated_at": format_kst(generated_at),
         "items": dedupe_weekly_career_items(items),
+        "excluded": dedupe_weekly_career_items(excluded or []),
     }
 
 
@@ -2755,12 +3208,13 @@ def write_category_output(
     output_path = output_path_for_category(output_dir, category)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     if category_id == WEEKLY_CAREER_CATEGORY_ID:
-        weekly_items = [
-            standardize_weekly_career_candidate(candidate, generated_at)
+        weekly_candidates = [
+            candidate
             for candidate in candidates
             if isinstance(candidate, Candidate)
         ]
-        payload = build_weekly_career_payload(category_id, generated_at, weekly_items)
+        weekly_items, excluded = filter_weekly_career_candidates(weekly_candidates, generated_at)
+        payload = build_weekly_career_payload(category_id, generated_at, weekly_items, excluded)
     elif category_id == OSS_CATEGORY_ID:
         payload = {
             "schema_version": 2,
@@ -2785,6 +3239,12 @@ def write_category_output(
             "items": [serialize_candidate(candidate) for candidate in candidates],
         }
     write_json_file(output_path, payload)
+    if category_id == WEEKLY_CAREER_CATEGORY_ID:
+        print(
+            f"Wrote {len(payload['items'])} candidate(s), "
+            f"excluded {len(payload['excluded'])}: {output_path}"
+        )
+        return
     print(f"Wrote {len(candidates)} candidate(s): {output_path}")
 
 
@@ -2830,12 +3290,19 @@ def write_weekly_career_split_outputs(
     generated_at: datetime,
     candidates: list[Candidate] | list[OssIssueCandidate],
 ) -> None:
-    weekly_items = [
-        standardize_weekly_career_candidate(candidate, generated_at)
+    weekly_candidates = [
+        candidate
         for candidate in candidates
         if isinstance(candidate, Candidate)
     ]
+    weekly_items, excluded_items = filter_weekly_career_candidates(
+        weekly_candidates,
+        generated_at,
+    )
     grouped: dict[Path, list[dict[str, object]]] = {
+        output_path: [] for output_path in WEEKLY_CAREER_EMPTY_OUTPUTS
+    }
+    excluded_grouped: dict[Path, list[dict[str, object]]] = {
         output_path: [] for output_path in WEEKLY_CAREER_EMPTY_OUTPUTS
     }
     for item in weekly_items:
@@ -2844,6 +3311,12 @@ def write_weekly_career_split_outputs(
         if output_path is None:
             continue
         grouped.setdefault(output_path, []).append(item)
+    for item in excluded_items:
+        sub_category = str(item.get("sub_category", ""))
+        output_path = WEEKLY_CAREER_SPLIT_OUTPUTS.get(sub_category)
+        if output_path is None:
+            continue
+        excluded_grouped.setdefault(output_path, []).append(item)
 
     category_by_path = {
         Path("reports/candidates/kr-backend-intern-jobs.json"): "kr-backend-intern-jobs",
@@ -2860,9 +3333,13 @@ def write_weekly_career_split_outputs(
             category_by_path.get(output_path, output_path.stem),
             generated_at,
             items,
+            excluded_grouped.get(output_path, []),
         )
         write_json_file(output_path, payload)
-        print(f"Wrote {len(payload['items'])} candidate(s): {output_path}")
+        print(
+            f"Wrote {len(payload['items'])} candidate(s), "
+            f"excluded {len(payload['excluded'])}: {output_path}"
+        )
 
 
 def load_company_watchlist(path: Path = COMPANY_CAREER_WATCHLIST_PATH) -> list[dict[str, object]]:
@@ -2935,7 +3412,7 @@ def collect_category(
         candidates.extend(
             collect_company_watchlist_candidates(category, current_time, penalty_keywords)
         )
-    if credentials:
+    if credentials and category_id != WEEKLY_CAREER_CATEGORY_ID:
         candidates.extend(
             collect_naver_candidates(
                 config,

@@ -64,6 +64,17 @@ Daily OSS 후보 정책:
 - `reports/candidates/kr-backend-career-activities.json`
 - `reports/candidates/kr-backend-company-watchlist.json`
 
+Weekly Career 후보 정책:
+
+- 뉴스 검색 결과는 최종 추천 후보로 사용하지 않습니다.
+- 최종 추천은 채용, 인턴, 해커톤, 공모전, 경진대회 상세 URL이 있는 후보만 사용합니다.
+- 뉴스 기사, 보도자료, 수상 기사, 개최 완료 기사, 결과 발표 기사, 종료된 행사는 제외합니다.
+- 마감일과 회사/주최는 원문에서 확인된 경우에만 출력합니다.
+- 마감일이나 회사/주최를 모르면 만들지 않고 해당 필드를 생략합니다.
+- 후보가 부족하면 TOP 5를 억지로 채우지 않고 empty-state를 출력합니다.
+- Naver News Search는 Weekly Career 최종 후보 source로 쓰지 않습니다.
+- Daily 한국 개발/AI 뉴스와 Weekly Career 후보 수집은 별도 정책으로 관리합니다.
+
 ## Mark PS Solved
 
 - workflow: `.github/workflows/mark-ps-solved.yml`
@@ -90,7 +101,7 @@ python3 scripts/update-ps-progress.py --status
 - `NAVER_CLIENT_ID`
 - `NAVER_CLIENT_SECRET`
 
-OpenAI/Discord secrets는 실행 필수입니다. Naver secrets는 한국 뉴스/채용 후보 품질 향상용입니다. Naver secrets가 없으면 fallback 후보만 사용되어 품질이 낮을 수 있습니다.
+OpenAI/Discord secrets는 실행 필수입니다. Naver secrets는 Daily 한국 개발/AI 뉴스 수집용입니다. Weekly Career 최종 후보에는 Naver News Search 결과를 사용하지 않습니다.
 
 Secret 값, API Key, Webhook URL은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 
