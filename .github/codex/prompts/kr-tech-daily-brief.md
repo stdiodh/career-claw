@@ -40,7 +40,7 @@ workflow는 `{{KST_NOW}}`를 현재 Asia/Seoul 기준시각으로 치환한다. 
 
 Spring 학습 후보는 title, summary, url, source, published_at, query, tags, score, backend_fit_score, kotlin_spring_fit_score, exclude_reason을 참고한다.
 PS 루틴 후보는 current_track, today_problem, advance_recommendation을 참고한다.
-오픈소스 후보는 repository, issue_number, labels, updated_at, summary, contribution_type, difficulty_band, why_beginner_friendly, first_30_min_action, risk_reason, exclude_reason, score를 참고한다.
+오픈소스 후보는 repository, issue_number, state, author, author_association, maintainer_authored, assignees, has_assignee, linked_prs_count, linked_branches_count, has_linked_work, has_claim_comment, labels, updated_at, summary, contribution_type, difficulty_band, why_beginner_friendly, first_30_min_action, pre_contribution_etiquette, status_check, risk_reason, exclude_reason, score를 참고한다.
 개발/AI 뉴스 후보는 title, summary, url, source, publisher, published_at, tags, score, exclude_reason을 참고한다.
 실무지식 후보는 today.title, today.summary, today.core_concept, today.practice_30m, today.check_question, today.search_keywords를 참고한다.
 
@@ -81,11 +81,13 @@ PS 루틴 후보는 current_track, today_problem, advance_recommendation을 참�
 
 ## 3. 오픈소스 기여 후보
 ### 후보: ...
+- 상태 확인:
 - 난이도 밴드: P5-like / P4-like
 - 저장소:
 - 기여 유형:
 - 왜 시도해볼 만한가:
 - 첫 30분 액션:
+- 기여 전 매너:
 - 확인할 파일/키워드:
 - 주의할 점:
 - 링크: [Issue 보기](URL)
@@ -154,10 +156,16 @@ PS 루틴 후보는 current_track, today_problem, advance_recommendation을 참�
 - `kr-oss-contribution-opportunities.json`에서 최대 1개만 고른다.
 - 후보가 없으면 지정된 없음 문장만 쓴다.
 - 오픈소스 후보는 P5-like 또는 P4-like만 추천한다.
-- too_hard, unclear, security vulnerability, CVE, release blocker, deep internals 후보는 제외한다.
+- maintainer/member/collaborator가 열었거나 maintainer가 초보자용으로 triage한 open issue만 추천한다.
+- assignee가 있거나 linked PR/branch가 있거나 댓글에서 누군가 작업 의사를 밝힌 이슈는 추천하지 않는다.
+- too_hard, unclear, security vulnerability, CVE, release blocker, breaking change, major API, deep internals 후보는 제외한다.
+- API 변경이 필요한 이슈는 첫 기여 후보로 넓히지 않고, docs/test/repro 중심 후보만 다룬다.
 - issue 내용을 과장하지 않는다.
+- `상태 확인`에는 maintainer 작성 여부, 담당자 없음, 연결 PR/branch 없음, claim 댓글 없음 중 후보 JSON에서 확인된 사실만 쓴다.
 - 첫 30분 액션은 CONTRIBUTING.md 확인, 로컬 빌드 실행, 실패 재현, 관련 파일 1~2개 읽기, 문서/테스트 위치 확인, issue 재현 조건 정리처럼 실제 확인 행동이어야 한다.
-- "코드를 수정한다", "PR을 만든다", "전체 구조를 파악한다"처럼 범위가 크거나 결과부터 요구하는 행동은 쓰지 않는다.
+- `기여 전 매너`에는 바로 PR을 만들기보다 issue에 짧게 확인 댓글을 남기도록 쓴다.
+- Spring Data 문서 기여라면 `src/docs/asciidoc`, `mvn package -Pdistribute`, DCO Signed-off-by, issue reference 확인을 반영한다.
+- "코드를 수정한다", "PR을 만든다", "바로 구현한다", "전체 구조를 파악한다"처럼 범위가 크거나 결과부터 요구하는 행동은 쓰지 않는다.
 
 ## 4번 한국 최신 개발/AI 뉴스 규칙
 

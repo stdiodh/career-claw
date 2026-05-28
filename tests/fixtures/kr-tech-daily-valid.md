@@ -25,7 +25,17 @@
 - 링크: [문제 보기](https://school.programmers.co.kr/learn/courses/30/lessons/1845)
 
 ## 3. 오픈소스 기여 후보
-- 오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다.
+### 후보: Support java.util.Pattern for LIKE query method predicates
+- 상태 확인: maintainer가 연 이슈이고, 담당자 없음, 연결 PR 없음, 작업 의사 댓글 없음이 확인되었습니다.
+- 난이도 밴드: P5-like
+- 저장소: spring-projects/spring-data-commons
+- 기여 유형: docs
+- 왜 시도해볼 만한가: 문서 위치 확인과 예제 검증 중심으로 첫 기여 범위를 작게 잡을 수 있습니다.
+- 첫 30분 액션: `src/docs/asciidoc`에서 LIKE/query method 관련 문서 위치를 찾고, `mvn package -Pdistribute` 문서 빌드 경로를 확인합니다.
+- 기여 전 매너: 작업 전 이슈에 “문서 위치를 확인해보고 작은 PR을 준비해도 괜찮을까요?”라고 짧게 확인합니다.
+- 확인할 파일/키워드: src/docs/asciidoc, LIKE, query method predicates, Pattern, DCO Signed-off-by
+- 주의할 점: API 동작 변경으로 넓히지 말고 문서 보강 범위로만 시작하며, PR을 준비하게 되면 issue reference를 확인합니다.
+- 링크: [Issue 보기](https://github.com/spring-projects/spring-data-commons/issues/3417)
 
 ## 4. 한국 최신 개발/AI 뉴스
 - 오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다.

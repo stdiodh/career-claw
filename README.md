@@ -38,6 +38,13 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 - `reports/candidates/kr-ai-tech-news.json`
 - `reports/candidates/backend-practical-knowledge.json`
 
+Daily OSS 후보 정책:
+
+- OSS 후보는 maintainer/member/collaborator가 올렸거나 maintainer가 초보자용으로 분류한 open issue만 추천합니다.
+- assignee가 있거나 linked PR/branch가 있거나 누군가 댓글로 작업 의사를 밝힌 이슈는 추천하지 않습니다.
+- 첫 30분 액션은 읽기, 재현, 문서 위치 확인, 로컬 빌드 확인처럼 PR 전 확인 행동으로 제한합니다.
+- 작업 전 issue에 짧게 확인 댓글을 남기는 것을 권장합니다.
+
 ## Weekly Backend Career Brief
 
 - workflow: `.github/workflows/kr-backend-career-weekly.yml`

@@ -18,6 +18,20 @@
     "spring-projects/spring-ai-examples",
     "spring-projects/spring-petclinic"
   ],
+  "trusted_maintainers": {
+    "spring-projects/spring-data-commons": [
+      "mp911de",
+      "christophstrobl"
+    ],
+    "spring-projects/spring-boot": [],
+    "spring-projects/spring-framework": [],
+    "spring-projects/spring-security": [],
+    "spring-projects/spring-data-jpa": [],
+    "spring-projects/spring-data-relational": [],
+    "spring-projects/spring-ai": [],
+    "spring-projects/spring-ai-examples": [],
+    "spring-projects/spring-petclinic": []
+  },
   "difficulty_model": {
     "p5_like": {
       "description": "첫 기여에 적합한 문서, 예제, 테스트, 재현, 작은 정리 작업",

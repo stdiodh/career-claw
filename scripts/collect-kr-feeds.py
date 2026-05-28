@@ -196,6 +196,17 @@ OSS_BEGINNER_KEYWORDS = [
     "example",
     "test",
     "reproducer",
+    "repro",
+    "typo",
+    "validation",
+]
+OSS_BEGINNER_TRIAGE_LABELS = [
+    "first-timers-only",
+    "for: first-timers-only",
+    "good first issue",
+    "help wanted",
+    "status: ideal-for-contribution",
+    "good first contribution",
 ]
 OSS_DIRECT_SPRING_KEYWORDS = [
     "Spring Boot",
@@ -215,6 +226,7 @@ OSS_DIRECT_SPRING_KEYWORDS = [
     "spring-ai",
     "spring-petclinic",
 ]
+OSS_MAINTAINER_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
 OSS_SECURITY_KEYWORDS = ["security vulnerability", "CVE"]
 OSS_RELEASE_BLOCKER_KEYWORDS = ["release blocker"]
 OSS_DEEP_INTERNALS_KEYWORDS = [
@@ -226,6 +238,28 @@ OSS_DEEP_INTERNALS_KEYWORDS = [
 ]
 OSS_DESIGN_KEYWORDS = ["design proposal", "RFC", "epic", "requires design"]
 OSS_DUPLICATE_KEYWORDS = ["duplicate", "invalid", "superseded"]
+OSS_MAJOR_API_KEYWORDS = ["major API", "breaking change"]
+OSS_BLOCKED_LABEL_TITLE_KEYWORDS = [
+    "security",
+    "CVE",
+    "release blocker",
+    "breaking change",
+    "major API",
+    "deep internals",
+]
+OSS_CLAIM_KEYWORDS = [
+    "I'll take this",
+    "I will take this",
+    "I am working on this",
+    "working on this",
+    "I can work on this",
+    "assign me",
+    "please assign",
+    "제가 해보겠습니다",
+    "작업하겠습니다",
+    "제가 맡겠습니다",
+]
+OSS_PREFERRED_CONTRIBUTION_TYPES = {"docs", "test", "bug-repro", "sample"}
 
 
 @dataclass(frozen=True)
@@ -264,10 +298,22 @@ class OssIssueCandidate:
     source: str
     repository: str
     issue_number: int
+    author: str
+    author_association: str
+    maintainer_authored: bool
     labels: list[str]
     state: str
+    assignees: list[str]
     assignees_count: int
+    has_assignee: bool
     comments: int
+    comments_count: int
+    has_claim_comment: bool
+    claim_comment_check: str
+    linked_prs_count: int
+    linked_branches_count: int
+    linked_work_check: str
+    has_linked_work: bool
     created_at: datetime | None
     updated_at: datetime | None
     summary: str
@@ -281,6 +327,8 @@ class OssIssueCandidate:
     difficulty_band: str
     why_beginner_friendly: str
     first_30_min_action: str
+    pre_contribution_etiquette: str
+    status_check: str
     risk_reason: str
     score: int
 
@@ -1460,17 +1508,14 @@ def collect_reference_candidates(
     return candidates
 
 
-def fetch_github_issues(repository: str, token: str | None) -> list[dict[str, object]]:
-    params = urllib.parse.urlencode(
-        {
-            "state": "open",
-            "sort": "updated",
-            "direction": "desc",
-            "per_page": 50,
-        }
-    )
+def fetch_github_api_json(
+    url: str,
+    token: str | None,
+    repository: str,
+    description: str,
+) -> object | None:
     request = urllib.request.Request(
-        f"https://api.github.com/repos/{repository}/issues?{params}",
+        url,
         headers={
             "User-Agent": USER_AGENT,
             "Accept": "application/vnd.github+json",
@@ -1481,33 +1526,106 @@ def fetch_github_issues(repository: str, token: str | None) -> list[dict[str, ob
 
     try:
         with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+            return json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
         detail = " ".join(body.split())[:300] if body else exc.reason
         if token and exc.code in {403, 404}:
             print(
-                f"Warning: GitHub token could not read {repository} ({exc.code}); "
+                f"Warning: GitHub token could not read {description} for {repository} "
+                f"({exc.code}); "
                 "retrying with the public unauthenticated API.",
                 file=sys.stderr,
             )
-            return fetch_github_issues(repository, None)
+            return fetch_github_api_json(url, None, repository, description)
         if exc.code == 403:
             print(
-                f"Warning: GitHub Issues API rate/auth limit for {repository} "
+                f"Warning: GitHub API rate/auth limit for {description} in {repository} "
                 f"({exc.code}): {detail}",
                 file=sys.stderr,
             )
-            return []
+            return None
         raise RuntimeError(
-            f"GitHub Issues API request failed for {repository} ({exc.code}): {detail}"
+            f"GitHub API request failed for {description} in {repository} "
+            f"({exc.code}): {detail}"
         ) from exc
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"GitHub Issues API request failed for {repository}: {exc}") from exc
+        raise RuntimeError(
+            f"GitHub API request failed for {description} in {repository}: {exc}"
+        ) from exc
+
+
+def fetch_github_issues(repository: str, token: str | None) -> list[dict[str, object]]:
+    params = urllib.parse.urlencode(
+        {
+            "state": "open",
+            "sort": "updated",
+            "direction": "desc",
+            "per_page": 50,
+        }
+    )
+    payload = fetch_github_api_json(
+        f"https://api.github.com/repos/{repository}/issues?{params}",
+        token,
+        repository,
+        "issues",
+    )
 
     if not isinstance(payload, list):
         return []
     return [item for item in payload if isinstance(item, dict)]
+
+
+def fetch_github_issue_comments(
+    repository: str,
+    issue_number: int,
+    token: str | None,
+    expected_count: int = 0,
+) -> list[dict[str, object]] | None:
+    comments: list[dict[str, object]] = []
+    page = 1
+    while True:
+        params = urllib.parse.urlencode({"per_page": 100, "page": page})
+        payload = fetch_github_api_json(
+            f"https://api.github.com/repos/{repository}/issues/{issue_number}/comments?{params}",
+            token,
+            repository,
+            f"issue #{issue_number} comments",
+        )
+        if payload is None:
+            return None
+        if not isinstance(payload, list):
+            return comments
+        page_items = [item for item in payload if isinstance(item, dict)]
+        comments.extend(page_items)
+        if len(page_items) < 100:
+            return comments
+        if expected_count and len(comments) >= expected_count:
+            return comments
+        page += 1
+
+
+def fetch_github_open_pr_reference_count(
+    repository: str,
+    issue_number: int,
+    token: str | None,
+) -> int | None:
+    query = f"repo:{repository} is:pr is:open {issue_number}"
+    params = urllib.parse.urlencode({"q": query, "per_page": 1})
+    payload = fetch_github_api_json(
+        f"https://api.github.com/search/issues?{params}",
+        token,
+        repository,
+        f"open PR search for issue #{issue_number}",
+    )
+    if payload is None:
+        return None
+    if not isinstance(payload, dict):
+        return 0
+    try:
+        return int(payload.get("total_count", 0))
+    except (TypeError, ValueError):
+        return 0
 
 
 def label_names(issue: dict[str, object]) -> list[str]:
@@ -1521,6 +1639,53 @@ def label_names(issue: dict[str, object]) -> list[str]:
             if name:
                 labels.append(name)
     return labels
+
+
+def github_login(issue: dict[str, object]) -> str:
+    user = issue.get("user", {})
+    if not isinstance(user, dict):
+        return ""
+    return str(user.get("login", "")).strip()
+
+
+def issue_assignee_logins(issue: dict[str, object]) -> list[str]:
+    raw_assignees = issue.get("assignees", [])
+    if not isinstance(raw_assignees, list):
+        return []
+    assignees = []
+    for assignee in raw_assignees:
+        if isinstance(assignee, dict):
+            login = str(assignee.get("login", "")).strip()
+            if login:
+                assignees.append(login)
+    return assignees
+
+
+def trusted_maintainers_for(
+    repository: str,
+    oss_config: dict[str, object],
+) -> set[str]:
+    trusted = oss_config.get("trusted_maintainers", {})
+    if not isinstance(trusted, dict):
+        return set()
+    maintainers = trusted.get(repository, [])
+    if not isinstance(maintainers, list):
+        return set()
+    return {str(login).strip().lower() for login in maintainers if str(login).strip()}
+
+
+def is_maintainer_triaged(labels: list[str]) -> bool:
+    return text_contains_any(" ".join(labels), OSS_BEGINNER_TRIAGE_LABELS)
+
+
+def comments_have_claim(comments: list[dict[str, object]] | None) -> bool:
+    if comments is None:
+        return False
+    for comment in comments:
+        body = strip_html(str(comment.get("body") or ""))
+        if text_contains_any(body, OSS_CLAIM_KEYWORDS):
+            return True
+    return False
 
 
 def infer_contribution_type(text: str) -> str:
@@ -1823,14 +1988,67 @@ def first_action_for_contribution_type(contribution_type: str) -> str:
     return "이슈 본문, label, 관련 파일 위치를 읽고 30분 안에 재현 가능성을 판단한다."
 
 
+def first_action_for_issue(repository: str, contribution_type: str, searchable: str) -> str:
+    if repository.startswith("spring-projects/spring-data") and contribution_type == "docs":
+        return (
+            "`src/docs/asciidoc`에서 관련 문서 위치를 찾고, "
+            "`mvn package -Pdistribute` 문서 빌드 경로를 확인한다."
+        )
+    if contribution_type in OSS_PREFERRED_CONTRIBUTION_TYPES:
+        return first_action_for_contribution_type(contribution_type)
+    if text_contains_any(searchable, ["validation"]):
+        return "검증 조건이 드러나는 테스트나 문서 위치를 먼저 찾고 재현 가능성을 메모한다."
+    return first_action_for_contribution_type(contribution_type)
+
+
+def pre_contribution_etiquette_for_issue() -> str:
+    return (
+        "작업 전 이슈에 "
+        "“문서 위치를 확인해보고 작은 PR을 준비해도 괜찮을까요?”라고 짧게 확인한다."
+    )
+
+
+def status_check_for_issue(
+    *,
+    maintainer_authored: bool,
+    maintainer_triaged: bool,
+    has_assignee: bool,
+    linked_prs_count: int,
+    linked_work_check: str,
+    comments_count: int,
+    has_claim_comment: bool,
+) -> str:
+    checks = []
+    if maintainer_authored:
+        checks.append("maintainer가 연 이슈")
+    elif maintainer_triaged:
+        checks.append("maintainer triage label 확인")
+    if not has_assignee:
+        checks.append("담당자 없음")
+    if linked_work_check != "unknown" and linked_prs_count == 0:
+        checks.append("연결 PR 없음")
+    if comments_count == 0:
+        checks.append("댓글 없음")
+    elif not has_claim_comment:
+        checks.append("작업 의사 댓글 없음")
+    return ", ".join(checks)
+
+
 def oss_issue_scores(
     category: dict[str, object],
     *,
     difficulty_model: dict[str, object],
     text: str,
     labels: list[str],
+    label_title_text: str,
     assignees_count: int,
     comments: int,
+    maintainer_authored: bool,
+    maintainer_qualified: bool,
+    has_linked_work: bool,
+    linked_work_check: str,
+    has_claim_comment: bool,
+    body_is_clear: bool,
     updated_at: datetime | None,
     current_time: datetime,
     state: str,
@@ -1844,14 +2062,18 @@ def oss_issue_scores(
     status_score = 50 if text_contains_any(label_text, ["status: ideal-for-contribution"]) else 0
     docs_label_score = 40 if text_contains_any(label_text, ["type: documentation", "in: docs"]) else 0
     beginner_keyword_score = 35 if text_contains_any(searchable, OSS_BEGINNER_KEYWORDS) else 0
-    good_first_score = 30 if text_contains_any(label_text, ["good first issue", "help wanted"]) else 0
+    good_first_score = 20 if text_contains_any(label_text, OSS_BEGINNER_TRIAGE_LABELS) else 0
     p5_match = difficulty_model_matches(difficulty_model, "p5_like", labels, searchable)
     p4_match = difficulty_model_matches(difficulty_model, "p4_like", labels, searchable)
     p5_score = 30 if p5_match else 0
     p4_score = 20 if p4_match else 0
     category_label_score = 15 if text_contains_any(label_text, positive_labels) else 0
     direct_spring_score = 15 if text_contains_any(searchable, OSS_DIRECT_SPRING_KEYWORDS) else 0
+    maintainer_score = 40 if maintainer_authored else 0
+    focused_scope_score = 20 if infer_contribution_type(searchable) in OSS_PREFERRED_CONTRIBUTION_TYPES else 0
+    body_clarity_score = 10 if body_is_clear else -20
     assignee_score = 20 if assignees_count == 0 else -40
+    linked_work_score = 20 if linked_work_check != "unknown" and not has_linked_work else -80
     recent_score = 0
     stale_penalty = 0
     if updated_at:
@@ -1868,6 +2090,18 @@ def oss_issue_scores(
     if state != "open" or is_pull_request:
         risk_penalty += 70
         risk_reasons.append("not-open-issue")
+    if not maintainer_qualified:
+        risk_penalty += 80
+        risk_reasons.append("external-author-without-maintainer-triage")
+    if has_linked_work:
+        risk_penalty += 80
+        risk_reasons.append("linked-work")
+    if linked_work_check == "unknown":
+        risk_penalty += 60
+        risk_reasons.append("linked-work-check-unknown")
+    if has_claim_comment:
+        risk_penalty += 80
+        risk_reasons.append("claim-comment")
     if text_contains_any(searchable, OSS_SECURITY_KEYWORDS):
         risk_penalty += 70
         risk_reasons.append("security-vulnerability")
@@ -1877,6 +2111,12 @@ def oss_issue_scores(
     if text_contains_any(searchable, OSS_DEEP_INTERNALS_KEYWORDS):
         risk_penalty += 60
         risk_reasons.append("deep-internals")
+    if text_contains_any(searchable, OSS_MAJOR_API_KEYWORDS):
+        risk_penalty += 60
+        risk_reasons.append("major-api-or-breaking-change")
+    if text_contains_any(label_title_text, OSS_BLOCKED_LABEL_TITLE_KEYWORDS):
+        risk_penalty += 60
+        risk_reasons.append("blocked-label-or-title")
     if text_contains_any(searchable, OSS_DESIGN_KEYWORDS):
         risk_penalty += 50
         risk_reasons.append("design-or-epic")
@@ -1903,7 +2143,7 @@ def oss_issue_scores(
         reason in risk_reasons
         for reason in ("security-vulnerability", "release-blocker", "deep-internals")
     )
-    if hard_exclusion or "design-or-epic" in risk_reasons:
+    if hard_exclusion or "design-or-epic" in risk_reasons or "major-api-or-breaking-change" in risk_reasons:
         difficulty_band = "too_hard"
     elif p5_match:
         difficulty_band = "p5_like"
@@ -1920,7 +2160,11 @@ def oss_issue_scores(
         + p5_score
         + p4_score
         + category_label_score
+        + maintainer_score
+        + focused_scope_score
+        + body_clarity_score
         + max(assignee_score, 0)
+        + max(linked_work_score, 0)
         + recent_score
         + comments_score
         + direct_spring_score
@@ -1928,6 +2172,7 @@ def oss_issue_scores(
     penalty_score = (
         risk_penalty
         + max(-assignee_score, 0)
+        + max(-linked_work_score, 0)
         + max(-comments_penalty, 0)
         + max(-stale_penalty, 0)
     )
@@ -1938,7 +2183,10 @@ def oss_issue_scores(
             + beginner_keyword_score
             + good_first_score
             + p5_score
+            + maintainer_score
+            + focused_scope_score
             + max(assignee_score, 0)
+            + max(linked_work_score, 0)
             + comments_score,
             100,
         ),
@@ -1954,7 +2202,10 @@ def oss_issue_scores(
             + good_first_score
             + p5_score
             + p4_score
+            + maintainer_score
+            + focused_scope_score
             + max(assignee_score, 0)
+            + max(linked_work_score, 0)
             + comments_score,
             100,
         ),
@@ -1964,6 +2215,19 @@ def oss_issue_scores(
     exclude_reasons = []
     if difficulty_band not in {"p5_like", "p4_like"}:
         exclude_reasons.append(difficulty_band)
+    hard_exclude_reasons = {
+        "external-author-without-maintainer-triage",
+        "assigned",
+        "linked-work",
+        "linked-work-check-unknown",
+        "claim-comment",
+        "security-vulnerability",
+        "release-blocker",
+        "deep-internals",
+        "major-api-or-breaking-change",
+        "blocked-label-or-title",
+    }
+    exclude_reasons.extend(reason for reason in risk_reasons if reason in hard_exclude_reasons)
     if hard_exclusion:
         exclude_reasons.extend(
             reason
@@ -1990,8 +2254,10 @@ def oss_issue_scores(
 def build_oss_issue_candidate(
     category: dict[str, object],
     difficulty_model: dict[str, object],
+    oss_config: dict[str, object],
     repository: str,
     issue: dict[str, object],
+    token: str | None,
     current_time: datetime,
 ) -> OssIssueCandidate | None:
     if "pull_request" in issue:
@@ -2011,18 +2277,74 @@ def build_oss_issue_candidate(
         return None
 
     labels = label_names(issue)
+    author = github_login(issue)
+    author_association = str(issue.get("author_association", "")).strip().upper()
+    trusted_maintainers = trusted_maintainers_for(repository, oss_config)
+    maintainer_authored = (
+        author_association in OSS_MAINTAINER_ASSOCIATIONS
+        or author.lower() in trusted_maintainers
+    )
+    maintainer_triaged = is_maintainer_triaged(labels)
+    maintainer_qualified = maintainer_authored or maintainer_triaged
     raw_body = strip_html(str(issue.get("body") or ""))
     summary = truncate_text(raw_body, OSS_SUMMARY_LIMIT)
-    assignees = issue.get("assignees", [])
-    assignees_count = len(assignees) if isinstance(assignees, list) else 0
+    assignees = issue_assignee_logins(issue)
+    assignees_count = len(assignees)
+    has_assignee = assignees_count > 0
     try:
-        comments = int(issue.get("comments", 0))
+        comments_count = int(issue.get("comments", 0))
     except (TypeError, ValueError):
-        comments = 0
+        comments_count = 0
     created_at = parse_datetime(str(issue.get("created_at", "")))
     updated_at = parse_datetime(str(issue.get("updated_at", "")))
     searchable = f"{repository} {title} {summary} {' '.join(labels)}"
+    label_title_text = f"{' '.join(labels)} {title}"
+    if not maintainer_qualified:
+        return None
+    if has_assignee:
+        return None
+    if text_contains_any(f"{title} {raw_body}", OSS_CLAIM_KEYWORDS):
+        return None
+    if text_contains_any(label_title_text, OSS_BLOCKED_LABEL_TITLE_KEYWORDS):
+        return None
+    if text_contains_any(searchable, OSS_SECURITY_KEYWORDS + OSS_RELEASE_BLOCKER_KEYWORDS):
+        return None
+    if text_contains_any(searchable, OSS_DEEP_INTERNALS_KEYWORDS + OSS_MAJOR_API_KEYWORDS):
+        return None
+    if text_contains_any(searchable, OSS_DESIGN_KEYWORDS):
+        return None
+    if not (
+        difficulty_model_matches(difficulty_model, "p5_like", labels, searchable)
+        or difficulty_model_matches(difficulty_model, "p4_like", labels, searchable)
+    ):
+        return None
+
+    comments_payload: list[dict[str, object]] | None = []
+    claim_comment_check = "checked"
+    if comments_count > 0:
+        comments_payload = fetch_github_issue_comments(
+            repository,
+            issue_number,
+            token,
+            comments_count,
+        )
+        if comments_payload is None:
+            claim_comment_check = "unknown"
+        elif comments_have_claim(comments_payload):
+            return None
+    linked_prs_result = fetch_github_open_pr_reference_count(repository, issue_number, token)
+    linked_work_check = "best_effort" if linked_prs_result is not None else "unknown"
+    linked_prs_count = linked_prs_result if linked_prs_result is not None else 0
+    linked_branches_count = 0
+    has_linked_work = linked_prs_count > 0 or linked_branches_count > 0
+    if has_linked_work or linked_work_check == "unknown" or claim_comment_check == "unknown":
+        return None
+
     contribution_type = infer_contribution_type(searchable)
+    body_is_clear = len(raw_body) >= 80 or text_contains_any(
+        searchable,
+        ["src/", ".java", ".kt", ".adoc", ".md", "documentation", "docs", "test"],
+    )
     (
         junior_fit_score,
         backend_fit_score,
@@ -2040,8 +2362,15 @@ def build_oss_issue_candidate(
         difficulty_model=difficulty_model,
         text=searchable,
         labels=labels,
+        label_title_text=label_title_text,
         assignees_count=assignees_count,
-        comments=comments,
+        comments=comments_count,
+        maintainer_authored=maintainer_authored,
+        maintainer_qualified=maintainer_qualified,
+        has_linked_work=has_linked_work,
+        linked_work_check=linked_work_check,
+        has_claim_comment=False,
+        body_is_clear=body_is_clear,
         updated_at=updated_at,
         current_time=current_time,
         state=state,
@@ -2056,10 +2385,22 @@ def build_oss_issue_candidate(
         source="GitHub Issues",
         repository=repository,
         issue_number=issue_number,
+        author=author,
+        author_association=author_association,
+        maintainer_authored=maintainer_authored,
         labels=labels,
         state=state,
+        assignees=assignees,
         assignees_count=assignees_count,
-        comments=comments,
+        has_assignee=has_assignee,
+        comments=comments_count,
+        comments_count=comments_count,
+        has_claim_comment=False,
+        claim_comment_check=claim_comment_check,
+        linked_prs_count=linked_prs_count,
+        linked_branches_count=linked_branches_count,
+        linked_work_check=linked_work_check,
+        has_linked_work=has_linked_work,
         created_at=created_at,
         updated_at=updated_at,
         summary=summary,
@@ -2072,7 +2413,17 @@ def build_oss_issue_candidate(
         exclude_reason=exclude_reason,
         difficulty_band=difficulty_band,
         why_beginner_friendly=why_beginner_friendly,
-        first_30_min_action=first_30_min_action,
+        first_30_min_action=first_action_for_issue(repository, contribution_type, searchable),
+        pre_contribution_etiquette=pre_contribution_etiquette_for_issue(),
+        status_check=status_check_for_issue(
+            maintainer_authored=maintainer_authored,
+            maintainer_triaged=maintainer_triaged,
+            has_assignee=has_assignee,
+            linked_prs_count=linked_prs_count,
+            linked_work_check=linked_work_check,
+            comments_count=comments_count,
+            has_claim_comment=False,
+        ),
         risk_reason=risk_reason,
         score=score,
     )
@@ -2098,11 +2449,17 @@ def collect_oss_issue_candidates(
             candidate = build_oss_issue_candidate(
                 category,
                 difficulty_model,
+                oss_config,
                 repository,
                 issue,
+                token,
                 current_time,
             )
-            if candidate and candidate.difficulty_band in {"p5_like", "p4_like"}:
+            if (
+                candidate
+                and candidate.difficulty_band in {"p5_like", "p4_like"}
+                and not candidate.exclude_reason
+            ):
                 candidates.append(candidate)
 
     try:
@@ -2188,12 +2545,25 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "url": candidate.url,
         "source_url": candidate.source_url,
         "source": candidate.source,
+        "repo": candidate.repository,
         "repository": candidate.repository,
         "issue_number": candidate.issue_number,
+        "author": candidate.author,
+        "author_association": candidate.author_association,
+        "maintainer_authored": candidate.maintainer_authored,
         "labels": candidate.labels,
         "state": candidate.state,
+        "assignees": candidate.assignees,
         "assignees_count": candidate.assignees_count,
+        "has_assignee": candidate.has_assignee,
         "comments": candidate.comments,
+        "comments_count": candidate.comments_count,
+        "has_claim_comment": candidate.has_claim_comment,
+        "claim_comment_check": candidate.claim_comment_check,
+        "linked_prs_count": candidate.linked_prs_count,
+        "linked_branches_count": candidate.linked_branches_count,
+        "linked_work_check": candidate.linked_work_check,
+        "has_linked_work": candidate.has_linked_work,
         "created_at": format_kst(candidate.created_at) if candidate.created_at else "",
         "updated_at": format_kst(candidate.updated_at) if candidate.updated_at else "",
         "summary": candidate.summary,
@@ -2207,6 +2577,9 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "difficulty_band": candidate.difficulty_band,
         "why_beginner_friendly": candidate.why_beginner_friendly,
         "first_30_min_action": candidate.first_30_min_action,
+        "first_30m_action": candidate.first_30_min_action,
+        "pre_contribution_etiquette": candidate.pre_contribution_etiquette,
+        "status_check": candidate.status_check,
         "risk_reason": candidate.risk_reason,
         "score": candidate.score,
     }

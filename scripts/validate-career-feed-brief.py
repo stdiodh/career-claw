@@ -174,14 +174,27 @@ WEEKLY_GENERIC_URLS = {
     "https://www.all-con.co.kr/",
 }
 DAILY_OSS_FIELDS = [
+    "상태 확인",
     "난이도 밴드",
     "저장소",
     "기여 유형",
     "왜 시도해볼 만한가",
     "첫 30분 액션",
+    "기여 전 매너",
     "확인할 파일/키워드",
     "주의할 점",
     "링크",
+]
+DAILY_OSS_FORBIDDEN_PATTERNS = [
+    r"바로\s*PR",
+    r"바로\s*구현",
+    r"전체\s*구조를\s*파악",
+    r"\bapprove\b",
+    r"\breject\b",
+    r"리뷰\s*승인",
+    r"담당자\s*있음",
+    r"연결\s*PR\s*있음",
+    r"작업\s*중",
 ]
 
 LINK_RE = re.compile(r"https?://[^\s)>\\\]]+")
@@ -468,6 +481,14 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
     if section is None:
         fail("Daily tech brief must include 오픈소스 기여 후보 section.")
 
+    found_forbidden = [
+        pattern
+        for pattern in DAILY_OSS_FORBIDDEN_PATTERNS
+        if re.search(pattern, section.body, flags=re.IGNORECASE)
+    ]
+    if found_forbidden:
+        fail(f"OSS section contains forbidden phrase(s): {', '.join(found_forbidden)}")
+
     has_issue_link = bool(
         re.search(r"\[Issue 보기\]\(https://github\.com/[^)]+/issues/\d+\)", section.body)
         or re.search(r"https://github\.com/[^\s)]+/issues/\d+", section.body)
@@ -491,6 +512,12 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
     missing = missing_bullet_fields(item.body, DAILY_OSS_FIELDS)
     if missing:
         fail(f"OSS candidate is missing field(s): {item.title} ({', '.join(missing)})")
+    status_check = bullet_field_value(item.body, "상태 확인")
+    if not re.search(r"담당자\s*없음|연결\s*PR\s*없음", status_check):
+        fail("OSS 상태 확인 must mention 담당자 없음 or 연결 PR 없음.")
+    first_action = bullet_field_value(item.body, "첫 30분 액션")
+    if re.match(r"`?(PR\s*생성|코드\s*수정)", first_action, flags=re.IGNORECASE):
+        fail("OSS 첫 30분 액션 must not start with PR creation or code editing.")
     validate_item_markdown_link(item)
 
 
