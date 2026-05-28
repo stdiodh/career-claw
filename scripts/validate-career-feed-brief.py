@@ -510,7 +510,7 @@ def validate_weekly_deadline_value(value: str, context: str) -> None:
         fail(f"Weekly career deadline is not actionable: {context}")
     if value in {"상시채용", "채용 시 마감"}:
         return
-    if re.fullmatch(r"20\d{2}-\d{2}-\d{2}(?: \d{2}:\d{2})? KST \(D-\d+\)", value):
+    if re.fullmatch(r"20\d{2}-\d{2}-\d{2}(?: \d{2}:\d{2})? KST(?: \(D-\d+\))?", value):
         return
     fail(f"Weekly career deadline has invalid format: {context} ({value})")
 
