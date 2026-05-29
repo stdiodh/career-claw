@@ -42,14 +42,34 @@ grep -q 'uses: actions/checkout@v5' .github/workflows/kr-tech-daily.yml
 grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-tech-daily.yml
 grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-tech-daily.yml
 grep -q 'cron: "5 8 \* \* 1-5"' .github/workflows/kr-tech-daily.yml
+grep -q 'cron: "25 9 \* \* 1-5"' .github/workflows/kr-tech-daily.yml
 grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-daily.yml
 grep -q 'workflow_dispatch:' .github/workflows/kr-tech-daily.yml
+grep -q 'dry_run:' .github/workflows/kr-tech-daily.yml
+grep -q 'force_send:' .github/workflows/kr-tech-daily.yml
+grep -q 'contents: read' .github/workflows/kr-tech-daily.yml
+grep -q 'actions: read' .github/workflows/kr-tech-daily.yml
+grep -q 'timeout-minutes: 75' .github/workflows/kr-tech-daily.yml
 grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-daily.yml
 grep -q 'collect-kr-feeds.py --mode daily-backend' .github/workflows/kr-tech-daily.yml
+if grep -q 'collect-kr-feeds.py --mode daily-tech' .github/workflows/kr-tech-daily.yml; then
+  echo "Backend Daily workflow must not use --mode daily-tech." >&2
+  exit 1
+fi
 grep -q -- '--type daily-tech' .github/workflows/kr-tech-daily.yml
+grep -q 'career-feed-backend-sent-' .github/workflows/kr-tech-daily.yml
+grep -q 'actions/cache/restore@v4' .github/workflows/kr-tech-daily.yml
+grep -q 'actions/cache/save@v4' .github/workflows/kr-tech-daily.yml
+grep -q 'group: career-feed-backend-daily-${{ github.ref }}' .github/workflows/kr-tech-daily.yml
 grep -q 'Wait until 09:00 KST before Discord send' .github/workflows/kr-tech-daily.yml
-grep -q "if: github.event_name == 'schedule'" .github/workflows/kr-tech-daily.yml
+grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/kr-tech-daily.yml
 grep -q 'target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:00:00" +%s)"' .github/workflows/kr-tech-daily.yml
+grep -q 'backend-daily-run-summary.json' .github/workflows/kr-tech-daily.yml
+grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/kr-tech-daily.yml
+grep -q 'if: always()' .github/workflows/kr-tech-daily.yml
+grep -q 'reports/ops/\*.json' .github/workflows/kr-tech-daily.yml
+grep -q 'reports/ops/\*.md' .github/workflows/kr-tech-daily.yml
+grep -q 'retention-days: 14' .github/workflows/kr-tech-daily.yml
 if grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY\|kr-dev-ai-news.json\|kr-ai-tech-news.json' .github/workflows/kr-tech-daily.yml; then
   echo "Backend Daily workflow must not use the news webhook or news candidate files." >&2
   exit 1
@@ -59,14 +79,30 @@ grep -q 'uses: actions/checkout@v5' .github/workflows/kr-tech-news-daily.yml
 grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-tech-news-daily.yml
 grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-tech-news-daily.yml
 grep -q 'cron: "15 8 \* \* 1-5"' .github/workflows/kr-tech-news-daily.yml
+grep -q 'cron: "30 9 \* \* 1-5"' .github/workflows/kr-tech-news-daily.yml
 grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-news-daily.yml
 grep -q 'workflow_dispatch:' .github/workflows/kr-tech-news-daily.yml
+grep -q 'dry_run:' .github/workflows/kr-tech-news-daily.yml
+grep -q 'force_send:' .github/workflows/kr-tech-news-daily.yml
+grep -q 'contents: read' .github/workflows/kr-tech-news-daily.yml
+grep -q 'actions: read' .github/workflows/kr-tech-news-daily.yml
+grep -q 'timeout-minutes: 75' .github/workflows/kr-tech-news-daily.yml
 grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY' .github/workflows/kr-tech-news-daily.yml
 grep -q 'collect-kr-feeds.py --mode daily-news' .github/workflows/kr-tech-news-daily.yml
 grep -q -- '--type daily-news' .github/workflows/kr-tech-news-daily.yml
+grep -q 'career-feed-news-sent-' .github/workflows/kr-tech-news-daily.yml
+grep -q 'actions/cache/restore@v4' .github/workflows/kr-tech-news-daily.yml
+grep -q 'actions/cache/save@v4' .github/workflows/kr-tech-news-daily.yml
+grep -q 'group: career-feed-news-daily-${{ github.ref }}' .github/workflows/kr-tech-news-daily.yml
 grep -q 'Wait until 09:05 KST before Discord send' .github/workflows/kr-tech-news-daily.yml
-grep -q "if: github.event_name == 'schedule'" .github/workflows/kr-tech-news-daily.yml
+grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/kr-tech-news-daily.yml
 grep -q 'target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:05:00" +%s)"' .github/workflows/kr-tech-news-daily.yml
+grep -q 'news-daily-run-summary.json' .github/workflows/kr-tech-news-daily.yml
+grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/kr-tech-news-daily.yml
+grep -q 'if: always()' .github/workflows/kr-tech-news-daily.yml
+grep -q 'reports/ops/\*.json' .github/workflows/kr-tech-news-daily.yml
+grep -q 'reports/ops/\*.md' .github/workflows/kr-tech-news-daily.yml
+grep -q 'retention-days: 14' .github/workflows/kr-tech-news-daily.yml
 if grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-news-daily.yml; then
   echo "News Daily workflow must not use the Backend Daily webhook." >&2
   exit 1
@@ -164,6 +200,10 @@ required_files=(
   "scripts/validate-career-feed-brief.py"
   "tests/fixtures/kr-tech-daily-valid.md"
   "tests/fixtures/kr-tech-news-daily-valid.md"
+  "tests/fixtures/kr-tech-news-daily-valid-sparse.md"
+  "tests/fixtures/kr-tech-news-daily-valid-empty.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-investment.md"
   "tests/fixtures/kr-backend-career-weekly-valid.md"
 )
 
@@ -309,6 +349,49 @@ else
   echo "Warning: ruby not found; skipping workflow YAML parse check." >&2
 fi
 
+echo "==> Checking Discord sender safety"
+python3 - <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+module_path = Path("scripts/send-discord.py")
+spec = importlib.util.spec_from_file_location("send_discord", module_path)
+if spec is None or spec.loader is None:
+    raise SystemExit("Could not load send-discord.py")
+sender = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = sender
+spec.loader.exec_module(sender)
+
+long_markdown = "# Career Feed Test\n\n" + "\n\n".join(
+    f"## Section {index}\n" + ("긴 본문 " * 90)
+    for index in range(1, 30)
+)
+chunks = sender.split_markdown_for_discord(long_markdown)
+if not chunks:
+    raise SystemExit("Long Markdown split produced no chunks")
+if any(len(chunk) > 2000 for chunk in chunks):
+    raise SystemExit("Discord chunk exceeds 2000 characters")
+try:
+    sender.split_markdown_for_discord(" \n\t")
+except RuntimeError:
+    pass
+else:
+    raise SystemExit("Empty Markdown must fail")
+
+print("Discord sender split smoke check passed")
+PY
+
+if rg -n --glob '!scripts/validate.sh' 'echo .*DISCORD_WEBHOOK_URL|print\(.*webhook_url|webhook_url.*print|DISCORD_WEBHOOK_URL.*echo' scripts .github; then
+  echo "Webhook URL may be printed by scripts or workflows." >&2
+  exit 1
+fi
+
+if rg -n 'https://discord(?:app)?\.com/api/webhooks/[0-9]+' .github scripts configs docs README.md .env.example tests AGENTS.md; then
+  echo "Hardcoded Discord webhook URL found." >&2
+  exit 1
+fi
+
 echo "==> Checking collector dry-runs"
 python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
 python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
@@ -357,6 +440,16 @@ PY
 echo "==> Checking fixtures"
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
+if python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md --type daily-news; then
+  echo "Expected duplicate URL fixture to fail" >&2
+  exit 1
+fi
+if python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment.md --type daily-news; then
+  echo "Expected investment fixture to fail" >&2
+  exit 1
+fi
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 python3 tests/test_weekly_career_collector.py
 

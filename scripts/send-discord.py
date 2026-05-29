@@ -15,8 +15,9 @@ from pathlib import Path
 from typing import Any
 
 
+DISCORD_CONTENT_LIMIT = 2000
 MAX_CHUNK_LENGTH = 1800
-MAX_RATE_LIMIT_RETRIES = 5
+DEFAULT_MAX_RETRIES = 3
 REQUEST_TIMEOUT_SECONDS = 30
 WEBHOOK_USERNAME = "Career Feed"
 USER_AGENT = "career-feed-discord-sender"
@@ -30,6 +31,12 @@ def parse_args() -> argparse.Namespace:
         description="Send a Markdown file to a Discord webhook."
     )
     parser.add_argument("markdown_file", help="Path to the Markdown report file.")
+    parser.add_argument(
+        "--max-retries",
+        type=int,
+        default=DEFAULT_MAX_RETRIES,
+        help="Retry count for Discord 429 and 5xx responses.",
+    )
     return parser.parse_args()
 
 
@@ -212,7 +219,7 @@ def build_payload(content: str) -> bytes:
 def parse_retry_after(body: str, headers: Any) -> float:
     try:
         parsed = json.loads(body) if body else {}
-        retry_after = parsed.get("retry_after")
+        retry_after = parsed.get("retry_after", parsed.get("retry"))
         if isinstance(retry_after, (int, float)):
             return max(float(retry_after), 0.0)
         if isinstance(retry_after, str):
@@ -230,6 +237,10 @@ def parse_retry_after(body: str, headers: Any) -> float:
     return 1.0
 
 
+def exponential_backoff_seconds(attempts: int) -> float:
+    return min(2 ** max(attempts - 1, 0), 30)
+
+
 def summarize_response_body(body: str) -> str:
     cleaned = " ".join(body.split())
     if not cleaned:
@@ -239,7 +250,11 @@ def summarize_response_body(body: str) -> str:
 
 
 def post_discord_chunk(
-    webhook_url: str, content: str, chunk_index: int, total_chunks: int
+    webhook_url: str,
+    content: str,
+    chunk_index: int,
+    total_chunks: int,
+    max_retries: int = DEFAULT_MAX_RETRIES,
 ) -> None:
     payload = build_payload(content)
     request = urllib.request.Request(
@@ -253,6 +268,7 @@ def post_discord_chunk(
     )
 
     attempts = 0
+    max_retries = max(max_retries, DEFAULT_MAX_RETRIES)
     while True:
         try:
             with urllib.request.urlopen(
@@ -269,14 +285,26 @@ def post_discord_chunk(
                 )
         except urllib.error.HTTPError as exc:
             body = exc.read().decode("utf-8", errors="replace")
-            if exc.code == 429 and attempts < MAX_RATE_LIMIT_RETRIES:
+            if exc.code == 429 and attempts < max_retries:
                 attempts += 1
                 retry_after = parse_retry_after(body, exc.headers)
                 print(
                     "Discord rate limit received. "
                     f"Retrying chunk {chunk_index}/{total_chunks} "
                     f"after {retry_after:.2f} seconds "
-                    f"(attempt {attempts}/{MAX_RATE_LIMIT_RETRIES}).",
+                    f"(attempt {attempts}/{max_retries}).",
+                    file=sys.stderr,
+                )
+                time.sleep(retry_after)
+                continue
+            if 500 <= exc.code < 600 and attempts < max_retries:
+                attempts += 1
+                retry_after = exponential_backoff_seconds(attempts)
+                print(
+                    "Discord server error received. "
+                    f"Retrying chunk {chunk_index}/{total_chunks} "
+                    f"after {retry_after:.2f} seconds "
+                    f"(attempt {attempts}/{max_retries}).",
                     file=sys.stderr,
                 )
                 time.sleep(retry_after)
@@ -287,32 +315,71 @@ def post_discord_chunk(
                 f"{chunk_index}/{total_chunks}: {summarize_response_body(body)}"
             ) from exc
         except urllib.error.URLError as exc:
+            if attempts < max_retries:
+                attempts += 1
+                retry_after = exponential_backoff_seconds(attempts)
+                print(
+                    "Discord network error received. "
+                    f"Retrying chunk {chunk_index}/{total_chunks} "
+                    f"after {retry_after:.2f} seconds "
+                    f"(attempt {attempts}/{max_retries}).",
+                    file=sys.stderr,
+                )
+                time.sleep(retry_after)
+                continue
             raise RuntimeError(
                 f"Network error while sending chunk {chunk_index}/{total_chunks}: "
                 f"{exc.reason}"
             ) from exc
 
 
-def send_to_discord(webhook_url: str, chunks: list[str]) -> int:
-    message_chunks = add_chunk_headers(chunks)
+def split_markdown_for_discord(markdown: str) -> list[str]:
+    content = markdown.strip()
+    if not content:
+        raise RuntimeError("Markdown report is empty.")
+    message_chunks = add_chunk_headers(chunk_markdown(content))
+    if any(len(chunk) > DISCORD_CONTENT_LIMIT for chunk in message_chunks):
+        raise RuntimeError("Failed to split Markdown within Discord content limit.")
+    return message_chunks
+
+
+def split_markdown_for_discord_path(path: Path) -> list[str]:
+    return split_markdown_for_discord(read_markdown(path))
+
+
+def send_to_discord(
+    webhook_url: str,
+    chunks: list[str],
+    max_retries: int = DEFAULT_MAX_RETRIES,
+) -> int:
+    message_chunks = chunks
     total_chunks = len(message_chunks)
     if total_chunks == 0:
         raise RuntimeError("No Discord message chunks were generated.")
 
     for index, chunk in enumerate(message_chunks, start=1):
-        post_discord_chunk(webhook_url, chunk, index, total_chunks)
+        post_discord_chunk(webhook_url, chunk, index, total_chunks, max_retries)
 
     return total_chunks
+
+
+def send_discord_markdown(
+    path: Path,
+    webhook_url: str,
+    max_retries: int = DEFAULT_MAX_RETRIES,
+) -> None:
+    chunks = split_markdown_for_discord_path(path)
+    send_to_discord(webhook_url, chunks, max_retries=max_retries)
 
 
 def main() -> int:
     args = parse_args()
 
     try:
-        content = read_markdown(Path(args.markdown_file))
         webhook_url = get_webhook_url()
-        chunks = chunk_markdown(content)
-        sent_count = send_to_discord(webhook_url, chunks)
+        chunks = split_markdown_for_discord_path(Path(args.markdown_file))
+        send_to_discord(webhook_url, chunks, max_retries=args.max_retries)
+        sent_count = len(chunks)
     except (FileNotFoundError, OSError, RuntimeError, ValueError) as exc:
         print(f"Failed to send Discord message: {exc}", file=sys.stderr)
         return 1

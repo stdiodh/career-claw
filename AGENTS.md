@@ -9,6 +9,8 @@
 - 기본 목표는 매일 Backend Daily Study Brief, 한국 개발/AI 뉴스 피드, 주간 백엔드 커리어 브리핑을 생성한 뒤 Discord Webhook으로 전송하는 것이다.
 - Daily Backend 브리핑은 Spring Boot/JVM 학습, Programmers 주차별 PS 루틴, Spring/JVM/Kotlin OSS 기여 후보, 주니어 백엔드 실무지식으로 구성한다.
 - 한국 개발/AI 뉴스는 별도 News Daily workflow와 Discord Webhook으로 전송한다.
+- Backend Daily와 News Daily는 `dry_run`, `force_send`, delivery lock, catch-up schedule을 사용해 지연/누락/중복 전송 위험을 완화한다.
+- News Daily는 기준을 만족하는 뉴스가 3개 미만이어도 sparse/empty 정책에 맞으면 정상 성공으로 본다.
 - Programmers PS 루틴은 정적 config와 progress 파일만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않는다.
 - OpenJDK/JBS는 Spring OSS 난이도 모델의 참고로만 사용하고 직접 수집하지 않는다.
 - 제품명과 문서명은 `Career Feed`로 통일한다. 저장소 이름이나 로컬 경로명은 환경에 따라 다를 수 있다.
@@ -20,6 +22,7 @@
 - 아직 구현되지 않은 기능은 문서에서 Roadmap 또는 TODO로만 표현한다.
 - Secrets, API Key, Webhook URL, 토큰을 코드나 문서 예시에 하드코딩하지 않는다.
 - `OPENAI_API_KEY`, `DISCORD_WEBHOOK_URL` 같은 값은 GitHub Secrets 또는 환경변수로만 다룬다.
+- `DISCORD_WEBHOOK_CAREER_FEED_OPS`는 선택 실패 알림 secret이며, 없을 때 workflow가 실패하면 안 된다.
 - GitHub Actions workflow는 사용자가 명시적으로 요청하기 전까지 생성하지 않는다.
 - 현재 단계에서 `app/`와 `infra/`는 수정하지 않는다.
 - 사용자가 명시적으로 요청하지 않는 한 서버, 배포 workflow, 인프라 설정을 변경하지 않는다.

@@ -465,6 +465,31 @@ OSS_CLAIM_KEYWORDS = [
     "제가 진행해보겠습니다",
 ]
 OSS_PREFERRED_CONTRIBUTION_TYPES = {"docs", "test", "bug-repro", "sample"}
+SOURCE_ERRORS: list[dict[str, str]] = []
+WARNINGS: list[str] = []
+
+
+def record_warning(message: str) -> None:
+    WARNINGS.append(message)
+    print(f"Warning: {message}", file=sys.stderr)
+
+
+def record_source_error(
+    source_name: str,
+    message: str,
+    *,
+    category: str = "",
+    source_type: str = "",
+) -> None:
+    SOURCE_ERRORS.append(
+        {
+            "source_name": source_name,
+            "source_type": source_type,
+            "category": category,
+            "error": message,
+        }
+    )
+    print(f"Warning: {source_name}: {message}", file=sys.stderr)
 
 
 @dataclass(frozen=True)
@@ -699,6 +724,13 @@ def normalize_url(url: str) -> str:
 
 def normalize_title(title: str) -> str:
     lowered = html.unescape(title or "").lower()
+    lowered = re.sub(
+        r"\s*[-–—|:]\s*(전자신문|zdnet korea|지디넷코리아|블로터|"
+        r"ai타임스|디지털데일리|itworld|cio korea)\s*$",
+        " ",
+        lowered,
+        flags=re.IGNORECASE,
+    )
     normalized = re.sub(r"[\W_]+", " ", lowered, flags=re.UNICODE)
     return " ".join(normalized.split())
 
@@ -748,7 +780,7 @@ def get_naver_credentials(dry_run: bool) -> tuple[str, str] | None:
         return client_id, client_secret
 
     if dry_run:
-        print(
+        record_warning(
             "Dry-run: NAVER_CLIENT_ID/NAVER_CLIENT_SECRET not required; "
             "Naver API collection skipped."
         )
@@ -762,11 +794,10 @@ def get_naver_credentials(dry_run: bool) -> tuple[str, str] | None:
         )
         if not value
     ]
-    print(
-        "Warning: missing optional environment variable(s): "
+    record_warning(
+        "missing optional environment variable(s): "
         f"{', '.join(missing)}. Naver News Search API collection skipped; "
-        "RSS/reference candidates will still be collected.",
-        file=sys.stderr,
+        "RSS/reference candidates will still be collected."
     )
     return None
 
@@ -776,11 +807,10 @@ def get_github_token() -> str | None:
         token = os.environ.get(env_name, "").strip()
         if token:
             return token
-    print(
-        "Warning: GITHUB_TOKEN/GH_TOKEN is not set. "
+    record_warning(
+        "GITHUB_TOKEN/GH_TOKEN is not set. "
         "GitHub Issues collection will use the public unauthenticated API "
-        "and may hit rate limits.",
-        file=sys.stderr,
+        "and may hit rate limits."
     )
     return None
 
@@ -2794,7 +2824,13 @@ def collect_naver_candidates(
     if not isinstance(reliability_domains, dict):
         reliability_domains = {}
     if not endpoint:
-        raise RuntimeError("Naver endpoint is missing in configs/kr-sources.json.")
+        record_source_error(
+            "Naver News Search",
+            "Naver endpoint is missing in configs/kr-sources.json.",
+            category=str(category.get("id", "")).strip(),
+            source_type="naver",
+        )
+        return []
 
     candidates: list[Candidate] = []
     raw_queries = category.get("naver_queries", [])
@@ -2806,7 +2842,16 @@ def collect_naver_candidates(
         if not query:
             continue
         display = naver_display(config, query_config)
-        items = fetch_naver_items(endpoint, query, display, sort, credentials)
+        try:
+            items = fetch_naver_items(endpoint, query, display, sort, credentials)
+        except RuntimeError as exc:
+            record_source_error(
+                "Naver News Search",
+                f"query '{query}' failed: {exc}",
+                category=str(category.get("id", "")).strip(),
+                source_type="naver",
+            )
+            continue
         for item in items:
             original_link = strip_html(str(item.get("originallink", ""))).strip()
             link = strip_html(str(item.get("link", ""))).strip()
@@ -2928,17 +2973,28 @@ def collect_feed_candidates(
         source_name = str(source.get("name", "")).strip() or "RSS/Atom"
         feed_url = str(source.get("url", "")).strip()
         if source_type not in SUPPORTED_FEED_TYPES:
-            print(f"Warning: unsupported feed type for {source_name}: {source_type}", file=sys.stderr)
+            record_warning(f"unsupported feed type for {source_name}: {source_type}")
             continue
         if not feed_url:
-            print(f"Warning: RSS source without URL: {source_name}", file=sys.stderr)
+            record_warning(f"RSS source without URL: {source_name}")
             continue
 
         try:
             payload = fetch_feed(source)
             parsed_items = parse_feed_items(payload)
-        except (ET.ParseError, OSError, urllib.error.URLError, urllib.error.HTTPError) as exc:
-            print(f"Warning: failed to collect RSS source '{source_name}': {exc}", file=sys.stderr)
+        except (
+            ET.ParseError,
+            OSError,
+            TimeoutError,
+            urllib.error.URLError,
+            urllib.error.HTTPError,
+        ) as exc:
+            record_source_error(
+                source_name,
+                f"failed to collect RSS source: {exc}",
+                category=str(category.get("id", "")).strip(),
+                source_type="rss",
+            )
             continue
 
         configured_reliability = str(source.get("source_reliability", "")).strip()
@@ -3030,28 +3086,27 @@ def fetch_github_api_json(
         body = exc.read().decode("utf-8", errors="replace")
         detail = " ".join(body.split())[:300] if body else exc.reason
         if token and exc.code in {403, 404}:
-            print(
-                f"Warning: GitHub token could not read {description} for {repository} "
+            record_warning(
+                f"GitHub token could not read {description} for {repository} "
                 f"({exc.code}); "
-                "retrying with the public unauthenticated API.",
-                file=sys.stderr,
+                "retrying with the public unauthenticated API."
             )
             return fetch_github_api_json(url, None, repository, description)
-        if exc.code == 403:
-            print(
-                f"Warning: GitHub API rate/auth limit for {description} in {repository} "
-                f"({exc.code}): {detail}",
-                file=sys.stderr,
-            )
-            return None
-        raise RuntimeError(
-            f"GitHub API request failed for {description} in {repository} "
-            f"({exc.code}): {detail}"
-        ) from exc
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub API request failed for {description} ({exc.code}): {detail}",
+            category=OSS_CATEGORY_ID,
+            source_type="github",
+        )
+        return None
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        raise RuntimeError(
-            f"GitHub API request failed for {description} in {repository}: {exc}"
-        ) from exc
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub API request failed for {description}: {exc}",
+            category=OSS_CATEGORY_ID,
+            source_type="github",
+        )
+        return None
 
 
 def fetch_github_issues(repository: str, token: str | None) -> list[dict[str, object]]:
@@ -4004,7 +4059,7 @@ def collect_oss_issue_candidates(
 
     for repository in repositories:
         if "/" not in repository:
-            print(f"Warning: invalid GitHub repository id: {repository}", file=sys.stderr)
+            record_warning(f"invalid GitHub repository id: {repository}")
             continue
         for issue in fetch_github_issues(repository, token):
             candidate = build_oss_issue_candidate(
@@ -4052,8 +4107,8 @@ def dedupe_candidates(candidates: list[Candidate]) -> list[Candidate]:
         ),
         reverse=True,
     ):
-        normalized_url = normalize_url(candidate.url)
-        normalized_source_url = normalize_url(candidate.source_url)
+        normalized_url = canonical_candidate_url(candidate.url)
+        normalized_source_url = canonical_candidate_url(candidate.source_url)
         if normalized_url and normalized_url in seen_urls:
             continue
         if normalized_source_url and normalized_source_url in seen_urls:
@@ -4101,6 +4156,77 @@ def sort_and_limit(
         ),
         reverse=True,
     )[:max(max_candidates, 0)]
+
+
+def canonical_candidate_url(url: str) -> str:
+    normalized = normalize_url(url)
+    if not normalized:
+        return ""
+    parsed = urllib.parse.urlsplit(normalized)
+    query_items = [
+        (key, value)
+        for key, value in urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
+        if not key.lower().startswith("utm_")
+        and key.lower() not in {"fbclid", "gclid", "igshid"}
+    ]
+    query = urllib.parse.urlencode(query_items, doseq=True)
+    return urllib.parse.urlunsplit(
+        (parsed.scheme, parsed.netloc, parsed.path.rstrip("/") or parsed.path, query, "")
+    )
+
+
+def candidate_category_hint(candidate: Candidate) -> str:
+    text = " ".join(
+        [
+            candidate.category,
+            candidate.title,
+            candidate.summary,
+            " ".join(candidate.tags),
+        ]
+    ).lower()
+    if any(keyword in text for keyword in ["security", "보안", "cve", "취약점"]):
+        return "Security"
+    if any(keyword in text for keyword in ["cloud", "클라우드", "kubernetes", "aws", "ncloud"]):
+        return "Cloud"
+    if any(keyword in text for keyword in ["data", "데이터", "postgresql", "mysql", "redis", "kafka"]):
+        return "Data"
+    if any(keyword in text for keyword in ["open source", "opensource", "오픈소스"]):
+        return "Open Source"
+    if any(keyword in text for keyword in ["productivity", "생산성", "ci", "코딩 에이전트"]):
+        return "Developer Productivity"
+    if any(keyword in text for keyword in ["ai", "llm", "모델", "에이전트"]):
+        return "AI"
+    return "Backend"
+
+
+def candidate_source_name(candidate: object) -> str:
+    if isinstance(candidate, dict):
+        return str(candidate.get("source_name") or candidate.get("source") or "").strip()
+    return str(getattr(candidate, "source", "")).strip()
+
+
+def candidate_source_count(candidates: list[object]) -> int:
+    sources = {
+        source
+        for source in (candidate_source_name(candidate) for candidate in candidates)
+        if source
+    }
+    return len(sources)
+
+
+def common_candidate_metadata(
+    mode: str,
+    generated_at: datetime,
+    candidates: list[object],
+) -> dict[str, object]:
+    return {
+        "mode": mode,
+        "generated_at_kst": format_kst(generated_at),
+        "candidate_count": len(candidates),
+        "source_count": candidate_source_count(candidates),
+        "source_errors": SOURCE_ERRORS,
+        "warnings": WARNINGS,
+    }
 
 
 def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, object]:
@@ -4159,10 +4285,15 @@ def serialize_candidate(candidate: Candidate | OssIssueCandidate) -> dict[str, o
     return {
         "title": candidate.title,
         "url": candidate.url,
+        "canonical_url": canonical_candidate_url(candidate.url),
+        "normalized_title": normalize_title(candidate.title),
+        "source_name": candidate.source,
         "source_url": candidate.source_url,
         "source": candidate.source,
         "publisher": candidate.publisher,
         "published_at": format_kst(candidate.published_at) if candidate.published_at else "",
+        "published_at_kst": format_kst(candidate.published_at) if candidate.published_at else "",
+        "category_hint": candidate_category_hint(candidate),
         "summary": candidate.summary,
         "query": candidate.query,
         "korea_relevance": candidate.korea_relevance,
@@ -4634,6 +4765,7 @@ def write_category_output(
     category: dict[str, object],
     generated_at: datetime,
     candidates: list[Candidate] | list[OssIssueCandidate],
+    mode: str,
     penalty_keywords: list[str] | None = None,
     update_cache: bool = True,
 ) -> None:
@@ -4647,27 +4779,31 @@ def write_category_output(
         payload = build_disabled_weekly_career_compat_payload(category_id, generated_at)
         WEEKLY_CAREER_LAST_PAYLOAD = payload
     elif category_id == OSS_CATEGORY_ID:
+        items = [
+            serialize_oss_issue_candidate(candidate)
+            for candidate in candidates
+            if isinstance(candidate, OssIssueCandidate) and candidate.safe_to_recommend
+        ]
         payload = {
             "schema_version": 2,
             "category": category_id,
             "generated_at": format_kst(generated_at),
+            **common_candidate_metadata(mode, generated_at, items),
             "verification_policy": (
                 "Only safe_to_recommend=true issues are included in items. "
                 "Maintainer authorship, assignee absence, linked work absence, "
                 "and claim comment absence must all be verified."
             ),
-            "items": [
-                serialize_oss_issue_candidate(candidate)
-                for candidate in candidates
-                if isinstance(candidate, OssIssueCandidate) and candidate.safe_to_recommend
-            ],
+            "items": items,
             "excluded": [],
         }
     else:
+        items = [serialize_candidate(candidate) for candidate in candidates]
         payload = {
             "category": category_id,
             "generated_at": format_kst(generated_at),
-            "items": [serialize_candidate(candidate) for candidate in candidates],
+            **common_candidate_metadata(mode, generated_at, items),
+            "items": items,
         }
     write_json_file(output_path, payload)
     if category_id == WEEKLY_CAREER_CATEGORY_ID:
@@ -5082,7 +5218,7 @@ def collect_category(
     dry_run: bool,
 ) -> list[Candidate] | list[OssIssueCandidate]:
     category_id = str(category.get("id", "")).strip()
-    if dry_run and category_id in {OSS_CATEGORY_ID, WEEKLY_CAREER_CATEGORY_ID}:
+    if dry_run:
         return []
 
     if category_id == OSS_CATEGORY_ID:
@@ -5147,9 +5283,11 @@ def main() -> int:
             raise RuntimeError("configs/kr-sources.json must contain a categories array.")
 
         candidates_by_category: dict[str, list[Candidate] | list[OssIssueCandidate]] = {}
+        selected_categories: list[dict[str, object]] = []
         for category in categories:
             if not isinstance(category, dict):
                 continue
+            selected_categories.append(category)
             candidates = collect_category(
                 config,
                 category,
@@ -5161,11 +5299,15 @@ def main() -> int:
             category_id = str(category.get("id", "")).strip()
             if category_id:
                 candidates_by_category[category_id] = candidates
+
+        for category in selected_categories:
+            category_id = str(category.get("id", "")).strip()
             write_category_output(
                 output_dir,
                 category,
                 current_time,
-                candidates,
+                candidates_by_category.get(category_id, []),
+                args.mode,
                 penalty_keywords=penalty_keywords,
                 update_cache=not args.dry_run,
             )

@@ -50,32 +50,45 @@ def check_scheduled_workflow(
     path: Path,
     *,
     label: str,
-    cron: str,
+    crons: list[str],
     secret: str,
     forbidden_secret: str,
     concurrency_group: str,
+    lock_key_prefix: str,
     wait_step_name: str,
     wait_time: str,
     collector_mode: str,
     validator_type: str,
 ) -> None:
     text = read_required(path)
-    if not has_quoted_value(text, "cron", cron):
-        fail(f"{path}: missing schedule cron: {cron}")
+    for cron in crons:
+        if not has_quoted_value(text, "cron", cron):
+            fail(f"{path}: missing schedule cron: {cron}")
     if not has_quoted_value(text, "timezone", "Asia/Seoul"):
         fail(f"{path}: missing schedule timezone: Asia/Seoul")
     require_contains(text, "workflow_dispatch:", path)
+    require_contains(text, "dry_run:", path)
+    require_contains(text, "force_send:", path)
     require_contains(text, secret, path)
     require_absent(text, forbidden_secret, path)
     require_contains(text, "validate-career-feed-brief.py", path)
     require_contains(text, f"--type {validator_type}", path)
     require_contains(text, f"collect-kr-feeds.py --mode {collector_mode}", path)
-    require_contains(text, "Log workflow trigger context", path)
     require_contains(text, "EVENT_NAME: ${{ github.event_name }}", path)
     require_contains(text, "EVENT_SCHEDULE: ${{ github.event.schedule }}", path)
-    require_contains(text, "kst_now=$(TZ=Asia/Seoul date", path)
+    require_contains(text, "delivery_lock_key=", path)
+    require_contains(text, lock_key_prefix, path)
+    require_contains(text, "actions/cache/restore@v4", path)
+    require_contains(text, "actions/cache/save@v4", path)
+    require_contains(text, "should_send", path)
+    require_contains(text, "dry_run", path)
+    require_contains(text, "force_send", path)
     require_contains(text, wait_step_name, path)
-    require_contains(text, "if: github.event_name == 'schedule'", path)
+    require_contains(
+        text,
+        "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'",
+        path,
+    )
     require_contains(text, 'now_epoch="$(TZ=Asia/Seoul date +%s)"', path)
     require_contains(
         text,
@@ -86,9 +99,15 @@ def check_scheduled_workflow(
     require_contains(text, "concurrency:", path)
     require_contains(text, f"group: {concurrency_group}", path)
     require_contains(text, "cancel-in-progress: false", path)
+    require_contains(text, "timeout-minutes: 75", path)
+    require_contains(text, "contents: read", path)
+    require_contains(text, "actions: read", path)
+    require_contains(text, "if: always()", path)
+    require_contains(text, "retention-days: 14", path)
+    require_contains(text, "DISCORD_WEBHOOK_CAREER_FEED_OPS", path)
     require_absent(text, "DISCORD_WEBHOOK_KR_" "PREMIUM_BRIEF", path)
     require_absent(text, "validate-kr-" "premium-brief.py", path)
-    print(f"ok: {label} schedule = {cron} Asia/Seoul")
+    print(f"ok: {label} schedules = {', '.join(crons)} Asia/Seoul")
 
 
 def check_mark_ps_workflow() -> None:
@@ -136,10 +155,11 @@ def main() -> int:
         check_scheduled_workflow(
             DAILY_WORKFLOW,
             label="Daily Backend Brief",
-            cron="5 8 * * 1-5",
+            crons=["5 8 * * 1-5", "25 9 * * 1-5"],
             secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
             forbidden_secret="DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY",
-            concurrency_group="career-feed-kr-tech-daily-${{ github.ref }}",
+            concurrency_group="career-feed-backend-daily-${{ github.ref }}",
+            lock_key_prefix="career-feed-backend-sent-",
             wait_step_name="Wait until 09:00 KST before Discord send",
             wait_time="09:00:00",
             collector_mode="daily-backend",
@@ -148,10 +168,11 @@ def main() -> int:
         check_scheduled_workflow(
             NEWS_DAILY_WORKFLOW,
             label="Daily Korea Dev AI News",
-            cron="15 8 * * 1-5",
+            crons=["15 8 * * 1-5", "30 9 * * 1-5"],
             secret="DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY",
             forbidden_secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
-            concurrency_group="career-feed-kr-tech-news-daily-${{ github.ref }}",
+            concurrency_group="career-feed-news-daily-${{ github.ref }}",
+            lock_key_prefix="career-feed-news-sent-",
             wait_step_name="Wait until 09:05 KST before Discord send",
             wait_time="09:05:00",
             collector_mode="daily-news",

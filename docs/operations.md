@@ -4,8 +4,8 @@
 
 | 경로 | 실행 | 산출물 |
 | --- | --- | --- |
-| Daily Backend Brief | 평일 08:05 KST 시작, 09:00 KST 전송 | `reports/briefs/kr-tech-daily.md` |
-| Korea Dev/AI News Daily | 평일 08:15 KST 시작, 09:05 KST 전송 | `reports/briefs/kr-tech-news-daily.md` |
+| Daily Backend Brief | 평일 08:05 KST 시작, 09:00 KST 전송. 09:25 KST catch-up 실행 | `reports/briefs/kr-tech-daily.md` |
+| Korea Dev/AI News Daily | 평일 08:15 KST 시작, 09:05 KST 전송. 09:30 KST catch-up 실행 | `reports/briefs/kr-tech-news-daily.md` |
 | Backend Career Site Radar | 수동 실행 | `reports/briefs/kr-backend-career-weekly.md` |
 | Mark PS Solved | 수동 실행 | `data/ps-progress.json` |
 
@@ -16,6 +16,8 @@
 - prompt: `.github/codex/prompts/kr-tech-daily-brief.md`
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
+- delivery lock: `career-feed-backend-sent-${KST_DATE}`
+- 운영 요약: `reports/ops/backend-daily-run-summary.json`, `reports/ops/backend-daily-run-summary.md`
 
 ## Korea Dev/AI News Daily
 
@@ -24,6 +26,21 @@
 - prompt: `.github/codex/prompts/kr-tech-news-daily.md`
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-news-daily.md --type daily-news`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY`
+- delivery lock: `career-feed-news-sent-${KST_DATE}`
+- 운영 요약: `reports/ops/news-daily-run-summary.json`, `reports/ops/news-daily-run-summary.md`
+
+News Daily는 기본적으로 3~5개 뉴스를 전송합니다. 기준을 만족하는 뉴스가 1~2개뿐이면 후보 부족 문구와 함께 정상 성공으로 보고, 0개면 기준을 만족하는 한국 개발/AI 뉴스가 없다는 문구만 전송합니다. Naver secret 누락이나 Naver API 실패는 warning/source error로 기록하고 RSS/공식 페이지 후보만으로도 JSON을 생성합니다.
+
+## Daily 운영 안정성
+
+- `workflow_dispatch` 입력은 Backend Daily와 News Daily 모두 `dry_run`, `force_send`를 사용합니다.
+- `dry_run=true`이면 Discord 전송과 delivery lock 저장을 하지 않습니다.
+- `force_send=true`이면 같은 날짜 delivery lock이 있어도 전송합니다.
+- Discord 전송 성공 후에만 GitHub Actions cache에 delivery lock marker를 저장합니다.
+- 같은 날짜 lock이 있고 `force_send=false`이면 Discord 전송을 skip합니다.
+- Discord 429/5xx는 `scripts/send-discord.py`에서 재시도합니다.
+- 실패 알림 선택 secret은 `DISCORD_WEBHOOK_CAREER_FEED_OPS`입니다. 없으면 실패 알림만 skip합니다.
+- GitHub Actions scheduled workflow는 부하에 따라 지연되거나 실행이 누락될 수 있으므로 catch-up schedule과 delivery lock으로 보완합니다.
 
 ## Backend Career Site Radar
 
@@ -49,6 +66,8 @@ python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/render-weekly-career-site-radar.py
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 ./scripts/validate.sh
 git diff --check

@@ -4,34 +4,120 @@ on:
   schedule:
     - cron: "15 8 * * 1-5"
       timezone: "Asia/Seoul"
+    - cron: "30 9 * * 1-5"
+      timezone: "Asia/Seoul"
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Generate and validate artifacts without sending Discord"
+        required: false
+        type: boolean
+        default: false
+      force_send:
+        description: "Send even if today's delivery lock exists"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
-  group: career-feed-kr-tech-news-daily-${{ github.ref }}
+  group: career-feed-news-daily-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  kr-tech-news-daily:
+  build:
     name: Generate and send Korea dev AI news daily
     runs-on: ubuntu-latest
+    timeout-minutes: 75
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Log workflow trigger context
+      - name: Prepare report directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/candidates reports/briefs reports/ops/delivery-locks
+
+      - name: Set run context
+        id: context
         shell: bash
         env:
+          INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
+          INPUT_FORCE_SEND: ${{ github.event_name == 'workflow_dispatch' && inputs.force_send || false }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_SCHEDULE: ${{ github.event.schedule }}
         run: |
           set -euo pipefail
+
+          kst_now="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
+          kst_date="$(TZ=Asia/Seoul date '+%Y-%m-%d')"
+          delivery_lock_key="career-feed-news-sent-${kst_date}"
+          lock_marker="reports/ops/delivery-locks/news-sent-${kst_date}.lock"
+
           echo "event_name=${EVENT_NAME}"
           echo "event_schedule=${EVENT_SCHEDULE:-}"
-          echo "kst_now=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
+          echo "kst_now=${kst_now}"
+          echo "dry_run=${INPUT_DRY_RUN}"
+          echo "force_send=${INPUT_FORCE_SEND}"
+
+          {
+            echo "kst_now=${kst_now}"
+            echo "kst_date=${kst_date}"
+            echo "dry_run=${INPUT_DRY_RUN}"
+            echo "force_send=${INPUT_FORCE_SEND}"
+            echo "delivery_lock_key=${delivery_lock_key}"
+            echo "lock_marker=${lock_marker}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Restore News Daily delivery lock
+        id: delivery-lock
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ steps.context.outputs.lock_marker }}
+          key: ${{ steps.context.outputs.delivery_lock_key }}
+
+      - name: Decide delivery action
+        id: delivery
+        shell: bash
+        env:
+          DRY_RUN: ${{ steps.context.outputs.dry_run }}
+          FORCE_SEND: ${{ steps.context.outputs.force_send }}
+          LOCK_HIT: ${{ steps.delivery-lock.outputs.cache-hit == 'true' }}
+        run: |
+          set -euo pipefail
+
+          should_generate="true"
+          should_send="true"
+          skip_reason=""
+
+          if [ "${DRY_RUN}" = "true" ]; then
+            should_send="false"
+            skip_reason="dry_run"
+          elif [ "${LOCK_HIT}" = "true" ] && [ "${FORCE_SEND}" != "true" ]; then
+            should_generate="false"
+            should_send="false"
+            skip_reason="delivery_lock_hit"
+          fi
+
+          echo "should_generate=${should_generate}" >> "${GITHUB_OUTPUT}"
+          echo "should_send=${should_send}" >> "${GITHUB_OUTPUT}"
+          echo "skip_reason=${skip_reason}" >> "${GITHUB_OUTPUT}"
+
+          if [ "${should_send}" != "true" ]; then
+            {
+              echo "# News Daily Discord send skipped"
+              echo
+              echo "- reason: ${skip_reason}"
+              echo "- delivery_lock_hit: ${LOCK_HIT}"
+              echo "- force_send: ${FORCE_SEND}"
+              echo "- dry_run: ${DRY_RUN}"
+            } > reports/ops/news-daily-discord-skip.md
+          fi
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -39,18 +125,21 @@ jobs:
           python-version: "3.x"
 
       - name: Check required secrets
+        id: check-secrets
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY: ${{ secrets.DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY }}
+          SHOULD_GENERATE: ${{ steps.delivery.outputs.should_generate }}
+          SHOULD_SEND: ${{ steps.delivery.outputs.should_send }}
         run: |
           set -euo pipefail
 
           missing=()
-          if [ -z "${OPENAI_API_KEY}" ]; then
+          if [ "${SHOULD_GENERATE}" = "true" ] && [ -z "${OPENAI_API_KEY}" ]; then
             missing+=("OPENAI_API_KEY")
           fi
-          if [ -z "${DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY}" ]; then
+          if [ "${SHOULD_SEND}" = "true" ] && [ -z "${DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY}" ]; then
             missing+=("DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY")
           fi
 
@@ -59,13 +148,9 @@ jobs:
             exit 1
           fi
 
-      - name: Prepare report directories
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p reports/candidates reports/briefs
-
       - name: Collect Korea dev AI news candidates
+        id: collect
+        if: steps.delivery.outputs.should_generate == 'true'
         shell: bash
         env:
           NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
@@ -76,11 +161,12 @@ jobs:
 
       - name: Prepare KST runtime prompt
         id: prepare
+        if: steps.delivery.outputs.should_generate == 'true'
         shell: bash
         run: |
           set -euo pipefail
 
-          kst_now="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
+          kst_now="${{ steps.context.outputs.kst_now }}"
           runtime_prompt="${RUNNER_TEMP}/kr-tech-news-daily-${GITHUB_RUN_ID}.md"
           report_file="reports/briefs/kr-tech-news-daily.md"
 
@@ -97,7 +183,8 @@ jobs:
           runtime += "- `reports/candidates/kr-dev-ai-news.json`\n"
           runtime += "- `reports/candidates/kr-ai-tech-news.json`\n"
           runtime += "- `configs/audience-profile.json`\n"
-          runtime += "\n`kr-dev-ai-news.json`과 `kr-ai-tech-news.json`에서 3~5개 뉴스를 고른다.\n"
+          runtime += "\n`kr-dev-ai-news.json`과 `kr-ai-tech-news.json`에서 3~5개 뉴스를 기본으로 고른다.\n"
+          runtime += "기준을 만족하는 후보가 3개 미만이면 품질을 낮춰 채우지 않고 sparse/empty 정책을 따른다.\n"
           runtime += "같은 사건은 하나만 고르고, 가능하면 원문 링크를 사용한다.\n"
           runtime += "\n## Runtime output\n\n"
           runtime += "- 최종 Markdown은 `reports/briefs/kr-tech-news-daily.md`에만 작성한다.\n"
@@ -107,12 +194,14 @@ jobs:
           PY
 
           {
-            echo "kst_now=${kst_now}"
             echo "runtime_prompt=${runtime_prompt}"
             echo "report_file=${report_file}"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Generate Korea dev AI news Markdown
+        id: generate-primary
+        if: steps.delivery.outputs.should_generate == 'true'
+        continue-on-error: true
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
@@ -122,7 +211,29 @@ jobs:
           safety-strategy: drop-sudo
           codex-args: '["--model","gpt-5.4-mini","-c","model_reasoning_effort=\"low\""]'
 
+      - name: Retry Korea dev AI news Markdown generation
+        id: generate-retry
+        if: steps.delivery.outputs.should_generate == 'true' && steps.generate-primary.outcome == 'failure'
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ steps.prepare.outputs.runtime_prompt }}
+          output-file: reports/briefs/kr-tech-news-daily-codex-summary.md
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          codex-args: '["--model","gpt-5.4-mini","-c","model_reasoning_effort=\"low\""]'
+
+      - name: Fail if Korea dev AI news generation failed
+        id: generation-status
+        if: steps.delivery.outputs.should_generate == 'true' && steps.generate-primary.outcome != 'success' && steps.generate-retry.outcome != 'success'
+        shell: bash
+        run: |
+          echo "Korea dev AI news generation failed after retry." >&2
+          exit 1
+
       - name: Validate Korea dev AI news Markdown
+        id: validate
+        if: steps.delivery.outputs.should_generate == 'true'
         shell: bash
         env:
           REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
@@ -131,7 +242,8 @@ jobs:
           python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type daily-news
 
       - name: Wait until 09:05 KST before Discord send
-        if: github.event_name == 'schedule'
+        id: wait-before-send
+        if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -149,6 +261,8 @@ jobs:
           fi
 
       - name: Send Korea dev AI news to Discord
+        id: send-discord
+        if: steps.delivery.outputs.should_send == 'true'
         shell: bash
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY }}
@@ -156,6 +270,159 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/send-discord.py "${REPORT_FILE}"
+
+      - name: Create News Daily delivery lock marker
+        id: create-lock
+        if: steps.send-discord.outcome == 'success' && steps.context.outputs.dry_run != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf 'sent_at_kst=%s\nrun_id=%s\n' \
+            "$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')" \
+            "${GITHUB_RUN_ID}" > "${{ steps.context.outputs.lock_marker }}"
+
+      - name: Save News Daily delivery lock
+        id: save-lock
+        if: steps.create-lock.outcome == 'success' && steps.delivery-lock.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ steps.context.outputs.lock_marker }}
+          key: ${{ steps.context.outputs.delivery_lock_key }}
+
+      - name: Write News Daily run summary
+        id: run-summary
+        if: always()
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+          DRY_RUN: ${{ steps.context.outputs.dry_run }}
+          FORCE_SEND: ${{ steps.context.outputs.force_send }}
+          DELIVERY_LOCK_KEY: ${{ steps.context.outputs.delivery_lock_key }}
+          DELIVERY_LOCK_HIT: ${{ steps.delivery-lock.outputs.cache-hit == 'true' }}
+          SHOULD_GENERATE: ${{ steps.delivery.outputs.should_generate }}
+          SHOULD_SEND: ${{ steps.delivery.outputs.should_send }}
+          SKIP_REASON: ${{ steps.delivery.outputs.skip_reason }}
+          DISCORD_SEND_OUTCOME: ${{ steps.send-discord.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          ops_dir = Path("reports/ops")
+          ops_dir.mkdir(parents=True, exist_ok=True)
+          candidate_paths = [
+              Path("reports/candidates/kr-dev-ai-news.json"),
+              Path("reports/candidates/kr-ai-tech-news.json"),
+          ]
+          candidate_count = 0
+          source_errors = set()
+          for path in candidate_paths:
+              if not path.exists():
+                  continue
+              try:
+                  data = json.loads(path.read_text(encoding="utf-8"))
+              except json.JSONDecodeError:
+                  continue
+              items = data.get("items", [])
+              candidate_count += int(data.get("candidate_count", len(items) if isinstance(items, list) else 0) or 0)
+              for error in data.get("source_errors", []) if isinstance(data.get("source_errors", []), list) else []:
+                  source_errors.add(json.dumps(error, ensure_ascii=False, sort_keys=True))
+
+          report_path = Path("reports/briefs/kr-tech-news-daily.md")
+          report = report_path.read_text(encoding="utf-8") if report_path.exists() else ""
+          selected_news_count = len(re.findall(r"^##\s+\d+\.\s+", report, flags=re.MULTILINE))
+          fallback_reason = os.environ.get("SKIP_REASON") or None
+          if selected_news_count == 0 and "기준을 만족하는 한국 개발/AI 뉴스가 없습니다" in report:
+              fallback_reason = "no_qualified_news"
+          elif 0 < selected_news_count < 3:
+              fallback_reason = "sparse_qualified_news"
+
+          send_attempted = os.environ.get("SHOULD_SEND") == "true"
+          send_success = os.environ.get("DISCORD_SEND_OUTCOME") == "success"
+          summary = {
+              "feed": "news-daily",
+              "generated_at_kst": os.popen("TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S KST'").read().strip(),
+              "event_name": os.environ.get("EVENT_NAME", ""),
+              "schedule": os.environ.get("EVENT_SCHEDULE", ""),
+              "dry_run": os.environ.get("DRY_RUN") == "true",
+              "force_send": os.environ.get("FORCE_SEND") == "true",
+              "delivery_lock_key": os.environ.get("DELIVERY_LOCK_KEY", ""),
+              "delivery_lock_hit": os.environ.get("DELIVERY_LOCK_HIT") == "true",
+              "candidate_count_total": candidate_count,
+              "selected_news_count": selected_news_count,
+              "fallback_reason": fallback_reason,
+              "source_errors_count": len(source_errors),
+              "discord_send_attempted": send_attempted,
+              "discord_send_success": send_success,
+              "generation_attempted": os.environ.get("SHOULD_GENERATE") == "true",
+          }
+          json_path = ops_dir / "news-daily-run-summary.json"
+          md_path = ops_dir / "news-daily-run-summary.md"
+          json_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          md_path.write_text(
+              "# News Daily Run Summary\n\n"
+              f"- event: {summary['event_name']}\n"
+              f"- schedule: {summary['schedule']}\n"
+              f"- dry_run: {summary['dry_run']}\n"
+              f"- force_send: {summary['force_send']}\n"
+              f"- delivery_lock_key: {summary['delivery_lock_key']}\n"
+              f"- delivery_lock_hit: {summary['delivery_lock_hit']}\n"
+              f"- candidate_count_total: {summary['candidate_count_total']}\n"
+              f"- selected_news_count: {summary['selected_news_count']}\n"
+              f"- source_errors_count: {summary['source_errors_count']}\n"
+              f"- discord_send_attempted: {summary['discord_send_attempted']}\n"
+              f"- discord_send_success: {summary['discord_send_success']}\n"
+              f"- fallback_reason: {summary['fallback_reason']}\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Notify ops webhook on failure
+        if: failure()
+        shell: bash
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_CAREER_FEED_OPS }}
+        run: |
+          set +e
+          if [ -z "${DISCORD_WEBHOOK_URL}" ]; then
+            echo "Ops webhook not configured; skipping failure alert."
+            exit 0
+          fi
+
+          failed_step="unknown"
+          for pair in \
+            "check-secrets:${{ steps.check-secrets.outcome }}" \
+            "collect:${{ steps.collect.outcome }}" \
+            "generate-primary:${{ steps.generate-primary.outcome }}" \
+            "generate-retry:${{ steps.generate-retry.outcome }}" \
+            "generation-status:${{ steps.generation-status.outcome }}" \
+            "validate:${{ steps.validate.outcome }}" \
+            "send-discord:${{ steps.send-discord.outcome }}" \
+            "save-lock:${{ steps.save-lock.outcome }}"
+          do
+            name="${pair%%:*}"
+            outcome="${pair#*:}"
+            if [ "${outcome}" = "failure" ]; then
+              failed_step="${name}"
+              break
+            fi
+          done
+
+          alert_file="reports/ops/news-daily-failure-alert.md"
+          {
+            echo "Career Feed workflow failed"
+            echo
+            echo "- workflow: ${GITHUB_WORKFLOW}"
+            echo "- run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            echo "- branch: ${GITHUB_REF_NAME}"
+            echo "- commit: ${GITHUB_SHA}"
+            echo "- failed step: ${failed_step}"
+            echo "- artifact: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          } > "${alert_file}"
+          python3 scripts/send-discord.py "${alert_file}" || true
 
       - name: Upload Korea dev AI news artifacts
         if: always()
@@ -167,4 +434,7 @@ jobs:
             reports/candidates/kr-ai-tech-news.json
             reports/briefs/kr-tech-news-daily.md
             reports/briefs/kr-tech-news-daily-codex-summary.md
+            reports/ops/*.json
+            reports/ops/*.md
           if-no-files-found: warn
+          retention-days: 14

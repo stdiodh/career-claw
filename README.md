@@ -17,8 +17,8 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 
 | 경로 | 실행 시간 |
 | --- | --- |
-| Daily Backend Brief | 평일 08:05 KST 시작, 09:00 KST 전송 |
-| Korea Dev/AI News Daily | 평일 08:15 KST 시작, 09:05 KST 전송 |
+| Daily Backend Brief | 평일 08:05 KST 시작, 09:00 KST 전송. 09:25 KST catch-up 실행 |
+| Korea Dev/AI News Daily | 평일 08:15 KST 시작, 09:05 KST 전송. 09:30 KST catch-up 실행 |
 | Backend Career Site Radar | 자동 실행 없음, 수동 실행 |
 | Mark PS Solved | 자동 실행 없음, 수동 실행 |
 
@@ -30,6 +30,7 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
 - report: `reports/briefs/kr-tech-daily.md`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
+- delivery lock: `career-feed-backend-sent-${KST_DATE}`
 
 후보 파일:
 
@@ -62,6 +63,7 @@ Daily OSS 후보 정책:
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-news-daily.md --type daily-news`
 - report: `reports/briefs/kr-tech-news-daily.md`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY`
+- delivery lock: `career-feed-news-sent-${KST_DATE}`
 
 후보 파일:
 
@@ -71,9 +73,33 @@ Daily OSS 후보 정책:
 News Daily 정책:
 
 - 한국 개발/AI 뉴스 3~5개를 별도 Discord 웹훅으로 전송합니다.
+- 기준을 만족하는 뉴스가 1~2개뿐이면 후보 부족 문구와 함께 그대로 전송하고, 0개면 기준을 만족하는 한국 개발/AI 뉴스가 없다는 문구만 전송합니다.
 - 원문 링크가 있으면 원문을 우선 사용하고, Naver News 링크는 fallback으로만 사용합니다.
 - 주가, 관련주, 투자 의견 중심 기사와 단순 홍보성 기사는 제외합니다.
 - 각 항목은 개발자 실무 연결과 백엔드 주니어 관점을 포함해야 합니다.
+- Naver secret이 없거나 Naver API가 실패해도 RSS/공식 페이지 후보로 JSON을 생성합니다.
+
+## Daily 운영 옵션
+
+Backend Daily와 News Daily의 `workflow_dispatch`는 같은 입력을 사용합니다.
+
+- `dry_run=true`: 후보 생성, Codex 생성, validator, artifact 업로드까지만 수행하고 Discord 전송과 delivery lock 저장은 하지 않습니다.
+- `force_send=true`: 같은 날짜의 delivery lock이 있어도 Discord 전송을 수행합니다.
+- 기본 scheduled run은 `dry_run=false`, `force_send=false`입니다.
+
+중복 전송 방지:
+
+- Discord 전송 성공 후에만 GitHub Actions cache에 delivery lock marker를 저장합니다.
+- 같은 날짜 lock이 있고 `force_send=false`이면 Discord 전송을 skip합니다.
+- `dry_run=true` 또는 Discord 전송 실패 시 lock을 저장하지 않습니다.
+
+GitHub Actions scheduled workflow는 Actions 부하에 따라 지연되거나 실행이 누락될 수 있습니다. Backend Daily는 09:25 KST, News Daily는 09:30 KST에 catch-up schedule을 한 번 더 두고, delivery lock으로 중복 전송을 막습니다.
+
+운영 요약:
+
+- Backend Daily: `reports/ops/backend-daily-run-summary.json`, `reports/ops/backend-daily-run-summary.md`
+- News Daily: `reports/ops/news-daily-run-summary.json`, `reports/ops/news-daily-run-summary.md`
+- 실패 알림 선택 secret: `DISCORD_WEBHOOK_CAREER_FEED_OPS`
 
 ## Backend Career Site Radar
 
@@ -141,6 +167,7 @@ python3 scripts/update-ps-progress.py --status
 | Mark PS Solved | 없음 |
 
 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`은 Korea Dev/AI News Daily 품질 향상용 선택 secret입니다. Backend Daily와 Career Site Radar에서는 사용하지 않습니다.
+`DISCORD_WEBHOOK_CAREER_FEED_OPS`는 workflow 실패 알림용 선택 secret입니다. 없으면 실패 알림만 skip합니다.
 
 Secret 값, API Key, Webhook URL은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 
@@ -148,17 +175,18 @@ Secret 값, API Key, Webhook URL은 코드, 문서 예시, 커밋 로그에 저�
 
 1. `Settings > Secrets and variables > Actions`에 필요한 secrets를 등록합니다.
 2. `Settings > Actions > General`에서 Actions 실행이 허용되어 있는지 확인합니다.
-3. Daily와 Mark PS Solved에서 progress commit이 필요하면 `Workflow permissions`를 `Read and write permissions`로 설정합니다.
-4. `Actions > Daily Korea Tech Brief`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
-5. `Actions > Daily Korea Dev AI News`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
-6. `Actions > Backend Career Site Radar`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
-7. `Actions > Mark PS Solved`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
-8. Backend Daily, News Daily, Career Site Radar를 각각 `Run workflow`로 1회 수동 실행해 Discord 도착 여부를 확인합니다.
-9. 이후 Backend Daily는 평일 09:00 KST 전후, News Daily는 평일 09:05 KST 전후에 도착합니다.
+3. `Actions > Daily Korea Tech Brief`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
+4. `Actions > Daily Korea Dev AI News`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
+5. `Actions > Backend Career Site Radar`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
+6. `Actions > Mark PS Solved`에서 `Enable workflow`가 보이면 눌러 활성화합니다.
+7. Backend Daily와 News Daily를 먼저 `dry_run=true`, `force_send=false`로 실행해 artifact와 validator를 확인합니다.
+8. 실제 전송 검증은 `dry_run=false`, `force_send=true`로 실행합니다.
+9. 같은 날 다시 `dry_run=false`, `force_send=false`로 실행해 delivery lock skip을 확인합니다.
+10. 이후 Backend Daily는 평일 09:00 KST 전후, News Daily는 평일 09:05 KST 전후에 도착합니다.
 
 GitHub Actions scheduled workflow는 default branch의 최신 workflow 파일을 기준으로 실행됩니다.
 GitHub Actions 부하가 높은 시간대에는 scheduled workflow가 지연될 수 있고, 매우 높은 부하에서는 일부 queued job이 drop될 수 있습니다.
-그래서 Backend Daily와 News Daily는 00분/30분을 피하고 각각 08:05, 08:15 KST에 시작합니다.
+그래서 Backend Daily와 News Daily는 00분/30분을 피하고 각각 08:05, 08:15 KST에 시작하며, catch-up schedule과 delivery lock으로 지연/누락과 중복 전송 위험을 완화합니다.
 public repository는 장기간 활동이 없으면 scheduled workflow가 자동 비활성화될 수 있으므로 Actions 탭에서 workflow가 enabled 상태인지 확인합니다.
 
 ## 로컬 검증
@@ -172,6 +200,8 @@ python3 scripts/render-weekly-career-site-radar.py
 python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 ./scripts/validate.sh
 git diff --check
@@ -202,7 +232,8 @@ repository-root/
 │  └─ ps-progress.json
 ├─ reports/
 │  ├─ briefs/
-│  └─ candidates/
+│  ├─ candidates/
+│  └─ ops/
 ├─ scripts/
 │  ├─ check-workflow-schedules.py
 │  ├─ collect-kr-feeds.py
@@ -215,6 +246,8 @@ repository-root/
 └─ tests/fixtures/
    ├─ kr-backend-career-weekly-valid.md
    ├─ kr-tech-daily-valid.md
+   ├─ kr-tech-news-daily-valid-empty.md
+   ├─ kr-tech-news-daily-valid-sparse.md
    └─ kr-tech-news-daily-valid.md
 ```
 

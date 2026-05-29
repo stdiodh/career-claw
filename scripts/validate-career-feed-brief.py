@@ -4,9 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import difflib
 import re
 import sys
 import urllib.parse
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -25,8 +27,9 @@ DAILY_SECTIONS = [
     "오픈소스 기여 후보",
     "주니어 백엔드 실무지식",
 ]
-NEWS_DAILY_SECTIONS_MIN = 3
+NEWS_DAILY_DEFAULT_MIN = 3
 NEWS_DAILY_SECTIONS_MAX = 5
+NEWS_DAILY_SPARSE_MAX = NEWS_DAILY_DEFAULT_MIN - 1
 WEEKLY_SECTIONS = [
     "공식 채용 사이트",
     "채용·인턴 플랫폼",
@@ -78,6 +81,7 @@ NO_ITEM_PHRASES = [
     "오늘은 긴급 체크 항목 없음",
     "오늘은 바로 추천할 안전한 issue는 없습니다.",
     "오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다.",
+    "오늘은 기준을 만족하는 한국 개발/AI 뉴스가 없습니다.",
     "이번 주 마감 임박 항목 없음",
     "이번 주 추천 항목 없음",
     "이번 주 기준을 만족하는 백엔드 커리어 기회가 없습니다.",
@@ -148,6 +152,10 @@ DAILY_PRACTICAL_FIELDS = [
     "검색 키워드",
 ]
 DAILY_NEWS_EMPTY_STATE = "오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다."
+NEWS_DAILY_EMPTY_STATES = [
+    "오늘은 기준을 만족하는 한국 개발/AI 뉴스가 없습니다.",
+    "오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다.",
+]
 DAILY_OSS_EMPTY_STATE = "오늘은 바로 추천할 안전한 issue는 없습니다."
 DAILY_OSS_PREP_FIELDS = [
     "저장소",
@@ -179,7 +187,16 @@ NEWS_DAILY_FORBIDDEN_PATTERNS = [
     r"투자의견",
     r"급등",
     r"테마주",
+    r"수혜주",
 ]
+NEWS_DAILY_OFFICIAL_TECH_BLOG_DOMAINS = {
+    "d2.naver.com",
+    "tech.kakao.com",
+    "techblog.woowahan.com",
+    "toss.tech",
+    "engineering.linecorp.com",
+    "developers.naver.com",
+}
 WEEKLY_REQUIRED_FIELDS = [
     "확인 유형",
     "바로가기",
@@ -573,7 +590,53 @@ def validation_url_key(url: str) -> str:
 
 
 def normalize_validation_title(title: str) -> str:
-    return re.sub(r"\s+", " ", title.strip()).lower()
+    cleaned = re.sub(r"\[[^\]]+\]|\([^)]*\)", " ", title)
+    cleaned = re.sub(
+        r"\s*[-–—|:]\s*(전자신문|ZDNet Korea|지디넷코리아|블로터|"
+        r"AI타임스|디지털데일리|ITWorld|CIO Korea)\s*$",
+        " ",
+        cleaned,
+        flags=re.IGNORECASE,
+    )
+    cleaned = re.sub(r"[^\w가-힣]+", " ", cleaned, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", cleaned.strip()).lower()
+
+
+def news_daily_has_sparse_phrase(content: str, item_count: int) -> bool:
+    count_pattern = re.escape(str(item_count))
+    patterns = [
+        rf"기준을\s*만족하는\s*뉴스가\s*{count_pattern}\s*개",
+        rf"기준\s*만족\s*뉴스\s*수\s*[:：]?\s*{count_pattern}\s*개",
+        r"기준을\s*만족하는\s*뉴스가\s*3\s*개\s*미만",
+        r"후보가\s*3\s*개\s*미만",
+        r"기준을\s*만족하는\s*후보가\s*3\s*개\s*미만",
+    ]
+    return any(re.search(pattern, content) for pattern in patterns)
+
+
+def news_daily_has_empty_phrase(content: str) -> bool:
+    if any(phrase in content for phrase in NEWS_DAILY_EMPTY_STATES):
+        return True
+    return bool(re.search(r"기준을\s*만족하는.*(?:한국\s*)?(?:개발/AI|개발\s*/\s*AI).*뉴스.*없", content))
+
+
+def keyword_count(value: str) -> int:
+    comma_parts = [
+        part.strip()
+        for part in re.split(r"[,;/|·]+", value)
+        if part.strip()
+    ]
+    if len(comma_parts) >= 2:
+        return len(set(comma_parts))
+    tokens = re.findall(r"[A-Za-z0-9가-힣+#.]+", value)
+    return len(set(tokens))
+
+
+def is_official_tech_blog_domain(domain: str) -> bool:
+    return any(
+        domain == official or domain.endswith(f".{official}")
+        for official in NEWS_DAILY_OFFICIAL_TECH_BLOG_DOMAINS
+    )
 
 
 def is_allowed_url_prefix(url: str, allowed_prefixes: list[str]) -> bool:
@@ -848,7 +911,6 @@ def validate_daily_news(content: str) -> None:
         fail("Missing Korea Dev/AI News title.")
     if "오늘의 흐름:" not in content:
         fail("Daily news brief must include 오늘의 흐름 field.")
-    validate_common(content, min_links=NEWS_DAILY_SECTIONS_MIN)
 
     sections = extract_sections(content)
     news_sections = [
@@ -856,20 +918,34 @@ def validate_daily_news(content: str) -> None:
         for section in sections
         if re.match(r"^\d+\.\s+", section.heading)
     ]
-    if not (NEWS_DAILY_SECTIONS_MIN <= len(news_sections) <= NEWS_DAILY_SECTIONS_MAX):
-        fail(
-            "Daily news brief must include "
-            f"{NEWS_DAILY_SECTIONS_MIN}-{NEWS_DAILY_SECTIONS_MAX} news items."
-        )
+    news_count = len(news_sections)
+    validate_common(content, min_links=news_count)
+    if news_count > NEWS_DAILY_SECTIONS_MAX:
+        fail(f"Daily news brief must not include more than {NEWS_DAILY_SECTIONS_MAX} news items.")
+    if NEWS_DAILY_DEFAULT_MIN <= news_count <= NEWS_DAILY_SECTIONS_MAX:
+        pass
+    elif 1 <= news_count <= NEWS_DAILY_SPARSE_MAX:
+        if not news_daily_has_sparse_phrase(content, news_count):
+            fail("Sparse daily news brief must state that fewer than 3 items met the criteria.")
+    elif news_count == 0:
+        if not news_daily_has_empty_phrase(content):
+            fail("Empty daily news brief must include the required no-qualified-news phrase.")
+        return
+    else:
+        fail("Daily news brief has an invalid number of news items.")
 
-    seen_titles: set[str] = set()
+    seen_titles: list[str] = []
     seen_urls: set[str] = set()
+    domain_counts: Counter[str] = Counter()
     for section in news_sections:
         title = re.sub(r"^\d+\.\s+", "", section.heading).strip()
         title_key = normalize_validation_title(title)
-        if title_key in seen_titles:
+        if title_key in seen_titles or any(
+            difflib.SequenceMatcher(None, title_key, seen).ratio() >= 0.9
+            for seen in seen_titles
+        ):
             fail(f"Duplicate daily news title found: {title}")
-        seen_titles.add(title_key)
+        seen_titles.append(title_key)
 
         core = bullet_field_value(section.body, "핵심")
         stock_text = "\n".join([title, core])
@@ -885,6 +961,26 @@ def validate_daily_news(content: str) -> None:
         if missing:
             fail(f"Daily news item is missing field(s): {title} ({', '.join(missing)})")
 
+        empty_fields = [
+            field
+            for field in NEWS_DAILY_FIELDS
+            if not bullet_field_value(section.body, field)
+        ]
+        if empty_fields:
+            fail(f"Daily news item has empty field(s): {title} ({', '.join(empty_fields)})")
+
+        core_key = normalize_validation_title(core)
+        if core_key == title_key or difflib.SequenceMatcher(None, core_key, title_key).ratio() >= 0.82:
+            fail(f"Daily news 핵심 must not just repeat the title: {title}")
+
+        viewpoint = bullet_field_value(section.body, "백엔드 주니어 관점")
+        if not viewpoint.strip():
+            fail(f"Daily news 백엔드 주니어 관점 is empty: {title}")
+
+        keywords = bullet_field_value(section.body, "더 볼 키워드")
+        if keyword_count(keywords) < 2:
+            fail(f"Daily news 더 볼 키워드 must include at least two keywords: {title}")
+
         link_value = bullet_field_value(section.body, "링크")
         if not MARKDOWN_LINK_RE.search(link_value):
             fail(f"Daily news item must include a Markdown link in 링크 field: {title}")
@@ -897,6 +993,18 @@ def validate_daily_news(content: str) -> None:
             if url_key in seen_urls:
                 fail(f"Duplicate daily news URL found: {url}")
             seen_urls.add(url_key)
+            domain_counts[validation_domain(url)] += 1
+
+    repeated_domains = [
+        (domain, count)
+        for domain, count in domain_counts.items()
+        if domain and count >= 3
+    ]
+    for domain, count in repeated_domains:
+        if is_official_tech_blog_domain(domain):
+            warn(f"Daily news uses the same official tech blog domain {count} times: {domain}")
+            continue
+        fail(f"Daily news repeats the same domain {count} times: {domain}")
 
 
 def validate_daily_practical_section(sections: list[Section]) -> None:
