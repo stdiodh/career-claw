@@ -2,7 +2,7 @@ name: Daily Korea Tech Brief
 
 on:
   schedule:
-    - cron: "47 8 * * 1-5"
+    - cron: "5 8 * * 1-5"
       timezone: "Asia/Seoul"
   workflow_dispatch:
 
@@ -140,6 +140,24 @@ jobs:
         run: |
           set -euo pipefail
           python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type daily-tech
+
+      - name: Wait until 09:00 KST before Discord send
+        if: github.event_name == 'schedule'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          now_epoch="$(TZ=Asia/Seoul date +%s)"
+          today_kst="$(TZ=Asia/Seoul date '+%Y-%m-%d')"
+          target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:00:00" +%s)"
+
+          if [ "${now_epoch}" -lt "${target_epoch}" ]; then
+            wait_seconds=$((target_epoch - now_epoch))
+            echo "Waiting ${wait_seconds}s until 09:00 KST before Discord send."
+            sleep "${wait_seconds}"
+          else
+            echo "Already past 09:00 KST. Sending immediately."
+          fi
 
       - name: Send Korea tech daily brief to Discord
         shell: bash

@@ -40,8 +40,11 @@ echo "==> Checking workflow versions and schedules"
 grep -q 'uses: actions/checkout@v5' .github/workflows/kr-tech-daily.yml
 grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-tech-daily.yml
 grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-tech-daily.yml
-grep -q 'cron: "47 8 \* \* 1-5"' .github/workflows/kr-tech-daily.yml
+grep -q 'cron: "5 8 \* \* 1-5"' .github/workflows/kr-tech-daily.yml
 grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-daily.yml
+grep -q 'Wait until 09:00 KST before Discord send' .github/workflows/kr-tech-daily.yml
+grep -q "if: github.event_name == 'schedule'" .github/workflows/kr-tech-daily.yml
+grep -q 'target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:00:00" +%s)"' .github/workflows/kr-tech-daily.yml
 
 grep -q 'uses: actions/checkout@v5' .github/workflows/kr-backend-career-weekly.yml
 grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-backend-career-weekly.yml

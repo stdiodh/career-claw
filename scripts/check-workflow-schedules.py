@@ -65,6 +65,15 @@ def check_scheduled_workflow(
     require_contains(text, "EVENT_NAME: ${{ github.event_name }}", path)
     require_contains(text, "EVENT_SCHEDULE: ${{ github.event.schedule }}", path)
     require_contains(text, "kst_now=$(TZ=Asia/Seoul date", path)
+    require_contains(text, "Wait until 09:00 KST before Discord send", path)
+    require_contains(text, "if: github.event_name == 'schedule'", path)
+    require_contains(text, 'now_epoch="$(TZ=Asia/Seoul date +%s)"', path)
+    require_contains(
+        text,
+        'target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:00:00" +%s)"',
+        path,
+    )
+    require_contains(text, 'sleep "${wait_seconds}"', path)
     require_contains(text, "concurrency:", path)
     require_contains(text, f"group: {concurrency_group}", path)
     require_contains(text, "cancel-in-progress: false", path)
@@ -118,7 +127,7 @@ def main() -> int:
         check_scheduled_workflow(
             DAILY_WORKFLOW,
             label="Daily Backend Brief",
-            cron="47 8 * * 1-5",
+            cron="5 8 * * 1-5",
             secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
             concurrency_group="career-feed-kr-tech-daily-${{ github.ref }}",
         )
