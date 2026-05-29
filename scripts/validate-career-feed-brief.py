@@ -338,10 +338,13 @@ PRACTICAL_ALLOWED_URL_PREFIXES = [
     "d2.naver.com",
     "engineering.linecorp.com",
 ]
-DAILY_LEARNING_BLOCKED_DOMAINS = {
-    "naver.com",
-    "news.naver.com",
+DAILY_LEARNING_BLOCKED_DOMAINS = [
     "n.news.naver.com",
+    "news.naver.com",
+    "m.search.naver.com",
+    "search.naver.com",
+    "m.blog.naver.com",
+    "blog.naver.com",
     "etnews.com",
     "zdnet.co.kr",
     "ddaily.co.kr",
@@ -355,7 +358,7 @@ DAILY_LEARNING_BLOCKED_DOMAINS = {
     "donga.com",
     "yna.co.kr",
     "newsis.com",
-}
+]
 
 LINK_RE = re.compile(r"https?://[^\s)>\\\]]+")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(https?://[^)]+\)")

@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "source": "manual-curated-spring-github-issues",
+  "source": "manual-curated-backend-jvm-github-issues",
   "policy": {
     "platform": "GitHub Issues",
-    "ecosystem": "Spring",
+    "ecosystem": "Spring/JVM/Kotlin backend",
     "no_openjdk_jbs_collection": true,
     "no_issue_mutation": true
   },
@@ -16,7 +16,14 @@
     "spring-projects/spring-data-commons",
     "spring-projects/spring-ai",
     "spring-projects/spring-ai-examples",
-    "spring-projects/spring-petclinic"
+    "spring-projects/spring-grpc",
+    "spring-projects/spring-modulith",
+    "spring-projects/spring-petclinic",
+    "micrometer-metrics/micrometer",
+    "open-telemetry/opentelemetry-java-instrumentation",
+    "Kotlin/kotlinx.coroutines",
+    "Kotlin/kotlinx.serialization",
+    "JetBrains/Exposed"
   ],
   "trusted_maintainers": {
     "spring-projects/spring-data-commons": [
@@ -30,7 +37,14 @@
     "spring-projects/spring-data-relational": [],
     "spring-projects/spring-ai": [],
     "spring-projects/spring-ai-examples": [],
-    "spring-projects/spring-petclinic": []
+    "spring-projects/spring-grpc": [],
+    "spring-projects/spring-modulith": [],
+    "spring-projects/spring-petclinic": [],
+    "micrometer-metrics/micrometer": [],
+    "open-telemetry/opentelemetry-java-instrumentation": [],
+    "Kotlin/kotlinx.coroutines": [],
+    "Kotlin/kotlinx.serialization": [],
+    "JetBrains/Exposed": []
   },
   "difficulty_model": {
     "p5_like": {

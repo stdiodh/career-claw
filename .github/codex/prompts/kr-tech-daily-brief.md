@@ -159,7 +159,6 @@ safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아
 - `owasp.org`
 - `docs.spring.io`
 - `docs.oracle.com`
-- `kotlinlang.org/docs`
 - `www.postgresql.org/docs`
 - `dev.mysql.com/doc`
 - `redis.io/docs`
@@ -284,6 +283,9 @@ safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아
 ## 1번 Spring Boot/JVM 작성 규칙
 
 - 1번은 반드시 학습 주제여야 하며 뉴스처럼 쓰지 않는다.
+- 후보 JSON의 `title`이 뉴스 제목처럼 보이면 그대로 쓰지 말고 Spring/JVM 학습 주제로 변환한다.
+- 학습 주제는 `기능/개념 + 30분 확인 행동` 형태여야 한다.
+- 레퍼런스는 Spring/JVM 공식 문서, 표준 문서, 릴리즈 노트 중심으로 고른다.
 - 좋은 주제는 30분 안에 확인 가능한 완료 기준이 있어야 한다.
 - Spring Boot 4 HTTP Service Clients, Spring Framework 7 API Versioning, Actuator + Micrometer p95 latency, OpenTelemetry Starter와 Micrometer 역할 차이, Kotlin 2.2 + JSpecify null-safety, Spring AI MCP tool calling, Spring gRPC streaming, Spring Modulith boundary test, JFR profiling, virtual threads 비교처럼 좁은 주제를 우선한다.
 - AI 시대 백엔드 개발자가 알아야 할 것, Spring Boot 트렌드 알아보기, MSA 관측성 개념 확인하기, JVM 성능 최적화 공부하기처럼 너무 넓고 완료 기준이 없는 주제는 제외한다.
@@ -307,8 +309,11 @@ safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아
 - 5번은 책 목차가 아니라 현업에서 겪는 문제로 시작한다.
 - 제목은 반드시 실무 상황, 실패 모드, 30분 실습으로 좁힌다.
 - `backend-practical-knowledge.json`의 `today.situation`, `today.failure_mode`, `today.practice_steps`, `today.official_refs`를 우선 사용한다.
+- `backend-practical-knowledge.json`의 `today.title`이 넓으면 `situation`과 `failure_mode`를 이용해 더 좁힌 제목으로 출력한다.
 - `practice_steps`가 있으면 30분 실습을 단일 추상 문장이 아니라 순서가 있는 확인 행동으로 요약한다.
-- `official_refs`는 레퍼런스 링크로 사용하고, 허용 도메인 밖 링크를 새로 넣지 않는다.
+- `official_refs`를 우선 레퍼런스 링크로 사용하고, 허용 도메인 밖 링크를 새로 넣지 않는다.
+- 네이버 뉴스/검색/블로그, 국내 언론 기사, 포털 검색 결과는 5번 레퍼런스로 쓰지 않는다.
+- 단, `d2.naver.com`은 실무 기술 블로그로 허용한다.
 - WebSocket 연결 증가 시 세션과 브로커 확인, PUT/PATCH/POST 오용과 재시도 위험, p95는 괜찮은데 p99가 튀는 상황 분리, JPA N+1을 로그와 쿼리 수로 확인, Redis cache hit rate가 높아도 장애가 나는 이유, SDK timeout/retry/error type 문서화, rate limit을 단순 IP 기준으로 잡을 때의 문제, transaction isolation을 모를 때 결제/재고 API 버그처럼 실무 문제를 우선한다.
 - 처리량과 응답 시간, REST API란, WebSocket 개념, 성능 최적화처럼 너무 넓은 제목은 쓰지 않는다.
 

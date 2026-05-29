@@ -33,7 +33,7 @@
     },
     {
       "id": "performance-throughput-latency",
-      "title": "처리량과 응답 시간",
+      "title": "평균은 괜찮은데 p99가 튀는 API를 처리량과 응답 시간으로 분리하기",
       "summary": "서비스 성능을 볼 때 요청을 얼마나 많이 처리하는지와 한 요청이 얼마나 빨리 끝나는지를 구분한다.",
       "core_concept": "처리량은 단위 시간당 처리 요청 수이고, 응답 시간은 한 요청이 끝나는 데 걸리는 시간이다.",
       "practice_30m": "간단한 API를 기준으로 평균 응답 시간, p95 응답 시간, 초당 요청 수를 표로 정리한다.",
@@ -57,7 +57,7 @@
     },
     {
       "id": "performance-server-tuning-basics",
-      "title": "서버 성능 개선 기초",
+      "title": "느린 API 병목을 로그, DB 시간, 외부 호출 시간으로 분리하기",
       "summary": "성능 개선은 병목을 추측하기보다 지표와 로그로 좁혀서 확인하는 과정이다.",
       "core_concept": "CPU, 메모리, IO, DB, 외부 API 중 어디에서 시간이 쓰이는지 먼저 나눠 본다.",
       "practice_30m": "느린 요청 하나를 정하고 애플리케이션 로그, DB 시간, 외부 호출 시간을 분리해 적는다.",
@@ -81,7 +81,7 @@
     },
     {
       "id": "db-core-for-performance",
-      "title": "성능에 핵심인 DB",
+      "title": "조회 API가 느려질 때 테이블과 조건을 요청 흐름으로 그리기",
       "summary": "대부분의 백엔드 성능 문제는 데이터 접근 방식과 쿼리 비용에서 시작된다.",
       "core_concept": "DB는 저장소이면서 동시에 정렬, 필터링, 조인 비용을 감당하는 실행 엔진이다.",
       "practice_30m": "자주 쓰는 조회 API 하나를 골라 어떤 테이블과 조건을 사용하는지 요청 흐름으로 그린다.",
@@ -129,7 +129,7 @@
     },
     {
       "id": "db-query-performance-improvements",
-      "title": "몇 가지 조회 성능 개선 방법",
+      "title": "목록 조회가 느릴 때 SELECT, 정렬, 페이지네이션 비용 점검하기",
       "summary": "조회 성능은 필요한 데이터만 가져오고, 반복 쿼리를 줄이고, 정렬 비용을 통제하면서 개선한다.",
       "core_concept": "N+1, 불필요한 컬럼 조회, 큰 offset, 비효율 정렬은 흔한 조회 성능 저하 원인이다.",
       "practice_30m": "목록 조회 쿼리 하나에서 SELECT 컬럼, WHERE 조건, 정렬, 페이지네이션 방식을 점검한다.",
@@ -153,7 +153,7 @@
     },
     {
       "id": "db-performance-cautions",
-      "title": "알아두면 좋을 몇 가지 주의 사항",
+      "title": "인덱스 추가가 쓰기 비용과 잠금을 늘리는지 확인하기",
       "summary": "DB 최적화는 빠르게 만드는 것뿐 아니라 쓰기 비용, 잠금, 운영 변경 위험까지 함께 본다.",
       "core_concept": "인덱스 추가와 쿼리 변경은 읽기 성능, 쓰기 비용, 배포 위험 사이의 균형이다.",
       "practice_30m": "기존 인덱스 1개를 골라 어떤 쿼리를 위해 존재하는지와 쓰기 비용 가능성을 적는다.",
@@ -177,7 +177,7 @@
     },
     {
       "id": "db-failure-transaction-considerations",
-      "title": "실패와 트랜잭션 고려하기",
+      "title": "외부 호출 실패 후 DB 상태를 트랜잭션 경계로 확인하기",
       "summary": "트랜잭션은 성공 경로뿐 아니라 중간 실패와 재시도 때 데이터가 어떻게 남는지까지 포함한다.",
       "core_concept": "트랜잭션 경계는 함께 성공하거나 함께 실패해야 하는 데이터 변경 범위를 정한다.",
       "practice_30m": "쓰기 API 하나의 트랜잭션 경계를 표시하고 외부 호출 실패 시 DB 상태를 적는다.",
@@ -201,7 +201,7 @@
     },
     {
       "id": "external-integration-not-our-fault",
-      "title": "우리는 문제가 없는데",
+      "title": "외부 API 장애가 내부 장애처럼 보일 때 timeout과 오류 로그 분리하기",
       "summary": "외부 연동 장애는 우리 코드가 정상이어도 사용자 요청 실패로 이어질 수 있다.",
       "core_concept": "외부 시스템 의존성은 latency, error rate, timeout, quota를 별도로 관찰해야 한다.",
       "practice_30m": "외부 API를 호출하는 코드 1곳을 찾아 timeout, 재시도, 오류 로그 위치를 확인한다.",
@@ -225,7 +225,7 @@
     },
     {
       "id": "external-integration-timeout",
-      "title": "타임아웃",
+      "title": "외부 API가 멈췄을 때 connect/read timeout 기본값 확인하기",
       "summary": "타임아웃은 외부 응답을 무한정 기다리지 않도록 요청의 최대 대기 시간을 정하는 장치다.",
       "core_concept": "connect timeout과 read timeout은 실패하는 구간이 다르므로 각각 설정하고 관찰해야 한다.",
       "practice_30m": "HTTP client 설정에서 connect/read timeout 값을 찾고 없으면 기본값을 문서로 확인한다.",
@@ -249,7 +249,7 @@
     },
     {
       "id": "external-integration-retry",
-      "title": "재시도",
+      "title": "외부 호출 재시도가 장애를 키우는 HTTP status 기준 나누기",
       "summary": "재시도는 일시적 실패를 흡수할 수 있지만 중복 처리와 장애 증폭 위험을 만든다.",
       "core_concept": "재시도는 idempotency, backoff, 최대 횟수, 재시도 가능한 오류를 함께 정해야 한다.",
       "practice_30m": "외부 호출 실패 시 재시도해도 되는 HTTP status와 안 되는 status를 나눠 적는다.",
@@ -273,7 +273,7 @@
     },
     {
       "id": "external-integration-concurrency-limit",
-      "title": "동시 요청 제한",
+      "title": "외부 API rate limit 앞에서 동시 요청 제한 지점 찾기",
       "summary": "외부 서비스가 감당할 수 있는 요청 수를 넘기면 우리 서비스도 함께 불안정해진다.",
       "core_concept": "동시 요청 제한은 외부 호출을 일정 수 이하로 묶어 실패 확산과 rate limit을 줄인다.",
       "practice_30m": "외부 API 호출 경로에서 초당 요청 수나 동시 요청 수를 제한할 지점을 찾는다.",
@@ -297,7 +297,7 @@
     },
     {
       "id": "external-integration-circuit-breaker",
-      "title": "서킷 브레이커",
+      "title": "외부 API 오류율 급증 시 fallback 응답 정하기",
       "summary": "서킷 브레이커는 실패가 계속되는 외부 호출을 잠시 차단해 전체 장애 확산을 막는다.",
       "core_concept": "실패율이 임계치를 넘으면 회로를 열고, 일정 시간이 지나면 일부 요청으로 회복 여부를 확인한다.",
       "practice_30m": "외부 API 오류율이 높아졌을 때 fallback으로 보여줄 응답이나 처리 방식을 적는다.",
@@ -345,7 +345,7 @@
     },
     {
       "id": "external-integration-http-connection-pool",
-      "title": "HTTP 커넥션 풀",
+      "title": "HTTP connection pool 고갈 시 acquire timeout과 기본값 확인하기",
       "summary": "HTTP 커넥션 풀은 외부 요청마다 연결을 새로 만들지 않고 재사용해 자원 비용을 줄인다.",
       "core_concept": "pool size, acquire timeout, idle timeout 설정은 외부 호출량과 지연 시간에 맞춰야 한다.",
       "practice_30m": "사용 중인 HTTP client의 connection pool 설정과 기본값을 확인해 메모한다.",
@@ -369,7 +369,7 @@
     },
     {
       "id": "external-integration-redundancy",
-      "title": "연동 서비스 이중화",
+      "title": "중요 외부 연동이 실패했을 때 대체 응답 가능성 확인하기",
       "summary": "중요한 외부 연동은 단일 장애점이 되지 않도록 대체 경로나 degrade 전략을 검토한다.",
       "core_concept": "이중화는 active-active, active-standby, fallback 데이터 등 목표에 따라 방식이 달라진다.",
       "practice_30m": "현재 서비스에서 외부 연동 하나가 실패했을 때 대체 응답이 가능한지 적는다.",
@@ -441,7 +441,7 @@
     },
     {
       "id": "async-messaging",
-      "title": "메시징",
+      "title": "메시지 중복 소비가 생기는 작업에서 payload와 재처리 기준 정하기",
       "summary": "메시징은 생산자와 소비자를 분리해 순간 트래픽과 장애를 완충한다.",
       "core_concept": "메시지 큐는 적재, 재처리, 순서, 중복 처리, dead letter 전략을 함께 설계해야 한다.",
       "practice_30m": "메시지 기반으로 바꿀 수 있는 작업 하나를 정하고 payload에 필요한 필드를 적는다.",
@@ -777,7 +777,7 @@
     },
     {
       "id": "security-importance",
-      "title": "중요한 보안",
+      "title": "보호되지 않은 API가 민감 데이터를 노출하는지 접근 권한 점검하기",
       "summary": "보안은 기능 완성 뒤에 붙이는 작업이 아니라 요구사항과 운영의 기본 조건이다.",
       "core_concept": "인증, 인가, 암호화, 로그, 접근 제어는 사용자 데이터와 서비스 신뢰를 지키는 기본 요소다.",
       "practice_30m": "현재 API 하나를 골라 보호해야 할 데이터와 접근 가능한 사용자를 적는다.",
@@ -801,7 +801,7 @@
     },
     {
       "id": "security-authentication-authorization",
-      "title": "인증과 인가",
+      "title": "로그인만 확인하고 리소스 권한을 놓치는 API 분리하기",
       "summary": "인증은 누구인지 확인하는 과정이고, 인가는 무엇을 할 수 있는지 판단하는 과정이다.",
       "core_concept": "로그인 성공 여부와 리소스 접근 권한 검사는 서로 다른 책임이다.",
       "practice_30m": "API 3개를 골라 인증 필요 여부와 필요한 권한을 표로 정리한다.",
@@ -825,7 +825,7 @@
     },
     {
       "id": "security-data-encryption",
-      "title": "데이터 암호화",
+      "title": "민감 필드를 마스킹만 할지 암호화할지 나누기",
       "summary": "민감 데이터는 저장과 전송 과정에서 노출되지 않도록 암호화 전략을 세워야 한다.",
       "core_concept": "전송 구간은 TLS, 저장 데이터는 암호화와 키 관리가 핵심이다.",
       "practice_30m": "서비스 데이터 중 암호화가 필요한 필드와 마스킹만 필요한 필드를 나눠 적는다.",
@@ -969,7 +969,7 @@
     },
     {
       "id": "security-secure-coding",
-      "title": "시큐어 코딩",
+      "title": "사용자 입력이 쿼리나 파일 경로로 들어가는 API 검증하기",
       "summary": "시큐어 코딩은 입력 검증, 출력 인코딩, 안전한 쿼리 작성 같은 습관으로 취약점을 줄인다.",
       "core_concept": "SQL injection, XSS, path traversal 같은 취약점은 신뢰할 수 없는 입력에서 시작된다.",
       "practice_30m": "입력값을 받는 API 하나에서 validation, encoding, parameter binding 여부를 확인한다.",
@@ -1017,7 +1017,7 @@
     },
     {
       "id": "server-basics-developer-and-server",
-      "title": "개발자와 서버",
+      "title": "서비스가 안 뜰 때 프로세스와 포트부터 확인하기",
       "summary": "백엔드 개발자는 코드뿐 아니라 코드가 실행되는 서버 환경도 이해해야 한다.",
       "core_concept": "프로세스, 포트, 로그, 디스크, 권한은 배포와 장애 대응의 기본 단위다.",
       "practice_30m": "로컬 또는 테스트 서버에서 애플리케이션 프로세스와 사용 포트를 확인한다.",
@@ -1065,7 +1065,7 @@
     },
     {
       "id": "server-check-process",
-      "title": "프로세스 확인하기",
+      "title": "배포 후 포트는 열렸는데 PID가 바뀐 상황 확인하기",
       "summary": "프로세스 확인은 서비스가 실제로 실행 중인지와 자원을 얼마나 쓰는지 보는 첫 단계다.",
       "core_concept": "pid, command, CPU, memory, start time을 보면 실행 상태와 이상 징후를 빠르게 파악할 수 있다.",
       "practice_30m": "ps 또는 top으로 실행 중인 서버 프로세스를 찾고 pid와 메모리 사용량을 기록한다.",
@@ -1089,7 +1089,7 @@
     },
     {
       "id": "server-background-process",
-      "title": "백그라운드 프로세스",
+      "title": "터미널 종료 후 서비스가 죽는 상황에서 실행 방식 확인하기",
       "summary": "백그라운드 프로세스는 터미널 세션과 분리되어 계속 실행되어야 하는 작업에 사용한다.",
       "core_concept": "systemd, nohup, supervisor 같은 방식은 실행 유지와 로그 관리 방식이 다르다.",
       "practice_30m": "서비스 실행 방식이 systemd인지 컨테이너인지 확인하고 재시작 명령을 기록한다.",
@@ -1161,7 +1161,7 @@
     },
     {
       "id": "server-time-sync",
-      "title": "시간 맞추기",
+      "title": "서버 시간이 어긋나 토큰과 로그가 틀어지는 상황 확인하기",
       "summary": "서버 시간이 어긋나면 로그 분석, 토큰 검증, 스케줄링, 인증서 검증에 문제가 생긴다.",
       "core_concept": "NTP나 chrony로 시간 동기화를 유지하고 timezone 표기를 명확히 해야 한다.",
       "practice_30m": "서버 timezone과 현재 시간을 확인하고 로그 timestamp와 비교한다.",
@@ -1329,7 +1329,7 @@
     },
     {
       "id": "network-nat",
-      "title": "NAT",
+      "title": "사설망 DB를 외부에서 직접 붙이려 할 때 NAT 경로 확인하기",
       "summary": "NAT는 사설 IP와 공인 IP 사이의 주소 변환으로 내부 네트워크가 외부와 통신하게 한다.",
       "core_concept": "NAT 환경에서는 외부에서 내부 서비스로 직접 접근하려면 port forwarding이나 load balancer가 필요하다.",
       "practice_30m": "내 로컬 IP와 외부에서 보이는 공인 IP가 다른지 확인한다.",
@@ -1353,7 +1353,7 @@
     },
     {
       "id": "network-vpn",
-      "title": "VPN",
+      "title": "VPN에서만 되는 내부 API의 IP 대역과 DNS 차이 확인하기",
       "summary": "VPN은 외부에서 내부망 자원에 안전하게 접근하기 위한 암호화된 네트워크 경로다.",
       "core_concept": "VPN 접속 여부에 따라 접근 가능한 IP 대역과 DNS 해석 결과가 달라질 수 있다.",
       "practice_30m": "VPN 연결 전후 접근 가능한 내부 도메인 또는 IP가 어떻게 달라지는지 기록한다.",
@@ -1401,7 +1401,7 @@
     },
     {
       "id": "architecture-mvc",
-      "title": "MVC 패턴",
+      "title": "Controller에 비즈니스 로직이 쌓일 때 DTO와 service 책임 나누기",
       "summary": "MVC는 요청 처리, 비즈니스 로직, 화면 또는 응답 모델의 책임을 나누는 기본 구조다.",
       "core_concept": "Controller는 요청과 응답, Model은 데이터, View는 표현을 담당한다.",
       "practice_30m": "Spring controller 하나를 골라 요청 DTO, service 호출, 응답 DTO 책임을 구분한다.",
@@ -1425,7 +1425,7 @@
     },
     {
       "id": "architecture-layered",
-      "title": "계층형 아키텍처",
+      "title": "repository가 controller까지 새는 패키지를 계층별로 분리해 보기",
       "summary": "계층형 아키텍처는 표현, 애플리케이션, 도메인, 인프라 책임을 나눠 변경 범위를 줄인다.",
       "core_concept": "상위 계층은 하위 계층을 사용하고, 각 계층은 자신의 책임을 넘지 않도록 유지한다.",
       "practice_30m": "현재 프로젝트 패키지를 controller, service, repository, domain으로 나눠 역할을 적는다.",
@@ -1473,7 +1473,7 @@
     },
     {
       "id": "architecture-microservices",
-      "title": "마이크로서비스 아키텍처",
+      "title": "기능을 서비스로 쪼갤 때 데이터 소유권과 장애 전파 확인하기",
       "summary": "마이크로서비스는 서비스를 작게 나눠 독립 배포와 확장을 가능하게 하지만 운영 복잡도를 높인다.",
       "core_concept": "서비스 경계, 데이터 소유권, 통신 방식, 관측 가능성이 MSA의 핵심 설계 지점이다.",
       "practice_30m": "하나의 기능을 서비스로 분리한다고 가정하고 소유할 데이터와 API를 적는다.",
@@ -1521,7 +1521,7 @@
     },
     {
       "id": "architecture-cqrs",
-      "title": "CQRS 패턴",
+      "title": "복잡한 목록 조회에서 쓰기 모델과 읽기 모델 분리 기준 잡기",
       "summary": "CQRS는 명령 모델과 조회 모델을 분리해 각 목적에 맞게 최적화하는 패턴이다.",
       "core_concept": "쓰기 모델은 일관성과 규칙을, 읽기 모델은 조회 성능과 화면 요구를 중심으로 설계한다.",
       "practice_30m": "복잡한 목록 조회 하나를 골라 쓰기 테이블과 조회 전용 모델을 분리하면 어떤 필드가 필요한지 적는다.",
@@ -1689,7 +1689,7 @@
     },
     {
       "id": "nosql-what-is-nosql",
-      "title": "NoSQL이란",
+      "title": "RDB로 불편한 데이터 구조를 NoSQL로 옮길 때 장단점 확인하기",
       "summary": "NoSQL은 관계형 모델이 아닌 다양한 데이터 저장 방식을 묶어 부르는 표현이다.",
       "core_concept": "NoSQL은 스키마 유연성, 확장성, 특정 접근 패턴 최적화를 위해 선택된다.",
       "practice_30m": "관계형 DB로 불편한 데이터 구조 하나를 정하고 NoSQL로 저장하면 어떤 장단점이 있는지 적는다.",
@@ -1713,7 +1713,7 @@
     },
     {
       "id": "nosql-types",
-      "title": "NoSQL 종류",
+      "title": "Redis와 document store를 같은 NoSQL로 묶어 잘못 고르는 상황 피하기",
       "summary": "NoSQL은 key-value, document, column-family, graph 등 저장 모델에 따라 나뉜다.",
       "core_concept": "저장 모델은 조회 패턴과 데이터 관계 표현 방식에 직접 영향을 준다.",
       "practice_30m": "Redis, MongoDB, Cassandra, Neo4j가 어떤 유형인지와 적합한 사용 사례를 적는다.",
@@ -1761,7 +1761,7 @@
     },
     {
       "id": "nosql-cap-theorem",
-      "title": "CAP 정리",
+      "title": "좋아요, 주문, 로그에서 CAP 일관성과 가용성 기준 나누기",
       "summary": "CAP 정리는 분산 시스템에서 일관성, 가용성, 분할 허용성 사이의 균형을 설명한다.",
       "core_concept": "네트워크 분할 상황에서는 강한 일관성과 높은 가용성을 동시에 완벽히 만족하기 어렵다.",
       "practice_30m": "주문, 좋아요, 로그 수집 중 각각 일관성과 가용성 중 무엇이 더 중요한지 적는다.",

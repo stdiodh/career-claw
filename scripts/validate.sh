@@ -170,7 +170,94 @@ for lesson in practical.get("lessons", []):
 if missing:
     raise SystemExit("backend practical curriculum misses required growth fields: " + "; ".join(missing[:5]))
 
+broad_titles = {
+    "처리량과 응답 시간",
+    "서버 성능 개선 기초",
+    "REST API란",
+    "WebSocket 개념",
+    "성능 최적화",
+    "자료구조와 알고리즘",
+}
+matches = [
+    f"{lesson.get('id', 'unknown')}:{lesson.get('title', '')}"
+    for lesson in practical.get("lessons", [])
+    if lesson.get("title") in broad_titles
+]
+if matches:
+    raise SystemExit("backend practical curriculum still has broad title(s): " + "; ".join(matches))
+
 print("daily source split smoke check passed")
+PY
+
+echo "==> Checking daily learning reference policy"
+python3 - <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+module_path = Path("scripts/validate-career-feed-brief.py")
+spec = importlib.util.spec_from_file_location("validate_career_feed_brief", module_path)
+if spec is None or spec.loader is None:
+    raise SystemExit("Could not load validate-career-feed-brief.py")
+validator = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = validator
+spec.loader.exec_module(validator)
+
+d2_url = "https://d2.naver.com/helloworld/123"
+news_url = "https://news.naver.com/article/123"
+search_url = "https://search.naver.com/search.naver?query=spring"
+blog_url = "https://blog.naver.com/example/123"
+media_url = "https://www.etnews.com/20260529000123"
+
+if validator.blocked_learning_domain(d2_url) != "":
+    raise SystemExit("d2.naver.com must not be blocked for practical knowledge references")
+if not validator.is_allowed_url_prefix(d2_url, validator.PRACTICAL_ALLOWED_URL_PREFIXES):
+    raise SystemExit("d2.naver.com must be allowed for practical knowledge references")
+if not validator.blocked_learning_domain(news_url):
+    raise SystemExit("news.naver.com must be blocked for learning references")
+if not validator.blocked_learning_domain(search_url):
+    raise SystemExit("search.naver.com must be blocked for learning references")
+if not validator.blocked_learning_domain(blog_url):
+    raise SystemExit("blog.naver.com must be blocked for learning references")
+if not validator.blocked_learning_domain(media_url):
+    raise SystemExit("domestic media domains must be blocked for learning references")
+
+print("daily learning reference policy smoke check passed")
+PY
+
+echo "==> Checking OSS repository config"
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+required = {
+    "spring-projects/spring-boot",
+    "spring-projects/spring-framework",
+    "spring-projects/spring-security",
+    "spring-projects/spring-data-jpa",
+    "spring-projects/spring-ai",
+    "spring-projects/spring-grpc",
+    "spring-projects/spring-modulith",
+    "micrometer-metrics/micrometer",
+    "open-telemetry/opentelemetry-java-instrumentation",
+    "Kotlin/kotlinx.coroutines",
+    "Kotlin/kotlinx.serialization",
+    "JetBrains/Exposed",
+}
+config = json.loads(Path("configs/oss-repositories.json").read_text(encoding="utf-8"))
+repositories = set(config.get("repositories", []))
+trusted = config.get("trusted_maintainers", {})
+if not isinstance(trusted, dict):
+    raise SystemExit("configs/oss-repositories.json trusted_maintainers must be an object")
+
+missing_repositories = sorted(required - repositories)
+missing_trusted = sorted(required - set(trusted.keys()))
+if missing_repositories:
+    raise SystemExit("oss-repositories.json is missing required repositories: " + ", ".join(missing_repositories))
+if missing_trusted:
+    raise SystemExit("oss-repositories.json trusted_maintainers is missing repository key(s): " + ", ".join(missing_trusted))
+
+print("OSS repository config smoke check passed")
 PY
 
 echo "==> Checking workflow YAML parse"
