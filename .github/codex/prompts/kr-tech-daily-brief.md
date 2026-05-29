@@ -306,6 +306,9 @@ safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아
 
 - 5번은 책 목차가 아니라 현업에서 겪는 문제로 시작한다.
 - 제목은 반드시 실무 상황, 실패 모드, 30분 실습으로 좁힌다.
+- `backend-practical-knowledge.json`의 `today.situation`, `today.failure_mode`, `today.practice_steps`, `today.official_refs`를 우선 사용한다.
+- `practice_steps`가 있으면 30분 실습을 단일 추상 문장이 아니라 순서가 있는 확인 행동으로 요약한다.
+- `official_refs`는 레퍼런스 링크로 사용하고, 허용 도메인 밖 링크를 새로 넣지 않는다.
 - WebSocket 연결 증가 시 세션과 브로커 확인, PUT/PATCH/POST 오용과 재시도 위험, p95는 괜찮은데 p99가 튀는 상황 분리, JPA N+1을 로그와 쿼리 수로 확인, Redis cache hit rate가 높아도 장애가 나는 이유, SDK timeout/retry/error type 문서화, rate limit을 단순 IP 기준으로 잡을 때의 문제, transaction isolation을 모를 때 결제/재고 API 버그처럼 실무 문제를 우선한다.
 - 처리량과 응답 시간, REST API란, WebSocket 개념, 성능 최적화처럼 너무 넓은 제목은 쓰지 않는다.
 

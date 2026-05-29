@@ -301,6 +301,61 @@ DAILY_OSS_STATUS_CHECK_TERMS = [
     r"claim\s*댓글",
     r"작업\s*claim",
 ]
+SPRING_ALLOWED_URL_PREFIXES = [
+    "spring.io",
+    "docs.spring.io",
+    "github.com/spring-projects/",
+    "openjdk.org",
+    "inside.java",
+    "blogs.oracle.com",
+    "opentelemetry.io",
+    "micrometer.io",
+    "kotlinlang.org",
+    "docs.gradle.org",
+    "testcontainers.com",
+    "docs.docker.com",
+    "kubernetes.io",
+]
+PRACTICAL_ALLOWED_URL_PREFIXES = [
+    "datatracker.ietf.org",
+    "developer.mozilla.org",
+    "cheatsheetseries.owasp.org",
+    "owasp.org",
+    "docs.spring.io",
+    "docs.oracle.com",
+    "postgresql.org",
+    "dev.mysql.com",
+    "redis.io",
+    "kafka.apache.org",
+    "docs.docker.com",
+    "kubernetes.io",
+    "opentelemetry.io",
+    "micrometer.io",
+    "testcontainers.com",
+    "toss.tech",
+    "techblog.woowahan.com",
+    "tech.kakao.com",
+    "d2.naver.com",
+    "engineering.linecorp.com",
+]
+DAILY_LEARNING_BLOCKED_DOMAINS = {
+    "naver.com",
+    "news.naver.com",
+    "n.news.naver.com",
+    "etnews.com",
+    "zdnet.co.kr",
+    "ddaily.co.kr",
+    "bloter.net",
+    "aitimes.com",
+    "itworld.co.kr",
+    "ciokorea.com",
+    "hankyung.com",
+    "chosun.com",
+    "joongang.co.kr",
+    "donga.com",
+    "yna.co.kr",
+    "newsis.com",
+}
 
 LINK_RE = re.compile(r"https?://[^\s)>\\\]]+")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(https?://[^)]+\)")
@@ -498,6 +553,58 @@ def validation_domain(url: str) -> str:
     return domain[4:] if domain.startswith("www.") else domain
 
 
+def validation_url_key(url: str) -> str:
+    parsed = urllib.parse.urlsplit(url)
+    domain = validation_domain(url)
+    path = parsed.path.lstrip("/")
+    return f"{domain}/{path}" if path else domain
+
+
+def is_allowed_url_prefix(url: str, allowed_prefixes: list[str]) -> bool:
+    key = validation_url_key(url).lower()
+    domain = validation_domain(url)
+    for prefix in allowed_prefixes:
+        normalized = prefix.lower().strip().rstrip("/")
+        if "/" in normalized:
+            if key == normalized or key.startswith(f"{normalized}/"):
+                return True
+            continue
+        if domain == normalized or domain.endswith(f".{normalized}"):
+            return True
+    return False
+
+
+def blocked_learning_domain(url: str) -> str:
+    domain = validation_domain(url)
+    for blocked in DAILY_LEARNING_BLOCKED_DOMAINS:
+        if domain == blocked or domain.endswith(f".{blocked}"):
+            return blocked
+    return ""
+
+
+def validate_learning_reference_domains(
+    text: str,
+    allowed_prefixes: list[str],
+    context: str,
+) -> None:
+    urls = markdown_link_urls(text)
+    if not urls:
+        fail(f"Section must include a Markdown link: {context}")
+
+    blocked = [(url, blocked_learning_domain(url)) for url in urls]
+    blocked = [(url, domain) for url, domain in blocked if domain]
+    if blocked:
+        fail(f"{context} uses blocked portal/news domain: {blocked[0][0]}")
+
+    invalid = [
+        url
+        for url in urls
+        if not is_allowed_url_prefix(url, allowed_prefixes)
+    ]
+    if invalid:
+        fail(f"{context} uses unsupported reference domain: {invalid[0]}")
+
+
 def is_generic_weekly_url(url: str) -> bool:
     normalized = normalize_validation_url(url)
     generic = {normalize_validation_url(item) for item in WEEKLY_GENERIC_URLS}
@@ -639,6 +746,11 @@ def validate_daily_study_section(sections: list[Section]) -> None:
     if re.search(r"^\s*-\s*검색 키워드\s*:", item.body, re.MULTILINE):
         fail("Spring Boot/JVM study section must use 완료 기준, not 검색 키워드.")
     validate_item_markdown_link(item)
+    validate_learning_reference_domains(
+        item.body,
+        SPRING_ALLOWED_URL_PREFIXES,
+        "오늘의 Spring Boot/JVM 학습",
+    )
 
 
 def validate_daily_ps_section(sections: list[Section]) -> None:
@@ -755,6 +867,11 @@ def validate_daily_practical_section(sections: list[Section]) -> None:
     if missing:
         fail(f"Backend practical knowledge topic is missing field(s): {', '.join(missing)}")
     require_markdown_link_in_text(item.body, "주니어 백엔드 실무지식")
+    validate_learning_reference_domains(
+        item.body,
+        PRACTICAL_ALLOWED_URL_PREFIXES,
+        "주니어 백엔드 실무지식",
+    )
     if len(section.body) > 1200:
         warn("Backend practical knowledge section may be too long for daily reading.")
 

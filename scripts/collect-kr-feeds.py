@@ -94,6 +94,7 @@ SUPPORTED_FEED_TYPES = {"rss", "atom"}
 OSS_CATEGORY_ID = "kr-oss-contribution-opportunities"
 AI_TECH_CATEGORY_ID = "kr-ai-tech-news"
 BACKEND_TECH_CATEGORY_ID = "kr-backend-tech-news"
+SPRING_JVM_STUDY_CATEGORY_ID = "spring-jvm-study-topics"
 WEEKLY_CAREER_CATEGORY_ID = "kr-backend-career-events"
 WEEKLY_CATEGORY_ORDER = ["job", "intern", "hackathon", "contest", "competition"]
 WEEKLY_CATEGORY_LABELS = {
@@ -161,10 +162,6 @@ WEEKLY_CATEGORY_CACHE_MAX_AGE_DAYS = {
 }
 DAILY_TECH_ALIAS_OUTPUTS = {
     AI_TECH_CATEGORY_ID: ("kr-dev-ai-news", Path("reports/candidates/kr-dev-ai-news.json")),
-    BACKEND_TECH_CATEGORY_ID: (
-        "spring-study-topic",
-        Path("reports/candidates/spring-study-topic.json"),
-    ),
 }
 RELIABILITY_SCORE = {
     "official": 20,
@@ -174,7 +171,12 @@ RELIABILITY_SCORE = {
     "unknown": 0,
 }
 MODE_CATEGORY_IDS = {
-    "daily-tech": {AI_TECH_CATEGORY_ID, BACKEND_TECH_CATEGORY_ID, OSS_CATEGORY_ID},
+    "daily-tech": {
+        AI_TECH_CATEGORY_ID,
+        BACKEND_TECH_CATEGORY_ID,
+        SPRING_JVM_STUDY_CATEGORY_ID,
+        OSS_CATEGORY_ID,
+    },
     "weekly-career": {WEEKLY_CAREER_CATEGORY_ID},
 }
 BACKEND_KEYWORDS = [
@@ -3392,6 +3394,46 @@ def load_backend_practical_curriculum(
         raise RuntimeError(
             "configs/backend-practical-knowledge-curriculum.json must contain lessons."
         )
+    required_fields = {
+        "id",
+        "track",
+        "title",
+        "situation",
+        "core_concept",
+        "failure_mode",
+        "practice_30m",
+        "practice_steps",
+        "official_refs",
+        "check_question",
+        "search_keywords",
+    }
+    for lesson in lessons:
+        if not isinstance(lesson, dict):
+            raise RuntimeError("Every backend practical lesson must be an object.")
+        missing: list[str] = []
+        for field in sorted(required_fields):
+            if field not in lesson:
+                missing.append(field)
+                continue
+            value = lesson.get(field)
+            if value is None or value == "" or value == []:
+                missing.append(field)
+        if missing:
+            lesson_id = str(lesson.get("id", "unknown"))
+            raise RuntimeError(
+                "Backend practical lesson is missing required field(s): "
+                f"{lesson_id} ({', '.join(missing)})"
+            )
+        if not isinstance(lesson.get("practice_steps"), list):
+            raise RuntimeError(
+                "Backend practical lesson practice_steps must be a list: "
+                f"{lesson.get('id')}"
+            )
+        if not isinstance(lesson.get("official_refs"), list):
+            raise RuntimeError(
+                "Backend practical lesson official_refs must be a list: "
+                f"{lesson.get('id')}"
+            )
     return curriculum
 
 
@@ -5033,10 +5075,10 @@ def collect_category(
     penalty_keywords: list[str],
     dry_run: bool,
 ) -> list[Candidate] | list[OssIssueCandidate]:
-    if dry_run:
+    category_id = str(category.get("id", "")).strip()
+    if dry_run and category_id in {OSS_CATEGORY_ID, WEEKLY_CAREER_CATEGORY_ID}:
         return []
 
-    category_id = str(category.get("id", "")).strip()
     if category_id == OSS_CATEGORY_ID:
         return collect_oss_issue_candidates(category, current_time)
     if category_id == WEEKLY_CAREER_CATEGORY_ID:

@@ -129,6 +129,50 @@ for file in "${required_files[@]}"; do
   test -f "${file}"
 done
 
+echo "==> Checking daily source split"
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+sources = json.loads(Path("configs/kr-sources.json").read_text(encoding="utf-8"))
+categories = {
+    category.get("id"): category
+    for category in sources.get("categories", [])
+    if isinstance(category, dict)
+}
+spring = categories.get("spring-jvm-study-topics")
+if not spring:
+    raise SystemExit("spring-jvm-study-topics category is required")
+if spring.get("output_file") != "reports/candidates/spring-study-topic.json":
+    raise SystemExit("spring-jvm-study-topics must write spring-study-topic.json")
+if spring.get("naver_queries") != []:
+    raise SystemExit("spring-jvm-study-topics must not use Naver queries")
+if not spring.get("rss_sources") or not spring.get("reference_pages"):
+    raise SystemExit("spring-jvm-study-topics needs official RSS/reference sources")
+
+practical = json.loads(Path("configs/backend-practical-knowledge-curriculum.json").read_text(encoding="utf-8"))
+required = {
+    "track",
+    "situation",
+    "failure_mode",
+    "practice_steps",
+    "official_refs",
+}
+missing = []
+for lesson in practical.get("lessons", []):
+    absent = [
+        field
+        for field in required
+        if not lesson.get(field)
+    ]
+    if absent:
+        missing.append(f"{lesson.get('id', 'unknown')}:{','.join(absent)}")
+if missing:
+    raise SystemExit("backend practical curriculum misses required growth fields: " + "; ".join(missing[:5]))
+
+print("daily source split smoke check passed")
+PY
+
 echo "==> Checking workflow YAML parse"
 if command -v ruby >/dev/null 2>&1; then
   ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path); puts "ok: #{path}" }' .github/workflows/*.yml

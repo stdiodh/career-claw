@@ -38,12 +38,20 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 - `reports/candidates/kr-ai-tech-news.json`
 - `reports/candidates/backend-practical-knowledge.json`
 
+Daily 수집 소스 정책:
+
+- `spring-study-topic.json`은 `spring-jvm-study-topics` 카테고리에서 생성하며 Naver query를 사용하지 않습니다.
+- Spring/JVM 학습 후보는 Spring 공식 블로그, Spring 문서, OpenJDK/Inside Java, Micrometer/OpenTelemetry 등 공식·표준 레퍼런스를 우선합니다.
+- `kr-backend-tech-news`는 한국 개발/AI 뉴스 후보용으로 유지하며 Spring 학습 후보로 alias하지 않습니다.
+- 실무지식 curriculum은 `situation`, `failure_mode`, `practice_steps`, `official_refs`를 포함해 브리핑 모델이 실패 상황과 30분 실습을 데이터에서 직접 읽도록 합니다.
+- validator는 1번 Spring/JVM 학습과 5번 실무지식 링크가 허용 도메인 밖이거나 포털/언론 도메인이면 실패합니다.
+
 Daily OSS 후보 정책:
 
 - OSS 후보는 maintainer/member/collaborator가 올렸거나 maintainer가 초보자용으로 분류한 open issue만 추천합니다.
 - assignee가 있거나 linked PR/branch가 있거나 누군가 댓글로 작업 의사를 밝힌 이슈는 추천하지 않습니다.
 - linked work 확인이 불완전하면 추천하지 않습니다.
-- 후보가 없으면 empty-state를 출력합니다.
+- 안전한 후보가 없으면 특정 issue를 추천하지 않고 OSS 기여 준비 루틴을 출력합니다.
 - 첫 30분 액션은 읽기, 재현, 문서 위치 확인, 로컬 빌드 확인처럼 PR 전 확인 행동으로 제한합니다.
 - 작업 전 issue에 짧게 확인 댓글을 남기는 것을 권장합니다.
 

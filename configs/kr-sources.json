@@ -261,6 +261,125 @@
       ]
     },
     {
+      "id": "spring-jvm-study-topics",
+      "name": "Spring/JVM 학습 후보",
+      "output_file": "reports/candidates/spring-study-topic.json",
+      "max_candidates": 30,
+      "tags": ["spring", "jvm", "backend", "developer"],
+      "naver_queries": [],
+      "rss_sources": [
+        {
+          "name": "Spring Blog",
+          "url": "https://spring.io/blog.atom",
+          "type": "atom",
+          "source_reliability": "official"
+        }
+      ],
+      "reference_pages": [
+        {
+          "name": "Spring Boot Release Highlights",
+          "url": "https://spring.io/projects/release-highlights",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring Boot Reference",
+          "url": "https://docs.spring.io/spring-boot/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring Framework Reference",
+          "url": "https://docs.spring.io/spring-framework/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring AI Reference",
+          "url": "https://docs.spring.io/spring-ai/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring gRPC Reference",
+          "url": "https://docs.spring.io/spring-grpc/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring Modulith Reference",
+          "url": "https://docs.spring.io/spring-modulith/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "OpenJDK JEPs",
+          "url": "https://openjdk.org/jeps/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Inside Java",
+          "url": "https://inside.java/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "OpenTelemetry Docs",
+          "url": "https://opentelemetry.io/docs/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Micrometer Docs",
+          "url": "https://micrometer.io/docs",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kotlin Docs",
+          "url": "https://kotlinlang.org/docs/home.html",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Gradle User Manual",
+          "url": "https://docs.gradle.org/current/userguide/userguide.html",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Testcontainers Docs",
+          "url": "https://testcontainers.com/guides/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Docker Docs",
+          "url": "https://docs.docker.com/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kubernetes Docs",
+          "url": "https://kubernetes.io/docs/",
+          "source_reliability": "official"
+        }
+      ],
+      "korea_keywords": [],
+      "developer_keywords": [
+        "Spring",
+        "Spring Boot",
+        "Spring Framework",
+        "Spring AI",
+        "Spring gRPC",
+        "Spring Modulith",
+        "Java",
+        "JVM",
+        "JDK",
+        "JEP",
+        "Kotlin",
+        "Gradle",
+        "Micrometer",
+        "OpenTelemetry",
+        "Docker",
+        "Kubernetes",
+        "Testcontainers",
+        "REST",
+        "API",
+        "observability",
+        "security",
+        "transaction",
+        "virtual thread"
+      ]
+    },
+    {
       "id": "kr-backend-career-events",
       "name": "백엔드 커리어 기회",
       "output_file": "reports/candidates/kr-backend-career-events.json",
