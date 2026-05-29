@@ -55,10 +55,12 @@ def check_scheduled_workflow(
     forbidden_secret: str,
     concurrency_group: str,
     lock_key_prefix: str,
+    content_permission: str,
     wait_step_name: str,
     wait_time: str,
     collector_mode: str,
     validator_type: str,
+    requires_ps_progress_commit: bool = False,
 ) -> None:
     text = read_required(path)
     for cron in crons:
@@ -100,8 +102,20 @@ def check_scheduled_workflow(
     require_contains(text, f"group: {concurrency_group}", path)
     require_contains(text, "cancel-in-progress: false", path)
     require_contains(text, "timeout-minutes: 75", path)
-    require_contains(text, "contents: read", path)
+    require_contains(text, f"contents: {content_permission}", path)
     require_contains(text, "actions: read", path)
+    if content_permission == "read":
+        require_absent(text, "contents: write", path)
+    if requires_ps_progress_commit:
+        require_contains(text, "persist-credentials: true", path)
+        require_contains(text, "Commit Programmers assignment progress", path)
+        require_contains(text, "commit-ps-progress", path)
+        require_contains(text, "data/ps-progress.json", path)
+        require_contains(text, "git push", path)
+    else:
+        require_absent(text, "Commit Programmers assignment progress", path)
+        require_absent(text, "data/ps-progress.json", path)
+        require_absent(text, "git push", path)
     require_contains(text, "if: always()", path)
     require_contains(text, "retention-days: 14", path)
     require_contains(text, "DISCORD_WEBHOOK_CAREER_FEED_OPS", path)
@@ -160,10 +174,12 @@ def main() -> int:
             forbidden_secret="DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY",
             concurrency_group="career-feed-backend-daily-${{ github.ref }}",
             lock_key_prefix="career-feed-backend-sent-",
+            content_permission="write",
             wait_step_name="Wait until 09:00 KST before Discord send",
             wait_time="09:00:00",
             collector_mode="daily-backend",
             validator_type="daily-tech",
+            requires_ps_progress_commit=True,
         )
         check_scheduled_workflow(
             NEWS_DAILY_WORKFLOW,
@@ -173,6 +189,7 @@ def main() -> int:
             forbidden_secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
             concurrency_group="career-feed-news-daily-${{ github.ref }}",
             lock_key_prefix="career-feed-news-sent-",
+            content_permission="read",
             wait_step_name="Wait until 09:05 KST before Discord send",
             wait_time="09:05:00",
             collector_mode="daily-news",

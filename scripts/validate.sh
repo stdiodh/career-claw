@@ -47,8 +47,9 @@ grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-daily.yml
 grep -q 'workflow_dispatch:' .github/workflows/kr-tech-daily.yml
 grep -q 'dry_run:' .github/workflows/kr-tech-daily.yml
 grep -q 'force_send:' .github/workflows/kr-tech-daily.yml
-grep -q 'contents: read' .github/workflows/kr-tech-daily.yml
+grep -q 'contents: write' .github/workflows/kr-tech-daily.yml
 grep -q 'actions: read' .github/workflows/kr-tech-daily.yml
+grep -q 'persist-credentials: true' .github/workflows/kr-tech-daily.yml
 grep -q 'timeout-minutes: 75' .github/workflows/kr-tech-daily.yml
 grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-daily.yml
 grep -q 'collect-kr-feeds.py --mode daily-backend' .github/workflows/kr-tech-daily.yml
@@ -70,6 +71,12 @@ grep -q 'if: always()' .github/workflows/kr-tech-daily.yml
 grep -q 'reports/ops/\*.json' .github/workflows/kr-tech-daily.yml
 grep -q 'reports/ops/\*.md' .github/workflows/kr-tech-daily.yml
 grep -q 'retention-days: 14' .github/workflows/kr-tech-daily.yml
+grep -q 'Commit Programmers assignment progress' .github/workflows/kr-tech-daily.yml
+grep -q 'data/ps-progress.json' .github/workflows/kr-tech-daily.yml
+grep -q 'git push' .github/workflows/kr-tech-daily.yml
+grep -q 'commit-ps-progress' .github/workflows/kr-tech-daily.yml
+grep -q 'ps_progress_commit_attempted' .github/workflows/kr-tech-daily.yml
+grep -q 'ps_progress_commit_success' .github/workflows/kr-tech-daily.yml
 if grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY\|kr-dev-ai-news.json\|kr-ai-tech-news.json' .github/workflows/kr-tech-daily.yml; then
   echo "Backend Daily workflow must not use the news webhook or news candidate files." >&2
   exit 1
@@ -85,6 +92,10 @@ grep -q 'workflow_dispatch:' .github/workflows/kr-tech-news-daily.yml
 grep -q 'dry_run:' .github/workflows/kr-tech-news-daily.yml
 grep -q 'force_send:' .github/workflows/kr-tech-news-daily.yml
 grep -q 'contents: read' .github/workflows/kr-tech-news-daily.yml
+if grep -q 'contents: write' .github/workflows/kr-tech-news-daily.yml; then
+  echo "News Daily workflow must not request contents: write." >&2
+  exit 1
+fi
 grep -q 'actions: read' .github/workflows/kr-tech-news-daily.yml
 grep -q 'timeout-minutes: 75' .github/workflows/kr-tech-news-daily.yml
 grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY' .github/workflows/kr-tech-news-daily.yml
@@ -105,6 +116,10 @@ grep -q 'reports/ops/\*.md' .github/workflows/kr-tech-news-daily.yml
 grep -q 'retention-days: 14' .github/workflows/kr-tech-news-daily.yml
 if grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-news-daily.yml; then
   echo "News Daily workflow must not use the Backend Daily webhook." >&2
+  exit 1
+fi
+if grep -q 'data/ps-progress.json\|Commit Programmers assignment progress\|git push' .github/workflows/kr-tech-news-daily.yml; then
+  echo "News Daily workflow must not commit PS progress." >&2
   exit 1
 fi
 

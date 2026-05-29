@@ -20,7 +20,7 @@ on:
         default: false
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 concurrency:
@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+        with:
+          persist-credentials: true
 
       - name: Prepare report directories
         shell: bash
@@ -291,6 +293,40 @@ jobs:
           path: ${{ steps.context.outputs.lock_marker }}
           key: ${{ steps.context.outputs.delivery_lock_key }}
 
+      - name: Commit Programmers assignment progress
+        id: commit-ps-progress
+        if: steps.send-discord.outcome == 'success' && steps.context.outputs.dry_run != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- data/ps-progress.json; then
+            echo "No PS progress changes to commit."
+            echo "ps_progress_changed=false" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          echo "ps_progress_changed=true" >> "${GITHUB_OUTPUT}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add data/ps-progress.json
+          git commit -m "chore(ps): record daily Programmers assignment"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase origin "${GITHUB_REF_NAME}" && git push; then
+              echo "PS progress committed and pushed."
+              exit 0
+            fi
+
+            echo "PS progress push failed on attempt ${attempt}; retrying." >&2
+            sleep $((attempt * 2))
+          done
+
+          echo "Failed to push PS progress after retries." >&2
+          exit 1
+
       - name: Write Backend Daily run summary
         id: run-summary
         if: always()
@@ -306,6 +342,8 @@ jobs:
           SHOULD_SEND: ${{ steps.delivery.outputs.should_send }}
           SKIP_REASON: ${{ steps.delivery.outputs.skip_reason }}
           DISCORD_SEND_OUTCOME: ${{ steps.send-discord.outcome }}
+          PS_PROGRESS_COMMIT_OUTCOME: ${{ steps.commit-ps-progress.outcome }}
+          PS_PROGRESS_CHANGED: ${{ steps.commit-ps-progress.outputs.ps_progress_changed }}
         run: |
           python3 - <<'PY'
           import json
@@ -336,6 +374,7 @@ jobs:
 
           send_attempted = os.environ.get("SHOULD_SEND") == "true"
           send_success = os.environ.get("DISCORD_SEND_OUTCOME") == "success"
+          ps_commit_outcome = os.environ.get("PS_PROGRESS_COMMIT_OUTCOME", "")
           summary = {
               "feed": "backend-daily",
               "generated_at_kst": os.popen("TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S KST'").read().strip(),
@@ -352,6 +391,9 @@ jobs:
               "discord_send_attempted": send_attempted,
               "discord_send_success": send_success,
               "generation_attempted": os.environ.get("SHOULD_GENERATE") == "true",
+              "ps_progress_commit_attempted": ps_commit_outcome not in ("", "skipped"),
+              "ps_progress_changed": os.environ.get("PS_PROGRESS_CHANGED") == "true",
+              "ps_progress_commit_success": ps_commit_outcome in ("success", "skipped"),
           }
           json_path = ops_dir / "backend-daily-run-summary.json"
           md_path = ops_dir / "backend-daily-run-summary.md"
@@ -366,6 +408,9 @@ jobs:
               f"- delivery_lock_hit: {summary['delivery_lock_hit']}\n"
               f"- discord_send_attempted: {summary['discord_send_attempted']}\n"
               f"- discord_send_success: {summary['discord_send_success']}\n"
+              f"- ps_progress_commit_attempted: {summary['ps_progress_commit_attempted']}\n"
+              f"- ps_progress_changed: {summary['ps_progress_changed']}\n"
+              f"- ps_progress_commit_success: {summary['ps_progress_commit_success']}\n"
               f"- fallback_reason: {summary['fallback_reason']}\n",
               encoding="utf-8",
           )
@@ -392,7 +437,8 @@ jobs:
             "generation-status:${{ steps.generation-status.outcome }}" \
             "validate:${{ steps.validate.outcome }}" \
             "send-discord:${{ steps.send-discord.outcome }}" \
-            "save-lock:${{ steps.save-lock.outcome }}"
+            "save-lock:${{ steps.save-lock.outcome }}" \
+            "commit-ps-progress:${{ steps.commit-ps-progress.outcome }}" \
           do
             name="${pair%%:*}"
             outcome="${pair#*:}"
