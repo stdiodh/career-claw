@@ -2,15 +2,18 @@
 기준시각: 2026-05-28 09:10:00 KST
 
 오늘의 방향:
-- 설정 흐름을 작게 확인하고, 해시 문제와 성능 지표 감각을 함께 이어갑니다.
+- API 버전 호환성과 HTTP 재시도 의미를 작게 검증하며 해시 루틴을 이어갑니다.
 
 ## 1. 오늘의 Spring Boot/JVM 학습
-### 주제: Spring Boot 설정 값 바인딩 흐름
-- 핵심 개념: `application.yml` 값이 설정 클래스에 바인딩되는 흐름을 확인합니다.
-- 30분 실습: 작은 설정 클래스를 만들고 테스트에서 값 주입을 확인합니다.
-- 완료 기준: 테스트에서 yml 값이 설정 클래스에 바인딩되는 것을 assert합니다.
-- 확장해서 볼 것: validation, profile별 설정 분리
-- 참고 링크: [원문 보기](https://docs.spring.io/spring-boot/reference/features/external-config.html)
+### 주제: Spring Framework 7 API Versioning으로 v1/v2 컨트롤러 분리하기
+- 왜 지금 볼 만한가: Spring Framework 7의 API versioning은 REST API 진화와 하위 호환성 유지 연습에 바로 연결됩니다.
+- 핵심 개념: 요청 버전 위치를 정하고 컨트롤러 매핑에서 지원 버전을 선언해 미지원 버전 요청을 분리합니다.
+- 30분 실습: `API-Version` 헤더 기반 v1/v2 컨트롤러를 만들고, MockMvc로 v1, v2, v3 요청 상태 코드를 비교합니다.
+- 완료 기준: v1과 v2 응답이 분리되고 지원하지 않는 v3 요청이 실패하는 테스트가 남습니다.
+- 확장해서 볼 것: path segment 방식, deprecated version 응답 헤더, RestClient 기본 버전 설정
+- 레퍼런스:
+  - [공식 문서](https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-config/api-version.html)
+  - [릴리즈 노트](https://spring.io/blog/2025/11/13/spring-framework-7-0-general-availability)
 
 ## 2. 이번 주 PS 성장 루틴
 - 이번 주 주제: 해시
@@ -25,25 +28,25 @@
 - 링크: [문제 보기](https://school.programmers.co.kr/learn/courses/30/lessons/1845)
 
 ## 3. 오픈소스 기여 후보
-### 후보: Support java.util.Pattern for LIKE query method predicates
-- 상태 확인: maintainer가 연 이슈이고, 담당자 없음, 연결 PR/branch 없음, 작업 claim 댓글 없음이 확인되었습니다.
-- 난이도 밴드: P5-like
-- 저장소: spring-projects/spring-data-commons
-- 기여 유형: docs
-- 왜 시도해볼 만한가: 문서 위치 확인과 예제 검증 중심으로 첫 기여 범위를 작게 잡을 수 있습니다.
-- 첫 30분 액션: `src/docs/asciidoc`에서 LIKE/query method 관련 문서 위치를 찾고, `mvn package -Pdistribute` 문서 빌드 경로를 확인합니다.
-- 기여 전 매너: 작업 전 이슈에 “문서 위치를 확인해보고 작은 PR을 준비해도 괜찮을까요?”라고 짧게 확인합니다.
-- 확인할 파일/키워드: src/docs/asciidoc, LIKE, query method predicates, Pattern, DCO Signed-off-by
-- 주의할 점: API 동작 변경으로 넓히지 말고 문서 보강 범위로만 시작하며, PR을 준비하게 되면 issue reference를 확인합니다.
-- 링크: [Issue 보기](https://github.com/spring-projects/spring-data-commons/issues/3417)
+### 오늘의 OSS 기여 준비 루틴
+- 오늘은 바로 추천할 안전한 issue는 없습니다.
+- 저장소: spring-projects/spring-boot
+- 30분 액션: CONTRIBUTING 문서에서 빌드와 테스트 명령을 확인하고, 로컬에서 어떤 모듈 테스트부터 돌릴지 메모합니다.
+- 확인할 문서: CONTRIBUTING.adoc, Build from Source, DCO Signed-off-by 안내
+- 다음에 issue를 찾을 때 쓸 GitHub 검색식: `repo:spring-projects/spring-boot is:issue is:open label:"status: ideal-for-contribution" no:assignee`
+- 기여 전 매너: 작업 의사를 남기기 전에 최근 댓글과 연결 PR 여부를 먼저 확인합니다.
 
 ## 4. 한국 최신 개발/AI 뉴스
 - 오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다.
 
 ## 5. 주니어 백엔드 실무지식
-### 주제: 처리량과 응답 시간
-- 큰 흐름: 서비스 성능을 볼 때 요청 수와 요청별 소요 시간을 나눠서 봅니다.
-- 핵심 개념: 처리량은 단위 시간당 처리 요청 수이고, 응답 시간은 한 요청이 끝나는 데 걸리는 시간입니다.
-- 30분 실습: 간단한 API를 기준으로 평균 응답 시간, p95 응답 시간, 초당 요청 수를 표로 정리합니다.
-- 현업 체크 질문: 응답 시간이 느린 것과 처리량이 부족한 것은 어떤 상황에서 다르게 나타나는가?
-- 검색 키워드: 처리량 응답 시간 p95, backend throughput latency
+### 주제: 결제 생성 API에서 POST 재시도가 중복 주문을 만드는 상황
+- 실무 상황: 클라이언트가 타임아웃 후 같은 결제 생성 요청을 다시 보내면 서버는 첫 요청 성공 여부를 모른 채 두 번째 주문을 만들 수 있습니다.
+- 핵심 개념: POST 생성 요청은 별도 idempotency key나 중복 방지 키가 없으면 반복 호출 결과가 달라질 수 있습니다.
+- 실패하면 생기는 문제: 결제, 포인트 적립, 재고 차감 같은 변경 작업에서 중복 데이터와 환불/정산 장애가 생깁니다.
+- 30분 실습: `/orders` POST를 두 번 호출했을 때 row가 2개 생기는 샘플을 만든 뒤, `Idempotency-Key` 헤더와 unique key로 같은 요청은 같은 결과를 돌려주도록 바꿔봅니다.
+- 현업 체크 질문: 이 API는 네트워크 타임아웃 후 자동 재시도되어도 같은 비즈니스 결과를 보장하는가?
+- 레퍼런스:
+  - [RFC 9110 HTTP Semantics](https://datatracker.ietf.org/doc/html/rfc9110)
+  - [MDN Idempotent](https://developer.mozilla.org/en-US/docs/Glossary/Idempotent)
+- 검색 키워드: HTTP idempotency POST retry, Idempotency-Key 결제 API 중복 방지

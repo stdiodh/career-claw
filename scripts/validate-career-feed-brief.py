@@ -75,7 +75,7 @@ NO_ITEM_PHRASES = [
     "오늘 확인된 주요 항목이 없습니다",
     "오늘 기준으로 포함할 만한 신뢰도 높은 후보를 찾지 못했습니다",
     "오늘은 긴급 체크 항목 없음",
-    "오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다.",
+    "오늘은 바로 추천할 안전한 issue는 없습니다.",
     "오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다.",
     "이번 주 마감 임박 항목 없음",
     "이번 주 추천 항목 없음",
@@ -110,11 +110,12 @@ DAILY_FORBIDDEN_PATTERNS = [
     r"긴급 체크",
 ]
 DAILY_STUDY_FIELDS = [
+    "왜 지금 볼 만한가",
     "핵심 개념",
     "30분 실습",
     "완료 기준",
     "확장해서 볼 것",
-    "참고 링크",
+    "레퍼런스",
 ]
 DAILY_PS_FIELDS = [
     "이번 주 주제",
@@ -137,14 +138,23 @@ DAILY_NEWS_FIELDS = [
     "링크",
 ]
 DAILY_PRACTICAL_FIELDS = [
-    "큰 흐름",
+    "실무 상황",
     "핵심 개념",
+    "실패하면 생기는 문제",
     "30분 실습",
     "현업 체크 질문",
+    "레퍼런스",
     "검색 키워드",
 ]
 DAILY_NEWS_EMPTY_STATE = "오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다."
-DAILY_OSS_EMPTY_STATE = "오늘은 주니어가 바로 시도하기 좋은 오픈소스 후보가 없습니다."
+DAILY_OSS_EMPTY_STATE = "오늘은 바로 추천할 안전한 issue는 없습니다."
+DAILY_OSS_PREP_FIELDS = [
+    "저장소",
+    "30분 액션",
+    "확인할 문서",
+    "다음에 issue를 찾을 때 쓸 GitHub 검색식",
+    "기여 전 매너",
+]
 DAILY_NEWS_FORBIDDEN_PATTERNS = [
     r"docs\.spring\.io",
     r"(?<!docs\.)\bspring\.io",
@@ -664,7 +674,7 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
         or re.search(r"https://github\.com/[^\s)]+/issues/\d+", section.body)
     )
     if DAILY_OSS_EMPTY_STATE not in section.body and not has_issue_link:
-        fail("OSS section must include an Issue 보기 link or the required empty-state phrase.")
+        fail("OSS section must include an Issue 보기 link or the required prep-routine phrase.")
 
     items = extract_items(section)
     if len(items) > 1:
@@ -675,6 +685,14 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
         fail("OSS section has no candidate and no required empty-state phrase.")
 
     item = items[0]
+    if DAILY_OSS_EMPTY_STATE in item.body and not has_issue_link:
+        if item.title != "오늘의 OSS 기여 준비 루틴":
+            fail("OSS prep routine must use the required heading.")
+        missing = missing_bullet_fields(item.body, DAILY_OSS_PREP_FIELDS)
+        if missing:
+            fail(f"OSS prep routine is missing field(s): {', '.join(missing)}")
+        return
+
     if not re.search(r"P[45]-like", item.body):
         fail("OSS candidate must include P5-like or P4-like difficulty band.")
     if re.search(r"too_hard|unclear", item.body, flags=re.IGNORECASE):
@@ -736,6 +754,7 @@ def validate_daily_practical_section(sections: list[Section]) -> None:
     missing = missing_bullet_fields(item.body, DAILY_PRACTICAL_FIELDS)
     if missing:
         fail(f"Backend practical knowledge topic is missing field(s): {', '.join(missing)}")
+    require_markdown_link_in_text(item.body, "주니어 백엔드 실무지식")
     if len(section.body) > 1200:
         warn("Backend practical knowledge section may be too long for daily reading.")
 
