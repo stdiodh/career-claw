@@ -160,9 +160,7 @@ WEEKLY_CATEGORY_CACHE_MAX_AGE_DAYS = {
     "contest": 60,
     "competition": 60,
 }
-DAILY_TECH_ALIAS_OUTPUTS = {
-    AI_TECH_CATEGORY_ID: ("kr-dev-ai-news", Path("reports/candidates/kr-dev-ai-news.json")),
-}
+DAILY_TECH_ALIAS_OUTPUTS: dict[str, tuple[str, Path]] = {}
 RELIABILITY_SCORE = {
     "official": 20,
     "major_media": 12,
@@ -176,6 +174,14 @@ MODE_CATEGORY_IDS = {
         BACKEND_TECH_CATEGORY_ID,
         SPRING_JVM_STUDY_CATEGORY_ID,
         OSS_CATEGORY_ID,
+    },
+    "daily-backend": {
+        SPRING_JVM_STUDY_CATEGORY_ID,
+        OSS_CATEGORY_ID,
+    },
+    "daily-news": {
+        AI_TECH_CATEGORY_ID,
+        BACKEND_TECH_CATEGORY_ID,
     },
     "weekly-career": {WEEKLY_CAREER_CATEGORY_ID},
 }
@@ -586,7 +592,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=["daily-tech", "weekly-career"],
+        choices=["daily-tech", "daily-backend", "daily-news", "weekly-career"],
         default="daily-tech",
         help="Collection mode for Career Feed workflows.",
     )
@@ -5122,11 +5128,15 @@ def main() -> int:
             write_weekly_career_split_outputs(current_time, [])
             return 0
 
-        if args.mode == "daily-tech":
+        if args.mode in {"daily-tech", "daily-backend"}:
             write_backend_practical_candidate(current_time)
 
         config = load_config(config_path, args.category, args.mode)
-        credentials = None if args.mode == "weekly-career" else get_naver_credentials(args.dry_run)
+        credentials = (
+            get_naver_credentials(args.dry_run)
+            if args.mode in {"daily-tech", "daily-news"}
+            else None
+        )
         penalty_keywords = [
             str(keyword).strip()
             for keyword in config.get("penalty_keywords", [])
@@ -5162,6 +5172,7 @@ def main() -> int:
 
         if args.mode == "daily-tech":
             write_daily_tech_alias_outputs(current_time, candidates_by_category)
+        if args.mode in {"daily-tech", "daily-backend"}:
             write_ps_routine_output(
                 current_time,
                 dry_run=args.dry_run,

@@ -16,6 +16,7 @@ python3 -m py_compile \
 
 echo "==> Checking current workflows"
 test -f .github/workflows/kr-tech-daily.yml
+test -f .github/workflows/kr-tech-news-daily.yml
 test -f .github/workflows/kr-backend-career-weekly.yml
 test -f .github/workflows/mark-ps-solved.yml
 
@@ -31,8 +32,8 @@ for file in "${removed_workflows[@]}"; do
 done
 
 workflow_count="$(find .github/workflows -maxdepth 1 -type f | wc -l | tr -d ' ')"
-if [ "${workflow_count}" != "3" ]; then
-  echo "Expected exactly 3 workflow files, found ${workflow_count}." >&2
+if [ "${workflow_count}" != "4" ]; then
+  echo "Expected exactly 4 workflow files, found ${workflow_count}." >&2
   exit 1
 fi
 
@@ -42,9 +43,34 @@ grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-tech-daily.yml
 grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-tech-daily.yml
 grep -q 'cron: "5 8 \* \* 1-5"' .github/workflows/kr-tech-daily.yml
 grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-daily.yml
+grep -q 'workflow_dispatch:' .github/workflows/kr-tech-daily.yml
+grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-daily.yml
+grep -q 'collect-kr-feeds.py --mode daily-backend' .github/workflows/kr-tech-daily.yml
+grep -q -- '--type daily-tech' .github/workflows/kr-tech-daily.yml
 grep -q 'Wait until 09:00 KST before Discord send' .github/workflows/kr-tech-daily.yml
 grep -q "if: github.event_name == 'schedule'" .github/workflows/kr-tech-daily.yml
 grep -q 'target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:00:00" +%s)"' .github/workflows/kr-tech-daily.yml
+if grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY\|kr-dev-ai-news.json\|kr-ai-tech-news.json' .github/workflows/kr-tech-daily.yml; then
+  echo "Backend Daily workflow must not use the news webhook or news candidate files." >&2
+  exit 1
+fi
+
+grep -q 'uses: actions/checkout@v5' .github/workflows/kr-tech-news-daily.yml
+grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-tech-news-daily.yml
+grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-tech-news-daily.yml
+grep -q 'cron: "15 8 \* \* 1-5"' .github/workflows/kr-tech-news-daily.yml
+grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-news-daily.yml
+grep -q 'workflow_dispatch:' .github/workflows/kr-tech-news-daily.yml
+grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY' .github/workflows/kr-tech-news-daily.yml
+grep -q 'collect-kr-feeds.py --mode daily-news' .github/workflows/kr-tech-news-daily.yml
+grep -q -- '--type daily-news' .github/workflows/kr-tech-news-daily.yml
+grep -q 'Wait until 09:05 KST before Discord send' .github/workflows/kr-tech-news-daily.yml
+grep -q "if: github.event_name == 'schedule'" .github/workflows/kr-tech-news-daily.yml
+grep -q 'target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:05:00" +%s)"' .github/workflows/kr-tech-news-daily.yml
+if grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-news-daily.yml; then
+  echo "News Daily workflow must not use the Backend Daily webhook." >&2
+  exit 1
+fi
 
 grep -q 'uses: actions/checkout@v5' .github/workflows/kr-backend-career-weekly.yml
 grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-backend-career-weekly.yml
@@ -71,6 +97,7 @@ fi
 
 echo "==> Checking current prompts"
 test -f .github/codex/prompts/kr-tech-daily-brief.md
+test -f .github/codex/prompts/kr-tech-news-daily.md
 test ! -f .github/codex/prompts/kr-backend-career-weekly.md
 
 removed_prompts=(
@@ -84,8 +111,17 @@ for file in "${removed_prompts[@]}"; do
 done
 
 prompt_count="$(find .github/codex/prompts -maxdepth 1 -type f | wc -l | tr -d ' ')"
-if [ "${prompt_count}" != "1" ]; then
-  echo "Expected exactly 1 prompt file, found ${prompt_count}." >&2
+if [ "${prompt_count}" != "2" ]; then
+  echo "Expected exactly 2 prompt files, found ${prompt_count}." >&2
+  exit 1
+fi
+
+if grep -Eq 'reports/candidates/kr-dev-ai-news.json|reports/candidates/kr-ai-tech-news.json|## [0-9]+\. 한국 최신 개발/AI 뉴스|한국 최신 개발/AI 뉴스 섹션' .github/codex/prompts/kr-tech-daily-brief.md; then
+  echo "Backend Daily prompt must not include news candidate inputs or a news output section." >&2
+  exit 1
+fi
+if ! grep -Eq '3(~|-)5개' .github/codex/prompts/kr-tech-news-daily.md; then
+  echo "News Daily prompt must include the 3~5개 output rule." >&2
   exit 1
 fi
 
@@ -111,12 +147,14 @@ echo "==> Checking required files"
 required_files=(
   "configs/audience-profile.json"
   "configs/kr-sources.json"
-	  "configs/backend-practical-knowledge-curriculum.json"
-	  "configs/company-career-watchlist.json"
-	  "configs/weekly-career-site-radar.json"
-	  "configs/oss-repositories.json"
-	  "configs/programmers-ps-curriculum.json"
-	  "data/ps-progress.json"
+  "configs/backend-practical-knowledge-curriculum.json"
+  "configs/company-career-watchlist.json"
+  "configs/weekly-career-site-radar.json"
+  "configs/oss-repositories.json"
+  "configs/programmers-ps-curriculum.json"
+  "data/ps-progress.json"
+  ".github/codex/prompts/kr-tech-news-daily.md"
+  ".github/workflows/kr-tech-news-daily.yml"
   "scripts/check-workflow-schedules.py"
   "scripts/collect-kr-feeds.py"
   "scripts/render-weekly-career-site-radar.py"
@@ -125,6 +163,7 @@ required_files=(
   "scripts/update-ps-progress.py"
   "scripts/validate-career-feed-brief.py"
   "tests/fixtures/kr-tech-daily-valid.md"
+  "tests/fixtures/kr-tech-news-daily-valid.md"
   "tests/fixtures/kr-backend-career-weekly-valid.md"
 )
 
@@ -271,7 +310,8 @@ else
 fi
 
 echo "==> Checking collector dry-runs"
-python3 scripts/collect-kr-feeds.py --mode daily-tech --dry-run
+python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
+python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/render-weekly-career-site-radar.py
 python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career
@@ -316,6 +356,7 @@ PY
 
 echo "==> Checking fixtures"
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 python3 tests/test_weekly_career_collector.py
 
@@ -334,7 +375,6 @@ blocked_terms=(
   "KR ""Pre""mium"
   "Daily Korea ""Pre""mium"
   "daily-""feed"
-  "daily-""news"
   "ai-brief-""manual"
   "compact-""brief"
   "kr-""pre""mium-brief"

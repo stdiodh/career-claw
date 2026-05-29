@@ -167,7 +167,7 @@
     {
       "id": "kr-backend-tech-news",
       "name": "한국 백엔드/개발자 기술 뉴스",
-      "output_file": "reports/candidates/kr-backend-tech-news.json",
+      "output_file": "reports/candidates/kr-dev-ai-news.json",
       "max_candidates": 30,
       "tags": ["backend", "developer"],
       "naver_queries": [

@@ -9,6 +9,7 @@ from pathlib import Path
 
 
 DAILY_WORKFLOW = Path(".github/workflows/kr-tech-daily.yml")
+NEWS_DAILY_WORKFLOW = Path(".github/workflows/kr-tech-news-daily.yml")
 WEEKLY_WORKFLOW = Path(".github/workflows/kr-backend-career-weekly.yml")
 MARK_PS_WORKFLOW = Path(".github/workflows/mark-ps-solved.yml")
 
@@ -51,7 +52,12 @@ def check_scheduled_workflow(
     label: str,
     cron: str,
     secret: str,
+    forbidden_secret: str,
     concurrency_group: str,
+    wait_step_name: str,
+    wait_time: str,
+    collector_mode: str,
+    validator_type: str,
 ) -> None:
     text = read_required(path)
     if not has_quoted_value(text, "cron", cron):
@@ -60,17 +66,20 @@ def check_scheduled_workflow(
         fail(f"{path}: missing schedule timezone: Asia/Seoul")
     require_contains(text, "workflow_dispatch:", path)
     require_contains(text, secret, path)
+    require_absent(text, forbidden_secret, path)
     require_contains(text, "validate-career-feed-brief.py", path)
+    require_contains(text, f"--type {validator_type}", path)
+    require_contains(text, f"collect-kr-feeds.py --mode {collector_mode}", path)
     require_contains(text, "Log workflow trigger context", path)
     require_contains(text, "EVENT_NAME: ${{ github.event_name }}", path)
     require_contains(text, "EVENT_SCHEDULE: ${{ github.event.schedule }}", path)
     require_contains(text, "kst_now=$(TZ=Asia/Seoul date", path)
-    require_contains(text, "Wait until 09:00 KST before Discord send", path)
+    require_contains(text, wait_step_name, path)
     require_contains(text, "if: github.event_name == 'schedule'", path)
     require_contains(text, 'now_epoch="$(TZ=Asia/Seoul date +%s)"', path)
     require_contains(
         text,
-        'target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:00:00" +%s)"',
+        f'target_epoch="$(TZ=Asia/Seoul date -d "${{today_kst}} {wait_time}" +%s)"',
         path,
     )
     require_contains(text, 'sleep "${wait_seconds}"', path)
@@ -129,7 +138,24 @@ def main() -> int:
             label="Daily Backend Brief",
             cron="5 8 * * 1-5",
             secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
+            forbidden_secret="DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY",
             concurrency_group="career-feed-kr-tech-daily-${{ github.ref }}",
+            wait_step_name="Wait until 09:00 KST before Discord send",
+            wait_time="09:00:00",
+            collector_mode="daily-backend",
+            validator_type="daily-tech",
+        )
+        check_scheduled_workflow(
+            NEWS_DAILY_WORKFLOW,
+            label="Daily Korea Dev AI News",
+            cron="15 8 * * 1-5",
+            secret="DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY",
+            forbidden_secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
+            concurrency_group="career-feed-kr-tech-news-daily-${{ github.ref }}",
+            wait_step_name="Wait until 09:05 KST before Discord send",
+            wait_time="09:05:00",
+            collector_mode="daily-news",
+            validator_type="daily-news",
         )
         check_weekly_site_radar_workflow()
         check_mark_ps_workflow()

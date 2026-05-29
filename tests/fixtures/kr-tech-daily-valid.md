@@ -36,10 +36,7 @@
 - 다음에 issue를 찾을 때 쓸 GitHub 검색식: `repo:spring-projects/spring-boot is:issue is:open label:"status: ideal-for-contribution" no:assignee`
 - 기여 전 매너: 작업 의사를 남기기 전에 최근 댓글과 연결 PR 여부를 먼저 확인합니다.
 
-## 4. 한국 최신 개발/AI 뉴스
-- 오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다.
-
-## 5. 주니어 백엔드 실무지식
+## 4. 주니어 백엔드 실무지식
 ### 주제: 결제 생성 API에서 POST 재시도가 중복 주문을 만드는 상황
 - 실무 상황: 클라이언트가 타임아웃 후 같은 결제 생성 요청을 다시 보내면 서버는 첫 요청 성공 여부를 모른 채 두 번째 주문을 만들 수 있습니다.
 - 핵심 개념: POST 생성 요청은 별도 idempotency key나 중복 방지 키가 없으면 반복 호출 결과가 달라질 수 있습니다.

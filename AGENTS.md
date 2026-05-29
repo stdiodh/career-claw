@@ -6,12 +6,13 @@
 
 - 이 프로젝트는 GitHub Actions, Codex, Discord Webhook 기반의 개발자 커리어 뉴스 브리핑 자동화 프로젝트다.
 - 상시 실행 서버, Discord Gateway Bot, Slash Command, 데이터베이스, 웹 대시보드는 초기 범위에 포함하지 않는다.
-- 기본 목표는 매일 Backend Daily Study Brief와 주간 백엔드 커리어 브리핑을 생성한 뒤 Discord Webhook으로 전송하는 것이다.
-- Daily 브리핑은 Spring Boot/JVM 학습, Programmers 주차별 PS 루틴, Spring OSS 기여 후보, 한국 개발/AI 뉴스로 구성한다.
+- 기본 목표는 매일 Backend Daily Study Brief, 한국 개발/AI 뉴스 피드, 주간 백엔드 커리어 브리핑을 생성한 뒤 Discord Webhook으로 전송하는 것이다.
+- Daily Backend 브리핑은 Spring Boot/JVM 학습, Programmers 주차별 PS 루틴, Spring/JVM/Kotlin OSS 기여 후보, 주니어 백엔드 실무지식으로 구성한다.
+- 한국 개발/AI 뉴스는 별도 News Daily workflow와 Discord Webhook으로 전송한다.
 - Programmers PS 루틴은 정적 config와 progress 파일만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않는다.
 - OpenJDK/JBS는 Spring OSS 난이도 모델의 참고로만 사용하고 직접 수집하지 않는다.
 - 제품명과 문서명은 `Career Feed`로 통일한다. 저장소 이름이나 로컬 경로명은 환경에 따라 다를 수 있다.
-- 현재 운영 경로는 Daily Backend Brief, Weekly Backend Career Brief, Mark PS Solved 3개뿐이다.
+- 현재 운영 경로는 Daily Backend Brief, Korea Dev/AI News Daily, Weekly Backend Career Brief, Mark PS Solved 4개뿐이다.
 
 ## 작업 원칙
 

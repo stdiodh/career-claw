@@ -1,0 +1,170 @@
+name: Daily Korea Dev AI News
+
+on:
+  schedule:
+    - cron: "15 8 * * 1-5"
+      timezone: "Asia/Seoul"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: career-feed-kr-tech-news-daily-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  kr-tech-news-daily:
+    name: Generate and send Korea dev AI news daily
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Log workflow trigger context
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_SCHEDULE: ${{ github.event.schedule }}
+        run: |
+          set -euo pipefail
+          echo "event_name=${EVENT_NAME}"
+          echo "event_schedule=${EVENT_SCHEDULE:-}"
+          echo "kst_now=$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Check required secrets
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY: ${{ secrets.DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY }}
+        run: |
+          set -euo pipefail
+
+          missing=()
+          if [ -z "${OPENAI_API_KEY}" ]; then
+            missing+=("OPENAI_API_KEY")
+          fi
+          if [ -z "${DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY}" ]; then
+            missing+=("DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY")
+          fi
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            printf 'Missing required secret(s): %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Prepare report directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports/candidates reports/briefs
+
+      - name: Collect Korea dev AI news candidates
+        shell: bash
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          python3 scripts/collect-kr-feeds.py --mode daily-news
+
+      - name: Prepare KST runtime prompt
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          kst_now="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
+          runtime_prompt="${RUNNER_TEMP}/kr-tech-news-daily-${GITHUB_RUN_ID}.md"
+          report_file="reports/briefs/kr-tech-news-daily.md"
+
+          KST_NOW="${kst_now}" RUNTIME_PROMPT="${runtime_prompt}" python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          source = Path(".github/codex/prompts/kr-tech-news-daily.md")
+          destination = Path(os.environ["RUNTIME_PROMPT"])
+          prompt = source.read_text(encoding="utf-8")
+          prompt = prompt.replace("{{KST_NOW}}", os.environ["KST_NOW"])
+          runtime = prompt + "\n\n## Runtime candidate files\n\n"
+          runtime += "아래 후보 JSON 파일과 사용자 프로필을 읽고 최종 뉴스 피드를 작성한다.\n\n"
+          runtime += "- `reports/candidates/kr-dev-ai-news.json`\n"
+          runtime += "- `reports/candidates/kr-ai-tech-news.json`\n"
+          runtime += "- `configs/audience-profile.json`\n"
+          runtime += "\n`kr-dev-ai-news.json`과 `kr-ai-tech-news.json`에서 3~5개 뉴스를 고른다.\n"
+          runtime += "같은 사건은 하나만 고르고, 가능하면 원문 링크를 사용한다.\n"
+          runtime += "\n## Runtime output\n\n"
+          runtime += "- 최종 Markdown은 `reports/briefs/kr-tech-news-daily.md`에만 작성한다.\n"
+          runtime += "- 후보 JSON, config, workflow, script 파일은 runtime Codex 생성 단계에서 수정하지 않는다.\n"
+          runtime += "- Secret 값이나 Webhook URL은 출력하지 않는다.\n"
+          destination.write_text(runtime, encoding="utf-8")
+          PY
+
+          {
+            echo "kst_now=${kst_now}"
+            echo "runtime_prompt=${runtime_prompt}"
+            echo "report_file=${report_file}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Generate Korea dev AI news Markdown
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ steps.prepare.outputs.runtime_prompt }}
+          output-file: reports/briefs/kr-tech-news-daily-codex-summary.md
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          codex-args: '["--model","gpt-5.4-mini","-c","model_reasoning_effort=\"low\""]'
+
+      - name: Validate Korea dev AI news Markdown
+        shell: bash
+        env:
+          REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
+        run: |
+          set -euo pipefail
+          python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type daily-news
+
+      - name: Wait until 09:05 KST before Discord send
+        if: github.event_name == 'schedule'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          now_epoch="$(TZ=Asia/Seoul date +%s)"
+          today_kst="$(TZ=Asia/Seoul date '+%Y-%m-%d')"
+          target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:05:00" +%s)"
+
+          if [ "${now_epoch}" -lt "${target_epoch}" ]; then
+            wait_seconds=$((target_epoch - now_epoch))
+            echo "Waiting ${wait_seconds}s until 09:05 KST before Discord send."
+            sleep "${wait_seconds}"
+          else
+            echo "Already past 09:05 KST. Sending immediately."
+          fi
+
+      - name: Send Korea dev AI news to Discord
+        shell: bash
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY }}
+          REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
+        run: |
+          set -euo pipefail
+          python3 scripts/send-discord.py "${REPORT_FILE}"
+
+      - name: Upload Korea dev AI news artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: career-feed-kr-tech-news-daily-${{ github.run_id }}
+          path: |
+            reports/candidates/kr-dev-ai-news.json
+            reports/candidates/kr-ai-tech-news.json
+            reports/briefs/kr-tech-news-daily.md
+            reports/briefs/kr-tech-news-daily-codex-summary.md
+          if-no-files-found: warn

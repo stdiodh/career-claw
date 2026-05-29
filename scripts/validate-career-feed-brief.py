@@ -23,9 +23,10 @@ DAILY_SECTIONS = [
     "오늘의 Spring Boot/JVM 학습",
     "이번 주 PS 성장 루틴",
     "오픈소스 기여 후보",
-    "한국 최신 개발/AI 뉴스",
     "주니어 백엔드 실무지식",
 ]
+NEWS_DAILY_SECTIONS_MIN = 3
+NEWS_DAILY_SECTIONS_MAX = 5
 WEEKLY_SECTIONS = [
     "공식 채용 사이트",
     "채용·인턴 플랫폼",
@@ -129,12 +130,12 @@ DAILY_PS_FIELDS = [
     "막히면 검색",
     "링크",
 ]
-DAILY_NEWS_FIELDS = [
-    "제목",
+NEWS_DAILY_FIELDS = [
+    "분류",
     "출처/게시",
     "핵심",
-    "실무 연결",
-    "검색 키워드",
+    "백엔드 주니어 관점",
+    "더 볼 키워드",
     "링크",
 ]
 DAILY_PRACTICAL_FIELDS = [
@@ -170,6 +171,14 @@ DAILY_NEWS_FORBIDDEN_PATTERNS = [
     r"공식 문서",
     r"Issue 보기",
     r"공부로 연결할 점",
+]
+NEWS_DAILY_FORBIDDEN_PATTERNS = [
+    r"주가",
+    r"관련주",
+    r"투자\s*의견",
+    r"투자의견",
+    r"급등",
+    r"테마주",
 ]
 WEEKLY_REQUIRED_FIELDS = [
     "확인 유형",
@@ -391,7 +400,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("path", nargs="?", default=DEFAULT_REPORT)
     parser.add_argument(
         "--type",
-        choices=["daily-tech", "weekly-career"],
+        choices=["daily-tech", "daily-news", "weekly-career"],
         default="daily-tech",
         help="Brief type to validate.",
     )
@@ -563,6 +572,10 @@ def validation_url_key(url: str) -> str:
     return f"{domain}/{path}" if path else domain
 
 
+def normalize_validation_title(title: str) -> str:
+    return re.sub(r"\s+", " ", title.strip()).lower()
+
+
 def is_allowed_url_prefix(url: str, allowed_prefixes: list[str]) -> bool:
     key = validation_url_key(url).lower()
     domain = validation_domain(url)
@@ -710,6 +723,8 @@ def validate_daily_tech(content: str) -> None:
     sections = extract_sections(content)
     validate_common(content, min_links=2)
     require_sections(sections, DAILY_SECTIONS)
+    if find_section(sections, "한국 최신 개발/AI 뉴스") is not None:
+        fail("Daily backend brief must not include 한국 최신 개발/AI 뉴스 section.")
 
     if re.search(r"^##\s+.*(?:커리어|인턴|공모전|해커톤)", content, re.MULTILINE):
         fail("Daily tech brief must not include a long career event section.")
@@ -720,7 +735,6 @@ def validate_daily_tech(content: str) -> None:
     validate_daily_study_section(sections)
     validate_daily_ps_section(sections)
     validate_daily_oss_section(sections)
-    validate_daily_news_section(sections)
     validate_daily_practical_section(sections)
 
 
@@ -829,30 +843,60 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
     validate_item_markdown_link(item)
 
 
-def validate_daily_news_section(sections: list[Section]) -> None:
-    section = find_section(sections, "한국 최신 개발/AI 뉴스")
-    if section is None:
-        fail("Daily tech brief must include 한국 최신 개발/AI 뉴스 section.")
+def validate_daily_news(content: str) -> None:
+    if not re.search(r"^#\s+Career Feed - Korea Dev/AI News\s*$", content, re.MULTILINE):
+        fail("Missing Korea Dev/AI News title.")
+    if "오늘의 흐름:" not in content:
+        fail("Daily news brief must include 오늘의 흐름 field.")
+    validate_common(content, min_links=NEWS_DAILY_SECTIONS_MIN)
 
-    found_forbidden = [
-        pattern
-        for pattern in DAILY_NEWS_FORBIDDEN_PATTERNS
-        if re.search(pattern, section.body, flags=re.IGNORECASE)
+    sections = extract_sections(content)
+    news_sections = [
+        section
+        for section in sections
+        if re.match(r"^\d+\.\s+", section.heading)
     ]
-    if found_forbidden:
-        fail(f"Daily news section contains forbidden source or field: {', '.join(found_forbidden)}")
+    if not (NEWS_DAILY_SECTIONS_MIN <= len(news_sections) <= NEWS_DAILY_SECTIONS_MAX):
+        fail(
+            "Daily news brief must include "
+            f"{NEWS_DAILY_SECTIONS_MIN}-{NEWS_DAILY_SECTIONS_MAX} news items."
+        )
 
-    items = extract_items(section)
-    if len(items) > 1:
-        fail("Daily development/AI news section must include at most one item.")
-    if not items and DAILY_NEWS_EMPTY_STATE in section.body:
-        return
+    seen_titles: set[str] = set()
+    seen_urls: set[str] = set()
+    for section in news_sections:
+        title = re.sub(r"^\d+\.\s+", "", section.heading).strip()
+        title_key = normalize_validation_title(title)
+        if title_key in seen_titles:
+            fail(f"Duplicate daily news title found: {title}")
+        seen_titles.add(title_key)
 
-    body = items[0].body if items else section.body
-    missing = missing_bullet_fields(body, DAILY_NEWS_FIELDS)
-    if missing:
-        fail(f"Daily development/AI news is missing field(s): {', '.join(missing)}")
-    require_markdown_link_in_text(body, "한국 최신 개발/AI 뉴스")
+        core = bullet_field_value(section.body, "핵심")
+        stock_text = "\n".join([title, core])
+        found_forbidden = [
+            pattern
+            for pattern in NEWS_DAILY_FORBIDDEN_PATTERNS
+            if re.search(pattern, stock_text, flags=re.IGNORECASE)
+        ]
+        if found_forbidden:
+            fail(f"Daily news item contains stock/investment wording: {title}")
+
+        missing = missing_bullet_fields(section.body, NEWS_DAILY_FIELDS)
+        if missing:
+            fail(f"Daily news item is missing field(s): {title} ({', '.join(missing)})")
+
+        link_value = bullet_field_value(section.body, "링크")
+        if not MARKDOWN_LINK_RE.search(link_value):
+            fail(f"Daily news item must include a Markdown link in 링크 field: {title}")
+
+        urls = markdown_link_urls(link_value)
+        if not urls:
+            fail(f"Daily news item must include a URL: {title}")
+        for url in urls:
+            url_key = normalize_validation_url(url)
+            if url_key in seen_urls:
+                fail(f"Duplicate daily news URL found: {url}")
+            seen_urls.add(url_key)
 
 
 def validate_daily_practical_section(sections: list[Section]) -> None:
@@ -1106,6 +1150,8 @@ def validate_weekly_tracking_section(sections: list[Section]) -> None:
 def validate(content: str, report_type: str) -> None:
     if report_type == "daily-tech":
         validate_daily_tech(content)
+    elif report_type == "daily-news":
+        validate_daily_news(content)
     elif report_type == "weekly-career":
         validate_weekly_career(content)
     else:
