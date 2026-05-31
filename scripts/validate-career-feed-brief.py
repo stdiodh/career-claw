@@ -358,15 +358,19 @@ DAILY_OSS_STATUS_REQUIRED_GROUPS = {
     "assignee absence": [
         r"담당자\s*없음",
         r"assignee\s*(?:없음|none|0)",
+        r"(?:담당자|assignee|배정).{0,30}없(?:음|다|고|는|습니다)?",
         r"배정\s*없음",
         r"미배정",
     ],
     "linked work absence": [
         r"(?:연결|linked).*(?:PR|branch|브랜치).*(?:없음|none|0)",
+        r"(?:연결|linked).{0,40}(?:PR|branch|브랜치).{0,40}없(?:음|다|고|는|습니다)?",
     ],
     "claim absence": [
         r"(?:claim|작업\s*의사|working|맡겠).*(?:없음|none|0)",
         r"댓글.*(?:claim|작업\s*의사).*(?:없음|none|0)",
+        r"(?:claim|작업\s*의사|working|맡겠).{0,40}없(?:음|다|고|는|습니다)?",
+        r"댓글.{0,40}(?:claim|작업\s*의사).{0,40}없(?:음|다|고|는|습니다)?",
     ],
 }
 OSS_CONTRIBUTION_TYPE_ALIASES = {
@@ -662,6 +666,10 @@ def text_contains_expected_or_alias(text: str, expected: str, aliases: dict[str,
     lowered_expected = expected.lower()
     values = aliases.get(lowered_expected, [expected])
     return any(value.lower() in lowered_text for value in values)
+
+
+def normalize_token_value(text: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "_", text.lower()).strip("_")
 
 
 def bullet_field_value(text: str, field: str) -> str:
@@ -1073,7 +1081,7 @@ def validate_oss_candidate_alignment(
 
     difficulty_band = candidate_text_value(candidate, "difficulty_band")
     difficulty_value = bullet_field_value(item.body, "난이도 밴드")
-    if difficulty_band and difficulty_band not in difficulty_value:
+    if difficulty_band and normalize_token_value(difficulty_band) not in normalize_token_value(difficulty_value):
         fail("OSS candidate 난이도 밴드 field must match the safe candidate JSON.")
 
     contribution_type = candidate_text_value(candidate, "contribution_type")
