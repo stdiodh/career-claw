@@ -16,6 +16,7 @@ python3 -m py_compile \
   scripts/build-daily-news-shortlist.py \
   scripts/check-workflow-schedules.py \
   scripts/collect-kr-feeds.py \
+  scripts/evaluate-news-daily-quality.py \
   scripts/estimate-prompt-budget.py \
   scripts/render-weekly-career-site-radar.py \
   scripts/select-ps-problem.py \
@@ -70,8 +71,8 @@ if grep -q 'collect-kr-feeds.py --mode daily-tech' .github/workflows/kr-tech-dai
 fi
 grep -q -- '--type daily-tech' .github/workflows/kr-tech-daily.yml
 grep -q 'career-feed-backend-sent-' .github/workflows/kr-tech-daily.yml
-grep -q 'actions/cache/restore@v4' .github/workflows/kr-tech-daily.yml
-grep -q 'actions/cache/save@v4' .github/workflows/kr-tech-daily.yml
+grep -q 'actions/cache/restore@v5' .github/workflows/kr-tech-daily.yml
+grep -q 'actions/cache/save@v5' .github/workflows/kr-tech-daily.yml
 grep -q 'group: career-feed-backend-daily-${{ github.ref }}' .github/workflows/kr-tech-daily.yml
 grep -q 'Wait until 09:00 KST before Discord send' .github/workflows/kr-tech-daily.yml
 grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/kr-tech-daily.yml
@@ -120,12 +121,18 @@ grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY' .github/workflows/kr-tech-news-dail
 grep -q 'collect-kr-feeds.py --mode daily-news' .github/workflows/kr-tech-news-daily.yml
 grep -q 'build-daily-news-shortlist.py' .github/workflows/kr-tech-news-daily.yml
 grep -q 'estimate-prompt-budget.py' .github/workflows/kr-tech-news-daily.yml
+grep -q 'evaluate-news-daily-quality.py' .github/workflows/kr-tech-news-daily.yml
 grep -q 'kr-tech-news-shortlist.json' .github/workflows/kr-tech-news-daily.yml
 grep -q 'news-daily-token-budget.json' scripts/write-news-daily-run-summary.py
+grep -q 'news-daily-quality-report.json' scripts/write-news-daily-run-summary.py
 grep -q -- '--type daily-news' .github/workflows/kr-tech-news-daily.yml
 grep -q 'career-feed-news-sent-' .github/workflows/kr-tech-news-daily.yml
-grep -q 'actions/cache/restore@v4' .github/workflows/kr-tech-news-daily.yml
-grep -q 'actions/cache/save@v4' .github/workflows/kr-tech-news-daily.yml
+grep -q 'actions/cache/restore@v5' .github/workflows/kr-tech-news-daily.yml
+grep -q 'actions/cache/save@v5' .github/workflows/kr-tech-news-daily.yml
+if grep -Eq 'actions/cache(/[^@[:space:]]*)?@v4' .github/workflows/*.yml; then
+  echo "GitHub Actions cache v4 usage must not remain." >&2
+  exit 1
+fi
 grep -q 'group: career-feed-news-daily-${{ github.ref }}' .github/workflows/kr-tech-news-daily.yml
 grep -q 'Wait until 09:05 KST before Discord send' .github/workflows/kr-tech-news-daily.yml
 grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/kr-tech-news-daily.yml
@@ -142,6 +149,12 @@ grep -q 'investment_selected_count' scripts/write-news-daily-run-summary.py
 grep -q 'bridge_present' scripts/write-news-daily-run-summary.py
 grep -q 'growth_score' scripts/write-news-daily-run-summary.py
 grep -q 'growth_action_present' scripts/write-news-daily-run-summary.py
+grep -q 'quality_score' scripts/write-news-daily-run-summary.py
+grep -q 'quality_recommendation' scripts/write-news-daily-run-summary.py
+grep -q 'target_ratio_met' scripts/write-news-daily-run-summary.py
+grep -q 'growth_action_quality' scripts/write-news-daily-run-summary.py
+grep -q 'investment_advice_risk' scripts/write-news-daily-run-summary.py
+grep -q 'price_move_only_risk' scripts/write-news-daily-run-summary.py
 grep -q 'estimated_prompt_tokens_rough' scripts/write-news-daily-run-summary.py
 grep -q 'retention-days: 14' .github/workflows/kr-tech-news-daily.yml
 if grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-news-daily.yml; then
@@ -250,6 +263,7 @@ required_files=(
   "scripts/build-daily-news-shortlist.py"
   "scripts/check-workflow-schedules.py"
   "scripts/collect-kr-feeds.py"
+  "scripts/evaluate-news-daily-quality.py"
   "scripts/estimate-prompt-budget.py"
   "scripts/render-weekly-career-site-radar.py"
   "scripts/select-ps-problem.py"
@@ -263,12 +277,16 @@ required_files=(
   "tests/fixtures/kr-tech-news-daily-valid-sparse.md"
   "tests/fixtures/kr-tech-news-daily-valid-empty.md"
   "tests/fixtures/kr-tech-news-daily-valid-tech-investment.md"
+  "tests/fixtures/kr-tech-news-daily-valid-quality-score-4.md"
   "tests/fixtures/kr-tech-news-daily-valid-tech-only.md"
   "tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md"
   "tests/fixtures/kr-tech-news-daily-invalid-investment-advice.md"
   "tests/fixtures/kr-tech-news-daily-invalid-related-stock.md"
   "tests/fixtures/kr-tech-news-daily-invalid-investment-missing-risk.md"
-  "tests/fixtures/kr-tech-news-daily-invalid-investment-too-many.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-price-only.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-investment-missing-indicator.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-growth-vague-action.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-too-many-investment.md"
   "tests/fixtures/kr-tech-news-daily-invalid-growth-missing.md"
   "tests/fixtures/kr-backend-career-weekly-valid.md"
   "tests/fixtures/candidates-empty/kr-oss-contribution-opportunities.json"
@@ -719,6 +737,11 @@ for field in [
     "estimated_prompt_chars",
     "estimated_prompt_tokens_rough",
     "estimated_output_tokens_budget_rough",
+    "target_total_items",
+    "target_tech_items",
+    "target_investment_items",
+    "max_flat_shortlist_items",
+    "token_budget_status",
 ]:
     if field not in budget:
         raise SystemExit(f"token budget payload misses field: {field}")
@@ -776,7 +799,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
         json.dumps({"preferences": {"content_tracks": {"enabled": True}}}),
         encoding="utf-8",
     )
-    payload = shortlist_module.build_shortlist([input_path], profile_path, 16, 10, 6)
+    payload = shortlist_module.build_shortlist([input_path], profile_path, 12, 8, 4)
 
 if payload["tech_shortlist_count"] != 1:
     raise SystemExit("shortlist smoke must classify one tech item")
@@ -789,6 +812,40 @@ for field in ["investment_relevance", "technology_link", "risk_flags"]:
 print("news daily track split smoke check passed")
 PY
 cp tests/fixtures/kr-tech-news-daily-valid-tech-investment.md reports/briefs/kr-tech-news-daily.md
+python3 scripts/evaluate-news-daily-quality.py \
+  --report tests/fixtures/kr-tech-news-daily-valid-tech-investment.md \
+  --shortlist reports/candidates/kr-tech-news-shortlist.json \
+  --token-budget reports/ops/news-daily-token-budget.json
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+quality = json.loads(Path("reports/ops/news-daily-quality-report.json").read_text(encoding="utf-8"))
+required_fields = [
+    "quality_score",
+    "tech_item_count",
+    "investment_item_count",
+    "total_item_count",
+    "target_ratio_met",
+    "bridge_present",
+    "growth_score",
+    "growth_action_present",
+    "growth_action_quality",
+    "investment_advice_risk",
+    "price_move_only_risk",
+    "token_efficiency",
+    "warnings",
+    "recommendation",
+]
+missing = [field for field in required_fields if field not in quality]
+if missing:
+    raise SystemExit("News Daily quality report misses field(s): " + ", ".join(missing))
+if quality["quality_score"] < 3:
+    raise SystemExit("News Daily quality report score must be at least 3 for valid fixture")
+if quality["recommendation"] not in {"accept", "review"}:
+    raise SystemExit("News Daily quality report must not tune a valid fixture")
+print("News Daily quality report smoke check passed")
+PY
 EVENT_NAME=workflow_dispatch \
 EVENT_SCHEDULE= \
 DRY_RUN=true \
@@ -816,6 +873,12 @@ required_fields = [
     "bridge_present",
     "growth_score",
     "growth_action_present",
+    "quality_score",
+    "quality_recommendation",
+    "target_ratio_met",
+    "growth_action_quality",
+    "investment_advice_risk",
+    "price_move_only_risk",
     "estimated_prompt_chars",
     "estimated_prompt_tokens_rough",
     "estimated_output_tokens_budget_rough",
@@ -881,12 +944,16 @@ python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-investment.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-quality-score-4.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-only.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment-advice.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-related-stock.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment-missing-risk.md --type daily-news
-expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment-too-many.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-price-only.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment-missing-indicator.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-growth-vague-action.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-too-many-investment.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-growth-missing.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 python3 tests/test_daily_oss_contract.py

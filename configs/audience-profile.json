@@ -24,7 +24,27 @@
       "enabled": true,
       "daily_total_items": {
         "min": 3,
-        "max": 5
+        "max": 5,
+        "default": 4
+      },
+      "daily_ratio_policy": {
+        "default_total_items": 4,
+        "target_tech_items": 3,
+        "target_investment_items": 1,
+        "max_total_items": 5,
+        "allow_zero_investment_when_quality_low": true,
+        "allow_second_investment_when": [
+          "investment item has clear technology driver",
+          "investment item is based on earnings, disclosure, CAPEX, data center, GPU/HBM, cloud, enterprise AI, API/platform revenue",
+          "at least two tech items are also selected",
+          "the second investment item is not about the same company or same event"
+        ],
+        "prefer_tech_when": [
+          "investment candidates are price-move-only",
+          "investment candidates repeat the same company too often",
+          "investment candidates lack technology_link",
+          "growth action would become vague"
+        ]
       },
       "tech": {
         "enabled": true,

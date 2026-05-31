@@ -16,6 +16,7 @@ KST = ZoneInfo("Asia/Seoul")
 DEFAULT_REPORT_FILE = Path("reports/briefs/kr-tech-news-daily.md")
 DEFAULT_SHORTLIST_FILE = Path("reports/candidates/kr-tech-news-shortlist.json")
 DEFAULT_BUDGET_FILE = Path("reports/ops/news-daily-token-budget.json")
+DEFAULT_QUALITY_FILE = Path("reports/ops/news-daily-quality-report.json")
 DEFAULT_OUTPUT_JSON = Path("reports/ops/news-daily-run-summary.json")
 DEFAULT_OUTPUT_MD = Path("reports/ops/news-daily-run-summary.md")
 DEFAULT_RAW_CANDIDATE_FILES = [
@@ -29,6 +30,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--report-file", type=Path, default=DEFAULT_REPORT_FILE)
     parser.add_argument("--shortlist-file", type=Path, default=DEFAULT_SHORTLIST_FILE)
     parser.add_argument("--budget-file", type=Path, default=DEFAULT_BUDGET_FILE)
+    parser.add_argument("--quality-file", type=Path, default=DEFAULT_QUALITY_FILE)
     parser.add_argument("--output-json", type=Path, default=DEFAULT_OUTPUT_JSON)
     parser.add_argument("--output-md", type=Path, default=DEFAULT_OUTPUT_MD)
     parser.add_argument(
@@ -136,6 +138,7 @@ def main() -> int:
     raw_count, source_errors = raw_candidate_stats(raw_candidate_files)
     shortlist = read_json_object(args.shortlist_file)
     budget = read_json_object(args.budget_file)
+    quality = read_json_object(args.quality_file)
     report = args.report_file.read_text(encoding="utf-8") if args.report_file.exists() else ""
 
     shortlist_items = shortlist.get("items", [])
@@ -173,6 +176,12 @@ def main() -> int:
         "bridge_present": bool(bridge_body),
         "growth_score": growth_score(report),
         "growth_action_present": growth_action_present(report),
+        "quality_score": int(quality.get("quality_score", 0) or 0),
+        "quality_recommendation": str(quality.get("recommendation", "")),
+        "target_ratio_met": quality.get("target_ratio_met") is True,
+        "growth_action_quality": str(quality.get("growth_action_quality", "")),
+        "investment_advice_risk": quality.get("investment_advice_risk") is True,
+        "price_move_only_risk": quality.get("price_move_only_risk") is True,
         "estimated_prompt_chars": int(budget.get("estimated_prompt_chars", 0) or 0),
         "estimated_prompt_tokens_rough": int(budget.get("estimated_prompt_tokens_rough", 0) or 0),
         "estimated_output_tokens_budget_rough": int(
@@ -212,6 +221,12 @@ def main() -> int:
         f"- bridge_present: {summary['bridge_present']}\n"
         f"- growth_score: {summary['growth_score']}\n"
         f"- growth_action_present: {summary['growth_action_present']}\n"
+        f"- quality_score: {summary['quality_score']}\n"
+        f"- quality_recommendation: {summary['quality_recommendation']}\n"
+        f"- target_ratio_met: {summary['target_ratio_met']}\n"
+        f"- growth_action_quality: {summary['growth_action_quality']}\n"
+        f"- investment_advice_risk: {summary['investment_advice_risk']}\n"
+        f"- price_move_only_risk: {summary['price_move_only_risk']}\n"
         f"- estimated_prompt_chars: {summary['estimated_prompt_chars']}\n"
         f"- estimated_prompt_tokens_rough: {summary['estimated_prompt_tokens_rough']}\n"
         f"- estimated_output_tokens_budget_rough: {summary['estimated_output_tokens_budget_rough']}\n"

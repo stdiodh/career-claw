@@ -250,6 +250,23 @@ NEWS_DAILY_MARKET_PRICE_PATTERNS = [
     r"상한가",
     r"하한가",
 ]
+NEWS_DAILY_PRICE_CONTEXT_PATTERNS = [
+    r"실적",
+    r"영업이익",
+    r"매출",
+    r"\bCAPEX\b",
+    r"데이터\s*센터",
+    r"데이터센터",
+    r"\bGPU\b",
+    r"\bHBM\b",
+    r"클라우드",
+    r"AI\s*제품",
+    r"기업용\s*AI",
+    r"\bAPI\b",
+    r"수요",
+    r"공시",
+    r"컨퍼런스콜",
+]
 NEWS_DAILY_TECH_CONTEXT_PATTERNS = [
     r"\bAPI\b",
     r"\bSDK\b",
@@ -276,6 +293,21 @@ NEWS_DAILY_TECH_CONTEXT_PATTERNS = [
     r"공시",
     r"컨퍼런스콜",
 ]
+NEWS_DAILY_OBJECTIVE_METRIC_PATTERNS = [
+    r"매출",
+    r"영업이익",
+    r"\bCAPEX\b",
+    r"가이던스",
+    r"데이터\s*센터\s*투자",
+    r"데이터센터\s*투자",
+    r"\bGPU\b\s*수요",
+    r"\bHBM\b\s*매출\s*비중",
+    r"클라우드\s*영업이익률",
+    r"\bAPI\b\s*사용량",
+    r"기업용\s*AI\s*매출",
+    r"고객\s*수",
+    r"서버\s*출하량",
+]
 NEWS_DAILY_GROWTH_ACTION_PATTERNS = [
     r"공식\s*문서\s*(?:보기|확인|정리)",
     r"작은\s*코드\s*실험",
@@ -286,6 +318,12 @@ NEWS_DAILY_GROWTH_ACTION_PATTERNS = [
     r"면접\s*질문",
     r"GitHub\s*issue",
     r"\bTIL\b",
+]
+NEWS_DAILY_VAGUE_ACTION_PATTERNS = [
+    r"관련\s*내용을\s*읽어본다",
+    r"관심을\s*가져본다",
+    r"공부해본다",
+    r"살펴본다",
 ]
 NEWS_DAILY_OFFICIAL_TECH_BLOG_DOMAINS = {
     "d2.naver.com",
@@ -1247,6 +1285,10 @@ def validate_daily_news_investment_item(item: Item) -> None:
     metrics = bullet_field_value(item.body, "확인할 지표")
     if not news_daily_has_tech_context("\n".join([technology_link, metrics])):
         fail(f"Daily investment news item must connect to technology demand or metrics: {title}")
+    if is_vague_technology_link(technology_link):
+        fail(f"Daily investment news item has vague technology connection: {title}")
+    if not matches_any_pattern(metrics, NEWS_DAILY_OBJECTIVE_METRIC_PATTERNS):
+        fail(f"Daily investment news item must include at least one objective metric: {title}")
 
     short_term_text = "\n".join(
         [
@@ -1256,6 +1298,8 @@ def validate_daily_news_investment_item(item: Item) -> None:
         ]
     )
     if matches_any_pattern(short_term_text, NEWS_DAILY_MARKET_PRICE_PATTERNS):
+        if not matches_any_pattern(short_term_text, NEWS_DAILY_PRICE_CONTEXT_PATTERNS):
+            fail(f"Daily investment news item describes price movement without business driver: {title}")
         if not news_daily_has_tech_context("\n".join([item.body, technology_link, metrics])):
             fail(f"Daily investment news item describes market movement without technology context: {title}")
 
@@ -1265,7 +1309,21 @@ def is_specific_growth_action(text: str) -> bool:
         return False
     if re.fullmatch(r"(?:기사|뉴스|원문)?\s*(?:읽기|보기|확인)\s*", text.strip()):
         return False
+    if matches_any_pattern(text, NEWS_DAILY_VAGUE_ACTION_PATTERNS):
+        return False
     return matches_any_pattern(text, NEWS_DAILY_GROWTH_ACTION_PATTERNS)
+
+
+def is_vague_technology_link(text: str) -> bool:
+    stripped = re.sub(r"\s+", " ", text.strip())
+    if not stripped:
+        return True
+    vague = [
+        r"AI와\s*관련(?:이\s*)?있(?:다|습니다)?\.?",
+        r"기술과\s*(?:관련|연결)(?:이\s*)?있(?:다|습니다)?\.?",
+        r"AI\s*기술과\s*(?:관련|연결)(?:이\s*)?있(?:다|습니다)?\.?",
+    ]
+    return matches_any_pattern(stripped, vague) and len(stripped) < 35
 
 
 def validate_daily_news_growth_section(section: Section | None) -> None:

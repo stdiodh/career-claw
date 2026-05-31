@@ -76,7 +76,7 @@ jobs:
 
       - name: Restore News Daily delivery lock
         id: delivery-lock
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: ${{ steps.context.outputs.lock_marker }}
           key: ${{ steps.context.outputs.delivery_lock_key }}
@@ -257,6 +257,17 @@ jobs:
           set -euo pipefail
           python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type daily-news
 
+      - name: Evaluate News Daily quality
+        id: quality
+        if: steps.delivery.outputs.should_generate == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/evaluate-news-daily-quality.py \
+            --report reports/briefs/kr-tech-news-daily.md \
+            --shortlist reports/candidates/kr-tech-news-shortlist.json \
+            --token-budget reports/ops/news-daily-token-budget.json
+
       - name: Wait until 09:05 KST before Discord send
         id: wait-before-send
         if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'
@@ -300,7 +311,7 @@ jobs:
       - name: Save News Daily delivery lock
         id: save-lock
         if: steps.create-lock.outcome == 'success' && steps.delivery-lock.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: ${{ steps.context.outputs.lock_marker }}
           key: ${{ steps.context.outputs.delivery_lock_key }}
@@ -349,6 +360,7 @@ jobs:
             "generate-retry:${{ steps.generate-retry.outcome }}" \
             "generation-status:${{ steps.generation-status.outcome }}" \
             "validate:${{ steps.validate.outcome }}" \
+            "quality:${{ steps.quality.outcome }}" \
             "send-discord:${{ steps.send-discord.outcome }}" \
             "save-lock:${{ steps.save-lock.outcome }}"
           do

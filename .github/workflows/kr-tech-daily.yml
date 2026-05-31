@@ -78,7 +78,7 @@ jobs:
 
       - name: Restore Backend Daily delivery lock
         id: delivery-lock
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: ${{ steps.context.outputs.lock_marker }}
           key: ${{ steps.context.outputs.delivery_lock_key }}
@@ -291,7 +291,7 @@ jobs:
       - name: Save Backend Daily delivery lock
         id: save-lock
         if: steps.create-lock.outcome == 'success' && steps.delivery-lock.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: ${{ steps.context.outputs.lock_marker }}
           key: ${{ steps.context.outputs.delivery_lock_key }}

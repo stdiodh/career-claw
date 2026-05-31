@@ -20,10 +20,10 @@ DEFAULT_INPUT_FILES = [
 ]
 DEFAULT_AUDIENCE_PROFILE = Path("configs/audience-profile.json")
 DEFAULT_OUTPUT_FILE = Path("reports/candidates/kr-tech-news-shortlist.json")
-DEFAULT_TECH_MAX_ITEMS = 10
-DEFAULT_INVESTMENT_MAX_ITEMS = 6
+DEFAULT_TECH_MAX_ITEMS = 8
+DEFAULT_INVESTMENT_MAX_ITEMS = 4
 DEFAULT_MAX_ITEMS = DEFAULT_TECH_MAX_ITEMS + DEFAULT_INVESTMENT_MAX_ITEMS
-TEXT_LIMIT = 180
+TEXT_LIMIT = 160
 
 TECH_CATEGORIES = {
     "AI",
@@ -526,6 +526,7 @@ def build_shortlist(
         "investment_shortlist_count": len(investment_items),
         "max_items": max_items,
         "content_tracks_policy": content_tracks,
+        "daily_ratio_policy": content_tracks.get("daily_ratio_policy", {}),
         "previous_market_policy": previous_market_policy,
         "source_errors": source_errors,
         "warnings": warnings,

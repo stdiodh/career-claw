@@ -20,6 +20,10 @@ DEFAULT_RAW_CANDIDATE_FILES = [
     Path("reports/candidates/kr-dev-ai-news.json"),
     Path("reports/candidates/kr-ai-tech-news.json"),
 ]
+TARGET_TOTAL_ITEMS = 4
+TARGET_TECH_ITEMS = 3
+TARGET_INVESTMENT_ITEMS = 1
+MAX_FLAT_SHORTLIST_ITEMS = 12
 
 
 def parse_args() -> argparse.Namespace:
@@ -120,6 +124,14 @@ def output_budget_rough(shortlist_items: int) -> int:
     return 1300
 
 
+def token_budget_status(estimated_tokens: int, shortlist_items: int) -> str:
+    if estimated_tokens > 4500 or shortlist_items > MAX_FLAT_SHORTLIST_ITEMS:
+        return "too_large"
+    if estimated_tokens > 3500 or shortlist_items > TARGET_TOTAL_ITEMS + 4:
+        return "watch"
+    return "ok"
+
+
 def main() -> int:
     args = parse_args()
     raw_candidate_files = args.raw_candidate_file or DEFAULT_RAW_CANDIDATE_FILES
@@ -137,6 +149,7 @@ def main() -> int:
     estimated_prompt_chars = len(runtime_prompt_text) + len(shortlist_text)
     shortlist_items = shortlist_count(args.shortlist_file)
 
+    estimated_prompt_tokens = rough_tokens(estimated_prompt_chars)
     payload = {
         "generated_at_kst": now_kst(),
         "prompt_file": str(args.prompt_file),
@@ -151,8 +164,13 @@ def main() -> int:
         "tech_shortlist_count": track_shortlist_count(args.shortlist_file, "tech"),
         "investment_shortlist_count": track_shortlist_count(args.shortlist_file, "investment"),
         "estimated_prompt_chars": estimated_prompt_chars,
-        "estimated_prompt_tokens_rough": rough_tokens(estimated_prompt_chars),
+        "estimated_prompt_tokens_rough": estimated_prompt_tokens,
         "estimated_output_tokens_budget_rough": output_budget_rough(shortlist_items),
+        "target_total_items": TARGET_TOTAL_ITEMS,
+        "target_tech_items": TARGET_TECH_ITEMS,
+        "target_investment_items": TARGET_INVESTMENT_ITEMS,
+        "max_flat_shortlist_items": MAX_FLAT_SHORTLIST_ITEMS,
+        "token_budget_status": token_budget_status(estimated_prompt_tokens, shortlist_items),
     }
 
     args.output_file.parent.mkdir(parents=True, exist_ok=True)
