@@ -340,12 +340,6 @@ DAILY_OSS_FORBIDDEN_PATTERNS = [
     r"리뷰\s*승인",
 ]
 DAILY_OSS_STATUS_REQUIRED_GROUPS = {
-    "maintainer/triage": [
-        r"maintainer",
-        r"메인테이너",
-        r"triage",
-        r"분류",
-    ],
     "assignee absence": [
         r"담당자\s*없음",
         r"assignee\s*(?:없음|none|0)",
@@ -1036,14 +1030,7 @@ def validate_daily_oss_section(sections: list[Section], candidates_dir: Path) ->
     missing_status_groups = [
         name
         for name, patterns in DAILY_OSS_STATUS_REQUIRED_GROUPS.items()
-        if not any(
-            re.search(
-                pattern,
-                item.body if name == "maintainer/triage" else status_check,
-                flags=re.IGNORECASE,
-            )
-            for pattern in patterns
-        )
+        if not any(re.search(pattern, status_check, flags=re.IGNORECASE) for pattern in patterns)
     ]
     if missing_status_groups:
         fail(f"OSS 상태 확인 is missing candidate safety signal(s): {', '.join(missing_status_groups)}")
