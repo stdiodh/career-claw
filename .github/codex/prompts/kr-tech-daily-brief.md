@@ -134,6 +134,7 @@ Spring/JVM 학습 후보는 다음 주제군에서 고른다.
 추천 가능한 issue 조건:
 
 - open issue여야 한다.
+- 후보 JSON의 `items`에 들어 있고 `safe_to_recommend=true`여야 한다.
 - assignee가 없어야 한다.
 - linked PR/branch가 없어야 한다.
 - 댓글에서 누군가 작업 의사를 밝힌 흔적이 없어야 한다.
@@ -143,6 +144,7 @@ Spring/JVM 학습 후보는 다음 주제군에서 고른다.
 - 첫 30분 액션은 PR 작성이 아니라 읽기, 빌드, 재현, 테스트 위치 확인, 문서 위치 확인, CONTRIBUTING 확인으로 제한한다.
 
 safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아래 형식의 OSS 기여 준비 루틴을 출력한다. 이 준비 루틴은 특정 issue를 잡으라고 말하면 안 되며, 기여자로 성장하는 데 필요한 실전 행동이어야 한다.
+`kr-oss-contribution-opportunities.json`의 `items`가 비어 있으면 추정으로 issue를 만들지 않는다.
 
 ## 4번 주니어 백엔드 실무지식 우선 소스
 

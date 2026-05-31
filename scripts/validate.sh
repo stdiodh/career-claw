@@ -227,6 +227,7 @@ required_files=(
   "tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md"
   "tests/fixtures/kr-tech-news-daily-invalid-investment.md"
   "tests/fixtures/kr-backend-career-weekly-valid.md"
+  "tests/test_oss_reliability_gate.py"
 )
 
 for file in "${required_files[@]}"; do
@@ -518,6 +519,18 @@ for path in [
     if payload.get("candidate_count") != 1 or not isinstance(payload.get("today"), dict):
         raise SystemExit(f"{path} must contain candidate_count=1 and a today object")
 
+oss_payload = json.loads(Path("reports/candidates/kr-oss-contribution-opportunities.json").read_text(encoding="utf-8"))
+if oss_payload.get("verification_policy", "").find("safe_to_recommend=true") == -1:
+    raise SystemExit("OSS candidate payload must document the safe_to_recommend gate")
+diagnostics = oss_payload.get("diagnostics", {})
+if not isinstance(diagnostics, dict):
+    raise SystemExit("OSS candidate payload must include diagnostics")
+if diagnostics.get("linked_work_verification") != "graphql_required":
+    raise SystemExit("OSS diagnostics must require GraphQL linked work verification")
+for item in oss_payload.get("items", []):
+    if not isinstance(item, dict) or item.get("safe_to_recommend") is not True:
+        raise SystemExit("OSS payload items must all have safe_to_recommend=true")
+
 print("daily-backend CS/term candidate smoke check passed")
 PY
 python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
@@ -577,6 +590,7 @@ if python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-dai
   exit 1
 fi
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
+python3 tests/test_oss_reliability_gate.py
 python3 tests/test_weekly_career_collector.py
 
 echo "==> Checking PS progress status"

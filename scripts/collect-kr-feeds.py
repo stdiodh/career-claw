@@ -478,6 +478,8 @@ OSS_CLAIM_KEYWORDS = [
 OSS_PREFERRED_CONTRIBUTION_TYPES = {"docs", "test", "bug-repro", "sample"}
 SOURCE_ERRORS: list[dict[str, str]] = []
 WARNINGS: list[str] = []
+OSS_GATE_EXCLUSION_COUNTS: Counter[str] = Counter()
+OSS_REPOSITORY_DIAGNOSTICS: list[dict[str, object]] = []
 
 
 def record_warning(message: str) -> None:
@@ -491,15 +493,17 @@ def record_source_error(
     *,
     category: str = "",
     source_type: str = "",
+    error_type: str = "",
 ) -> None:
-    SOURCE_ERRORS.append(
-        {
-            "source_name": source_name,
-            "source_type": source_type,
-            "category": category,
-            "error": message,
-        }
-    )
+    error = {
+        "source_name": source_name,
+        "source_type": source_type,
+        "category": category,
+        "error": message,
+    }
+    if error_type:
+        error["error_type"] = error_type
+    SOURCE_ERRORS.append(error)
     print(f"Warning: {source_name}: {message}", file=sys.stderr)
 
 
@@ -580,6 +584,8 @@ class OssIssueCandidate:
     author: str
     author_association: str
     maintainer_authored: bool
+    maintainer_triaged: bool
+    maintainer_qualified: bool
     labels: list[str]
     state: str
     assignees: list[str]
@@ -613,6 +619,16 @@ class OssIssueCandidate:
     status_check: str
     risk_reason: str
     score: int
+
+
+@dataclass(frozen=True)
+class GitHubLinkedWorkCheck:
+    check_status: str
+    linked_prs_count: int
+    linked_branches_count: int
+    has_linked_work: bool
+    source: str
+    timeline_page_complete: bool
 
 
 def parse_args() -> argparse.Namespace:
@@ -3103,11 +3119,19 @@ def fetch_github_api_json(
                 "retrying with the public unauthenticated API."
             )
             return fetch_github_api_json(url, None, repository, description)
+        lowered_detail = detail.lower()
+        rate_limit_remaining = str(exc.headers.get("X-RateLimit-Remaining", "")).strip()
+        error_type = "github_api_request_failed"
+        if rate_limit_remaining == "0" or "rate limit" in lowered_detail:
+            error_type = "github_rate_limit"
+        elif exc.code in {401, 403, 404}:
+            error_type = "github_repository_access_failed"
         record_source_error(
             f"GitHub {repository}",
             f"GitHub API request failed for {description} ({exc.code}): {detail}",
             category=OSS_CATEGORY_ID,
             source_type="github",
+            error_type=error_type,
         )
         return None
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
@@ -3116,8 +3140,104 @@ def fetch_github_api_json(
             f"GitHub API request failed for {description}: {exc}",
             category=OSS_CATEGORY_ID,
             source_type="github",
+            error_type="github_api_request_failed",
         )
         return None
+
+
+def fetch_github_graphql_json(
+    query: str,
+    variables: dict[str, object],
+    token: str | None,
+    repository: str,
+    description: str,
+) -> dict[str, object] | None:
+    if not token:
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub GraphQL request skipped for {description}: token is required.",
+            category=OSS_CATEGORY_ID,
+            source_type="github_graphql",
+            error_type="github_graphql_token_missing",
+        )
+        return None
+
+    request = urllib.request.Request(
+        "https://api.github.com/graphql",
+        data=json.dumps({"query": query, "variables": variables}).encode("utf-8"),
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(request, timeout=REQUEST_TIMEOUT_SECONDS) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        detail = " ".join(body.split())[:300] if body else exc.reason
+        lowered_detail = detail.lower()
+        rate_limit_remaining = str(exc.headers.get("X-RateLimit-Remaining", "")).strip()
+        error_type = "github_graphql_request_failed"
+        if rate_limit_remaining == "0" or "rate limit" in lowered_detail:
+            error_type = "github_rate_limit"
+        elif exc.code in {401, 403, 404}:
+            error_type = "github_repository_access_failed"
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub GraphQL request failed for {description} ({exc.code}): {detail}",
+            category=OSS_CATEGORY_ID,
+            source_type="github_graphql",
+            error_type=error_type,
+        )
+        return None
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub GraphQL request failed for {description}: {exc}",
+            category=OSS_CATEGORY_ID,
+            source_type="github_graphql",
+            error_type="github_graphql_request_failed",
+        )
+        return None
+
+    if not isinstance(payload, dict):
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub GraphQL response was not an object for {description}.",
+            category=OSS_CATEGORY_ID,
+            source_type="github_graphql",
+            error_type="github_graphql_invalid_response",
+        )
+        return None
+
+    errors = payload.get("errors", [])
+    if isinstance(errors, list) and errors:
+        detail = json.dumps(errors[:2], ensure_ascii=False)[:300]
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub GraphQL response included errors for {description}: {detail}",
+            category=OSS_CATEGORY_ID,
+            source_type="github_graphql",
+            error_type="github_graphql_response_error",
+        )
+        return None
+
+    data = payload.get("data")
+    if not isinstance(data, dict):
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub GraphQL response had no data object for {description}.",
+            category=OSS_CATEGORY_ID,
+            source_type="github_graphql",
+            error_type="github_graphql_invalid_response",
+        )
+        return None
+    return data
 
 
 def fetch_github_issues(repository: str, token: str | None) -> list[dict[str, object]]:
@@ -3193,6 +3313,118 @@ def fetch_github_open_pr_reference_count(
         return 0
 
 
+def graphql_pull_request_reference_count(node: object) -> int:
+    if not isinstance(node, dict):
+        return 0
+    count = 0
+    for field in ("source", "subject", "target"):
+        value = node.get(field)
+        if isinstance(value, dict) and value.get("__typename") == "PullRequest":
+            count += 1
+    return count
+
+
+def fetch_github_linked_work_check(
+    repository: str,
+    issue_number: int,
+    token: str | None,
+) -> GitHubLinkedWorkCheck | None:
+    owner, name = repository.split("/", 1)
+    query = """
+    query($owner: String!, $name: String!, $number: Int!) {
+      repository(owner: $owner, name: $name) {
+        issue(number: $number) {
+          linkedBranches(first: 20) {
+            totalCount
+          }
+          timelineItems(first: 100, itemTypes: [CONNECTED_EVENT, CROSS_REFERENCED_EVENT]) {
+            pageInfo {
+              hasNextPage
+            }
+            nodes {
+              __typename
+              ... on ConnectedEvent {
+                source {
+                  __typename
+                  ... on PullRequest { number state url }
+                  ... on Issue { number state url }
+                }
+                subject {
+                  __typename
+                  ... on PullRequest { number state url }
+                  ... on Issue { number state url }
+                }
+              }
+              ... on CrossReferencedEvent {
+                willCloseTarget
+                source {
+                  __typename
+                  ... on PullRequest { number state url }
+                  ... on Issue { number state url }
+                }
+                target {
+                  __typename
+                  ... on PullRequest { number state url }
+                  ... on Issue { number state url }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    """
+    data = fetch_github_graphql_json(
+        query,
+        {"owner": owner, "name": name, "number": issue_number},
+        token,
+        repository,
+        f"linked work check for issue #{issue_number}",
+    )
+    if data is None:
+        return None
+
+    repository_payload = data.get("repository")
+    issue_payload = repository_payload.get("issue") if isinstance(repository_payload, dict) else None
+    if not isinstance(issue_payload, dict):
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub GraphQL linked work check found no issue #{issue_number}.",
+            category=OSS_CATEGORY_ID,
+            source_type="github_graphql",
+            error_type="github_graphql_issue_missing",
+        )
+        return None
+
+    linked_branches = issue_payload.get("linkedBranches", {})
+    try:
+        linked_branches_count = int(
+            linked_branches.get("totalCount", 0)
+            if isinstance(linked_branches, dict)
+            else 0
+        )
+    except (TypeError, ValueError):
+        linked_branches_count = 0
+
+    timeline = issue_payload.get("timelineItems", {})
+    nodes = timeline.get("nodes", []) if isinstance(timeline, dict) else []
+    page_info = timeline.get("pageInfo", {}) if isinstance(timeline, dict) else {}
+    timeline_page_complete = not bool(
+        page_info.get("hasNextPage") if isinstance(page_info, dict) else True
+    )
+    linked_prs_count = sum(graphql_pull_request_reference_count(node) for node in nodes)
+    has_linked_work = linked_prs_count > 0 or linked_branches_count > 0
+    check_status = "verified" if timeline_page_complete else "unknown"
+    return GitHubLinkedWorkCheck(
+        check_status=check_status,
+        linked_prs_count=linked_prs_count,
+        linked_branches_count=linked_branches_count,
+        has_linked_work=has_linked_work,
+        source="graphql",
+        timeline_page_complete=timeline_page_complete,
+    )
+
+
 def label_names(issue: dict[str, object]) -> list[str]:
     raw_labels = issue.get("labels", [])
     if not isinstance(raw_labels, list):
@@ -3254,6 +3486,10 @@ def claim_comment_author(comments: list[dict[str, object]] | None) -> str:
                 return str(user.get("login", "")).strip()
             return "unknown"
     return ""
+
+
+def record_oss_gate_exclusion(reason: str) -> None:
+    OSS_GATE_EXCLUSION_COUNTS[reason] += 1
 
 
 def infer_contribution_type(text: str) -> str:
@@ -4061,9 +4297,11 @@ def build_oss_issue_candidate(
     current_time: datetime,
 ) -> OssIssueCandidate | None:
     if "pull_request" in issue:
+        record_oss_gate_exclusion("pull-request-item")
         return None
     state = str(issue.get("state", "")).strip()
     if state != "open":
+        record_oss_gate_exclusion("not-open")
         return None
 
     title = truncate_text(strip_html(str(issue.get("title", ""))), TITLE_LIMIT)
@@ -4074,6 +4312,7 @@ def build_oss_issue_candidate(
     except (TypeError, ValueError):
         issue_number = 0
     if not title or not html_url or issue_number <= 0:
+        record_oss_gate_exclusion("missing-required-issue-fields")
         return None
 
     labels = label_names(issue)
@@ -4100,23 +4339,31 @@ def build_oss_issue_candidate(
     searchable = f"{repository} {title} {summary} {' '.join(labels)}"
     label_title_text = f"{' '.join(labels)} {title}"
     if not maintainer_qualified:
+        record_oss_gate_exclusion("external-author-without-maintainer-triage")
         return None
     if has_assignee:
+        record_oss_gate_exclusion("assigned")
         return None
     if text_contains_any(f"{title} {raw_body}", OSS_CLAIM_KEYWORDS):
+        record_oss_gate_exclusion("claim-in-issue-body")
         return None
     if text_contains_any(label_title_text, OSS_BLOCKED_LABEL_TITLE_KEYWORDS):
+        record_oss_gate_exclusion("blocked-label-or-title")
         return None
     if text_contains_any(searchable, OSS_SECURITY_KEYWORDS + OSS_RELEASE_BLOCKER_KEYWORDS):
+        record_oss_gate_exclusion("security-or-release-blocker")
         return None
     if text_contains_any(searchable, OSS_DEEP_INTERNALS_KEYWORDS + OSS_MAJOR_API_KEYWORDS):
+        record_oss_gate_exclusion("deep-internals-or-major-api")
         return None
     if text_contains_any(searchable, OSS_DESIGN_KEYWORDS):
+        record_oss_gate_exclusion("design-or-epic")
         return None
     if not (
         difficulty_model_matches(difficulty_model, "p5_like", labels, searchable)
         or difficulty_model_matches(difficulty_model, "p4_like", labels, searchable)
     ):
+        record_oss_gate_exclusion("no-beginner-difficulty-signal")
         return None
 
     contribution_type = infer_contribution_type(searchable)
@@ -4137,15 +4384,29 @@ def build_oss_issue_candidate(
             comments_checked_count = len(comments_payload)
             claim_author = claim_comment_author(comments_payload)
         if claim_author:
+            record_oss_gate_exclusion("claim-comment")
             return None
-    linked_prs_result = fetch_github_open_pr_reference_count(repository, issue_number, token)
-    linked_prs_count = linked_prs_result if linked_prs_result is not None else 0
-    linked_branches_count = -1
-    linked_work_check = "unknown"
-    has_linked_work = linked_prs_count > 0 or linked_branches_count > 0
+    linked_work_result = fetch_github_linked_work_check(repository, issue_number, token)
+    if linked_work_result is None:
+        linked_prs_count = 0
+        linked_branches_count = 0
+        linked_work_check = "unknown"
+        has_linked_work = False
+        record_oss_gate_exclusion("linked-work-check-unknown")
+    else:
+        linked_prs_count = linked_work_result.linked_prs_count
+        linked_branches_count = linked_work_result.linked_branches_count
+        linked_work_check = linked_work_result.check_status
+        has_linked_work = linked_work_result.has_linked_work
+        if has_linked_work:
+            record_oss_gate_exclusion("linked-work")
+        elif linked_work_check != "verified":
+            record_oss_gate_exclusion("linked-work-check-unknown")
+    if claim_comment_check != "checked":
+        record_oss_gate_exclusion("claim-comment-check-unknown")
     safe_to_recommend = (
         state == "open"
-        and maintainer_authored
+        and maintainer_qualified
         and not has_assignee
         and linked_prs_count == 0
         and linked_branches_count == 0
@@ -4154,6 +4415,8 @@ def build_oss_issue_candidate(
         and not claim_author
         and contribution_type in OSS_PREFERRED_CONTRIBUTION_TYPES
     )
+    if contribution_type not in OSS_PREFERRED_CONTRIBUTION_TYPES:
+        record_oss_gate_exclusion("unsupported-contribution-type")
     if has_linked_work or not safe_to_recommend:
         return None
 
@@ -4204,6 +4467,8 @@ def build_oss_issue_candidate(
         author=author,
         author_association=author_association,
         maintainer_authored=maintainer_authored,
+        maintainer_triaged=maintainer_triaged,
+        maintainer_qualified=maintainer_qualified,
         labels=labels,
         state=state,
         assignees=assignees,
@@ -4252,6 +4517,8 @@ def collect_oss_issue_candidates(
     category: dict[str, object],
     current_time: datetime,
 ) -> list[OssIssueCandidate]:
+    OSS_GATE_EXCLUSION_COUNTS.clear()
+    OSS_REPOSITORY_DIAGNOSTICS.clear()
     oss_config = load_oss_repositories_config()
     repositories = configured_repositories(category, oss_config)
     difficulty_model = oss_config.get("difficulty_model", {})
@@ -4264,7 +4531,14 @@ def collect_oss_issue_candidates(
         if "/" not in repository:
             record_warning(f"invalid GitHub repository id: {repository}")
             continue
-        for issue in fetch_github_issues(repository, token):
+        issues = fetch_github_issues(repository, token)
+        OSS_REPOSITORY_DIAGNOSTICS.append(
+            {
+                "repository": repository,
+                "issues_fetched": len(issues),
+            }
+        )
+        for issue in issues:
             candidate = build_oss_issue_candidate(
                 category,
                 difficulty_model,
@@ -4444,6 +4718,8 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "author": candidate.author,
         "author_association": candidate.author_association,
         "maintainer_authored": candidate.maintainer_authored,
+        "maintainer_triaged": candidate.maintainer_triaged,
+        "maintainer_qualified": candidate.maintainer_qualified,
         "labels": candidate.labels,
         "state": candidate.state,
         "assignees": candidate.assignees,
@@ -4987,6 +5263,11 @@ def write_category_output(
             for candidate in candidates
             if isinstance(candidate, OssIssueCandidate) and candidate.safe_to_recommend
         ]
+        source_error_types = Counter(
+            str(error.get("error_type", "unknown"))
+            for error in SOURCE_ERRORS
+            if error.get("category") == OSS_CATEGORY_ID
+        )
         payload = {
             "schema_version": 2,
             "category": category_id,
@@ -4994,9 +5275,23 @@ def write_category_output(
             **common_candidate_metadata(mode, generated_at, items),
             "verification_policy": (
                 "Only safe_to_recommend=true issues are included in items. "
-                "Maintainer authorship, assignee absence, linked work absence, "
+                "Maintainer authorship or maintainer triage, assignee absence, linked work absence, "
                 "and claim comment absence must all be verified."
             ),
+            "diagnostics": {
+                "safe_items_count": len(items),
+                "repository_count": len(OSS_REPOSITORY_DIAGNOSTICS),
+                "repositories": OSS_REPOSITORY_DIAGNOSTICS,
+                "gate_exclusion_counts": dict(sorted(OSS_GATE_EXCLUSION_COUNTS.items())),
+                "source_error_type_counts": dict(sorted(source_error_types.items())),
+                "github_api_error_count": sum(source_error_types.values()),
+                "github_rate_limit_error_count": int(source_error_types.get("github_rate_limit", 0)),
+                "github_repository_access_error_count": int(
+                    source_error_types.get("github_repository_access_failed", 0)
+                ),
+                "linked_work_verification": "graphql_required",
+                "fallback_when_empty": "oss-preparation-routine",
+            },
             "items": items,
             "excluded": [],
         }
