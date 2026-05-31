@@ -246,7 +246,7 @@ jobs:
           REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
         run: |
           set -euo pipefail
-          python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type daily-tech
+          python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type daily-tech --candidates-dir reports/candidates
 
       - name: Wait until 09:00 KST before Discord send
         id: wait-before-send
@@ -365,6 +365,8 @@ jobs:
           ]
           candidate_count = 0
           source_errors = set()
+          oss_payload = {}
+          oss_path = Path("reports/candidates/kr-oss-contribution-opportunities.json")
           for path in candidate_paths:
               if not path.exists():
                   continue
@@ -376,6 +378,84 @@ jobs:
               candidate_count += int(data.get("candidate_count", len(items) if isinstance(items, list) else 0) or 0)
               for error in data.get("source_errors", []) if isinstance(data.get("source_errors", []), list) else []:
                   source_errors.add(json.dumps(error, ensure_ascii=False, sort_keys=True))
+              if path == oss_path:
+                  oss_payload = data
+
+          def int_value(value):
+              try:
+                  return int(value or 0)
+              except (TypeError, ValueError):
+                  return 0
+
+          def sum_count_values(mapping):
+              if not isinstance(mapping, dict):
+                  return 0
+              return sum(int_value(value) for value in mapping.values())
+
+          oss_items = oss_payload.get("items", []) if isinstance(oss_payload, dict) else []
+          if not isinstance(oss_items, list):
+              oss_items = []
+          oss_safe_items = [
+              item
+              for item in oss_items
+              if isinstance(item, dict) and item.get("safe_to_recommend") is True
+          ]
+          oss_diagnostics = oss_payload.get("diagnostics", {}) if isinstance(oss_payload, dict) else {}
+          if not isinstance(oss_diagnostics, dict):
+              oss_diagnostics = {}
+          oss_gate_exclusions = oss_diagnostics.get("gate_exclusion_counts", {})
+          oss_source_error_types = oss_diagnostics.get("source_error_type_counts", {})
+          oss_filtered_out_count = sum_count_values(oss_gate_exclusions)
+          oss_safe_candidate_count = int_value(
+              oss_diagnostics.get("safe_items_count", len(oss_safe_items))
+          )
+          oss_candidate_count = oss_safe_candidate_count + oss_filtered_out_count
+          oss_source_errors = (
+              oss_payload.get("source_errors", [])
+              if isinstance(oss_payload.get("source_errors", []), list)
+              else []
+          ) if isinstance(oss_payload, dict) else []
+          oss_source_errors_count = max(
+              len(oss_source_errors),
+              sum_count_values(oss_source_error_types),
+          )
+          selected_oss = oss_safe_items[0] if oss_safe_items else {}
+          selected_oss_repository = str(
+              selected_oss.get("repository") or selected_oss.get("repo") or ""
+          ).strip() if selected_oss else ""
+          selected_oss_issue_url = str(selected_oss.get("url") or "").strip() if selected_oss else ""
+          selected_oss_issue_number = str(selected_oss.get("issue_number") or "").strip() if selected_oss else ""
+          selected_oss_difficulty_band = str(
+              selected_oss.get("difficulty_band") or ""
+          ).strip() if selected_oss else ""
+          oss_fallback_reason = None
+          if oss_safe_candidate_count == 0:
+              oss_fallback_reason = str(
+                  oss_diagnostics.get("fallback_when_empty")
+                  or "oss-preparation-routine"
+              )
+          oss_linked_work_check_degraded = bool(
+              int_value(oss_gate_exclusions.get("linked-work-check-unknown"))
+              or int_value(oss_source_error_types.get("github_graphql_token_missing"))
+              or int_value(oss_source_error_types.get("github_graphql_request_failed"))
+              or int_value(oss_source_error_types.get("github_graphql_response_error"))
+              or int_value(oss_source_error_types.get("github_rate_limit"))
+          )
+          oss_selected_label = "없음"
+          if selected_oss_repository and selected_oss_issue_number:
+              oss_selected_label = f"{selected_oss_repository} #{selected_oss_issue_number}"
+          elif selected_oss_repository and selected_oss_issue_url:
+              oss_selected_label = f"{selected_oss_repository} ({selected_oss_issue_url})"
+          oss_warning = (
+              "linked work check degraded 있음"
+              if oss_linked_work_check_degraded
+              else "linked work check degraded 없음"
+          )
+          oss_selected_band_label = (
+              f" ({selected_oss_difficulty_band})"
+              if selected_oss_difficulty_band
+              else ""
+          )
 
           send_attempted = os.environ.get("SHOULD_SEND") == "true"
           send_success = os.environ.get("DISCORD_SEND_OUTCOME") == "success"
@@ -393,6 +473,15 @@ jobs:
               "selected_news_count": None,
               "fallback_reason": os.environ.get("SKIP_REASON") or None,
               "source_errors_count": len(source_errors),
+              "oss_safe_candidate_count": oss_safe_candidate_count,
+              "oss_candidate_count": oss_candidate_count,
+              "oss_filtered_out_count": oss_filtered_out_count,
+              "oss_fallback_reason": oss_fallback_reason,
+              "oss_source_errors_count": oss_source_errors_count,
+              "selected_oss_repository": selected_oss_repository or None,
+              "selected_oss_issue_url": selected_oss_issue_url or None,
+              "selected_oss_difficulty_band": selected_oss_difficulty_band or None,
+              "oss_linked_work_check_degraded": oss_linked_work_check_degraded,
               "discord_send_attempted": send_attempted,
               "discord_send_success": send_success,
               "generation_attempted": os.environ.get("SHOULD_GENERATE") == "true",
@@ -414,6 +503,13 @@ jobs:
               f"- discord_send_attempted: {summary['discord_send_attempted']}\n"
               f"- discord_send_success: {summary['discord_send_success']}\n"
               f"- candidate_count_total: {summary['candidate_count_total']}\n"
+              "\n## OSS Candidate Ops\n\n"
+              f"- OSS 후보 상태: safe {summary['oss_safe_candidate_count']}개 / "
+              f"filtered {summary['oss_filtered_out_count']}개 / "
+              f"fallback {summary['oss_fallback_reason'] or '없음'}\n"
+              f"- 선택 후보: {oss_selected_label}{oss_selected_band_label}\n"
+              f"- 주의: {oss_warning}, source_errors {summary['oss_source_errors_count']}개\n"
+              "\n## PS Progress Ops\n\n"
               f"- ps_progress_commit_attempted: {summary['ps_progress_commit_attempted']}\n"
               f"- ps_progress_changed: {summary['ps_progress_changed']}\n"
               f"- ps_progress_commit_success: {summary['ps_progress_commit_success']}\n"

@@ -11,6 +11,7 @@ python3 -m py_compile \
   scripts/render-weekly-career-site-radar.py \
   scripts/select-ps-problem.py \
   scripts/send-discord.py \
+  scripts/update-oss-progress.py \
   scripts/update-ps-progress.py \
   scripts/validate-career-feed-brief.py
 
@@ -79,6 +80,11 @@ grep -q 'git push' .github/workflows/kr-tech-daily.yml
 grep -q 'commit-ps-progress' .github/workflows/kr-tech-daily.yml
 grep -q 'ps_progress_commit_attempted' .github/workflows/kr-tech-daily.yml
 grep -q 'ps_progress_commit_success' .github/workflows/kr-tech-daily.yml
+grep -q 'oss_safe_candidate_count' .github/workflows/kr-tech-daily.yml
+grep -q 'oss_filtered_out_count' .github/workflows/kr-tech-daily.yml
+grep -q 'oss_source_errors_count' .github/workflows/kr-tech-daily.yml
+grep -q 'selected_oss_issue_url' .github/workflows/kr-tech-daily.yml
+grep -q 'OSS 후보 상태' .github/workflows/kr-tech-daily.yml
 if grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY\|kr-dev-ai-news.json\|kr-ai-tech-news.json' .github/workflows/kr-tech-daily.yml; then
   echo "Backend Daily workflow must not use the news webhook or news candidate files." >&2
   exit 1
@@ -210,7 +216,10 @@ required_files=(
   "configs/weekly-career-site-radar.json"
   "configs/oss-repositories.json"
   "configs/programmers-ps-curriculum.json"
+  "data/oss-progress.json"
   "data/ps-progress.json"
+  "docs/daily-growth-ops.md"
+  "docs/oss-candidate-policy.md"
   ".github/codex/prompts/kr-tech-news-daily.md"
   ".github/workflows/kr-tech-news-daily.yml"
   "scripts/check-workflow-schedules.py"
@@ -218,6 +227,7 @@ required_files=(
   "scripts/render-weekly-career-site-radar.py"
   "scripts/select-ps-problem.py"
   "scripts/send-discord.py"
+  "scripts/update-oss-progress.py"
   "scripts/update-ps-progress.py"
   "scripts/validate-career-feed-brief.py"
   "tests/fixtures/kr-tech-daily-valid.md"
@@ -227,6 +237,8 @@ required_files=(
   "tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md"
   "tests/fixtures/kr-tech-news-daily-invalid-investment.md"
   "tests/fixtures/kr-backend-career-weekly-valid.md"
+  "tests/fixtures/candidates-empty/kr-oss-contribution-opportunities.json"
+  "tests/test_daily_oss_contract.py"
   "tests/test_oss_reliability_gate.py"
 )
 
@@ -426,8 +438,11 @@ required = {
 config = json.loads(Path("configs/oss-repositories.json").read_text(encoding="utf-8"))
 repositories = set(config.get("repositories", []))
 trusted = config.get("trusted_maintainers", {})
+profiles = config.get("repository_profiles", [])
 if not isinstance(trusted, dict):
     raise SystemExit("configs/oss-repositories.json trusted_maintainers must be an object")
+if not isinstance(profiles, list):
+    raise SystemExit("configs/oss-repositories.json repository_profiles must be a list")
 
 missing_repositories = sorted(required - repositories)
 missing_trusted = sorted(required - set(trusted.keys()))
@@ -435,6 +450,49 @@ if missing_repositories:
     raise SystemExit("oss-repositories.json is missing required repositories: " + ", ".join(missing_repositories))
 if missing_trusted:
     raise SystemExit("oss-repositories.json trusted_maintainers is missing repository key(s): " + ", ".join(missing_trusted))
+
+profiles_by_repo = {
+    str(profile.get("repository", "")).strip(): profile
+    for profile in profiles
+    if isinstance(profile, dict)
+}
+missing_profiles = sorted(repositories - set(profiles_by_repo.keys()))
+if missing_profiles:
+    raise SystemExit("oss-repositories.json repository_profiles is missing repository key(s): " + ", ".join(missing_profiles))
+
+required_profile_fields = [
+    "priority",
+    "ecosystem_tags",
+    "beginner_labels",
+    "avoid_labels",
+    "avoid_title_keywords",
+    "preferred_contribution_types",
+    "contribution_guide",
+    "local_check_hints",
+    "docs_or_test_hints",
+    "junior_notes",
+]
+allowed_types = {"docs", "test", "sample", "bug-repro"}
+for repository, profile in profiles_by_repo.items():
+    missing_fields = [field for field in required_profile_fields if not profile.get(field)]
+    if missing_fields:
+        raise SystemExit(f"repository profile misses field(s): {repository} {missing_fields}")
+    if profile.get("priority") not in {"A", "B", "C"}:
+        raise SystemExit(f"repository profile has invalid priority: {repository}")
+    for list_field in (
+        "ecosystem_tags",
+        "beginner_labels",
+        "avoid_labels",
+        "avoid_title_keywords",
+        "preferred_contribution_types",
+        "local_check_hints",
+        "docs_or_test_hints",
+    ):
+        if not isinstance(profile.get(list_field), list) or not profile.get(list_field):
+            raise SystemExit(f"repository profile field must be a non-empty list: {repository} {list_field}")
+    preferred = set(profile.get("preferred_contribution_types", []))
+    if not preferred <= allowed_types:
+        raise SystemExit(f"repository profile has unsupported contribution type: {repository}")
 
 print("OSS repository config smoke check passed")
 PY
@@ -533,6 +591,67 @@ for item in oss_payload.get("items", []):
 
 print("daily-backend CS/term candidate smoke check passed")
 PY
+
+echo "==> Checking Backend Daily run summary smoke"
+EVENT_NAME=workflow_dispatch \
+EVENT_SCHEDULE= \
+DRY_RUN=true \
+FORCE_SEND=false \
+DELIVERY_LOCK_KEY=career-feed-backend-sent-test \
+DELIVERY_LOCK_HIT=false \
+SHOULD_GENERATE=true \
+SHOULD_SEND=false \
+SKIP_REASON=dry_run \
+DISCORD_SEND_OUTCOME=skipped \
+PS_PROGRESS_COMMIT_OUTCOME=skipped \
+PS_PROGRESS_CHANGED=false \
+python3 - <<'PY'
+import json
+import os
+from pathlib import Path
+
+workflow = Path(".github/workflows/kr-tech-daily.yml").read_text(encoding="utf-8").splitlines()
+step_start = next(
+    index
+    for index, line in enumerate(workflow)
+    if line.strip() == "- name: Write Backend Daily run summary"
+)
+heredoc_start = next(
+    index
+    for index in range(step_start, len(workflow))
+    if "python3 - <<'PY'" in workflow[index]
+)
+heredoc_end = next(
+    index
+    for index in range(heredoc_start + 1, len(workflow))
+    if workflow[index].strip() == "PY"
+)
+code_lines = []
+for line in workflow[heredoc_start + 1 : heredoc_end]:
+    code_lines.append(line[10:] if line.startswith("          ") else line)
+exec(compile("\n".join(code_lines), "kr-tech-daily-run-summary", "exec"), {})
+
+summary = json.loads(Path("reports/ops/backend-daily-run-summary.json").read_text(encoding="utf-8"))
+required_fields = [
+    "oss_safe_candidate_count",
+    "oss_candidate_count",
+    "oss_filtered_out_count",
+    "oss_fallback_reason",
+    "oss_source_errors_count",
+    "selected_oss_repository",
+    "selected_oss_issue_url",
+    "selected_oss_difficulty_band",
+]
+missing = [field for field in required_fields if field not in summary]
+if missing:
+    raise SystemExit("Backend Daily run summary misses OSS field(s): " + ", ".join(missing))
+summary_md = Path("reports/ops/backend-daily-run-summary.md").read_text(encoding="utf-8")
+for text in ("OSS 후보 상태", "선택 후보", "linked work check degraded"):
+    if text not in summary_md:
+        raise SystemExit(f"Backend Daily run summary markdown misses: {text}")
+print("Backend Daily run summary smoke check passed")
+PY
+
 python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/render-weekly-career-site-radar.py
@@ -577,7 +696,7 @@ print("weekly career site radar smoke check passed")
 PY
 
 echo "==> Checking fixtures"
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
@@ -590,11 +709,13 @@ if python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-dai
   exit 1
 fi
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
+python3 tests/test_daily_oss_contract.py
 python3 tests/test_oss_reliability_gate.py
 python3 tests/test_weekly_career_collector.py
 
 echo "==> Checking PS progress status"
 python3 scripts/update-ps-progress.py --status >/dev/null
+python3 scripts/update-oss-progress.py --status >/dev/null
 
 echo "==> Checking removed references"
 blocked_terms=(

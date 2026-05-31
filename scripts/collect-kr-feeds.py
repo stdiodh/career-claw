@@ -581,6 +581,12 @@ class OssIssueCandidate:
     source: str
     repository: str
     issue_number: int
+    repository_priority: str
+    repository_ecosystem_tags: list[str]
+    repository_contribution_guide: str
+    repository_local_check_hints: list[str]
+    repository_docs_or_test_hints: list[str]
+    repository_junior_notes: str
     author: str
     author_association: str
     maintainer_authored: bool
@@ -612,6 +618,7 @@ class OssIssueCandidate:
     exclude_reason: str
     difficulty_band: str
     why_beginner_friendly: str
+    junior_fit_evidence: list[str]
     first_30_min_action: str
     pre_contribution_etiquette: str
     claim_comment_author: str
@@ -866,6 +873,32 @@ def configured_repositories(
     if repositories:
         return repositories
     return category_values(category, "github_repositories")
+
+
+def repository_profiles_by_id(oss_config: dict[str, object]) -> dict[str, dict[str, object]]:
+    raw_profiles = oss_config.get("repository_profiles", [])
+    if not isinstance(raw_profiles, list):
+        return {}
+    profiles: dict[str, dict[str, object]] = {}
+    for raw_profile in raw_profiles:
+        if not isinstance(raw_profile, dict):
+            continue
+        repository = str(raw_profile.get("repository", "")).strip()
+        if repository:
+            profiles[repository] = raw_profile
+    return profiles
+
+
+def repository_profile_for(repository: str, oss_config: dict[str, object]) -> dict[str, object]:
+    return repository_profiles_by_id(oss_config).get(repository, {})
+
+
+def repository_profile_values(profile: dict[str, object], key: str) -> list[str]:
+    return category_values(profile, key)
+
+
+def repository_priority_score(priority: str) -> int:
+    return {"A": 20, "B": 10, "C": 0}.get(priority.upper(), 0)
 
 
 def difficulty_model_values(
@@ -3471,8 +3504,11 @@ def trusted_maintainers_for(
     return {str(login).strip().lower() for login in maintainers if str(login).strip()}
 
 
-def is_maintainer_triaged(labels: list[str]) -> bool:
-    return text_contains_any(" ".join(labels), OSS_BEGINNER_TRIAGE_LABELS)
+def is_maintainer_triaged(labels: list[str], repository_beginner_labels: list[str] | None = None) -> bool:
+    beginner_labels = list(OSS_BEGINNER_TRIAGE_LABELS)
+    if repository_beginner_labels:
+        beginner_labels.extend(repository_beginner_labels)
+    return text_contains_any(" ".join(labels), beginner_labels)
 
 
 def claim_comment_author(comments: list[dict[str, object]] | None) -> str:
@@ -3987,11 +4023,15 @@ def difficulty_model_matches(
     band: str,
     labels: list[str],
     searchable: str,
+    extra_positive_labels: list[str] | None = None,
 ) -> bool:
     label_text = " ".join(labels)
+    positive_labels = difficulty_model_values(difficulty_model, band, "positive_labels")
+    if extra_positive_labels:
+        positive_labels = positive_labels + extra_positive_labels
     return text_contains_any(
         label_text,
-        difficulty_model_values(difficulty_model, band, "positive_labels"),
+        positive_labels,
     ) or text_contains_any(
         searchable,
         difficulty_model_values(difficulty_model, band, "positive_keywords"),
@@ -4024,7 +4064,15 @@ def first_action_for_contribution_type(contribution_type: str) -> str:
     return "이슈 본문, label, 관련 파일 위치를 읽고 30분 안에 재현 가능성을 판단한다."
 
 
-def first_action_for_issue(repository: str, contribution_type: str, searchable: str) -> str:
+def first_action_for_issue(
+    repository: str,
+    contribution_type: str,
+    searchable: str,
+    local_check_hints: list[str],
+) -> str:
+    if local_check_hints:
+        hint = local_check_hints[0]
+        return f"`{hint}` 기준으로 로컬 확인 경로를 잡고, 이슈 범위를 30분 안에 재현 가능한지 메모한다."
     if repository.startswith("spring-projects/spring-data") and contribution_type == "docs":
         return (
             "`src/docs/asciidoc`에서 관련 문서 위치를 찾고, "
@@ -4042,6 +4090,50 @@ def pre_contribution_etiquette_for_issue() -> str:
         "작업 전 이슈에 "
         "“문서 위치를 확인해보고 작은 PR을 준비해도 괜찮을까요?”라고 짧게 확인한다."
     )
+
+
+def junior_fit_evidence_for_issue(
+    *,
+    repository_priority: str,
+    repository_ecosystem_tags: list[str],
+    labels: list[str],
+    repository_beginner_labels: list[str],
+    contribution_type: str,
+    preferred_contribution_types: set[str],
+    local_check_hints: list[str],
+    docs_or_test_hints: list[str],
+    maintainer_authored: bool,
+    maintainer_triaged: bool,
+    difficulty_band: str,
+    repository_junior_notes: str,
+) -> list[str]:
+    evidence: list[str] = []
+    if repository_priority:
+        evidence.append(f"repository priority {repository_priority}")
+    if repository_ecosystem_tags:
+        evidence.append("ecosystem: " + ", ".join(repository_ecosystem_tags[:4]))
+    matched_beginner_labels = [
+        label
+        for label in labels
+        if text_contains_any(label, repository_beginner_labels + OSS_BEGINNER_TRIAGE_LABELS)
+    ]
+    if matched_beginner_labels:
+        evidence.append("beginner label: " + ", ".join(matched_beginner_labels[:3]))
+    if contribution_type in preferred_contribution_types:
+        evidence.append(f"preferred contribution type: {contribution_type}")
+    if maintainer_authored:
+        evidence.append("maintainer-authored issue")
+    elif maintainer_triaged:
+        evidence.append("maintainer-triaged issue")
+    if difficulty_band in {"p5_like", "p4_like"}:
+        evidence.append(f"difficulty band: {difficulty_band}")
+    if local_check_hints:
+        evidence.append("local check hint: " + local_check_hints[0])
+    if docs_or_test_hints:
+        evidence.append("docs/test hint: " + docs_or_test_hints[0])
+    if repository_junior_notes:
+        evidence.append(repository_junior_notes)
+    return evidence[:8]
 
 
 def status_check_for_issue(
@@ -4074,6 +4166,12 @@ def oss_issue_scores(
     category: dict[str, object],
     *,
     difficulty_model: dict[str, object],
+    repository_priority: str,
+    repository_beginner_labels: list[str],
+    repository_avoid_labels: list[str],
+    repository_avoid_title_keywords: list[str],
+    preferred_contribution_types: set[str],
+    title_text: str,
     text: str,
     labels: list[str],
     label_title_text: str,
@@ -4099,14 +4197,23 @@ def oss_issue_scores(
     docs_label_score = 40 if text_contains_any(label_text, ["type: documentation", "in: docs"]) else 0
     beginner_keyword_score = 35 if text_contains_any(searchable, OSS_BEGINNER_KEYWORDS) else 0
     good_first_score = 20 if text_contains_any(label_text, OSS_BEGINNER_TRIAGE_LABELS) else 0
-    p5_match = difficulty_model_matches(difficulty_model, "p5_like", labels, searchable)
+    p5_match = difficulty_model_matches(
+        difficulty_model,
+        "p5_like",
+        labels,
+        searchable,
+        repository_beginner_labels,
+    )
     p4_match = difficulty_model_matches(difficulty_model, "p4_like", labels, searchable)
     p5_score = 30 if p5_match else 0
     p4_score = 20 if p4_match else 0
+    repository_beginner_score = 25 if text_contains_any(label_text, repository_beginner_labels) else 0
+    priority_score = repository_priority_score(repository_priority)
     category_label_score = 15 if text_contains_any(label_text, positive_labels) else 0
     direct_spring_score = 15 if text_contains_any(searchable, OSS_DIRECT_SPRING_KEYWORDS) else 0
     maintainer_score = 40 if maintainer_authored else 0
-    focused_scope_score = 20 if infer_contribution_type(searchable) in OSS_PREFERRED_CONTRIBUTION_TYPES else 0
+    contribution_type = infer_contribution_type(searchable)
+    focused_scope_score = 20 if contribution_type in preferred_contribution_types else 0
     body_clarity_score = 10 if body_is_clear else -20
     assignee_score = 20 if assignees_count == 0 else -40
     linked_work_score = 20 if linked_work_check != "unknown" and not has_linked_work else -80
@@ -4153,6 +4260,12 @@ def oss_issue_scores(
     if text_contains_any(label_title_text, OSS_BLOCKED_LABEL_TITLE_KEYWORDS):
         risk_penalty += 60
         risk_reasons.append("blocked-label-or-title")
+    if text_contains_any(label_text, repository_avoid_labels):
+        risk_penalty += 70
+        risk_reasons.append("repository-avoid-label")
+    if text_contains_any(title_text, repository_avoid_title_keywords):
+        risk_penalty += 70
+        risk_reasons.append("repository-avoid-title-keyword")
     if text_contains_any(searchable, OSS_DESIGN_KEYWORDS):
         risk_penalty += 50
         risk_reasons.append("design-or-epic")
@@ -4174,12 +4287,17 @@ def oss_issue_scores(
     if text_contains_any(searchable, negative_keywords):
         risk_penalty += 10
 
-    contribution_type = infer_contribution_type(searchable)
     hard_exclusion = any(
         reason in risk_reasons
         for reason in ("security-vulnerability", "release-blocker", "deep-internals")
     )
-    if hard_exclusion or "design-or-epic" in risk_reasons or "major-api-or-breaking-change" in risk_reasons:
+    if (
+        hard_exclusion
+        or "design-or-epic" in risk_reasons
+        or "major-api-or-breaking-change" in risk_reasons
+        or "repository-avoid-label" in risk_reasons
+        or "repository-avoid-title-keyword" in risk_reasons
+    ):
         difficulty_band = "too_hard"
     elif p5_match:
         difficulty_band = "p5_like"
@@ -4195,6 +4313,8 @@ def oss_issue_scores(
         + good_first_score
         + p5_score
         + p4_score
+        + repository_beginner_score
+        + priority_score
         + category_label_score
         + maintainer_score
         + focused_scope_score
@@ -4219,6 +4339,8 @@ def oss_issue_scores(
             + beginner_keyword_score
             + good_first_score
             + p5_score
+            + repository_beginner_score
+            + priority_score
             + maintainer_score
             + focused_scope_score
             + max(assignee_score, 0)
@@ -4238,6 +4360,8 @@ def oss_issue_scores(
             + good_first_score
             + p5_score
             + p4_score
+            + repository_beginner_score
+            + priority_score
             + maintainer_score
             + focused_scope_score
             + max(assignee_score, 0)
@@ -4262,6 +4386,8 @@ def oss_issue_scores(
         "deep-internals",
         "major-api-or-breaking-change",
         "blocked-label-or-title",
+        "repository-avoid-label",
+        "repository-avoid-title-keyword",
     }
     exclude_reasons.extend(reason for reason in risk_reasons if reason in hard_exclude_reasons)
     if hard_exclusion:
@@ -4316,6 +4442,26 @@ def build_oss_issue_candidate(
         return None
 
     labels = label_names(issue)
+    repository_profile = repository_profile_for(repository, oss_config)
+    repository_priority = str(repository_profile.get("priority", "")).strip().upper()
+    repository_ecosystem_tags = repository_profile_values(repository_profile, "ecosystem_tags")
+    repository_beginner_labels = repository_profile_values(repository_profile, "beginner_labels")
+    repository_avoid_labels = repository_profile_values(repository_profile, "avoid_labels")
+    repository_avoid_title_keywords = repository_profile_values(
+        repository_profile,
+        "avoid_title_keywords",
+    )
+    repository_preferred_types = {
+        value
+        for value in repository_profile_values(repository_profile, "preferred_contribution_types")
+        if value
+    } or set(OSS_PREFERRED_CONTRIBUTION_TYPES)
+    repository_contribution_guide = str(
+        repository_profile.get("contribution_guide", "")
+    ).strip()
+    repository_local_check_hints = repository_profile_values(repository_profile, "local_check_hints")
+    repository_docs_or_test_hints = repository_profile_values(repository_profile, "docs_or_test_hints")
+    repository_junior_notes = str(repository_profile.get("junior_notes", "")).strip()
     author = github_login(issue)
     author_association = str(issue.get("author_association", "")).strip().upper()
     trusted_maintainers = trusted_maintainers_for(repository, oss_config)
@@ -4323,7 +4469,7 @@ def build_oss_issue_candidate(
         author_association in OSS_MAINTAINER_ASSOCIATIONS
         or author.lower() in trusted_maintainers
     )
-    maintainer_triaged = is_maintainer_triaged(labels)
+    maintainer_triaged = is_maintainer_triaged(labels, repository_beginner_labels)
     maintainer_qualified = maintainer_authored or maintainer_triaged
     raw_body = strip_html(str(issue.get("body") or ""))
     summary = truncate_text(raw_body, OSS_SUMMARY_LIMIT)
@@ -4350,6 +4496,12 @@ def build_oss_issue_candidate(
     if text_contains_any(label_title_text, OSS_BLOCKED_LABEL_TITLE_KEYWORDS):
         record_oss_gate_exclusion("blocked-label-or-title")
         return None
+    if text_contains_any(" ".join(labels), repository_avoid_labels):
+        record_oss_gate_exclusion("repository-avoid-label")
+        return None
+    if text_contains_any(title, repository_avoid_title_keywords):
+        record_oss_gate_exclusion("repository-avoid-title-keyword")
+        return None
     if text_contains_any(searchable, OSS_SECURITY_KEYWORDS + OSS_RELEASE_BLOCKER_KEYWORDS):
         record_oss_gate_exclusion("security-or-release-blocker")
         return None
@@ -4361,6 +4513,7 @@ def build_oss_issue_candidate(
         return None
     if not (
         difficulty_model_matches(difficulty_model, "p5_like", labels, searchable)
+        or text_contains_any(" ".join(labels), repository_beginner_labels)
         or difficulty_model_matches(difficulty_model, "p4_like", labels, searchable)
     ):
         record_oss_gate_exclusion("no-beginner-difficulty-signal")
@@ -4413,9 +4566,9 @@ def build_oss_issue_candidate(
         and linked_work_check == "verified"
         and claim_comment_check == "checked"
         and not claim_author
-        and contribution_type in OSS_PREFERRED_CONTRIBUTION_TYPES
+        and contribution_type in repository_preferred_types
     )
-    if contribution_type not in OSS_PREFERRED_CONTRIBUTION_TYPES:
+    if contribution_type not in repository_preferred_types:
         record_oss_gate_exclusion("unsupported-contribution-type")
     if has_linked_work or not safe_to_recommend:
         return None
@@ -4439,6 +4592,12 @@ def build_oss_issue_candidate(
     ) = oss_issue_scores(
         category,
         difficulty_model=difficulty_model,
+        repository_priority=repository_priority,
+        repository_beginner_labels=repository_beginner_labels,
+        repository_avoid_labels=repository_avoid_labels,
+        repository_avoid_title_keywords=repository_avoid_title_keywords,
+        preferred_contribution_types=repository_preferred_types,
+        title_text=title,
         text=searchable,
         labels=labels,
         label_title_text=label_title_text,
@@ -4455,6 +4614,20 @@ def build_oss_issue_candidate(
         state=state,
         is_pull_request=False,
     )
+    junior_fit_evidence = junior_fit_evidence_for_issue(
+        repository_priority=repository_priority,
+        repository_ecosystem_tags=repository_ecosystem_tags,
+        labels=labels,
+        repository_beginner_labels=repository_beginner_labels,
+        contribution_type=contribution_type,
+        preferred_contribution_types=repository_preferred_types,
+        local_check_hints=repository_local_check_hints,
+        docs_or_test_hints=repository_docs_or_test_hints,
+        maintainer_authored=maintainer_authored,
+        maintainer_triaged=maintainer_triaged,
+        difficulty_band=difficulty_band,
+        repository_junior_notes=repository_junior_notes,
+    )
 
     return OssIssueCandidate(
         category=OSS_CATEGORY_ID,
@@ -4464,6 +4637,12 @@ def build_oss_issue_candidate(
         source="GitHub Issues",
         repository=repository,
         issue_number=issue_number,
+        repository_priority=repository_priority,
+        repository_ecosystem_tags=repository_ecosystem_tags,
+        repository_contribution_guide=repository_contribution_guide,
+        repository_local_check_hints=repository_local_check_hints,
+        repository_docs_or_test_hints=repository_docs_or_test_hints,
+        repository_junior_notes=repository_junior_notes,
         author=author,
         author_association=author_association,
         maintainer_authored=maintainer_authored,
@@ -4495,7 +4674,13 @@ def build_oss_issue_candidate(
         exclude_reason=exclude_reason,
         difficulty_band=difficulty_band,
         why_beginner_friendly=why_beginner_friendly,
-        first_30_min_action=first_action_for_issue(repository, contribution_type, searchable),
+        junior_fit_evidence=junior_fit_evidence,
+        first_30_min_action=first_action_for_issue(
+            repository,
+            contribution_type,
+            searchable,
+            repository_local_check_hints,
+        ),
         pre_contribution_etiquette=pre_contribution_etiquette_for_issue(),
         claim_comment_author=claim_author,
         safe_to_recommend=safe_to_recommend,
@@ -4531,10 +4716,13 @@ def collect_oss_issue_candidates(
         if "/" not in repository:
             record_warning(f"invalid GitHub repository id: {repository}")
             continue
+        repository_profile = repository_profile_for(repository, oss_config)
         issues = fetch_github_issues(repository, token)
         OSS_REPOSITORY_DIAGNOSTICS.append(
             {
                 "repository": repository,
+                "priority": str(repository_profile.get("priority", "")).strip().upper(),
+                "ecosystem_tags": repository_profile_values(repository_profile, "ecosystem_tags"),
                 "issues_fetched": len(issues),
             }
         )
@@ -4715,6 +4903,12 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "repo": candidate.repository,
         "repository": candidate.repository,
         "issue_number": candidate.issue_number,
+        "repository_priority": candidate.repository_priority,
+        "repository_ecosystem_tags": candidate.repository_ecosystem_tags,
+        "repository_contribution_guide": candidate.repository_contribution_guide,
+        "repository_local_check_hints": candidate.repository_local_check_hints,
+        "repository_docs_or_test_hints": candidate.repository_docs_or_test_hints,
+        "repository_junior_notes": candidate.repository_junior_notes,
         "author": candidate.author,
         "author_association": candidate.author_association,
         "maintainer_authored": candidate.maintainer_authored,
@@ -4747,6 +4941,7 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "exclude_reason": candidate.exclude_reason,
         "difficulty_band": candidate.difficulty_band,
         "why_beginner_friendly": candidate.why_beginner_friendly,
+        "junior_fit_evidence": candidate.junior_fit_evidence,
         "first_30_min_action": candidate.first_30_min_action,
         "first_30m_action": candidate.first_30_min_action,
         "pre_contribution_etiquette": candidate.pre_contribution_etiquette,

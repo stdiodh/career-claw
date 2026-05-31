@@ -27,7 +27,7 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 - workflow: `.github/workflows/kr-tech-daily.yml`
 - prompt: `.github/codex/prompts/kr-tech-daily-brief.md`
 - collector: `python3 scripts/collect-kr-feeds.py --mode daily-backend`
-- validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
+- validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech --candidates-dir reports/candidates`
 - report: `reports/briefs/kr-tech-daily.md`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
 - delivery lock: `career-feed-backend-sent-${KST_DATE}`
@@ -61,10 +61,13 @@ Daily 수집 소스 정책:
 Daily OSS 후보 정책:
 
 - OSS 후보는 maintainer/member/collaborator가 올렸거나 maintainer가 초보자용으로 분류한 open issue만 추천합니다.
+- `configs/oss-repositories.json`의 저장소별 priority, ecosystem tag, beginner label, avoid label/title keyword, 선호 기여 유형, 로컬 확인 힌트를 scoring과 후보 evidence에 반영합니다.
+- 저장소 profile 관리 기준은 `docs/oss-candidate-policy.md`에 정리합니다.
 - assignee가 있거나 linked PR/branch가 있거나 누군가 댓글로 작업 의사를 밝힌 이슈는 추천하지 않습니다.
 - linked work 확인이 불완전하면 추천하지 않습니다.
 - linked PR/branch 확인은 GitHub GraphQL 보조 검증을 통과해야 하며, 검증이 실패하거나 불완전하면 추천하지 않습니다.
 - GitHub API 실패, rate limit, repository 접근 실패는 후보 JSON의 `diagnostics`와 `source_errors`에 남깁니다.
+- Daily Backend validator는 `kr-oss-contribution-opportunities.json`을 함께 읽고, Markdown의 OSS issue URL이 `safe_to_recommend=true` 후보 URL과 다르면 실패합니다.
 - 안전한 후보가 없으면 특정 issue를 추천하지 않고 OSS 기여 준비 루틴을 출력합니다.
 - 첫 30분 액션은 읽기, 재현, 문서 위치 확인, 로컬 빌드 확인처럼 PR 전 확인 행동으로 제한합니다.
 - 작업 전 issue에 짧게 확인 댓글을 남기는 것을 권장합니다.
@@ -114,6 +117,7 @@ GitHub Actions scheduled workflow는 Actions 부하에 따라 지연되거나 �
 - Backend Daily: `reports/ops/backend-daily-run-summary.json`, `reports/ops/backend-daily-run-summary.md`
 - News Daily: `reports/ops/news-daily-run-summary.json`, `reports/ops/news-daily-run-summary.md`
 - 실패 알림 선택 secret: `DISCORD_WEBHOOK_CAREER_FEED_OPS`
+- Daily Growth 운영 확인 방법: `docs/daily-growth-ops.md`
 
 ## Backend Career Site Radar
 
@@ -171,6 +175,14 @@ Site Radar 정책:
 python3 scripts/update-ps-progress.py --status
 ```
 
+## OSS Progress Notes
+
+- progress file: `data/oss-progress.json`
+- local command: `python3 scripts/update-oss-progress.py --status`
+- mark reviewed/skipped/attempted: `python3 scripts/update-oss-progress.py --mark-reviewed <GitHub issue URL> --note "<memo>"`
+
+이 기록은 로컬 정적 JSON만 수정하며 GitHub issue에 댓글, assign, label 변경을 하지 않습니다.
+
 ## 필요한 Secrets
 
 | 경로 | Secrets |
@@ -211,8 +223,9 @@ python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
 python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/render-weekly-career-site-radar.py
+python3 scripts/update-oss-progress.py --status
 python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
@@ -245,6 +258,7 @@ repository-root/
 │  ├─ programmers-ps-curriculum.json
 │  └─ weekly-career-site-radar.json
 ├─ data/
+│  ├─ oss-progress.json
 │  └─ ps-progress.json
 ├─ reports/
 │  ├─ briefs/
@@ -256,6 +270,7 @@ repository-root/
 │  ├─ render-weekly-career-site-radar.py
 │  ├─ select-ps-problem.py
 │  ├─ send-discord.py
+│  ├─ update-oss-progress.py
 │  ├─ update-ps-progress.py
 │  ├─ validate-career-feed-brief.py
 │  └─ validate.sh

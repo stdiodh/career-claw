@@ -46,6 +46,24 @@ DIFFICULTY_MODEL = {
     },
 }
 OSS_CONFIG = {"trusted_maintainers": {}}
+PROFILED_OSS_CONFIG = {
+    "trusted_maintainers": {},
+    "repository_profiles": [
+        {
+            "repository": "spring-projects/spring-boot",
+            "priority": "A",
+            "ecosystem_tags": ["spring", "backend"],
+            "beginner_labels": ["status: ideal-for-contribution"],
+            "avoid_labels": ["component: compiler"],
+            "avoid_title_keywords": ["compiler redesign"],
+            "preferred_contribution_types": ["docs", "test"],
+            "contribution_guide": "CONTRIBUTING.adoc",
+            "local_check_hints": ["./gradlew test"],
+            "docs_or_test_hints": ["spring-boot docs"],
+            "junior_notes": "문서와 테스트 재현 우선",
+        }
+    ],
+}
 CURRENT_TIME = datetime(2026, 6, 1, 9, 0, tzinfo=KST)
 
 
@@ -86,11 +104,11 @@ def issue_payload(**overrides: object) -> dict[str, object]:
     return payload
 
 
-def build_candidate(issue: dict[str, object]):
+def build_candidate(issue: dict[str, object], oss_config: dict[str, object] | None = None):
     return collector.build_oss_issue_candidate(
         CATEGORY,
         DIFFICULTY_MODEL,
-        OSS_CONFIG,
+        oss_config or OSS_CONFIG,
         "spring-projects/spring-boot",
         issue,
         "token",
@@ -134,6 +152,61 @@ def test_safe_maintainer_triaged_issue() -> None:
     assert candidate.maintainer_authored is False
     assert candidate.maintainer_triaged is True
     assert candidate.maintainer_qualified is True
+
+
+def test_repository_profile_is_reflected_in_candidate_evidence() -> None:
+    reset_gate()
+    candidate = build_candidate(issue_payload(), PROFILED_OSS_CONFIG)
+    assert candidate is not None
+    assert candidate.repository_priority == "A"
+    assert candidate.repository_ecosystem_tags == ["spring", "backend"]
+    assert candidate.repository_local_check_hints == ["./gradlew test"]
+    assert candidate.repository_docs_or_test_hints == ["spring-boot docs"]
+    assert candidate.repository_junior_notes == "문서와 테스트 재현 우선"
+    assert "./gradlew test" in candidate.first_30_min_action
+    assert any("repository priority A" in item for item in candidate.junior_fit_evidence)
+    assert any("ecosystem: spring, backend" in item for item in candidate.junior_fit_evidence)
+    assert any("preferred contribution type: docs" in item for item in candidate.junior_fit_evidence)
+    assert any("docs/test hint: spring-boot docs" in item for item in candidate.junior_fit_evidence)
+    serialized = collector.serialize_oss_issue_candidate(candidate)
+    assert serialized["repository_priority"] == "A"
+    assert serialized["junior_fit_evidence"]
+    assert serialized["repository_local_check_hints"] == ["./gradlew test"]
+    assert serialized["repository_docs_or_test_hints"] == ["spring-boot docs"]
+
+
+def test_repository_avoid_label_is_excluded() -> None:
+    reset_gate()
+    candidate = build_candidate(
+        issue_payload(labels=[{"name": "status: ideal-for-contribution"}, {"name": "component: compiler"}]),
+        PROFILED_OSS_CONFIG,
+    )
+    assert candidate is None
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("repository-avoid-label", 0) == 1
+
+
+def test_repository_avoid_title_keyword_is_excluded() -> None:
+    reset_gate()
+    candidate = build_candidate(
+        issue_payload(title="Compiler redesign docs for getting started tests"),
+        PROFILED_OSS_CONFIG,
+    )
+    assert candidate is None
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("repository-avoid-title-keyword", 0) == 1
+
+
+def test_repository_preferred_contribution_types_are_required() -> None:
+    reset_gate()
+    candidate = build_candidate(
+        issue_payload(
+            title="Small enhancement for configuration option",
+            body="Small enhancement with a clear configuration option and enough details. " * 2,
+            labels=[{"name": "status: ideal-for-contribution"}, {"name": "type: enhancement"}],
+        ),
+        PROFILED_OSS_CONFIG,
+    )
+    assert candidate is None
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("unsupported-contribution-type", 0) == 1
 
 
 def test_pull_request_item_is_excluded() -> None:
@@ -261,6 +334,10 @@ def main() -> int:
     tests = [
         test_safe_maintainer_authored_issue,
         test_safe_maintainer_triaged_issue,
+        test_repository_profile_is_reflected_in_candidate_evidence,
+        test_repository_avoid_label_is_excluded,
+        test_repository_avoid_title_keyword_is_excluded,
+        test_repository_preferred_contribution_types_are_required,
         test_pull_request_item_is_excluded,
         test_assigned_issue_is_excluded,
         test_claim_comment_is_excluded,

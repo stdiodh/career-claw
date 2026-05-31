@@ -1,0 +1,12 @@
+{
+  "schema_version": 2,
+  "category": "kr-oss-contribution-opportunities",
+  "candidate_count": 0,
+  "verification_policy": "Only safe_to_recommend=true issues are included in items.",
+  "diagnostics": {
+    "safe_items_count": 0,
+    "linked_work_verification": "graphql_required",
+    "fallback_when_empty": "oss-preparation-routine"
+  },
+  "items": []
+}

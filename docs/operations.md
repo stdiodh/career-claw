@@ -14,10 +14,13 @@
 - workflow: `.github/workflows/kr-tech-daily.yml`
 - 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-backend`
 - prompt: `.github/codex/prompts/kr-tech-daily-brief.md`
-- validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech`
+- validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech --candidates-dir reports/candidates`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
 - delivery lock: `career-feed-backend-sent-${KST_DATE}`
 - 운영 요약: `reports/ops/backend-daily-run-summary.json`, `reports/ops/backend-daily-run-summary.md`
+
+OSS 후보는 `configs/oss-repositories.json`의 저장소별 priority, ecosystem tag, beginner label, avoid label/title keyword, 선호 기여 유형, 로컬 확인 힌트를 scoring과 후보 evidence에 반영합니다. 저장소 profile 관리 기준은 `docs/oss-candidate-policy.md`를 따릅니다.
+Daily Growth 운영 요약과 artifact 해석 방법은 `docs/daily-growth-ops.md`를 따릅니다.
 
 ## Korea Dev/AI News Daily
 
@@ -57,6 +60,13 @@ News Daily는 기본적으로 3~5개 뉴스를 전송합니다. 기준을 만족
 - 상태 확인: `python3 scripts/update-ps-progress.py --status`
 - 풀이 기록: `python3 scripts/update-ps-progress.py --problem-id <problem_id> --note "<memo>"`
 
+## OSS Progress Notes
+
+- 진행 파일: `data/oss-progress.json`
+- 상태 확인: `python3 scripts/update-oss-progress.py --status`
+- 검토 기록: `python3 scripts/update-oss-progress.py --mark-reviewed <GitHub issue URL> --note "<memo>"`
+- GitHub issue 댓글, assign, label 변경은 하지 않습니다.
+
 ## 검증
 
 ```bash
@@ -64,7 +74,8 @@ python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
 python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/render-weekly-career-site-radar.py
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech
+python3 scripts/update-oss-progress.py --status
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news

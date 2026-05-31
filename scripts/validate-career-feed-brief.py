@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import difflib
+import json
 import re
 import sys
 import urllib.parse
@@ -17,6 +18,7 @@ from pathlib import Path
 DEFAULT_REPORT = "reports/briefs/kr-tech-daily.md"
 MAX_WARNING_CHARS = 6500
 DAILY_CS_TERM_SECTION_MAX_CHARS = 1500
+OSS_CANDIDATE_FILENAME = "kr-oss-contribution-opportunities.json"
 
 
 def joined(*parts: str) -> str:
@@ -346,6 +348,33 @@ DAILY_OSS_STATUS_CHECK_TERMS = [
     r"claim\s*댓글",
     r"작업\s*claim",
 ]
+DAILY_OSS_STATUS_REQUIRED_GROUPS = {
+    "maintainer/triage": [
+        r"maintainer",
+        r"메인테이너",
+        r"triage",
+        r"분류",
+    ],
+    "assignee absence": [
+        r"담당자\s*없음",
+        r"assignee\s*(?:없음|none|0)",
+        r"배정\s*없음",
+        r"미배정",
+    ],
+    "linked work absence": [
+        r"(?:연결|linked).*(?:PR|branch|브랜치).*(?:없음|none|0)",
+    ],
+    "claim absence": [
+        r"(?:claim|작업\s*의사|working|맡겠).*(?:없음|none|0)",
+        r"댓글.*(?:claim|작업\s*의사).*(?:없음|none|0)",
+    ],
+}
+OSS_CONTRIBUTION_TYPE_ALIASES = {
+    "docs": ["docs", "문서"],
+    "test": ["test", "테스트"],
+    "bug-repro": ["bug-repro", "bug repro", "재현"],
+    "sample": ["sample", "샘플", "예제"],
+}
 SPRING_ALLOWED_URL_PREFIXES = [
     "spring.io",
     "docs.spring.io",
@@ -408,6 +437,9 @@ DAILY_LEARNING_BLOCKED_DOMAINS = [
 LINK_RE = re.compile(r"https?://[^\s)>\\\]]+")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(https?://[^)]+\)")
 SITE_LINK_RE = re.compile(r"\[사이트 보기\]\((https?://[^)]+)\)")
+GITHUB_ISSUE_URL_RE = re.compile(
+    r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/issues/\d+"
+)
 SECTION_HEADING_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
 ITEM_HEADING_RE = re.compile(r"^###\s+(.+?)\s*$", re.MULTILINE)
 WEEKLY_CATEGORY_HEADING_RE = re.compile(r"^###\s+\d+\.\s+(.+?)\s*$", re.MULTILINE)
@@ -439,6 +471,11 @@ def parse_args() -> argparse.Namespace:
         choices=["daily-tech", "daily-news", "weekly-career"],
         default="daily-tech",
         help="Brief type to validate.",
+    )
+    parser.add_argument(
+        "--candidates-dir",
+        default="reports/candidates",
+        help="Directory containing candidate JSON files for cross-checks.",
     )
     return parser.parse_args()
 
@@ -579,6 +616,54 @@ def require_markdown_link_in_text(text: str, context: str) -> None:
         fail(f"Section must include a Markdown link: {context}")
 
 
+def read_oss_candidate_payload(candidates_dir: Path) -> dict[str, object]:
+    path = candidates_dir / OSS_CANDIDATE_FILENAME
+    if not path.exists():
+        fail(f"Daily tech validation requires OSS candidate JSON: {path}")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        fail(f"OSS candidate JSON is invalid: {path} ({exc})")
+    if not isinstance(payload, dict):
+        fail(f"OSS candidate JSON must be an object: {path}")
+    return payload
+
+
+def safe_oss_candidates_by_url(payload: dict[str, object]) -> dict[str, dict[str, object]]:
+    raw_items = payload.get("items", [])
+    if not isinstance(raw_items, list):
+        fail("OSS candidate JSON items must be a list.")
+
+    candidates: dict[str, dict[str, object]] = {}
+    for raw_item in raw_items:
+        if not isinstance(raw_item, dict):
+            continue
+        if raw_item.get("safe_to_recommend") is not True:
+            continue
+        url = str(raw_item.get("url") or raw_item.get("source_url") or "").strip()
+        if not GITHUB_ISSUE_URL_RE.fullmatch(url):
+            fail("safe_to_recommend OSS candidate must include a GitHub issue URL.")
+        candidates[normalize_github_issue_url(url)] = raw_item
+    return candidates
+
+
+def candidate_text_value(candidate: dict[str, object], *keys: str) -> str:
+    for key in keys:
+        value = candidate.get(key)
+        if value is not None:
+            text = str(value).strip()
+            if text:
+                return text
+    return ""
+
+
+def text_contains_expected_or_alias(text: str, expected: str, aliases: dict[str, list[str]]) -> bool:
+    lowered_text = text.lower()
+    lowered_expected = expected.lower()
+    values = aliases.get(lowered_expected, [expected])
+    return any(value.lower() in lowered_text for value in values)
+
+
 def bullet_field_value(text: str, field: str) -> str:
     match = re.search(
         rf"^\s*-\s*{re.escape(field)}\s*:\s*(.+?)\s*$",
@@ -590,6 +675,15 @@ def bullet_field_value(text: str, field: str) -> str:
 
 def markdown_link_urls(text: str) -> list[str]:
     return re.findall(r"\[[^\]]+\]\((https?://[^)]+)\)", text)
+
+
+def github_issue_urls(text: str) -> list[str]:
+    return GITHUB_ISSUE_URL_RE.findall(text)
+
+
+def normalize_github_issue_url(url: str) -> str:
+    parsed = urllib.parse.urlsplit(url.strip().rstrip("/"))
+    return f"https://{parsed.netloc.lower()}{parsed.path.rstrip('/')}"
 
 
 def normalize_validation_url(url: str) -> str:
@@ -795,7 +889,7 @@ def validate_weekly_naver_host_policy(text: str, context: str) -> None:
             fail(f"Weekly career item uses NAVER as host without official NAVER career URL: {context}")
 
 
-def validate_daily_tech(content: str) -> None:
+def validate_daily_tech(content: str, candidates_dir: Path) -> None:
     if (
         "Career Feed - Backend Daily" not in content
         and "Career Feed - Korea Tech Daily" not in content
@@ -817,7 +911,7 @@ def validate_daily_tech(content: str) -> None:
 
     validate_daily_study_section(sections)
     validate_daily_ps_section(sections)
-    validate_daily_oss_section(sections)
+    validate_daily_oss_section(sections, candidates_dir)
     validate_daily_practical_section(sections)
     validate_daily_cs_term_section(sections)
 
@@ -880,10 +974,11 @@ def validate_daily_ps_section(sections: list[Section]) -> None:
     require_markdown_link_in_text(section.body, "이번 주 PS 성장 루틴")
 
 
-def validate_daily_oss_section(sections: list[Section]) -> None:
+def validate_daily_oss_section(sections: list[Section], candidates_dir: Path) -> None:
     section = find_section(sections, "오픈소스 기여 후보")
     if section is None:
         fail("Daily tech brief must include 오픈소스 기여 후보 section.")
+    safe_candidates = safe_oss_candidates_by_url(read_oss_candidate_payload(candidates_dir))
 
     found_forbidden = [
         pattern
@@ -893,10 +988,16 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
     if found_forbidden:
         fail(f"OSS section contains forbidden phrase(s): {', '.join(found_forbidden)}")
 
-    has_issue_link = bool(
-        re.search(r"\[Issue 보기\]\(https://github\.com/[^)]+/issues/\d+\)", section.body)
-        or re.search(r"https://github\.com/[^\s)]+/issues/\d+", section.body)
-    )
+    issue_urls = sorted({normalize_github_issue_url(url) for url in github_issue_urls(section.body)})
+    has_issue_link = bool(issue_urls)
+    if len(issue_urls) > 1:
+        fail("OSS section must include at most one GitHub issue URL.")
+    if has_issue_link and DAILY_OSS_EMPTY_STATE in section.body:
+        fail("OSS section must not mix an issue URL with the empty-state prep routine.")
+    if not safe_candidates and has_issue_link:
+        fail("OSS candidate JSON has no safe candidate, but Markdown includes an issue URL.")
+    if safe_candidates and not has_issue_link:
+        fail("OSS candidate JSON has safe candidate(s), but Markdown does not include an issue URL.")
     if DAILY_OSS_EMPTY_STATE not in section.body and not has_issue_link:
         fail("OSS section must include an Issue 보기 link or the required prep-routine phrase.")
 
@@ -916,6 +1017,12 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
         if missing:
             fail(f"OSS prep routine is missing field(s): {', '.join(missing)}")
         return
+    if not issue_urls:
+        fail("OSS candidate must include a GitHub issue URL.")
+    issue_url = issue_urls[0]
+    candidate = safe_candidates.get(issue_url)
+    if candidate is None:
+        fail("OSS issue URL is not present in safe_to_recommend candidate JSON items.")
 
     if not re.search(r"P[45]-like", item.body):
         fail("OSS candidate must include P5-like or P4-like difficulty band.")
@@ -932,10 +1039,56 @@ def validate_daily_oss_section(sections: list[Section]) -> None:
     ]
     if len(matched_status_terms) < 2:
         fail("OSS 상태 확인 must include at least two verification signals.")
+    missing_status_groups = [
+        name
+        for name, patterns in DAILY_OSS_STATUS_REQUIRED_GROUPS.items()
+        if not any(re.search(pattern, status_check, flags=re.IGNORECASE) for pattern in patterns)
+    ]
+    if missing_status_groups:
+        fail(f"OSS 상태 확인 is missing candidate safety signal(s): {', '.join(missing_status_groups)}")
     first_action = bullet_field_value(item.body, "첫 30분 액션")
     if re.match(r"`?(PR\s*생성|코드\s*수정|구현)", first_action, flags=re.IGNORECASE):
         fail("OSS 첫 30분 액션 must not start with PR creation or code editing.")
     validate_item_markdown_link(item)
+    validate_oss_candidate_alignment(item, candidate, issue_url)
+
+
+def validate_oss_candidate_alignment(
+    item: Item,
+    candidate: dict[str, object],
+    issue_url: str,
+) -> None:
+    link_value = bullet_field_value(item.body, "링크")
+    link_issue_urls = [
+        normalize_github_issue_url(url)
+        for url in github_issue_urls(link_value)
+    ]
+    if link_issue_urls != [issue_url]:
+        fail("OSS candidate 링크 field must contain exactly the safe candidate issue URL.")
+
+    repository = candidate_text_value(candidate, "repository", "repo")
+    repository_value = bullet_field_value(item.body, "저장소")
+    if repository and repository not in repository_value:
+        fail("OSS candidate 저장소 field must match the safe candidate JSON repository.")
+
+    difficulty_band = candidate_text_value(candidate, "difficulty_band")
+    difficulty_value = bullet_field_value(item.body, "난이도 밴드")
+    if difficulty_band and difficulty_band not in difficulty_value:
+        fail("OSS candidate 난이도 밴드 field must match the safe candidate JSON.")
+
+    contribution_type = candidate_text_value(candidate, "contribution_type")
+    contribution_value = bullet_field_value(item.body, "기여 유형")
+    if contribution_type and not text_contains_expected_or_alias(
+        contribution_value,
+        contribution_type,
+        OSS_CONTRIBUTION_TYPE_ALIASES,
+    ):
+        fail("OSS candidate 기여 유형 field must match the safe candidate JSON.")
+
+    if not bullet_field_value(item.body, "첫 30분 액션"):
+        fail("OSS candidate 첫 30분 액션 field must not be empty.")
+    if not bullet_field_value(item.body, "기여 전 매너"):
+        fail("OSS candidate 기여 전 매너 field must not be empty.")
 
 
 def validate_daily_news(content: str) -> None:
@@ -1328,9 +1481,9 @@ def validate_weekly_tracking_section(sections: list[Section]) -> None:
         validate_weekly_item_links(line, "다음 주에도 추적할 후보")
 
 
-def validate(content: str, report_type: str) -> None:
+def validate(content: str, report_type: str, candidates_dir: Path) -> None:
     if report_type == "daily-tech":
-        validate_daily_tech(content)
+        validate_daily_tech(content, candidates_dir)
     elif report_type == "daily-news":
         validate_daily_news(content)
     elif report_type == "weekly-career":
@@ -1343,7 +1496,7 @@ def main() -> int:
     args = parse_args()
     try:
         content = read_report(Path(args.path))
-        validate(content, args.type)
+        validate(content, args.type, Path(args.candidates_dir))
     except (OSError, UnicodeDecodeError, RuntimeError) as exc:
         print(f"Career Feed brief validation failed: {exc}", file=sys.stderr)
         return 1
