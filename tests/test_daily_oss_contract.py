@@ -49,7 +49,7 @@ def oss_candidate_section(url: str = SAFE_URL) -> str:
 def oss_candidate_section_with_natural_absence_text(url: str = SAFE_URL) -> str:
     return f"""## 3. 오픈소스 기여 후보
 ### 후보: Improve getting started documentation
-- 상태 확인: maintainer 작성 이슈이고, assignee와 linked PR/branch가 없고 claim 댓글도 없다.
+- 상태 확인: maintainer 작성 이슈이고, assignee와 linked PR/branch가 없고 claim 댓글도 확인되지 않아 안전한 추천 조건을 만족합니다.
 - 난이도 밴드: P5-like
 - 저장소: spring-projects/spring-boot
 - 기여 유형: docs

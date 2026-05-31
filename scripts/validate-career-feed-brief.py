@@ -371,6 +371,7 @@ DAILY_OSS_STATUS_REQUIRED_GROUPS = {
         r"댓글.*(?:claim|작업\s*의사).*(?:없음|none|0)",
         r"(?:claim|작업\s*의사|working|맡겠).{0,40}없(?:음|다|고|는|습니다)?",
         r"댓글.{0,40}(?:claim|작업\s*의사).{0,40}없(?:음|다|고|는|습니다)?",
+        r"(?:claim|작업\s*의사|working|맡겠).{0,40}(?:확인|발견)되지",
     ],
 }
 OSS_CONTRIBUTION_TYPE_ALIASES = {
