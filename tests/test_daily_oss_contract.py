@@ -61,6 +61,21 @@ def oss_candidate_section_with_natural_absence_text(url: str = SAFE_URL) -> str:
 - 링크: [Issue 보기]({url})"""
 
 
+def oss_candidate_section_with_split_maintainer_signal(url: str = SAFE_URL) -> str:
+    return f"""## 3. 오픈소스 기여 후보
+### 후보: Improve getting started documentation
+- 상태 확인: `spring-projects/spring-boot`의 open issue이고 assignee가 없으며 linked PR/branch와 claim 댓글도 없다.
+- 난이도 밴드: P5-like
+- 저장소: spring-projects/spring-boot
+- 기여 유형: docs
+- 왜 시도해볼 만한가: maintainer가 작성한 문서 이슈이고 확인 범위가 작아 첫 기여로 검토하기 좋습니다.
+- 첫 30분 액션: CONTRIBUTING 문서에서 빌드 명령을 확인하고 관련 docs 위치를 메모합니다.
+- 기여 전 매너: 최근 댓글과 연결 PR/branch가 계속 없는지 확인한 뒤 범위 확인 댓글을 남깁니다.
+- 확인할 파일/키워드: CONTRIBUTING.adoc, getting started docs
+- 주의할 점: PR 작성 전에 재현 범위와 문서 위치를 먼저 확인합니다.
+- 링크: [Issue 보기]({url})"""
+
+
 def candidate_payload(url: str = SAFE_URL, *, safe: bool = True) -> dict[str, object]:
     return {
         "schema_version": 2,
@@ -134,6 +149,12 @@ def test_safe_candidate_natural_absence_text_passes() -> None:
     assert_passes(run_validator(markdown, candidate_payload()))
 
 
+def test_safe_candidate_split_maintainer_signal_passes() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    markdown = replace_oss_section(base, oss_candidate_section_with_split_maintainer_signal())
+    assert_passes(run_validator(markdown, candidate_payload()))
+
+
 def test_empty_candidate_rejects_issue_url() -> None:
     base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
     markdown = replace_oss_section(base, oss_candidate_section())
@@ -156,6 +177,7 @@ def main() -> int:
     tests = [
         test_safe_candidate_url_passes,
         test_safe_candidate_natural_absence_text_passes,
+        test_safe_candidate_split_maintainer_signal_passes,
         test_empty_candidate_rejects_issue_url,
         test_hallucinated_issue_url_is_rejected,
     ]
