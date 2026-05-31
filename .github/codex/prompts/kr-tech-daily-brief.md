@@ -63,6 +63,7 @@ workflow는 `{{KST_NOW}}`를 Asia/Seoul 기준시각으로 치환한다. 이 시
 - `docs.spring.io/spring-framework`
 - `docs.spring.io/spring-ai`
 - `docs.spring.io/spring-grpc`
+- `grpc.io/docs`
 - `docs.spring.io/spring-modulith`
 - `github.com/spring-projects/*/releases`
 - `github.com/spring-projects/*/wiki/*Release*`

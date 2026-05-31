@@ -375,6 +375,7 @@ SPRING_ALLOWED_URL_PREFIXES = [
     "spring.io",
     "docs.spring.io",
     "github.com/spring-projects/",
+    "grpc.io",
     "openjdk.org",
     "inside.java",
     "blogs.oracle.com",
