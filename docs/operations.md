@@ -26,13 +26,15 @@ Daily Growth 운영 요약과 artifact 해석 방법은 `docs/daily-growth-ops.m
 
 - workflow: `.github/workflows/kr-tech-news-daily.yml`
 - 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-news`
+- shortlist 생성: `python3 scripts/build-daily-news-shortlist.py`
+- prompt budget 기록: `python3 scripts/estimate-prompt-budget.py`
 - prompt: `.github/codex/prompts/kr-tech-news-daily.md`
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-news-daily.md --type daily-news`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY`
 - delivery lock: `career-feed-news-sent-${KST_DATE}`
 - 운영 요약: `reports/ops/news-daily-run-summary.json`, `reports/ops/news-daily-run-summary.md`
 
-News Daily는 기본적으로 3~5개 뉴스를 전송합니다. 기준을 만족하는 뉴스가 1~2개뿐이면 후보 부족 문구와 함께 정상 성공으로 보고, 0개면 기준을 만족하는 한국 개발/AI 뉴스가 없다는 문구만 전송합니다. Naver secret 누락이나 Naver API 실패는 warning/source error로 기록하고 RSS/공식 페이지 후보만으로도 JSON을 생성합니다.
+News Daily는 기본적으로 3~5개 뉴스를 전송합니다. 기준을 만족하는 뉴스가 1~2개뿐이면 후보 부족 문구와 함께 정상 성공으로 보고, 0개면 기준을 만족하는 한국 개발/AI 뉴스가 없다는 문구만 전송합니다. Codex 입력은 원본 후보 전체가 아니라 최대 12개 shortlist를 중심으로 사용하고, `reports/ops/news-daily-token-budget.json`에 rough token 추정치를 기록합니다. 시장/비즈니스 맥락은 하루 0~1개만 허용하며 AI 인프라, 클라우드, 데이터센터, GPU/HBM, API/SDK, 개발자 역량 수요와 연결될 때만 사용합니다. 목표가, 매수/매도, 관련주/테마주 중심 기사는 제외합니다. Naver secret 누락이나 Naver API 실패는 warning/source error로 기록하고 RSS/공식 페이지 후보만으로도 JSON을 생성합니다.
 
 ## Daily 운영 안정성
 
@@ -72,6 +74,8 @@ News Daily는 기본적으로 3~5개 뉴스를 전송합니다. 기준을 만족
 ```bash
 python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
 python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
+python3 scripts/build-daily-news-shortlist.py
+python3 scripts/estimate-prompt-budget.py
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/render-weekly-career-site-radar.py
 python3 scripts/update-oss-progress.py --status
@@ -79,6 +83,7 @@ python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-market.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 ./scripts/validate.sh
 git diff --check

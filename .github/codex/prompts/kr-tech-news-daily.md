@@ -1,6 +1,6 @@
 # Career Feed Korea Dev/AI News Prompt
 
-이 프롬프트는 한국 개발/AI 뉴스 전용 Discord 피드 생성을 위한 것이다.
+한국 개발/AI 뉴스 전용 Discord 피드를 생성한다.
 
 ## 역할
 
@@ -10,11 +10,17 @@
 
 ## 입력 파일
 
-다음 후보 파일을 읽는다.
+주 입력은 Runtime Context의 `SHORTLIST_FILE`이다.
+
+- `reports/candidates/kr-tech-news-shortlist.json`
+- `configs/audience-profile.json`
+
+원본 후보 파일은 shortlist가 비었거나 진단 확인이 필요할 때만 fallback으로 참고한다.
 
 - `reports/candidates/kr-dev-ai-news.json`
 - `reports/candidates/kr-ai-tech-news.json`
-- `configs/audience-profile.json`
+
+기준시각은 Runtime Context의 `KST_NOW`를 사용한다.
 
 ## 선별 기준
 
@@ -24,7 +30,7 @@
 
 - 1~2개만 고를 수 있으면 `오늘은 기준을 만족하는 뉴스가 N개입니다.` 문장을 `오늘의 흐름` 아래에 쓴다.
 - 0개면 `오늘은 기준을 만족하는 한국 개발/AI 뉴스가 없습니다.`만 쓰고, 억지 뉴스를 만들지 않는다.
-- 후보 JSON에 `source_errors` 또는 `warnings`가 있으면 최종 본문에는 길게 쓰지 말고, 필요할 때만 `일부 소스 수집 실패로 후보가 제한됨` 정도로 짧게 표시한다.
+- 후보 JSON에 `source_errors` 또는 `warnings`가 있으면 필요할 때만 `일부 소스 수집 실패로 후보가 제한됨` 정도로 짧게 표시한다.
 
 우선순위:
 
@@ -33,11 +39,11 @@
 3. 한국 개발자 생태계에 영향을 줄 수 있는 정책, 플랫폼, SDK, API, 오픈소스, 클라우드 변화
 4. 주니어 백엔드 개발자가 면접/프로젝트/운영 감각을 쌓는 데 도움이 되는 뉴스
 
-가능하면 아래 균형을 맞춘다.
+시장/비즈니스 맥락은 하루 0~1개만 허용한다.
 
-- AI/LLM/API/생산성: 1~2개
-- 백엔드/인프라/클라우드/보안/데이터: 1~2개
-- 국내 기업 기술 블로그/개발 조직/오픈소스: 0~1개
+- 허용: AI 인프라 투자, 클라우드/데이터센터/GPU/HBM/서버 수요, 개발자 플랫폼/API/SDK 생태계, 백엔드/클라우드 역량 수요와 연결되는 내용
+- 제외: 주가만 다루는 기사, 목표가, 매수/매도 의견, 관련주/테마주 추천, 급등락만 중심인 기사
+- 시장 맥락은 투자 판단이 아니라 개발자 관점이어야 한다.
 
 ## 제외 기준
 
@@ -51,7 +57,7 @@
 - 기사 전문을 그대로 가져와야 이해되는 내용
 - 제목은 AI지만 실제 내용은 광고/마케팅인 기사
 
-## 중복 제거
+## 중복 제거와 링크
 
 같은 사건을 다룬 기사가 여러 개 있으면 하나만 고른다.
 
@@ -64,71 +70,51 @@
 
 같은 출처에서 너무 많이 고르지 않는다. 가능하면 한 출처는 최대 2개까지만 사용한다.
 
-후보의 `canonical_url`, `normalized_title`, `source_name`, `published_at_kst`, `category_hint`를 활용해 같은 사건 중복을 제거한다.
-
-## 링크 정책
-
-- 가능하면 원문 링크를 사용한다.
-- Naver News API 후보라도 `originallink`가 있으면 원문 링크를 우선한다.
-- `news.naver.com`은 원문 링크가 없을 때만 fallback으로 사용한다.
-- 링크 없는 뉴스는 출력하지 않는다.
+링크는 원문을 우선하고, Naver News 링크는 원문 링크가 없을 때만 fallback으로 사용한다. 링크 없는 뉴스는 출력하지 않는다.
 
 ## 출력 형식
 
-최종 Markdown은 반드시 `reports/briefs/kr-tech-news-daily.md`에 작성한다.
+최종 Markdown은 Runtime Context의 `OUTPUT_FILE`에만 작성한다.
 
 아래 형식을 따른다.
 
 ```markdown
 # Career Feed - Korea Dev/AI News
 
-기준시각: {{KST_NOW}}
+기준시각: Runtime Context의 KST_NOW
 
 오늘의 흐름:
 - 오늘 뉴스에서 보이는 개발/AI 흐름을 1문장으로 요약한다.
 
 ## 1. 뉴스 제목
 
-- 분류: AI / Backend / Cloud / Security / Data / Developer Productivity / Open Source 중 하나
+- 분류: AI / Backend / Cloud / Security / Data / Developer Productivity / Open Source / Business/Market Context 중 하나
 - 출처/게시:
 - 핵심:
+- 시장/비즈니스 맥락: 기술 변화가 기업 인프라, API, 개발자 생태계와 연결되는 경우에만 1문장. 투자 조언 금지.
 - 백엔드 주니어 관점: 마지막 문장은 반드시 "내가 뭘 배워야 하는가"로 끝낸다.
-- 더 볼 키워드:
-- 링크: [원문 보기](URL)
-
-## 2. 뉴스 제목
-
-- 분류:
-- 출처/게시:
-- 핵심:
-- 백엔드 주니어 관점:
 - 더 볼 키워드:
 - 링크: [원문 보기](URL)
 ```
 
-3~5개를 기본으로 출력한다.
+`시장/비즈니스 맥락`은 관련 뉴스에만 넣고, 모든 뉴스에 억지로 넣지 않는다.
 
-기준을 만족하는 후보가 3개 미만이면 억지로 저품질 뉴스를 넣지 말고, 기준 만족 뉴스 수를 명시한다. 0개면 `오늘은 기준을 만족하는 한국 개발/AI 뉴스가 없습니다.`만 쓴다.
+3~5개를 기본으로 출력한다. 기준을 만족하는 후보가 3개 미만이면 기준 만족 뉴스 수를 명시한다. 0개면 `오늘은 기준을 만족하는 한국 개발/AI 뉴스가 없습니다.`만 쓴다.
 
 ## 품질 체크
-
-출력 전 확인한다.
 
 - 뉴스가 3~5개인가?
 - 1~2개만 출력했다면 후보 부족 문구가 있는가?
 - 0개라면 기준을 만족하는 한국 개발/AI 뉴스가 없다는 문구만 있는가?
 - 같은 사건을 중복으로 뽑지 않았는가?
-- 같은 출처는 가능하면 최대 2개까지만 사용했는가?
-- 주가/관련주/투자 의견 기사가 아닌가?
+- 주가/관련주/투자 의견 중심 기사가 아닌가?
+- 시장/비즈니스 맥락은 0~1개이며 투자 조언이 아닌가?
 - 각 뉴스에 백엔드 주니어 관점이 있고 "내가 뭘 배워야 하는가"로 끝나는가?
-- 백엔드 주니어 관점이 단순 감상문이 아닌 학습 액션인가?
 - 핵심이 제목 반복이 아닌가?
 - 더 볼 키워드가 2개 이상인가?
 - 링크가 있는가?
-- 링크는 원문 우선인가?
 - 기사 전문을 과도하게 인용하지 않았는가?
-- Discord에서 너무 길지 않은가?
 
 ## 최종 지시
 
-요약 설명이 아니라 실제 Markdown 파일을 `reports/briefs/kr-tech-news-daily.md`에 작성한다.
+요약 설명이 아니라 실제 Markdown 파일을 Runtime Context의 `OUTPUT_FILE`에 작성한다. 후보 JSON, config, workflow, script 파일은 runtime Codex 생성 단계에서 수정하지 않는다.

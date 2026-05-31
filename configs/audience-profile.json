@@ -19,6 +19,23 @@
       "frontend-only",
       "marketing-only",
       "expired-deadline"
-    ]
+    ],
+    "market_context": {
+      "enabled": true,
+      "max_items_per_day": 1,
+      "allow_when": [
+        "AI infrastructure investment",
+        "cloud/datacenter/GPU/HBM/server demand",
+        "developer platform/API/SDK ecosystem impact",
+        "backend/cloud hiring or skill demand impact"
+      ],
+      "exclude_when": [
+        "stock price only",
+        "target price",
+        "buy/sell recommendation",
+        "theme stock",
+        "related stock list"
+      ]
+    }
   }
 }

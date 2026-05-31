@@ -4,10 +4,19 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT_DIR}"
 
+expect_fail() {
+  if "$@"; then
+    echo "Expected command to fail: $*" >&2
+    exit 1
+  fi
+}
+
 echo "==> Checking Python syntax"
 python3 -m py_compile \
+  scripts/build-daily-news-shortlist.py \
   scripts/check-workflow-schedules.py \
   scripts/collect-kr-feeds.py \
+  scripts/estimate-prompt-budget.py \
   scripts/render-weekly-career-site-radar.py \
   scripts/select-ps-problem.py \
   scripts/send-discord.py \
@@ -108,6 +117,10 @@ grep -q 'actions: read' .github/workflows/kr-tech-news-daily.yml
 grep -q 'timeout-minutes: 75' .github/workflows/kr-tech-news-daily.yml
 grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY' .github/workflows/kr-tech-news-daily.yml
 grep -q 'collect-kr-feeds.py --mode daily-news' .github/workflows/kr-tech-news-daily.yml
+grep -q 'build-daily-news-shortlist.py' .github/workflows/kr-tech-news-daily.yml
+grep -q 'estimate-prompt-budget.py' .github/workflows/kr-tech-news-daily.yml
+grep -q 'kr-tech-news-shortlist.json' .github/workflows/kr-tech-news-daily.yml
+grep -q 'news-daily-token-budget.json' .github/workflows/kr-tech-news-daily.yml
 grep -q -- '--type daily-news' .github/workflows/kr-tech-news-daily.yml
 grep -q 'career-feed-news-sent-' .github/workflows/kr-tech-news-daily.yml
 grep -q 'actions/cache/restore@v4' .github/workflows/kr-tech-news-daily.yml
@@ -121,6 +134,9 @@ grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/kr-tech-news-daily.y
 grep -q 'if: always()' .github/workflows/kr-tech-news-daily.yml
 grep -q 'reports/ops/\*.json' .github/workflows/kr-tech-news-daily.yml
 grep -q 'reports/ops/\*.md' .github/workflows/kr-tech-news-daily.yml
+grep -q 'raw_candidate_count_total' .github/workflows/kr-tech-news-daily.yml
+grep -q 'market_context_selected_count' .github/workflows/kr-tech-news-daily.yml
+grep -q 'estimated_prompt_tokens_rough' .github/workflows/kr-tech-news-daily.yml
 grep -q 'retention-days: 14' .github/workflows/kr-tech-news-daily.yml
 if grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-news-daily.yml; then
   echo "News Daily workflow must not use the Backend Daily webhook." >&2
@@ -186,6 +202,8 @@ if ! grep -Eq '3(~|-)5개' .github/codex/prompts/kr-tech-news-daily.md; then
   echo "News Daily prompt must include the 3~5개 output rule." >&2
   exit 1
 fi
+grep -q 'reports/candidates/kr-tech-news-shortlist.json' .github/codex/prompts/kr-tech-news-daily.md
+grep -q '시장/비즈니스 맥락' .github/codex/prompts/kr-tech-news-daily.md
 
 echo "==> Checking workflow schedules"
 python3 scripts/check-workflow-schedules.py
@@ -222,8 +240,10 @@ required_files=(
   "docs/oss-candidate-policy.md"
   ".github/codex/prompts/kr-tech-news-daily.md"
   ".github/workflows/kr-tech-news-daily.yml"
+  "scripts/build-daily-news-shortlist.py"
   "scripts/check-workflow-schedules.py"
   "scripts/collect-kr-feeds.py"
+  "scripts/estimate-prompt-budget.py"
   "scripts/render-weekly-career-site-radar.py"
   "scripts/select-ps-problem.py"
   "scripts/send-discord.py"
@@ -234,8 +254,10 @@ required_files=(
   "tests/fixtures/kr-tech-news-daily-valid.md"
   "tests/fixtures/kr-tech-news-daily-valid-sparse.md"
   "tests/fixtures/kr-tech-news-daily-valid-empty.md"
+  "tests/fixtures/kr-tech-news-daily-valid-market.md"
   "tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md"
   "tests/fixtures/kr-tech-news-daily-invalid-investment.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-market-duplicate.md"
   "tests/fixtures/kr-backend-career-weekly-valid.md"
   "tests/fixtures/candidates-empty/kr-oss-contribution-opportunities.json"
   "tests/test_daily_oss_contract.py"
@@ -653,6 +675,81 @@ print("Backend Daily run summary smoke check passed")
 PY
 
 python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
+python3 scripts/build-daily-news-shortlist.py
+python3 scripts/estimate-prompt-budget.py --kst-now "2026-05-29 09:05:00 KST"
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+shortlist = json.loads(Path("reports/candidates/kr-tech-news-shortlist.json").read_text(encoding="utf-8"))
+budget = json.loads(Path("reports/ops/news-daily-token-budget.json").read_text(encoding="utf-8"))
+for field in ["raw_candidate_count_total", "shortlist_count", "items"]:
+    if field not in shortlist:
+        raise SystemExit(f"shortlist payload misses field: {field}")
+for field in [
+    "raw_candidate_count_total",
+    "shortlist_count",
+    "estimated_prompt_chars",
+    "estimated_prompt_tokens_rough",
+]:
+    if field not in budget:
+        raise SystemExit(f"token budget payload misses field: {field}")
+if budget["estimated_prompt_tokens_rough"] < 1:
+    raise SystemExit("rough token estimate must be positive")
+print("news daily shortlist and token budget smoke check passed")
+PY
+cp tests/fixtures/kr-tech-news-daily-valid-market.md reports/briefs/kr-tech-news-daily.md
+EVENT_NAME=workflow_dispatch \
+EVENT_SCHEDULE= \
+DRY_RUN=true \
+FORCE_SEND=false \
+DELIVERY_LOCK_KEY=career-feed-news-sent-test \
+DELIVERY_LOCK_HIT=false \
+SHOULD_GENERATE=true \
+SHOULD_SEND=false \
+SKIP_REASON=dry_run \
+DISCORD_SEND_OUTCOME=skipped \
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+workflow = Path(".github/workflows/kr-tech-news-daily.yml").read_text(encoding="utf-8").splitlines()
+step_start = next(
+    index
+    for index, line in enumerate(workflow)
+    if line.strip() == "- name: Write News Daily run summary"
+)
+heredoc_start = next(
+    index
+    for index in range(step_start, len(workflow))
+    if "python3 - <<'PY'" in workflow[index]
+)
+heredoc_end = next(
+    index
+    for index in range(heredoc_start + 1, len(workflow))
+    if workflow[index].strip() == "PY"
+)
+code_lines = []
+for line in workflow[heredoc_start + 1 : heredoc_end]:
+    code_lines.append(line[10:] if line.startswith("          ") else line)
+exec(compile("\n".join(code_lines), "kr-tech-news-daily-run-summary", "exec"), {})
+
+summary = json.loads(Path("reports/ops/news-daily-run-summary.json").read_text(encoding="utf-8"))
+required_fields = [
+    "raw_candidate_count_total",
+    "shortlist_count",
+    "selected_news_count",
+    "market_context_selected_count",
+    "estimated_prompt_chars",
+    "estimated_prompt_tokens_rough",
+]
+missing = [field for field in required_fields if field not in summary]
+if missing:
+    raise SystemExit("News Daily run summary misses field(s): " + ", ".join(missing))
+if summary["market_context_selected_count"] != 1:
+    raise SystemExit("News Daily run summary must count one market context line")
+print("News Daily run summary smoke check passed")
+PY
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/render-weekly-career-site-radar.py
 python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career
@@ -700,14 +797,10 @@ python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
-if python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md --type daily-news; then
-  echo "Expected duplicate URL fixture to fail" >&2
-  exit 1
-fi
-if python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment.md --type daily-news; then
-  echo "Expected investment fixture to fail" >&2
-  exit 1
-fi
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-market.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-market-duplicate.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 python3 tests/test_daily_oss_contract.py
 python3 tests/test_oss_reliability_gate.py

@@ -159,6 +159,23 @@ jobs:
           set -euo pipefail
           python3 scripts/collect-kr-feeds.py --mode daily-news
 
+      - name: Build News Daily shortlist
+        id: shortlist
+        if: steps.delivery.outputs.should_generate == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/build-daily-news-shortlist.py
+
+      - name: Estimate News Daily prompt budget
+        id: prompt-budget
+        if: steps.delivery.outputs.should_generate == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/estimate-prompt-budget.py \
+            --kst-now "${{ steps.context.outputs.kst_now }}"
+
       - name: Prepare KST runtime prompt
         id: prepare
         if: steps.delivery.outputs.should_generate == 'true'
@@ -168,28 +185,27 @@ jobs:
 
           kst_now="${{ steps.context.outputs.kst_now }}"
           runtime_prompt="${RUNNER_TEMP}/kr-tech-news-daily-${GITHUB_RUN_ID}.md"
+          shortlist_file="reports/candidates/kr-tech-news-shortlist.json"
           report_file="reports/briefs/kr-tech-news-daily.md"
 
-          KST_NOW="${kst_now}" RUNTIME_PROMPT="${runtime_prompt}" python3 - <<'PY'
+          KST_NOW="${kst_now}" \
+          RUNTIME_PROMPT="${runtime_prompt}" \
+          SHORTLIST_FILE="${shortlist_file}" \
+          REPORT_FILE="${report_file}" \
+          python3 - <<'PY'
           import os
           from pathlib import Path
 
           source = Path(".github/codex/prompts/kr-tech-news-daily.md")
           destination = Path(os.environ["RUNTIME_PROMPT"])
-          prompt = source.read_text(encoding="utf-8")
-          prompt = prompt.replace("{{KST_NOW}}", os.environ["KST_NOW"])
-          runtime = prompt + "\n\n## Runtime candidate files\n\n"
-          runtime += "아래 후보 JSON 파일과 사용자 프로필을 읽고 최종 뉴스 피드를 작성한다.\n\n"
-          runtime += "- `reports/candidates/kr-dev-ai-news.json`\n"
-          runtime += "- `reports/candidates/kr-ai-tech-news.json`\n"
-          runtime += "- `configs/audience-profile.json`\n"
-          runtime += "\n`kr-dev-ai-news.json`과 `kr-ai-tech-news.json`에서 3~5개 뉴스를 기본으로 고른다.\n"
-          runtime += "기준을 만족하는 후보가 3개 미만이면 품질을 낮춰 채우지 않고 sparse/empty 정책을 따른다.\n"
-          runtime += "같은 사건은 하나만 고르고, 가능하면 원문 링크를 사용한다.\n"
-          runtime += "\n## Runtime output\n\n"
-          runtime += "- 최종 Markdown은 `reports/briefs/kr-tech-news-daily.md`에만 작성한다.\n"
-          runtime += "- 후보 JSON, config, workflow, script 파일은 runtime Codex 생성 단계에서 수정하지 않는다.\n"
-          runtime += "- Secret 값이나 Webhook URL은 출력하지 않는다.\n"
+          prompt = source.read_text(encoding="utf-8").rstrip()
+          runtime = prompt + "\n\n## Runtime Context\n\n"
+          runtime += f"- KST_NOW: {os.environ['KST_NOW']}\n"
+          runtime += f"- SHORTLIST_FILE: {os.environ['SHORTLIST_FILE']}\n"
+          runtime += f"- OUTPUT_FILE: {os.environ['REPORT_FILE']}\n"
+          runtime += "- FALLBACK_CANDIDATE_FILES:\n"
+          runtime += "- reports/candidates/kr-dev-ai-news.json\n"
+          runtime += "- reports/candidates/kr-ai-tech-news.json\n"
           destination.write_text(runtime, encoding="utf-8")
           PY
 
@@ -317,7 +333,7 @@ jobs:
               Path("reports/candidates/kr-dev-ai-news.json"),
               Path("reports/candidates/kr-ai-tech-news.json"),
           ]
-          candidate_count = 0
+          raw_candidate_count_total = 0
           source_errors = set()
           for path in candidate_paths:
               if not path.exists():
@@ -327,13 +343,37 @@ jobs:
               except json.JSONDecodeError:
                   continue
               items = data.get("items", [])
-              candidate_count += int(data.get("candidate_count", len(items) if isinstance(items, list) else 0) or 0)
+              raw_candidate_count_total += int(data.get("candidate_count", len(items) if isinstance(items, list) else 0) or 0)
               for error in data.get("source_errors", []) if isinstance(data.get("source_errors", []), list) else []:
                   source_errors.add(json.dumps(error, ensure_ascii=False, sort_keys=True))
+
+          shortlist_path = Path("reports/candidates/kr-tech-news-shortlist.json")
+          shortlist_count = 0
+          if shortlist_path.exists():
+              try:
+                  shortlist = json.loads(shortlist_path.read_text(encoding="utf-8"))
+              except json.JSONDecodeError:
+                  shortlist = {}
+              if isinstance(shortlist, dict):
+                  items = shortlist.get("items", [])
+                  shortlist_count = int(shortlist.get("shortlist_count", len(items) if isinstance(items, list) else 0) or 0)
+                  for error in shortlist.get("source_errors", []) if isinstance(shortlist.get("source_errors", []), list) else []:
+                      source_errors.add(json.dumps(error, ensure_ascii=False, sort_keys=True))
+
+          budget_path = Path("reports/ops/news-daily-token-budget.json")
+          budget = {}
+          if budget_path.exists():
+              try:
+                  budget = json.loads(budget_path.read_text(encoding="utf-8"))
+              except json.JSONDecodeError:
+                  budget = {}
 
           report_path = Path("reports/briefs/kr-tech-news-daily.md")
           report = report_path.read_text(encoding="utf-8") if report_path.exists() else ""
           selected_news_count = len(re.findall(r"^##\s+\d+\.\s+", report, flags=re.MULTILINE))
+          market_context_selected_count = len(
+              re.findall(r"^\s*-\s*시장/비즈니스 맥락\s*:", report, flags=re.MULTILINE)
+          )
           fallback_reason = os.environ.get("SKIP_REASON") or None
           if selected_news_count == 0 and "기준을 만족하는 한국 개발/AI 뉴스가 없습니다" in report:
               fallback_reason = "no_qualified_news"
@@ -351,8 +391,13 @@ jobs:
               "force_send": os.environ.get("FORCE_SEND") == "true",
               "delivery_lock_key": os.environ.get("DELIVERY_LOCK_KEY", ""),
               "delivery_lock_hit": os.environ.get("DELIVERY_LOCK_HIT") == "true",
-              "candidate_count_total": candidate_count,
+              "candidate_count_total": raw_candidate_count_total,
+              "raw_candidate_count_total": raw_candidate_count_total,
+              "shortlist_count": shortlist_count,
               "selected_news_count": selected_news_count,
+              "market_context_selected_count": market_context_selected_count,
+              "estimated_prompt_chars": int(budget.get("estimated_prompt_chars", 0) or 0),
+              "estimated_prompt_tokens_rough": int(budget.get("estimated_prompt_tokens_rough", 0) or 0),
               "fallback_reason": fallback_reason,
               "source_errors_count": len(source_errors),
               "discord_send_attempted": send_attempted,
@@ -371,7 +416,12 @@ jobs:
               f"- delivery_lock_key: {summary['delivery_lock_key']}\n"
               f"- delivery_lock_hit: {summary['delivery_lock_hit']}\n"
               f"- candidate_count_total: {summary['candidate_count_total']}\n"
+              f"- raw_candidate_count_total: {summary['raw_candidate_count_total']}\n"
+              f"- shortlist_count: {summary['shortlist_count']}\n"
               f"- selected_news_count: {summary['selected_news_count']}\n"
+              f"- market_context_selected_count: {summary['market_context_selected_count']}\n"
+              f"- estimated_prompt_chars: {summary['estimated_prompt_chars']}\n"
+              f"- estimated_prompt_tokens_rough: {summary['estimated_prompt_tokens_rough']}\n"
               f"- source_errors_count: {summary['source_errors_count']}\n"
               f"- discord_send_attempted: {summary['discord_send_attempted']}\n"
               f"- discord_send_success: {summary['discord_send_success']}\n"
@@ -396,6 +446,9 @@ jobs:
           for pair in \
             "check-secrets:${{ steps.check-secrets.outcome }}" \
             "collect:${{ steps.collect.outcome }}" \
+            "shortlist:${{ steps.shortlist.outcome }}" \
+            "prompt-budget:${{ steps.prompt-budget.outcome }}" \
+            "prepare:${{ steps.prepare.outcome }}" \
             "generate-primary:${{ steps.generate-primary.outcome }}" \
             "generate-retry:${{ steps.generate-retry.outcome }}" \
             "generation-status:${{ steps.generation-status.outcome }}" \
@@ -432,6 +485,7 @@ jobs:
           path: |
             reports/candidates/kr-dev-ai-news.json
             reports/candidates/kr-ai-tech-news.json
+            reports/candidates/kr-tech-news-shortlist.json
             reports/briefs/kr-tech-news-daily.md
             reports/briefs/kr-tech-news-daily-codex-summary.md
             reports/ops/*.json

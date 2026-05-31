@@ -201,14 +201,41 @@ DAILY_NEWS_FORBIDDEN_PATTERNS = [
     r"Issue 보기",
     r"공부로 연결할 점",
 ]
-NEWS_DAILY_FORBIDDEN_PATTERNS = [
-    r"주가",
-    r"관련주",
+NEWS_DAILY_INVESTMENT_ADVICE_PATTERNS = [
+    r"매수",
+    r"매도",
+    r"목표가",
     r"투자\s*의견",
     r"투자의견",
-    r"급등",
+    r"추천주",
+    r"관련주",
     r"테마주",
-    r"수혜주",
+    r"급등주",
+]
+NEWS_DAILY_MARKET_PRICE_PATTERNS = [
+    r"주가",
+    r"급등",
+    r"급락",
+    r"상한가",
+    r"하한가",
+]
+NEWS_DAILY_TECH_CONTEXT_PATTERNS = [
+    r"\bAPI\b",
+    r"\bSDK\b",
+    r"클라우드",
+    r"데이터\s*센터",
+    r"데이터센터",
+    r"인프라",
+    r"\bGPU\b",
+    r"\bHBM\b",
+    r"반도체",
+    r"서버",
+    r"개발자",
+    r"플랫폼",
+    r"백엔드",
+    r"보안",
+    r"오픈소스",
+    r"AI\s*서비스",
 ]
 NEWS_DAILY_OFFICIAL_TECH_BLOG_DOMAINS = {
     "d2.naver.com",
@@ -740,6 +767,14 @@ def keyword_count(value: str) -> int:
     return len(set(tokens))
 
 
+def matches_any_pattern(text: str, patterns: list[str]) -> bool:
+    return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in patterns)
+
+
+def news_daily_has_tech_context(text: str) -> bool:
+    return matches_any_pattern(text, NEWS_DAILY_TECH_CONTEXT_PATTERNS)
+
+
 def is_official_tech_blog_domain(domain: str) -> bool:
     return any(
         domain == official or domain.endswith(f".{official}")
@@ -1110,6 +1145,7 @@ def validate_daily_news(content: str) -> None:
     seen_titles: list[str] = []
     seen_urls: set[str] = set()
     domain_counts: Counter[str] = Counter()
+    market_context_count = 0
     for section in news_sections:
         title = re.sub(r"^\d+\.\s+", "", section.heading).strip()
         title_key = normalize_validation_title(title)
@@ -1121,15 +1157,6 @@ def validate_daily_news(content: str) -> None:
         seen_titles.append(title_key)
 
         core = bullet_field_value(section.body, "핵심")
-        stock_text = "\n".join([title, core])
-        found_forbidden = [
-            pattern
-            for pattern in NEWS_DAILY_FORBIDDEN_PATTERNS
-            if re.search(pattern, stock_text, flags=re.IGNORECASE)
-        ]
-        if found_forbidden:
-            fail(f"Daily news item contains stock/investment wording: {title}")
-
         missing = missing_bullet_fields(section.body, NEWS_DAILY_FIELDS)
         if missing:
             fail(f"Daily news item is missing field(s): {title} ({', '.join(missing)})")
@@ -1149,6 +1176,33 @@ def validate_daily_news(content: str) -> None:
         viewpoint = bullet_field_value(section.body, "백엔드 주니어 관점")
         if not viewpoint.strip():
             fail(f"Daily news 백엔드 주니어 관점 is empty: {title}")
+        if not viewpoint.strip().endswith("내가 뭘 배워야 하는가"):
+            fail(f"Daily news 백엔드 주니어 관점 must end with required learning question: {title}")
+
+        market_context_match = re.search(
+            r"^\s*-\s*시장/비즈니스 맥락\s*:\s*(.*?)\s*$",
+            section.body,
+            flags=re.MULTILINE,
+        )
+        market_context = market_context_match.group(1).strip() if market_context_match else ""
+        if market_context_match:
+            market_context_count += 1
+            if not market_context:
+                fail(f"Daily news 시장/비즈니스 맥락 field is empty: {title}")
+            if matches_any_pattern(market_context, NEWS_DAILY_INVESTMENT_ADVICE_PATTERNS):
+                fail(f"Daily news 시장/비즈니스 맥락 contains investment advice wording: {title}")
+            if not news_daily_has_tech_context(market_context):
+                fail(f"Daily news 시장/비즈니스 맥락 must connect to developer or infrastructure context: {title}")
+            if market_context_count > 1:
+                fail("Daily news brief must not include more than one 시장/비즈니스 맥락 field.")
+
+        stock_text = "\n".join([title, core])
+        if matches_any_pattern(stock_text, NEWS_DAILY_INVESTMENT_ADVICE_PATTERNS):
+            fail(f"Daily news item contains investment advice wording: {title}")
+        if matches_any_pattern(stock_text, NEWS_DAILY_MARKET_PRICE_PATTERNS):
+            context_text = "\n".join([stock_text, market_context, viewpoint])
+            if not news_daily_has_tech_context(context_text):
+                fail(f"Daily news item describes market movement without developer or infrastructure context: {title}")
 
         keywords = bullet_field_value(section.body, "더 볼 키워드")
         if keyword_count(keywords) < 2:
