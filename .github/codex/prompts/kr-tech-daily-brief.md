@@ -8,12 +8,13 @@
 
 목표는 매일 30~60분 동안 실제 백엔드 개발자로 성장할 수 있는 학습 재료를 고르는 것이다.
 
-오늘의 브리핑은 다음 4개 섹션으로 구성한다.
+오늘의 브리핑은 다음 5개 섹션으로 구성한다.
 
 1. 오늘의 Spring Boot/JVM 학습
 2. 이번 주 PS 성장 루틴
 3. 오픈소스 기여 후보 또는 OSS 기여 준비 루틴
 4. 주니어 백엔드 실무지식
+5. 오늘의 CS Core & 백엔드 용어
 
 ## 핵심 원칙
 
@@ -37,9 +38,11 @@ workflow는 `{{KST_NOW}}`를 Asia/Seoul 기준시각으로 치환한다. 이 시
 - `reports/candidates/ps-weekly-routine.json`
 - `reports/candidates/kr-oss-contribution-opportunities.json`
 - `reports/candidates/backend-practical-knowledge.json`
+- `reports/candidates/cs-core-daily-topic.json`
+- `reports/candidates/backend-term-daily.json`
 - `configs/audience-profile.json`
 
-단, 1번과 4번은 후보 JSON이 얕거나 실무 성장성이 낮으면 그대로 사용하지 않는다.
+단, 1번, 4번, 5번은 후보 JSON이 얕거나 실무 성장성이 낮으면 그대로 사용하지 않는다.
 
 후보가 부실한 기준:
 
@@ -183,6 +186,37 @@ safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아
 - 같은 주제를 반복할 때는 난이도를 올린다.
 - Spring Boot 샘플, curl, Docker Compose, 간단한 DB 쿼리, Actuator metric 등으로 확인 가능한 실습을 우선한다.
 
+## 5번 CS Core & 백엔드 용어 작성 원칙
+
+`cs-core-daily-topic.json`의 today 후보와 `backend-term-daily.json`의 today 후보를 primary 입력으로 사용한다.
+
+CS Core는 다음 트랙을 균형 있게 순환하는 짧은 학습 슬롯이다.
+
+- computer-architecture
+- operating-system
+- network
+- database
+- jvm-runtime
+
+CS Core 작성 기준:
+
+- 개념 설명만 쓰지 않는다.
+- 10~20분 안에 확인할 수 있는 행동을 포함한다.
+- 완료 기준은 관찰 결과, 메모, 테스트, 설정 확인처럼 확인 가능한 형태로 쓴다.
+- Spring/JVM/API/DB/운영 상황과 연결한다.
+- 면접 질문은 암기 답안이 아니라 직접 확인한 내용으로 대답할 수 있게 둔다.
+
+백엔드 용어 작성 기준:
+
+- 사전식 정의로 끝내지 않는다.
+- 실무에서 언제 마주치는지, 오해하면 어떤 장애나 설계 문제가 생기는지 포함한다.
+- Spring 또는 API 설계와 연결한다.
+- 확인 질문은 오늘 코드나 설계를 점검할 수 있는 문장으로 쓴다.
+- 5번 섹션은 Discord에서 읽기 쉽게 짧게 유지한다.
+- 각 bullet 값은 1문장으로 제한한다.
+- CS Core와 백엔드 용어의 레퍼런스는 각각 최대 2개만 둔다.
+- 5번 섹션에는 추가 설명 문단이나 표를 넣지 않는다.
+
 ## 출력 구조
 
 아래 Markdown 구조를 따른다.
@@ -256,6 +290,27 @@ safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아
   - [표준/공식 문서](URL)
   - [실무 참고](URL)
 - 검색 키워드:
+
+## 5. 오늘의 CS Core & 백엔드 용어
+
+### CS Core: ...
+- 트랙:
+- 왜 백엔드에 중요한가:
+- 핵심 개념:
+- 10~20분 확인:
+- 완료 기준:
+- 면접 연결 질문:
+- 레퍼런스:
+  - [공식/표준 문서](URL)
+
+### 백엔드 용어: ...
+- 한 줄 정의:
+- 실무 상황:
+- 오해하면 생기는 문제:
+- Spring/API 연결:
+- 확인 질문:
+- 레퍼런스:
+  - [공식/표준 문서](URL)
 ```
 
 ## 1번 Spring Boot/JVM 작성 규칙

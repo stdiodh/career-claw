@@ -185,10 +185,13 @@ jobs:
           runtime += "- `reports/candidates/ps-weekly-routine.json`\n"
           runtime += "- `reports/candidates/kr-oss-contribution-opportunities.json`\n"
           runtime += "- `reports/candidates/backend-practical-knowledge.json`\n"
+          runtime += "- `reports/candidates/cs-core-daily-topic.json`\n"
+          runtime += "- `reports/candidates/backend-term-daily.json`\n"
           runtime += "- `configs/audience-profile.json`\n"
           runtime += "\n`ps-weekly-routine.json`을 알고리즘 루틴의 primary 후보로 사용한다.\n"
           runtime += "`spring-study-topic.json`은 1번 Spring Boot/JVM 학습 섹션의 primary 입력으로 사용하되, 후보가 부실하면 프롬프트의 보강 규칙을 따른다.\n"
           runtime += "`backend-practical-knowledge.json`의 today 후보를 4번 주니어 백엔드 실무지식의 primary 입력으로 사용하되, 후보가 부실하면 프롬프트의 보강 규칙을 따른다.\n"
+          runtime += "`cs-core-daily-topic.json`과 `backend-term-daily.json`의 today 후보를 5번 오늘의 CS Core & 백엔드 용어 섹션의 primary 입력으로 사용한다.\n"
           runtime += "`## 오늘 " "할 일` 섹션은 출력하지 않는다.\n"
           runtime += "\n## Runtime output\n\n"
           runtime += "- 최종 Markdown은 `reports/briefs/kr-tech-daily.md`에만 작성한다.\n"
@@ -357,6 +360,8 @@ jobs:
               Path("reports/candidates/ps-weekly-routine.json"),
               Path("reports/candidates/kr-oss-contribution-opportunities.json"),
               Path("reports/candidates/backend-practical-knowledge.json"),
+              Path("reports/candidates/cs-core-daily-topic.json"),
+              Path("reports/candidates/backend-term-daily.json"),
           ]
           candidate_count = 0
           source_errors = set()
@@ -408,6 +413,7 @@ jobs:
               f"- delivery_lock_hit: {summary['delivery_lock_hit']}\n"
               f"- discord_send_attempted: {summary['discord_send_attempted']}\n"
               f"- discord_send_success: {summary['discord_send_success']}\n"
+              f"- candidate_count_total: {summary['candidate_count_total']}\n"
               f"- ps_progress_commit_attempted: {summary['ps_progress_commit_attempted']}\n"
               f"- ps_progress_changed: {summary['ps_progress_changed']}\n"
               f"- ps_progress_commit_success: {summary['ps_progress_commit_success']}\n"
@@ -471,6 +477,8 @@ jobs:
             reports/candidates/ps-weekly-routine.json
             reports/candidates/kr-oss-contribution-opportunities.json
             reports/candidates/backend-practical-knowledge.json
+            reports/candidates/cs-core-daily-topic.json
+            reports/candidates/backend-term-daily.json
             reports/briefs/kr-tech-daily.md
             reports/briefs/kr-tech-daily-codex-summary.md
             reports/ops/*.json

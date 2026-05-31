@@ -66,6 +66,8 @@ grep -q 'Wait until 09:00 KST before Discord send' .github/workflows/kr-tech-dai
 grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/kr-tech-daily.yml
 grep -q 'target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:00:00" +%s)"' .github/workflows/kr-tech-daily.yml
 grep -q 'backend-daily-run-summary.json' .github/workflows/kr-tech-daily.yml
+grep -q 'reports/candidates/cs-core-daily-topic.json' .github/workflows/kr-tech-daily.yml
+grep -q 'reports/candidates/backend-term-daily.json' .github/workflows/kr-tech-daily.yml
 grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/kr-tech-daily.yml
 grep -q 'if: always()' .github/workflows/kr-tech-daily.yml
 grep -q 'reports/ops/\*.json' .github/workflows/kr-tech-daily.yml
@@ -171,6 +173,9 @@ if grep -Eq 'reports/candidates/kr-dev-ai-news.json|reports/candidates/kr-ai-tec
   echo "Backend Daily prompt must not include news candidate inputs or a news output section." >&2
   exit 1
 fi
+grep -q 'reports/candidates/cs-core-daily-topic.json' .github/codex/prompts/kr-tech-daily-brief.md
+grep -q 'reports/candidates/backend-term-daily.json' .github/codex/prompts/kr-tech-daily-brief.md
+grep -q '오늘의 CS Core & 백엔드 용어' .github/codex/prompts/kr-tech-daily-brief.md
 if ! grep -Eq '3(~|-)5개' .github/codex/prompts/kr-tech-news-daily.md; then
   echo "News Daily prompt must include the 3~5개 output rule." >&2
   exit 1
@@ -199,6 +204,8 @@ required_files=(
   "configs/audience-profile.json"
   "configs/kr-sources.json"
   "configs/backend-practical-knowledge-curriculum.json"
+  "configs/backend-core-cs-curriculum.json"
+  "configs/backend-terms-glossary.json"
   "configs/company-career-watchlist.json"
   "configs/weekly-career-site-radar.json"
   "configs/oss-repositories.json"
@@ -282,6 +289,80 @@ matches = [
 ]
 if matches:
     raise SystemExit("backend practical curriculum still has broad title(s): " + "; ".join(matches))
+
+cs_curriculum = json.loads(Path("configs/backend-core-cs-curriculum.json").read_text(encoding="utf-8"))
+required_tracks = {
+    "computer-architecture",
+    "operating-system",
+    "network",
+    "database",
+    "jvm-runtime",
+}
+required_topic_fields = {
+    "id",
+    "track",
+    "title",
+    "why_backend",
+    "key_concept",
+    "practice_steps",
+    "done_criteria",
+    "interview_question",
+    "refs",
+}
+topics = cs_curriculum.get("topics", [])
+if not isinstance(topics, list) or not topics:
+    raise SystemExit("backend core CS curriculum must contain topics")
+tracks = {
+    topic.get("track")
+    for topic in topics
+    if isinstance(topic, dict)
+}
+missing_tracks = sorted(required_tracks - tracks)
+if missing_tracks:
+    raise SystemExit("backend core CS curriculum misses tracks: " + ", ".join(missing_tracks))
+topic_missing = []
+for topic in topics:
+    if not isinstance(topic, dict):
+        topic_missing.append("non-object")
+        continue
+    absent = [
+        field
+        for field in required_topic_fields
+        if not topic.get(field)
+    ]
+    if absent:
+        topic_missing.append(f"{topic.get('id', 'unknown')}:{','.join(absent)}")
+if topic_missing:
+    raise SystemExit("backend core CS curriculum misses required fields: " + "; ".join(topic_missing[:5]))
+
+terms_glossary = json.loads(Path("configs/backend-terms-glossary.json").read_text(encoding="utf-8"))
+required_term_fields = {
+    "id",
+    "term",
+    "one_line_definition",
+    "backend_context",
+    "common_misunderstanding",
+    "spring_or_api_connection",
+    "check_question",
+    "refs",
+}
+terms = terms_glossary.get("terms", [])
+if not isinstance(terms, list) or len(terms) < 30:
+    raise SystemExit("backend terms glossary must contain at least 30 terms")
+term_missing = []
+for term in terms:
+    if not isinstance(term, dict):
+        term_missing.append("non-object")
+        continue
+    absent = [
+        field
+        for field in required_term_fields
+        if not term.get(field)
+    ]
+    if absent:
+        term_missing.append(f"{term.get('id', 'unknown')}:{','.join(absent)}")
+if term_missing:
+    raise SystemExit("backend terms glossary misses required fields: " + "; ".join(term_missing[:5]))
 
 print("daily source split smoke check passed")
 PY
@@ -409,6 +490,36 @@ fi
 
 echo "==> Checking collector dry-runs"
 python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+required_daily_backend_candidates = [
+    Path("reports/candidates/spring-study-topic.json"),
+    Path("reports/candidates/ps-weekly-routine.json"),
+    Path("reports/candidates/kr-oss-contribution-opportunities.json"),
+    Path("reports/candidates/backend-practical-knowledge.json"),
+    Path("reports/candidates/cs-core-daily-topic.json"),
+    Path("reports/candidates/backend-term-daily.json"),
+]
+missing = [
+    str(path)
+    for path in required_daily_backend_candidates
+    if not path.exists()
+]
+if missing:
+    raise SystemExit("daily-backend dry-run did not create candidate file(s): " + ", ".join(missing))
+
+for path in [
+    Path("reports/candidates/cs-core-daily-topic.json"),
+    Path("reports/candidates/backend-term-daily.json"),
+]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("candidate_count") != 1 or not isinstance(payload.get("today"), dict):
+        raise SystemExit(f"{path} must contain candidate_count=1 and a today object")
+
+print("daily-backend CS/term candidate smoke check passed")
+PY
 python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/render-weekly-career-site-radar.py

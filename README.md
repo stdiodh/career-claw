@@ -8,7 +8,7 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 
 | 경로 | Workflow | 목적 |
 | --- | --- | --- |
-| Daily Backend Brief | `.github/workflows/kr-tech-daily.yml` | 평일 백엔드 학습/PS/OSS/실무지식 브리핑 |
+| Daily Backend Brief | `.github/workflows/kr-tech-daily.yml` | 평일 백엔드 학습/PS/OSS/실무지식/CS Core/용어 브리핑 |
 | Korea Dev/AI News Daily | `.github/workflows/kr-tech-news-daily.yml` | 평일 한국 개발/AI 뉴스 피드 |
 | Backend Career Site Radar | `.github/workflows/kr-backend-career-weekly.yml` | 수동 실행형 백엔드 커리어 사이트 레이더 |
 | Mark PS Solved | `.github/workflows/mark-ps-solved.yml` | PS 풀이 진행도 기록 |
@@ -38,13 +38,25 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 - `reports/candidates/ps-weekly-routine.json`
 - `reports/candidates/kr-oss-contribution-opportunities.json`
 - `reports/candidates/backend-practical-knowledge.json`
+- `reports/candidates/cs-core-daily-topic.json`
+- `reports/candidates/backend-term-daily.json`
 
 Daily 수집 소스 정책:
 
 - `spring-study-topic.json`은 `spring-jvm-study-topics` 카테고리에서 생성하며 Naver query를 사용하지 않습니다.
 - Spring/JVM 학습 후보는 Spring 공식 블로그, Spring 문서, OpenJDK/Inside Java, Micrometer/OpenTelemetry 등 공식·표준 레퍼런스를 우선합니다.
 - 실무지식 curriculum은 `situation`, `failure_mode`, `practice_steps`, `official_refs`를 포함해 브리핑 모델이 실패 상황과 30분 실습을 데이터에서 직접 읽도록 합니다.
+- CS Core curriculum은 `configs/backend-core-cs-curriculum.json`에서 KST 날짜 기반으로 1개 topic을 선택하며, computer architecture, OS, network, database, JVM runtime 트랙을 순환합니다.
+- 백엔드 용어 glossary는 `configs/backend-terms-glossary.json`에서 KST 날짜 기반으로 1개 term을 선택하며, 정의보다 실무 상황, 오해 위험, Spring/API 연결을 우선합니다.
 - validator는 1번 Spring/JVM 학습과 4번 실무지식 링크가 허용 도메인 밖이거나 포털/언론 도메인이면 실패합니다.
+
+출력 섹션:
+
+- 오늘의 Spring Boot/JVM 학습
+- 이번 주 PS 성장 루틴
+- 오픈소스 기여 후보 또는 OSS 기여 준비 루틴
+- 주니어 백엔드 실무지식
+- 오늘의 CS Core & 백엔드 용어
 
 Daily OSS 후보 정책:
 
@@ -222,7 +234,9 @@ repository-root/
 │     └─ mark-ps-solved.yml
 ├─ configs/
 │  ├─ audience-profile.json
+│  ├─ backend-core-cs-curriculum.json
 │  ├─ backend-practical-knowledge-curriculum.json
+│  ├─ backend-terms-glossary.json
 │  ├─ company-career-watchlist.json
 │  ├─ kr-sources.json
 │  ├─ oss-repositories.json

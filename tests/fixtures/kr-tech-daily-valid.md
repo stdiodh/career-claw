@@ -47,3 +47,25 @@
   - [RFC 9110 HTTP Semantics](https://datatracker.ietf.org/doc/html/rfc9110)
   - [MDN Idempotent](https://developer.mozilla.org/en-US/docs/Glossary/Idempotent)
 - 검색 키워드: HTTP idempotency POST retry, Idempotency-Key 결제 API 중복 방지
+
+## 5. 오늘의 CS Core & 백엔드 용어
+### CS Core: TCP 연결 생성과 timeout을 외부 API 호출 장애로 연결하기
+- 트랙: network
+- 왜 백엔드에 중요한가: 외부 API 장애는 연결 실패, 응답 지연, TLS 문제 중 어디에서 막혔는지에 따라 대응이 달라집니다.
+- 핵심 개념: TCP 연결은 handshake로 세션을 만든 뒤 데이터를 주고받으며, connect timeout과 read timeout은 실패 위치가 다릅니다.
+- 10~20분 확인: HTTP client 설정에서 connect timeout과 read timeout 값을 찾아보고, 장애 로그에 timeout 종류가 남는지 확인합니다.
+- 완료 기준: connect timeout과 read timeout을 구분한 메모 2줄과 현재 프로젝트 설정 위치를 남깁니다.
+- 면접 연결 질문: connect timeout과 read timeout은 장애 원인 추적에서 어떻게 다르게 해석해야 하는가?
+- 레퍼런스:
+  - [RFC 9293 TCP](https://datatracker.ietf.org/doc/html/rfc9293)
+  - [Spring REST Clients](https://docs.spring.io/spring-framework/reference/integration/rest-clients.html)
+
+### 백엔드 용어: Connection Pool
+- 한 줄 정의: DB나 외부 서버 연결을 매번 새로 만들지 않고 재사용하는 연결 묶음입니다.
+- 실무 상황: pool이 너무 작으면 요청이 대기하고, 너무 크면 DB나 외부 API 서버를 압박합니다.
+- 오해하면 생기는 문제: pool 크기를 키우면 항상 성능이 좋아진다고 보면 병목을 DB로 옮기고 장애 범위를 키울 수 있습니다.
+- Spring/API 연결: Spring Boot DataSource는 HikariCP 설정으로 maximumPoolSize와 connectionTimeout을 조정합니다.
+- 확인 질문: 현재 DB connection pool 대기 시간과 활성 connection 수를 보고 있는가?
+- 레퍼런스:
+  - [Spring Boot SQL Databases](https://docs.spring.io/spring-boot/reference/data/sql.html)
+  - [HikariCP](https://github.com/brettwooldridge/HikariCP)

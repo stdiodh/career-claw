@@ -16,6 +16,7 @@ from pathlib import Path
 
 DEFAULT_REPORT = "reports/briefs/kr-tech-daily.md"
 MAX_WARNING_CHARS = 6500
+DAILY_CS_TERM_SECTION_MAX_CHARS = 1500
 
 
 def joined(*parts: str) -> str:
@@ -26,6 +27,7 @@ DAILY_SECTIONS = [
     "이번 주 PS 성장 루틴",
     "오픈소스 기여 후보",
     "주니어 백엔드 실무지식",
+    "오늘의 CS Core & 백엔드 용어",
 ]
 NEWS_DAILY_DEFAULT_MIN = 3
 NEWS_DAILY_SECTIONS_MAX = 5
@@ -150,6 +152,23 @@ DAILY_PRACTICAL_FIELDS = [
     "현업 체크 질문",
     "레퍼런스",
     "검색 키워드",
+]
+DAILY_CS_CORE_FIELDS = [
+    "트랙",
+    "왜 백엔드에 중요한가",
+    "핵심 개념",
+    "10~20분 확인",
+    "완료 기준",
+    "면접 연결 질문",
+    "레퍼런스",
+]
+DAILY_BACKEND_TERM_FIELDS = [
+    "한 줄 정의",
+    "실무 상황",
+    "오해하면 생기는 문제",
+    "Spring/API 연결",
+    "확인 질문",
+    "레퍼런스",
 ]
 DAILY_NEWS_EMPTY_STATE = "오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다."
 NEWS_DAILY_EMPTY_STATES = [
@@ -784,8 +803,9 @@ def validate_daily_tech(content: str) -> None:
         fail("Missing daily tech title.")
     validate_daily_forbidden_text(content)
     sections = extract_sections(content)
-    validate_common(content, min_links=2)
+    validate_common(content, min_links=2, allow_duplicate_links=True)
     require_sections(sections, DAILY_SECTIONS)
+    validate_daily_section_duplicate_links(sections)
     if find_section(sections, "한국 최신 개발/AI 뉴스") is not None:
         fail("Daily backend brief must not include 한국 최신 개발/AI 뉴스 section.")
 
@@ -799,6 +819,18 @@ def validate_daily_tech(content: str) -> None:
     validate_daily_ps_section(sections)
     validate_daily_oss_section(sections)
     validate_daily_practical_section(sections)
+    validate_daily_cs_term_section(sections)
+
+
+def validate_daily_section_duplicate_links(sections: list[Section]) -> None:
+    for section in sections:
+        urls = markdown_link_urls(section.body)
+        duplicated = sorted({url for url in urls if urls.count(url) > 1})
+        if duplicated:
+            fail(
+                "Daily backend section repeats the same reference link: "
+                f"{section.heading} ({duplicated[0]})"
+            )
 
 
 def validate_daily_forbidden_text(content: str) -> None:
@@ -1029,6 +1061,47 @@ def validate_daily_practical_section(sections: list[Section]) -> None:
     )
     if len(section.body) > 1200:
         warn("Backend practical knowledge section may be too long for daily reading.")
+
+
+def validate_daily_cs_term_section(sections: list[Section]) -> None:
+    section = find_section(sections, "오늘의 CS Core & 백엔드 용어")
+    if section is None:
+        fail("Daily tech brief must include 오늘의 CS Core & 백엔드 용어 section.")
+
+    items = extract_items(section)
+    cs_item = next((item for item in items if item.title.startswith("CS Core:")), None)
+    term_item = next((item for item in items if item.title.startswith("백엔드 용어:")), None)
+    if cs_item is None:
+        fail("CS/term section must include a CS Core topic heading.")
+    if term_item is None:
+        fail("CS/term section must include a backend term heading.")
+
+    missing = missing_bullet_fields(cs_item.body, DAILY_CS_CORE_FIELDS)
+    if missing:
+        fail(f"CS Core topic is missing field(s): {', '.join(missing)}")
+    missing = missing_bullet_fields(term_item.body, DAILY_BACKEND_TERM_FIELDS)
+    if missing:
+        fail(f"Backend term is missing field(s): {', '.join(missing)}")
+
+    for item, context in (
+        (cs_item, "오늘의 CS Core"),
+        (term_item, "오늘의 백엔드 용어"),
+    ):
+        require_markdown_link_in_text(item.body, context)
+
+    if not bullet_field_value(cs_item.body, "10~20분 확인"):
+        fail("CS Core topic must include a concrete 10~20 minute check action.")
+    if not bullet_field_value(cs_item.body, "완료 기준"):
+        fail("CS Core topic must include done criteria.")
+    if not bullet_field_value(term_item.body, "오해하면 생기는 문제"):
+        fail("Backend term must include the risk of misunderstanding.")
+    if not bullet_field_value(term_item.body, "Spring/API 연결"):
+        fail("Backend term must include a Spring/API connection.")
+    if len(section.body) > DAILY_CS_TERM_SECTION_MAX_CHARS:
+        fail(
+            "CS Core & backend term section is too long for daily reading: "
+            f"{len(section.body)} chars"
+        )
 
 
 def validate_weekly_career(content: str) -> None:

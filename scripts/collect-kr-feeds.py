@@ -89,6 +89,17 @@ BACKEND_PRACTICAL_CURRICULUM_PATH = Path(
 BACKEND_PRACTICAL_OUTPUT_PATH = Path(
     "reports/candidates/backend-practical-knowledge.json"
 )
+BACKEND_CORE_CS_CURRICULUM_PATH = Path("configs/backend-core-cs-curriculum.json")
+BACKEND_CORE_CS_OUTPUT_PATH = Path("reports/candidates/cs-core-daily-topic.json")
+BACKEND_TERMS_GLOSSARY_PATH = Path("configs/backend-terms-glossary.json")
+BACKEND_TERM_OUTPUT_PATH = Path("reports/candidates/backend-term-daily.json")
+CS_CORE_REQUIRED_TRACKS = {
+    "computer-architecture",
+    "operating-system",
+    "network",
+    "database",
+    "jvm-runtime",
+}
 USER_AGENT = "career-feed-kr-collector"
 SUPPORTED_FEED_TYPES = {"rss", "atom"}
 OSS_CATEGORY_ID = "kr-oss-contribution-opportunities"
@@ -3543,6 +3554,198 @@ def write_backend_practical_candidate(current_time: datetime) -> None:
     print(f"Wrote backend practical knowledge: {BACKEND_PRACTICAL_OUTPUT_PATH}")
 
 
+def date_rotation_index(
+    item_count: int,
+    selection_policy: dict[str, object],
+    current_time: datetime,
+    context: str,
+) -> int:
+    if item_count <= 0:
+        raise RuntimeError(f"{context} needs at least one selectable item.")
+    if str(selection_policy.get("type", "")).strip() != "date_rotation":
+        raise RuntimeError(f"{context} must use date_rotation policy.")
+    if str(selection_policy.get("timezone", "")).strip() != "Asia/Seoul":
+        raise RuntimeError(f"{context} timezone must be Asia/Seoul.")
+
+    start_date_value = str(selection_policy.get("start_date", "")).strip()
+    try:
+        start_date = datetime.strptime(start_date_value, "%Y-%m-%d").date()
+    except ValueError as exc:
+        raise RuntimeError(f"{context} start_date must use YYYY-MM-DD.") from exc
+
+    today = current_time.astimezone(KST).date()
+    days_since_start = max((today - start_date).days, 0)
+    return days_since_start % item_count
+
+
+def require_non_empty_list(value: object, field: str, context: str) -> None:
+    if not isinstance(value, list) or not value:
+        raise RuntimeError(f"{context} needs non-empty {field}.")
+    if not all(str(item).strip() for item in value):
+        raise RuntimeError(f"{context} {field} must not contain empty values.")
+
+
+def require_curated_fields(
+    item: dict[str, object],
+    required_fields: set[str],
+    list_fields: set[str],
+    context: str,
+) -> None:
+    missing = []
+    for field in sorted(required_fields):
+        value = item.get(field)
+        if value is None or value == "" or value == []:
+            missing.append(field)
+    if missing:
+        raise RuntimeError(f"{context} is missing field(s): {', '.join(missing)}")
+    for field in sorted(list_fields):
+        require_non_empty_list(item.get(field), field, context)
+
+
+def load_backend_core_cs_curriculum(
+    path: Path = BACKEND_CORE_CS_CURRICULUM_PATH,
+) -> dict[str, object]:
+    curriculum = load_required_json(path)
+    topics = curriculum.get("topics", [])
+    if not isinstance(topics, list) or not topics:
+        raise RuntimeError("configs/backend-core-cs-curriculum.json must contain topics.")
+
+    required_fields = {
+        "id",
+        "track",
+        "title",
+        "why_backend",
+        "key_concept",
+        "practice_steps",
+        "done_criteria",
+        "interview_question",
+        "refs",
+    }
+    seen_ids: set[str] = set()
+    seen_tracks: set[str] = set()
+    for topic in topics:
+        if not isinstance(topic, dict):
+            raise RuntimeError("Every CS Core topic must be an object.")
+        topic_id = str(topic.get("id", "")).strip()
+        context = f"CS Core topic {topic_id or 'unknown'}"
+        require_curated_fields(topic, required_fields, {"practice_steps", "done_criteria", "refs"}, context)
+        if topic_id in seen_ids:
+            raise RuntimeError(f"Duplicate CS Core topic id: {topic_id}")
+        seen_ids.add(topic_id)
+        seen_tracks.add(str(topic.get("track", "")).strip())
+
+    missing_tracks = sorted(CS_CORE_REQUIRED_TRACKS - seen_tracks)
+    if missing_tracks:
+        raise RuntimeError(
+            "CS Core curriculum misses required track(s): "
+            f"{', '.join(missing_tracks)}"
+        )
+    return curriculum
+
+
+def select_backend_core_cs_topic(
+    curriculum: dict[str, object],
+    current_time: datetime,
+) -> dict[str, object]:
+    topics = curriculum.get("topics", [])
+    if not isinstance(topics, list):
+        raise RuntimeError("CS Core curriculum topics must be a list.")
+    selection_policy = curriculum.get("selection_policy", {})
+    if not isinstance(selection_policy, dict):
+        raise RuntimeError("CS Core curriculum selection_policy is required.")
+    index = date_rotation_index(
+        len(topics),
+        selection_policy,
+        current_time,
+        "CS Core curriculum",
+    )
+    selected = topics[index]
+    if not isinstance(selected, dict):
+        raise RuntimeError("Selected CS Core topic must be an object.")
+    return selected
+
+
+def write_backend_core_cs_candidate(current_time: datetime) -> None:
+    curriculum = load_backend_core_cs_curriculum()
+    selected = select_backend_core_cs_topic(curriculum, current_time)
+    payload = {
+        "category": "cs-core-daily-topic",
+        "generated_at": format_kst(current_time),
+        "selection_policy": "date_rotation",
+        "candidate_count": 1,
+        "today": selected,
+    }
+    write_json_file(BACKEND_CORE_CS_OUTPUT_PATH, payload)
+    print(f"Wrote CS Core daily topic: {BACKEND_CORE_CS_OUTPUT_PATH}")
+
+
+def load_backend_terms_glossary(
+    path: Path = BACKEND_TERMS_GLOSSARY_PATH,
+) -> dict[str, object]:
+    glossary = load_required_json(path)
+    terms = glossary.get("terms", [])
+    if not isinstance(terms, list) or len(terms) < 30:
+        raise RuntimeError("configs/backend-terms-glossary.json must contain at least 30 terms.")
+
+    required_fields = {
+        "id",
+        "term",
+        "one_line_definition",
+        "backend_context",
+        "common_misunderstanding",
+        "spring_or_api_connection",
+        "check_question",
+        "refs",
+    }
+    seen_ids: set[str] = set()
+    for term in terms:
+        if not isinstance(term, dict):
+            raise RuntimeError("Every backend glossary term must be an object.")
+        term_id = str(term.get("id", "")).strip()
+        context = f"Backend glossary term {term_id or 'unknown'}"
+        require_curated_fields(term, required_fields, {"refs"}, context)
+        if term_id in seen_ids:
+            raise RuntimeError(f"Duplicate backend glossary term id: {term_id}")
+        seen_ids.add(term_id)
+    return glossary
+
+
+def select_backend_term(
+    glossary: dict[str, object],
+    current_time: datetime,
+) -> dict[str, object]:
+    terms = glossary.get("terms", [])
+    if not isinstance(terms, list):
+        raise RuntimeError("Backend terms glossary terms must be a list.")
+    selection_policy = glossary.get("selection_policy", {})
+    if not isinstance(selection_policy, dict):
+        raise RuntimeError("Backend terms glossary selection_policy is required.")
+    index = date_rotation_index(
+        len(terms),
+        selection_policy,
+        current_time,
+        "Backend terms glossary",
+    )
+    selected = terms[index]
+    if not isinstance(selected, dict):
+        raise RuntimeError("Selected backend term must be an object.")
+    return selected
+
+
+def write_backend_term_candidate(current_time: datetime) -> None:
+    glossary = load_backend_terms_glossary()
+    selected = select_backend_term(glossary, current_time)
+    payload = {
+        "category": "backend-term-daily",
+        "generated_at": format_kst(current_time),
+        "selection_policy": "date_rotation",
+        "candidate_count": 1,
+        "today": selected,
+    }
+    write_json_file(BACKEND_TERM_OUTPUT_PATH, payload)
+    print(f"Wrote backend term daily: {BACKEND_TERM_OUTPUT_PATH}")
+
+
 def difficulty_model_matches(
     difficulty_model: dict[str, object],
     band: str,
@@ -5266,6 +5469,8 @@ def main() -> int:
 
         if args.mode in {"daily-tech", "daily-backend"}:
             write_backend_practical_candidate(current_time)
+            write_backend_core_cs_candidate(current_time)
+            write_backend_term_candidate(current_time)
 
         config = load_config(config_path, args.category, args.mode)
         credentials = (
