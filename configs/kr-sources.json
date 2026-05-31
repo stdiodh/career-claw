@@ -84,21 +84,18 @@
       "max_candidates": 30,
       "tags": ["ai", "developer"],
       "naver_queries": [
-        "한국 생성형 AI 개발",
-        "AI 에이전트 개발자",
-        "LLM API 한국",
-        "네이버클라우드 AI 개발자",
-        "카카오 AI 개발자",
-        "업스테이지 LLM",
-        "뤼튼 AI",
-        "리벨리온 AI 반도체 개발",
-        "퓨리오사AI 개발",
-        "AI 코딩 에이전트",
-        "AI 반도체 HBM 데이터센터 개발자",
-        "클라우드 투자 AI 인프라 개발자",
-        "GPU 서버 AI 서비스 API 국내",
-        "네이버 카카오 AI 클라우드 인프라",
-        "삼성 SK하이닉스 AI 반도체 서버 인프라"
+        {"track": "tech", "query": "국내 AI API 개발자"},
+        {"track": "tech", "query": "LLM 서비스 인프라 백엔드"},
+        {"track": "tech", "query": "국내 생성형 AI API SDK"},
+        {"track": "tech", "query": "AI 에이전트 개발자 플랫폼"},
+        {"track": "tech", "query": "국내 개발자 플랫폼 SDK API"},
+        {"track": "tech", "query": "AI 코딩 에이전트 개발 생산성"},
+        {"track": "investment", "query": "AI 반도체 HBM 실적 데이터센터"},
+        {"track": "investment", "query": "클라우드 CAPEX AI 인프라"},
+        {"track": "investment", "query": "GPU 서버 수요 AI 서비스"},
+        {"track": "investment", "query": "네이버 카카오 AI 클라우드 실적"},
+        {"track": "investment", "query": "삼성전자 SK하이닉스 HBM 데이터센터 수요"},
+        {"track": "investment", "query": "기업용 AI 매출 API 플랫폼"}
       ],
       "rss_sources": [
         {
@@ -181,16 +178,15 @@
       "max_candidates": 30,
       "tags": ["backend", "developer"],
       "naver_queries": [
-        "Kotlin Spring Boot",
-        "Spring Boot 한국",
-        "백엔드 개발 기술",
-        "서버 개발 Kubernetes",
-        "Java Kotlin 백엔드",
-        "PostgreSQL Redis Kafka",
-        "MSA 백엔드",
-        "API 서버 개발",
-        "테크블로그 백엔드",
-        "개발자 플랫폼 백엔드"
+        {"track": "tech", "query": "Spring Boot Kotlin 기술 블로그"},
+        {"track": "tech", "query": "Kubernetes 클라우드 장애 분석"},
+        {"track": "tech", "query": "백엔드 개발 기술 API 서버"},
+        {"track": "tech", "query": "Java Kotlin 백엔드 운영"},
+        {"track": "tech", "query": "PostgreSQL Redis Kafka 장애"},
+        {"track": "tech", "query": "MSA 백엔드 관측성"},
+        {"track": "tech", "query": "국내 개발자 플랫폼 SDK API"},
+        {"track": "investment", "query": "클라우드 CAPEX 백엔드 인프라"},
+        {"track": "investment", "query": "기업용 AI API 플랫폼 매출"}
       ],
       "rss_sources": [
         {

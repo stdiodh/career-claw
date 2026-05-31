@@ -92,14 +92,15 @@ Daily OSS 후보 정책:
 
 News Daily 정책:
 
-- 한국 개발/AI 뉴스 3~5개를 별도 Discord 웹훅으로 전송합니다.
-- 기준을 만족하는 뉴스가 1~2개뿐이면 후보 부족 문구와 함께 그대로 전송하고, 0개면 기준을 만족하는 한국 개발/AI 뉴스가 없다는 문구만 전송합니다.
-- Codex 입력은 원본 후보 전체가 아니라 최대 12개로 줄인 `kr-tech-news-shortlist.json`을 중심으로 사용합니다.
-- `reports/ops/news-daily-token-budget.json`에 raw 후보 수, shortlist 수, prompt 문자 수, rough token 추정치를 기록합니다.
+- 한국 개발/AI 뉴스를 `새 기술 이야기`, `주식/투자 이야기`, `기술과 시장 연결`, `오늘의 성장 판단`으로 나눠 별도 Discord 웹훅으로 전송합니다.
+- 기준을 만족하는 뉴스가 1~2개뿐이면 후보 부족 문구와 함께 그대로 전송하고, 0개면 기준을 만족하는 한국 개발/AI 뉴스가 없다는 문구와 성장 판단만 전송합니다.
+- Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist를 담은 `kr-tech-news-shortlist.json`을 중심으로 사용합니다.
+- `reports/ops/news-daily-token-budget.json`에 raw 후보 수, tech/investment shortlist 수, prompt 문자 수, rough token 추정치를 기록합니다.
 - 원문 링크가 있으면 원문을 우선 사용하고, Naver News 링크는 fallback으로만 사용합니다.
-- 시장/비즈니스 맥락은 하루 0~1개만 허용하며, AI 인프라, 클라우드, 데이터센터, GPU/HBM, API/SDK, 개발자 역량 수요와 연결될 때만 사용합니다.
-- 목표가, 매수/매도 의견, 관련주/테마주 추천, 급등락만 중심인 기사와 단순 홍보성 기사는 제외합니다.
-- 각 항목은 개발자 실무 연결과 백엔드 주니어 관점을 포함해야 합니다.
+- 주식/투자 이야기는 0~2개만 허용하며, 매수/매도 추천이 아니라 실적, CAPEX, 데이터센터, GPU/HBM, 클라우드 투자, AI 제품 매출 같은 기술 수요와 기업/산업 변화를 읽기 위한 관찰 섹션입니다.
+- 추천주, 관련주/테마주 목록, 수익 보장, 명령형 투자 조언, 급등락만 중심인 기사와 단순 홍보성 기사는 제외합니다.
+- 오늘의 성장 판단은 매일 도움 점수와 오늘 할 일 1개를 남깁니다.
+- 각 기술 항목은 개발자 실무 연결과 백엔드 주니어 학습 액션을 포함해야 합니다.
 - Naver secret이 없거나 Naver API가 실패해도 RSS/공식 페이지 후보로 JSON을 생성합니다.
 
 ## Daily 운영 옵션
@@ -237,7 +238,8 @@ python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-market.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-investment.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-only.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 ./scripts/validate.sh
 git diff --check

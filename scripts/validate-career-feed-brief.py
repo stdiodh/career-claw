@@ -146,6 +146,28 @@ NEWS_DAILY_FIELDS = [
     "더 볼 키워드",
     "링크",
 ]
+NEWS_DAILY_TECH_FIELDS_REQUIRED = [
+    "분류",
+    "출처/게시",
+    "핵심",
+    "더 볼 키워드",
+    "링크",
+]
+NEWS_DAILY_INVESTMENT_FIELDS = [
+    "분류",
+    "출처/게시",
+    "핵심",
+    "투자 관찰 포인트",
+    "기술과 연결",
+    "리스크",
+    "확인할 지표",
+    "링크",
+]
+NEWS_DAILY_GROWTH_FIELDS = [
+    "도움 점수",
+    "왜 도움 되는가",
+    "오늘 할 일 1개",
+]
 DAILY_PRACTICAL_FIELDS = [
     "실무 상황",
     "핵심 개념",
@@ -207,10 +229,19 @@ NEWS_DAILY_INVESTMENT_ADVICE_PATTERNS = [
     r"목표가",
     r"투자\s*의견",
     r"투자의견",
+    r"매수하세요",
+    r"매도하세요",
+    r"지금\s*사야",
+    r"지금\s*팔아야",
+    r"매수\s*(?:추천|의견)",
+    r"매도\s*(?:추천|의견)",
     r"추천주",
     r"관련주",
     r"테마주",
     r"급등주",
+    r"수익\s*보장",
+    r"무조건",
+    r"목표가까지\s*간다",
 ]
 NEWS_DAILY_MARKET_PRICE_PATTERNS = [
     r"주가",
@@ -236,6 +267,25 @@ NEWS_DAILY_TECH_CONTEXT_PATTERNS = [
     r"보안",
     r"오픈소스",
     r"AI\s*서비스",
+    r"기업용\s*AI",
+    r"실적",
+    r"\bCAPEX\b",
+    r"가이던스",
+    r"수요",
+    r"매출",
+    r"공시",
+    r"컨퍼런스콜",
+]
+NEWS_DAILY_GROWTH_ACTION_PATTERNS = [
+    r"공식\s*문서\s*(?:보기|확인|정리)",
+    r"작은\s*코드\s*실험",
+    r"아키텍처\s*메모",
+    r"기업\s*실적",
+    r"지표\s*확인",
+    r"포트폴리오",
+    r"면접\s*질문",
+    r"GitHub\s*issue",
+    r"\bTIL\b",
 ]
 NEWS_DAILY_OFFICIAL_TECH_BLOG_DOMAINS = {
     "d2.naver.com",
@@ -937,7 +987,7 @@ def validate_daily_tech(content: str, candidates_dir: Path) -> None:
         fail("Daily tech brief must not include a long career event section.")
 
     if any(keyword in content for keyword in ["주가", "관련주", "투자의견"]):
-        warn("Daily tech brief may contain stock/investment-only wording.")
+        warn("Daily tech brief may contain price-move-only wording.")
 
     validate_daily_study_section(sections)
     validate_daily_ps_section(sections)
@@ -1114,20 +1164,149 @@ def validate_oss_candidate_alignment(
         fail("OSS candidate 기여 전 매너 field must not be empty.")
 
 
+def validate_news_item_identity(
+    item: Item,
+    seen_titles: list[str],
+    seen_urls: set[str],
+    domain_counts: Counter[str],
+) -> None:
+    title = re.sub(r"^\d+\.\s+", "", item.title).strip()
+    title_key = normalize_validation_title(title)
+    if title_key in seen_titles or any(
+        difflib.SequenceMatcher(None, title_key, seen).ratio() >= 0.9
+        for seen in seen_titles
+    ):
+        fail(f"Duplicate daily news title found: {title}")
+    seen_titles.append(title_key)
+
+    core = bullet_field_value(item.body, "핵심")
+    core_key = normalize_validation_title(core)
+    if core_key == title_key or difflib.SequenceMatcher(None, core_key, title_key).ratio() >= 0.82:
+        fail(f"Daily news 핵심 must not just repeat the title: {title}")
+
+    link_value = bullet_field_value(item.body, "링크")
+    if not MARKDOWN_LINK_RE.search(link_value):
+        fail(f"Daily news item must include a Markdown link in 링크 field: {title}")
+
+    urls = markdown_link_urls(link_value)
+    if not urls:
+        fail(f"Daily news item must include a URL: {title}")
+    for url in urls:
+        url_key = normalize_validation_url(url)
+        if url_key in seen_urls:
+            fail(f"Duplicate daily news URL found: {url}")
+        seen_urls.add(url_key)
+        domain_counts[validation_domain(url)] += 1
+
+
+def validate_daily_news_tech_item(item: Item) -> None:
+    title = re.sub(r"^\d+\.\s+", "", item.title).strip()
+    missing = missing_bullet_fields(item.body, NEWS_DAILY_TECH_FIELDS_REQUIRED)
+    viewpoint = bullet_field_value(item.body, "백엔드 주니어 관점")
+    learning_action = bullet_field_value(item.body, "내가 뭘 배워야 하는가")
+    if not viewpoint and not learning_action:
+        missing.append("백엔드 주니어 관점 또는 내가 뭘 배워야 하는가")
+    if missing:
+        fail(f"Daily tech news item is missing field(s): {title} ({', '.join(missing)})")
+
+    empty_fields = [
+        field
+        for field in NEWS_DAILY_TECH_FIELDS_REQUIRED
+        if not bullet_field_value(item.body, field)
+    ]
+    if empty_fields:
+        fail(f"Daily tech news item has empty field(s): {title} ({', '.join(empty_fields)})")
+    if viewpoint and not viewpoint.strip():
+        fail(f"Daily tech news 백엔드 주니어 관점 is empty: {title}")
+    if learning_action and not is_specific_growth_action(learning_action):
+        fail(f"Daily tech news learning action is not concrete enough: {title}")
+
+    keywords = bullet_field_value(item.body, "더 볼 키워드")
+    if keyword_count(keywords) < 2:
+        fail(f"Daily tech news 더 볼 키워드 must include at least two keywords: {title}")
+
+
+def validate_daily_news_investment_item(item: Item) -> None:
+    title = re.sub(r"^\d+\.\s+", "", item.title).strip()
+    missing = missing_bullet_fields(item.body, NEWS_DAILY_INVESTMENT_FIELDS)
+    if missing:
+        fail(f"Daily investment news item is missing field(s): {title} ({', '.join(missing)})")
+
+    empty_fields = [
+        field
+        for field in NEWS_DAILY_INVESTMENT_FIELDS
+        if not bullet_field_value(item.body, field)
+    ]
+    if empty_fields:
+        fail(f"Daily investment news item has empty field(s): {title} ({', '.join(empty_fields)})")
+
+    if matches_any_pattern(item.body, NEWS_DAILY_INVESTMENT_ADVICE_PATTERNS):
+        fail(f"Daily investment news item contains investment advice wording: {title}")
+
+    technology_link = bullet_field_value(item.body, "기술과 연결")
+    metrics = bullet_field_value(item.body, "확인할 지표")
+    if not news_daily_has_tech_context("\n".join([technology_link, metrics])):
+        fail(f"Daily investment news item must connect to technology demand or metrics: {title}")
+
+    short_term_text = "\n".join(
+        [
+            title,
+            bullet_field_value(item.body, "핵심"),
+            bullet_field_value(item.body, "투자 관찰 포인트"),
+        ]
+    )
+    if matches_any_pattern(short_term_text, NEWS_DAILY_MARKET_PRICE_PATTERNS):
+        if not news_daily_has_tech_context("\n".join([item.body, technology_link, metrics])):
+            fail(f"Daily investment news item describes market movement without technology context: {title}")
+
+
+def is_specific_growth_action(text: str) -> bool:
+    if not text.strip():
+        return False
+    if re.fullmatch(r"(?:기사|뉴스|원문)?\s*(?:읽기|보기|확인)\s*", text.strip()):
+        return False
+    return matches_any_pattern(text, NEWS_DAILY_GROWTH_ACTION_PATTERNS)
+
+
+def validate_daily_news_growth_section(section: Section | None) -> None:
+    if section is None:
+        fail("Daily news brief must include 오늘의 성장 판단 section.")
+    missing = missing_bullet_fields(section.body, NEWS_DAILY_GROWTH_FIELDS)
+    if missing:
+        fail(f"Daily news growth section is missing field(s): {', '.join(missing)}")
+
+    score = bullet_field_value(section.body, "도움 점수")
+    if not re.fullmatch(r"[1-5]", score):
+        fail("Daily news growth score must be an integer from 1 to 5.")
+    reason = bullet_field_value(section.body, "왜 도움 되는가")
+    action = bullet_field_value(section.body, "오늘 할 일 1개")
+    if not reason:
+        fail("Daily news growth reason must not be empty.")
+    if not is_specific_growth_action(action):
+        fail("Daily news growth action must be a concrete allowed action.")
+
+
 def validate_daily_news(content: str) -> None:
-    if not re.search(r"^#\s+Career Feed - Korea Dev/AI News\s*$", content, re.MULTILINE):
-        fail("Missing Korea Dev/AI News title.")
+    if not re.search(r"^#\s+Career Feed - Tech & Investment Daily\s*$", content, re.MULTILINE):
+        fail("Missing Tech & Investment Daily title.")
     if "오늘의 흐름:" not in content:
         fail("Daily news brief must include 오늘의 흐름 field.")
+    if matches_any_pattern(content, NEWS_DAILY_INVESTMENT_ADVICE_PATTERNS):
+        fail("Daily news brief contains investment advice wording.")
 
     sections = extract_sections(content)
-    news_sections = [
-        section
-        for section in sections
-        if re.match(r"^\d+\.\s+", section.heading)
-    ]
-    news_count = len(news_sections)
+    tech_section = find_section(sections, "새 기술 이야기")
+    investment_section = find_section(sections, "주식/투자 이야기")
+    bridge_section = find_section(sections, "기술과 시장 연결")
+    growth_section = find_section(sections, "오늘의 성장 판단")
+    tech_items = extract_items(tech_section) if tech_section else []
+    investment_items = extract_items(investment_section) if investment_section else []
+    news_count = len(tech_items) + len(investment_items)
+
     validate_common(content, min_links=news_count)
+    validate_daily_news_growth_section(growth_section)
+    if len(investment_items) > 2:
+        fail("Daily news brief must not include more than 2 investment items.")
     if news_count > NEWS_DAILY_SECTIONS_MAX:
         fail(f"Daily news brief must not include more than {NEWS_DAILY_SECTIONS_MAX} news items.")
     if NEWS_DAILY_DEFAULT_MIN <= news_count <= NEWS_DAILY_SECTIONS_MAX:
@@ -1142,85 +1321,21 @@ def validate_daily_news(content: str) -> None:
     else:
         fail("Daily news brief has an invalid number of news items.")
 
+    if tech_items and investment_items:
+        if bridge_section is None or not bridge_section.body.strip():
+            fail("Daily news brief with both tracks must include 기술과 시장 연결 section.")
+        if not news_daily_has_tech_context(bridge_section.body):
+            fail("Daily news bridge section must connect technology and market demand.")
+
     seen_titles: list[str] = []
     seen_urls: set[str] = set()
     domain_counts: Counter[str] = Counter()
-    market_context_count = 0
-    for section in news_sections:
-        title = re.sub(r"^\d+\.\s+", "", section.heading).strip()
-        title_key = normalize_validation_title(title)
-        if title_key in seen_titles or any(
-            difflib.SequenceMatcher(None, title_key, seen).ratio() >= 0.9
-            for seen in seen_titles
-        ):
-            fail(f"Duplicate daily news title found: {title}")
-        seen_titles.append(title_key)
-
-        core = bullet_field_value(section.body, "핵심")
-        missing = missing_bullet_fields(section.body, NEWS_DAILY_FIELDS)
-        if missing:
-            fail(f"Daily news item is missing field(s): {title} ({', '.join(missing)})")
-
-        empty_fields = [
-            field
-            for field in NEWS_DAILY_FIELDS
-            if not bullet_field_value(section.body, field)
-        ]
-        if empty_fields:
-            fail(f"Daily news item has empty field(s): {title} ({', '.join(empty_fields)})")
-
-        core_key = normalize_validation_title(core)
-        if core_key == title_key or difflib.SequenceMatcher(None, core_key, title_key).ratio() >= 0.82:
-            fail(f"Daily news 핵심 must not just repeat the title: {title}")
-
-        viewpoint = bullet_field_value(section.body, "백엔드 주니어 관점")
-        if not viewpoint.strip():
-            fail(f"Daily news 백엔드 주니어 관점 is empty: {title}")
-        if not viewpoint.strip().endswith("내가 뭘 배워야 하는가"):
-            fail(f"Daily news 백엔드 주니어 관점 must end with required learning question: {title}")
-
-        market_context_match = re.search(
-            r"^\s*-\s*시장/비즈니스 맥락\s*:\s*(.*?)\s*$",
-            section.body,
-            flags=re.MULTILINE,
-        )
-        market_context = market_context_match.group(1).strip() if market_context_match else ""
-        if market_context_match:
-            market_context_count += 1
-            if not market_context:
-                fail(f"Daily news 시장/비즈니스 맥락 field is empty: {title}")
-            if matches_any_pattern(market_context, NEWS_DAILY_INVESTMENT_ADVICE_PATTERNS):
-                fail(f"Daily news 시장/비즈니스 맥락 contains investment advice wording: {title}")
-            if not news_daily_has_tech_context(market_context):
-                fail(f"Daily news 시장/비즈니스 맥락 must connect to developer or infrastructure context: {title}")
-            if market_context_count > 1:
-                fail("Daily news brief must not include more than one 시장/비즈니스 맥락 field.")
-
-        stock_text = "\n".join([title, core])
-        if matches_any_pattern(stock_text, NEWS_DAILY_INVESTMENT_ADVICE_PATTERNS):
-            fail(f"Daily news item contains investment advice wording: {title}")
-        if matches_any_pattern(stock_text, NEWS_DAILY_MARKET_PRICE_PATTERNS):
-            context_text = "\n".join([stock_text, market_context, viewpoint])
-            if not news_daily_has_tech_context(context_text):
-                fail(f"Daily news item describes market movement without developer or infrastructure context: {title}")
-
-        keywords = bullet_field_value(section.body, "더 볼 키워드")
-        if keyword_count(keywords) < 2:
-            fail(f"Daily news 더 볼 키워드 must include at least two keywords: {title}")
-
-        link_value = bullet_field_value(section.body, "링크")
-        if not MARKDOWN_LINK_RE.search(link_value):
-            fail(f"Daily news item must include a Markdown link in 링크 field: {title}")
-
-        urls = markdown_link_urls(link_value)
-        if not urls:
-            fail(f"Daily news item must include a URL: {title}")
-        for url in urls:
-            url_key = normalize_validation_url(url)
-            if url_key in seen_urls:
-                fail(f"Duplicate daily news URL found: {url}")
-            seen_urls.add(url_key)
-            domain_counts[validation_domain(url)] += 1
+    for item in tech_items:
+        validate_news_item_identity(item, seen_titles, seen_urls, domain_counts)
+        validate_daily_news_tech_item(item)
+    for item in investment_items:
+        validate_news_item_identity(item, seen_titles, seen_urls, domain_counts)
+        validate_daily_news_investment_item(item)
 
     repeated_domains = [
         (domain, count)

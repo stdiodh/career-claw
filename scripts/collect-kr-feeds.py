@@ -2668,7 +2668,7 @@ def infer_exclude_reason(category_id: str, text: str) -> str:
     ):
         return "education-or-non-developer-focused"
     if text_contains_any(text, ["주가", "급등", "급락", "목표가", "투자의견", "관련주"]):
-        return "stock-or-investment-only"
+        return "price-move-without-tech-driver"
     if category_id == WEEKLY_CAREER_CATEGORY_ID and not text_contains_any(
         text, BACKEND_KEYWORDS + STUDENT_KEYWORDS
     ):

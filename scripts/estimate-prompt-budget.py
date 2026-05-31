@@ -74,6 +74,23 @@ def shortlist_count(path: Path) -> int:
     return len(items) if isinstance(items, list) else 0
 
 
+def track_shortlist_count(path: Path, track: str) -> int:
+    payload = read_json_object(path)
+    explicit_key = f"{track}_shortlist_count"
+    explicit_count = payload.get(explicit_key)
+    if isinstance(explicit_count, int):
+        return explicit_count
+
+    tracks = payload.get("tracks", {})
+    if not isinstance(tracks, dict):
+        return 0
+    track_payload = tracks.get(track, {})
+    if not isinstance(track_payload, dict):
+        return 0
+    items = track_payload.get("items", [])
+    return len(items) if isinstance(items, list) else 0
+
+
 def runtime_context(
     kst_now: str,
     shortlist_file: Path,
@@ -95,6 +112,14 @@ def rough_tokens(chars: int) -> int:
     return max(1, math.ceil(chars / 3))
 
 
+def output_budget_rough(shortlist_items: int) -> int:
+    if shortlist_items <= 0:
+        return 220
+    if shortlist_items <= 2:
+        return 700
+    return 1300
+
+
 def main() -> int:
     args = parse_args()
     raw_candidate_files = args.raw_candidate_file or DEFAULT_RAW_CANDIDATE_FILES
@@ -110,6 +135,7 @@ def main() -> int:
     runtime_prompt_text = prompt_text + context
     shortlist_text = read_text_if_exists(args.shortlist_file)
     estimated_prompt_chars = len(runtime_prompt_text) + len(shortlist_text)
+    shortlist_items = shortlist_count(args.shortlist_file)
 
     payload = {
         "generated_at_kst": now_kst(),
@@ -121,9 +147,12 @@ def main() -> int:
         "shortlist_json_chars": len(shortlist_text),
         "shortlist_json_bytes": len(shortlist_text.encode("utf-8")),
         "raw_candidate_count_total": sum(item_count(path) for path in raw_candidate_files),
-        "shortlist_count": shortlist_count(args.shortlist_file),
+        "shortlist_count": shortlist_items,
+        "tech_shortlist_count": track_shortlist_count(args.shortlist_file, "tech"),
+        "investment_shortlist_count": track_shortlist_count(args.shortlist_file, "investment"),
         "estimated_prompt_chars": estimated_prompt_chars,
         "estimated_prompt_tokens_rough": rough_tokens(estimated_prompt_chars),
+        "estimated_output_tokens_budget_rough": output_budget_rough(shortlist_items),
     }
 
     args.output_file.parent.mkdir(parents=True, exist_ok=True)

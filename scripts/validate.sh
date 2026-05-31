@@ -22,7 +22,8 @@ python3 -m py_compile \
   scripts/send-discord.py \
   scripts/update-oss-progress.py \
   scripts/update-ps-progress.py \
-  scripts/validate-career-feed-brief.py
+  scripts/validate-career-feed-brief.py \
+  scripts/write-news-daily-run-summary.py
 
 echo "==> Checking current workflows"
 test -f .github/workflows/kr-tech-daily.yml
@@ -120,7 +121,7 @@ grep -q 'collect-kr-feeds.py --mode daily-news' .github/workflows/kr-tech-news-d
 grep -q 'build-daily-news-shortlist.py' .github/workflows/kr-tech-news-daily.yml
 grep -q 'estimate-prompt-budget.py' .github/workflows/kr-tech-news-daily.yml
 grep -q 'kr-tech-news-shortlist.json' .github/workflows/kr-tech-news-daily.yml
-grep -q 'news-daily-token-budget.json' .github/workflows/kr-tech-news-daily.yml
+grep -q 'news-daily-token-budget.json' scripts/write-news-daily-run-summary.py
 grep -q -- '--type daily-news' .github/workflows/kr-tech-news-daily.yml
 grep -q 'career-feed-news-sent-' .github/workflows/kr-tech-news-daily.yml
 grep -q 'actions/cache/restore@v4' .github/workflows/kr-tech-news-daily.yml
@@ -134,9 +135,14 @@ grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/kr-tech-news-daily.y
 grep -q 'if: always()' .github/workflows/kr-tech-news-daily.yml
 grep -q 'reports/ops/\*.json' .github/workflows/kr-tech-news-daily.yml
 grep -q 'reports/ops/\*.md' .github/workflows/kr-tech-news-daily.yml
-grep -q 'raw_candidate_count_total' .github/workflows/kr-tech-news-daily.yml
-grep -q 'market_context_selected_count' .github/workflows/kr-tech-news-daily.yml
-grep -q 'estimated_prompt_tokens_rough' .github/workflows/kr-tech-news-daily.yml
+grep -q 'raw_candidate_count_total' scripts/write-news-daily-run-summary.py
+grep -q 'write-news-daily-run-summary.py' .github/workflows/kr-tech-news-daily.yml
+grep -q 'tech_selected_count' scripts/write-news-daily-run-summary.py
+grep -q 'investment_selected_count' scripts/write-news-daily-run-summary.py
+grep -q 'bridge_present' scripts/write-news-daily-run-summary.py
+grep -q 'growth_score' scripts/write-news-daily-run-summary.py
+grep -q 'growth_action_present' scripts/write-news-daily-run-summary.py
+grep -q 'estimated_prompt_tokens_rough' scripts/write-news-daily-run-summary.py
 grep -q 'retention-days: 14' .github/workflows/kr-tech-news-daily.yml
 if grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-news-daily.yml; then
   echo "News Daily workflow must not use the Backend Daily webhook." >&2
@@ -203,7 +209,8 @@ if ! grep -Eq '3(~|-)5개' .github/codex/prompts/kr-tech-news-daily.md; then
   exit 1
 fi
 grep -q 'reports/candidates/kr-tech-news-shortlist.json' .github/codex/prompts/kr-tech-news-daily.md
-grep -q '시장/비즈니스 맥락' .github/codex/prompts/kr-tech-news-daily.md
+grep -q 'Tech & Investment Daily' .github/codex/prompts/kr-tech-news-daily.md
+grep -q '주식/투자 이야기' .github/codex/prompts/kr-tech-news-daily.md
 
 echo "==> Checking workflow schedules"
 python3 scripts/check-workflow-schedules.py
@@ -250,14 +257,19 @@ required_files=(
   "scripts/update-oss-progress.py"
   "scripts/update-ps-progress.py"
   "scripts/validate-career-feed-brief.py"
+  "scripts/write-news-daily-run-summary.py"
   "tests/fixtures/kr-tech-daily-valid.md"
   "tests/fixtures/kr-tech-news-daily-valid.md"
   "tests/fixtures/kr-tech-news-daily-valid-sparse.md"
   "tests/fixtures/kr-tech-news-daily-valid-empty.md"
-  "tests/fixtures/kr-tech-news-daily-valid-market.md"
+  "tests/fixtures/kr-tech-news-daily-valid-tech-investment.md"
+  "tests/fixtures/kr-tech-news-daily-valid-tech-only.md"
   "tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md"
-  "tests/fixtures/kr-tech-news-daily-invalid-investment.md"
-  "tests/fixtures/kr-tech-news-daily-invalid-market-duplicate.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-investment-advice.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-related-stock.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-investment-missing-risk.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-investment-too-many.md"
+  "tests/fixtures/kr-tech-news-daily-invalid-growth-missing.md"
   "tests/fixtures/kr-backend-career-weekly-valid.md"
   "tests/fixtures/candidates-empty/kr-oss-contribution-opportunities.json"
   "tests/test_daily_oss_contract.py"
@@ -683,14 +695,30 @@ from pathlib import Path
 
 shortlist = json.loads(Path("reports/candidates/kr-tech-news-shortlist.json").read_text(encoding="utf-8"))
 budget = json.loads(Path("reports/ops/news-daily-token-budget.json").read_text(encoding="utf-8"))
-for field in ["raw_candidate_count_total", "shortlist_count", "items"]:
+for field in [
+    "schema_version",
+    "raw_candidate_count_total",
+    "shortlist_count",
+    "tech_shortlist_count",
+    "investment_shortlist_count",
+    "tracks",
+    "items",
+]:
     if field not in shortlist:
         raise SystemExit(f"shortlist payload misses field: {field}")
+if shortlist["schema_version"] != 2:
+    raise SystemExit("shortlist schema_version must be 2")
+for track in ["tech", "investment"]:
+    if track not in shortlist["tracks"] or "items" not in shortlist["tracks"][track]:
+        raise SystemExit(f"shortlist payload misses track items: {track}")
 for field in [
     "raw_candidate_count_total",
     "shortlist_count",
+    "tech_shortlist_count",
+    "investment_shortlist_count",
     "estimated_prompt_chars",
     "estimated_prompt_tokens_rough",
+    "estimated_output_tokens_budget_rough",
 ]:
     if field not in budget:
         raise SystemExit(f"token budget payload misses field: {field}")
@@ -698,7 +726,69 @@ if budget["estimated_prompt_tokens_rough"] < 1:
     raise SystemExit("rough token estimate must be positive")
 print("news daily shortlist and token budget smoke check passed")
 PY
-cp tests/fixtures/kr-tech-news-daily-valid-market.md reports/briefs/kr-tech-news-daily.md
+python3 - <<'PY'
+import importlib.util
+import json
+import sys
+import tempfile
+from pathlib import Path
+
+module_path = Path("scripts/build-daily-news-shortlist.py")
+spec = importlib.util.spec_from_file_location("build_daily_news_shortlist", module_path)
+if spec is None or spec.loader is None:
+    raise SystemExit("Could not load build-daily-news-shortlist.py")
+shortlist_module = importlib.util.module_from_spec(spec)
+sys.modules[spec.name] = shortlist_module
+spec.loader.exec_module(shortlist_module)
+
+with tempfile.TemporaryDirectory() as tmpdir:
+    tmp = Path(tmpdir)
+    input_path = tmp / "candidates.json"
+    profile_path = tmp / "audience-profile.json"
+    input_path.write_text(
+        json.dumps(
+            {
+                "candidate_count": 2,
+                "items": [
+                    {
+                        "title": "AI API rate limit update",
+                        "url": "https://tech.example.com/api-rate-limit",
+                        "summary": "Developer API timeout and retry policy changed.",
+                        "query": "국내 AI API 개발자",
+                        "developer_relevance": "high",
+                        "score": 80,
+                    },
+                    {
+                        "title": "Cloud CAPEX and GPU server demand",
+                        "url": "https://finance.example.com/cloud-capex",
+                        "summary": "Cloud CAPEX, GPU server demand, and enterprise AI revenue are connected.",
+                        "query": "클라우드 CAPEX AI 인프라",
+                        "developer_relevance": "medium",
+                        "score": 70,
+                    },
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    profile_path.write_text(
+        json.dumps({"preferences": {"content_tracks": {"enabled": True}}}),
+        encoding="utf-8",
+    )
+    payload = shortlist_module.build_shortlist([input_path], profile_path, 16, 10, 6)
+
+if payload["tech_shortlist_count"] != 1:
+    raise SystemExit("shortlist smoke must classify one tech item")
+if payload["investment_shortlist_count"] != 1:
+    raise SystemExit("shortlist smoke must classify one investment item")
+investment_item = payload["tracks"]["investment"]["items"][0]
+for field in ["investment_relevance", "technology_link", "risk_flags"]:
+    if field not in investment_item:
+        raise SystemExit(f"investment shortlist item misses field: {field}")
+print("news daily track split smoke check passed")
+PY
+cp tests/fixtures/kr-tech-news-daily-valid-tech-investment.md reports/briefs/kr-tech-news-daily.md
 EVENT_NAME=workflow_dispatch \
 EVENT_SCHEDULE= \
 DRY_RUN=true \
@@ -709,45 +799,38 @@ SHOULD_GENERATE=true \
 SHOULD_SEND=false \
 SKIP_REASON=dry_run \
 DISCORD_SEND_OUTCOME=skipped \
+python3 scripts/write-news-daily-run-summary.py
 python3 - <<'PY'
 import json
 from pathlib import Path
-
-workflow = Path(".github/workflows/kr-tech-news-daily.yml").read_text(encoding="utf-8").splitlines()
-step_start = next(
-    index
-    for index, line in enumerate(workflow)
-    if line.strip() == "- name: Write News Daily run summary"
-)
-heredoc_start = next(
-    index
-    for index in range(step_start, len(workflow))
-    if "python3 - <<'PY'" in workflow[index]
-)
-heredoc_end = next(
-    index
-    for index in range(heredoc_start + 1, len(workflow))
-    if workflow[index].strip() == "PY"
-)
-code_lines = []
-for line in workflow[heredoc_start + 1 : heredoc_end]:
-    code_lines.append(line[10:] if line.startswith("          ") else line)
-exec(compile("\n".join(code_lines), "kr-tech-news-daily-run-summary", "exec"), {})
 
 summary = json.loads(Path("reports/ops/news-daily-run-summary.json").read_text(encoding="utf-8"))
 required_fields = [
     "raw_candidate_count_total",
     "shortlist_count",
+    "tech_shortlist_count",
+    "investment_shortlist_count",
     "selected_news_count",
-    "market_context_selected_count",
+    "tech_selected_count",
+    "investment_selected_count",
+    "bridge_present",
+    "growth_score",
+    "growth_action_present",
     "estimated_prompt_chars",
     "estimated_prompt_tokens_rough",
+    "estimated_output_tokens_budget_rough",
 ]
 missing = [field for field in required_fields if field not in summary]
 if missing:
     raise SystemExit("News Daily run summary misses field(s): " + ", ".join(missing))
-if summary["market_context_selected_count"] != 1:
-    raise SystemExit("News Daily run summary must count one market context line")
+if summary["tech_selected_count"] != 2:
+    raise SystemExit("News Daily run summary must count two tech items")
+if summary["investment_selected_count"] != 1:
+    raise SystemExit("News Daily run summary must count one investment item")
+if summary["bridge_present"] is not True:
+    raise SystemExit("News Daily run summary must detect bridge section")
+if summary["growth_score"] != 5 or summary["growth_action_present"] is not True:
+    raise SystemExit("News Daily run summary must detect growth score and action")
 print("News Daily run summary smoke check passed")
 PY
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
@@ -797,10 +880,14 @@ python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-market.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-investment.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-only.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md --type daily-news
-expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment.md --type daily-news
-expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-market-duplicate.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment-advice.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-related-stock.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment-missing-risk.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment-too-many.md --type daily-news
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-growth-missing.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
 python3 tests/test_daily_oss_contract.py
 python3 tests/test_oss_reliability_gate.py
@@ -858,7 +945,6 @@ fi
 
 echo "==> Checking removed output fields"
 removed_output_terms=(
-  "오늘 ""할 일"
   "Mark PS Solved ""workflow"
   "대상 ""적합성"
   "백엔드 ""적합성"
