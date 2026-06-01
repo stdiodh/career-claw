@@ -62,9 +62,7 @@ python3 scripts/update-oss-progress.py --mark-attempted https://github.com/owner
 
 ## News Daily 성장 품질 점검
 
-News Daily는 기본 목표를 기술 3개 + 투자 1개, 총 4개로 둡니다. 허용 범위는 전체 3~5개, 기술 2~3개, 투자 0~2개입니다. 투자 후보 품질이 낮으면 투자 섹션은 생략하고, 투자 후보가 매우 좋고 기술 후보도 충분할 때만 투자 2개까지 허용합니다.
-
-투자 섹션은 매수/매도 추천이 아니라 기술 수요와 기업/산업 변화를 읽는 관찰 섹션입니다. 실적, CAPEX, 데이터센터, GPU/HBM, 클라우드, AI 제품 매출, API/플랫폼 매출을 봅니다.
+News Daily의 후보 수, 투자 섹션, sparse/empty 정책은 [Korea Dev/AI News Daily](./daily-news-ops.md)를 따릅니다.
 
 성장 판단은 매일 도움 점수와 오늘 할 일 1개를 남깁니다. 오늘 할 일은 읽기만 하는 행동이 아니라 20~30분 안에 실행 가능한 공식 문서 확인, 작은 코드 실험, 아키텍처 메모, 지표 확인, TIL 작성이어야 합니다.
 

@@ -11,40 +11,17 @@
 | Backend Career Site Radar | 수동 실행 | `reports/briefs/kr-backend-career-weekly.md` |
 | Mark PS Solved | 수동 실행 | `data/ps-progress.json` |
 
-## Daily Backend Brief
+## 상세 운영 문서
 
-- workflow: `.github/workflows/kr-tech-daily.yml`
-- 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-backend`
-- prompt: `.github/codex/prompts/kr-tech-daily-brief.md`
-- validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech --candidates-dir reports/candidates`
-- Discord secret: `DISCORD_WEBHOOK_KR_TECH_DAILY`
-- delivery lock: `career-feed-backend-sent-${KST_DATE}`
-- 운영 요약: `reports/ops/backend-daily-run-summary.json`, `reports/ops/backend-daily-run-summary.md`
-
-OSS 후보는 `configs/oss-repositories.json`의 저장소별 priority, ecosystem tag, beginner label, avoid label/title keyword, 선호 기여 유형, 로컬 확인 힌트를 scoring과 후보 evidence에 반영합니다. 저장소 profile 관리 기준은 `docs/oss-candidate-policy.md`를 따릅니다.
-Daily Growth 운영 요약과 artifact 해석 방법은 `docs/daily-growth-ops.md`를 따릅니다.
-
-## Korea Dev/AI News Daily
-
-- workflow: `.github/workflows/kr-tech-news-daily.yml`
-- 후보 수집: `python3 scripts/collect-kr-feeds.py --mode daily-news`
-- shortlist 생성: `python3 scripts/build-daily-news-shortlist.py`
-- prompt budget 기록: `python3 scripts/estimate-prompt-budget.py`
-- quality report 기록: `python3 scripts/evaluate-news-daily-quality.py`
-- run summary 기록: `python3 scripts/write-news-daily-run-summary.py`
-- prompt: `.github/codex/prompts/kr-tech-news-daily.md`
-- validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-news-daily.md --type daily-news`
-- Discord secret: `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY`
-- delivery lock: `career-feed-news-sent-${KST_DATE}`
-- 운영 요약: `reports/ops/news-daily-run-summary.json`, `reports/ops/news-daily-run-summary.md`
-
-News Daily는 기본 목표를 기술 3개 + 투자 1개, 총 4개로 둡니다. 허용 범위는 전체 3~5개, 기술 2~3개, 투자 0~2개입니다. 기준을 만족하는 뉴스가 1~2개뿐이면 후보 부족 문구와 함께 정상 성공으로 보고, 0개면 기준을 만족하는 한국 개발/AI 뉴스가 없다는 문구와 성장 판단만 전송합니다. 출력은 `새 기술 이야기`, `주식/투자 이야기`, `기술과 시장 연결`, `오늘의 성장 판단`으로 분리합니다. Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist를 중심으로 사용하고, `reports/ops/news-daily-token-budget.json`에 raw 후보 수, tech/investment shortlist 수, rough token 추정치를 기록합니다. `reports/ops/news-daily-quality-report.json`은 비중, 성장 행동, 투자 조언 위험, 가격 움직임 중심 위험, token 효율을 운영 관찰용으로 기록합니다.
-
-주식/투자 이야기는 매수/매도 추천이 아니라 기술 수요와 기업/산업 변화를 읽는 관찰 섹션입니다. 실적, CAPEX, 데이터센터, GPU/HBM, 클라우드, AI 제품 매출, API/플랫폼 매출을 봅니다. 투자 후보 품질이 낮으면 투자 섹션은 생략하고, 투자 후보가 매우 좋고 기술 후보도 충분할 때만 투자 2개까지 허용합니다. 추천주, 관련주/테마주 목록, 수익 보장, 명령형 투자 조언, 급등락만 중심인 기사는 제외합니다. `configs/audience-profile.json`의 `market_context`는 이전 호환용이며, 현재 기준은 `content_tracks.daily_ratio_policy`와 `content_tracks.investment`입니다. Naver secret 누락이나 Naver API 실패는 warning/source error로 기록하고 RSS/공식 페이지 후보만으로도 JSON을 생성합니다.
+- [Daily Backend Brief](./daily-backend-brief.md)
+- [Korea Dev/AI News Daily](./daily-news-ops.md)
+- [Backend Career Site Radar](./career-site-radar.md)
+- [로컬 검증 가이드](./local-validation.md)
+- [Daily Growth Ops](./daily-growth-ops.md)
 
 ## Daily 운영 안정성
 
-- `workflow_dispatch` 입력은 Backend Daily와 News Daily 모두 `dry_run`, `force_send`를 사용합니다.
+- Backend Daily와 News Daily의 `workflow_dispatch` 입력은 `dry_run`, `force_send`를 사용합니다.
 - `dry_run=true`이면 Discord 전송과 delivery lock 저장을 하지 않습니다.
 - `force_send=true`이면 같은 날짜 delivery lock이 있어도 전송합니다.
 - Discord 전송 성공 후에만 GitHub Actions cache에 delivery lock marker를 저장합니다.
@@ -53,13 +30,17 @@ News Daily는 기본 목표를 기술 3개 + 투자 1개, 총 4개로 둡니다.
 - 실패 알림 선택 secret은 `DISCORD_WEBHOOK_CAREER_FEED_OPS`입니다. 없으면 실패 알림만 skip합니다.
 - GitHub Actions scheduled workflow는 부하에 따라 지연되거나 실행이 누락될 수 있으므로 catch-up schedule과 delivery lock으로 보완합니다.
 
-## Backend Career Site Radar
+## Actions 체크리스트
 
-- workflow: `.github/workflows/kr-backend-career-weekly.yml`
-- site radar JSON 생성: `python3 scripts/collect-kr-feeds.py --mode weekly-career`
-- Markdown 생성: `python3 scripts/render-weekly-career-site-radar.py`
-- validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career`
-- Discord secret: `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY`
+1. `Settings > Secrets and variables > Actions`에 필요한 secrets를 등록합니다.
+2. `Settings > Actions > General`에서 Actions 실행이 허용되어 있는지 확인합니다.
+3. Actions 탭에서 4개 운영 경로가 enabled 상태인지 확인합니다.
+4. Backend Daily와 News Daily를 먼저 `dry_run=true`, `force_send=false`로 실행해 artifact와 validator를 확인합니다.
+5. 실제 전송 검증은 `dry_run=false`, `force_send=true`로 실행합니다.
+6. 같은 날 다시 `dry_run=false`, `force_send=false`로 실행해 delivery lock skip을 확인합니다.
+7. 이후 Backend Daily는 평일 09:00 KST 전후, News Daily는 평일 09:05 KST 전후에 도착합니다.
+
+GitHub Actions scheduled workflow는 default branch의 최신 workflow 파일을 기준으로 실행됩니다. Public repository는 장기간 활동이 없으면 scheduled workflow가 자동 비활성화될 수 있으므로 Actions 탭에서 workflow 상태를 확인합니다.
 
 ## Mark PS Solved
 
@@ -77,21 +58,10 @@ News Daily는 기본 목표를 기술 3개 + 투자 1개, 총 4개로 둡니다.
 
 ## 검증
 
+전체 검증 명령은 [로컬 검증 가이드](./local-validation.md)를 따릅니다.
+
 ```bash
-python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
-python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
-python3 scripts/build-daily-news-shortlist.py
-python3 scripts/estimate-prompt-budget.py
-python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
-python3 scripts/render-weekly-career-site-radar.py
-python3 scripts/update-oss-progress.py --status
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-investment.md --type daily-news
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-only.md --type daily-news
-python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
+python3 scripts/check-workflow-schedules.py
 ./scripts/validate.sh
 git diff --check
 ```
