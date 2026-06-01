@@ -255,7 +255,44 @@ jobs:
           REPORT_FILE: ${{ steps.prepare.outputs.report_file }}
         run: |
           set -euo pipefail
-          python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type daily-news
+          mkdir -p reports/ops
+
+          validation_report="reports/ops/news-daily-validation-report.md"
+          validation_log="$(mktemp)"
+          validation_status="passed"
+          validation_error=""
+          exit_code=0
+
+          set +e
+          python3 scripts/validate-career-feed-brief.py "${REPORT_FILE}" --type daily-news > "${validation_log}" 2>&1
+          exit_code="$?"
+          set -e
+
+          if [ "${exit_code}" -ne 0 ]; then
+            validation_status="failed"
+            validation_error="$(tail -n 1 "${validation_log}" | sed 's/[[:cntrl:]]//g')"
+          fi
+
+          {
+            echo "# News Daily Validation Report"
+            echo
+            echo "- status: ${validation_status}"
+            echo "- report_file: ${REPORT_FILE}"
+            if [ -n "${validation_error}" ]; then
+              echo "- error: ${validation_error}"
+            fi
+            echo
+            echo "## Output"
+            echo
+            echo '```text'
+            tail -n 30 "${validation_log}" || true
+            echo '```'
+          } > "${validation_report}"
+
+          cat "${validation_report}" >> "${GITHUB_STEP_SUMMARY}"
+          cat "${validation_log}"
+          rm -f "${validation_log}"
+          exit "${exit_code}"
 
       - name: Evaluate News Daily quality
         id: quality
@@ -373,6 +410,10 @@ jobs:
           done
 
           alert_file="reports/ops/news-daily-failure-alert.md"
+          validation_error=""
+          if [ -f reports/ops/news-daily-validation-report.md ]; then
+            validation_error="$(grep -m 1 '^- error:' reports/ops/news-daily-validation-report.md | sed 's/^- error: //' || true)"
+          fi
           {
             echo "Career Feed workflow failed"
             echo
@@ -381,6 +422,9 @@ jobs:
             echo "- branch: ${GITHUB_REF_NAME}"
             echo "- commit: ${GITHUB_SHA}"
             echo "- failed step: ${failed_step}"
+            if [ -n "${validation_error}" ]; then
+              echo "- validator error: ${validation_error}"
+            fi
             echo "- artifact: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           } > "${alert_file}"
           python3 scripts/send-discord.py "${alert_file}" || true
