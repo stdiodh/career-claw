@@ -98,8 +98,8 @@
 | KEEP | `tests/test_daily_oss_contract.py` | 해당 없음 | OSS validator contract tests | validate.sh/test command path | MEDIUM | `git checkout HEAD^ -- tests/test_daily_oss_contract.py` | test 보호 |
 | KEEP | `tests/test_oss_reliability_gate.py` | 해당 없음 | OSS reliability gate tests | validate.sh/test command path | MEDIUM | `git checkout HEAD^ -- tests/test_oss_reliability_gate.py` | test 보호 |
 | KEEP | `tests/test_weekly_career_collector.py` | 해당 없음 | Weekly site radar tests | validate.sh/test command path | MEDIUM | `git checkout HEAD^ -- tests/test_weekly_career_collector.py` | test 보호 |
-| REMOVE | `configs/oss-repositories 2.json` | 추적되지 않은 예전 OSS config 사본, README/워크플로/스크립트 참조 없음 | `configs/oss-repositories.json` | `git grep`, `rg`, `git log --` 결과 없음 | LOW | 필요 시 로컬 백업 또는 이전 작업물에서 복구 | 이번 정리에서 삭제 |
-| REMOVE | `docs/oss-candidate-policy 2.md` | 추적되지 않은 예전 OSS 정책 문서 사본, README/문서 참조 없음 | `docs/oss-candidate-policy.md` | `git grep`, `rg`, `git log --` 결과 없음 | LOW | 필요 시 로컬 백업 또는 이전 작업물에서 복구 | 이번 정리에서 삭제 |
+| REMOVE | `configs/oss-repositories 2.json` | 추적되지 않은 예전 OSS config 사본, README/워크플로/스크립트 참조 없음 | `configs/oss-repositories.json` | `git grep`, `rg`, `git log --` 결과 없음 | LOW | git 추적 이력 없음. 필요 시 로컬 백업 또는 이전 작업물에서 복구 | already removed before this pass |
+| REMOVE | `docs/oss-candidate-policy 2.md` | 추적되지 않은 예전 OSS 정책 문서 사본, README/문서 참조 없음 | `docs/oss-candidate-policy.md` | `git grep`, `rg`, `git log --` 결과 없음 | LOW | git 추적 이력 없음. 필요 시 로컬 백업 또는 이전 작업물에서 복구 | already removed before this pass |
 
 ## Deferred
 
