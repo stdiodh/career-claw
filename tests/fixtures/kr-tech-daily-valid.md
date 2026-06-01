@@ -49,36 +49,19 @@
 - 다음에 issue를 찾을 때 쓸 GitHub 검색식: `repo:spring-projects/spring-boot is:issue is:open label:"status: ideal-for-contribution" no:assignee`
 - 기여 전 매너: 작업 의사를 남기기 전에 최근 댓글과 연결 PR 여부를 먼저 확인합니다.
 
-## 4. 주니어 백엔드 실무지식
-### 주제: 결제 생성 API에서 POST 재시도가 중복 주문을 만드는 상황
+## 4. 오늘의 백엔드 실무 충전
+### 주제: timeout 후 재시도되는 POST API에서 Idempotency-Key 검증하기
 - 실무 상황: 클라이언트가 타임아웃 후 같은 결제 생성 요청을 다시 보내면 서버는 첫 요청 성공 여부를 모른 채 두 번째 주문을 만들 수 있습니다.
+- 왜 지금 알아야 하는가: 모바일 네트워크와 외부 결제 연동에서는 재시도가 자연스럽게 발생하므로, 쓰기 API는 중복 요청을 전제로 설계해야 합니다.
 - 핵심 개념: POST 생성 요청은 별도 idempotency key나 중복 방지 키가 없으면 반복 호출 결과가 달라질 수 있습니다.
+- CS Core 연결: 네트워크 timeout은 응답 도착 여부를 보장하지 않으므로, retry가 queueing되거나 중복 실행될 때의 상태 전이를 함께 봐야 합니다.
+- 오늘의 백엔드 용어: Idempotency-Key는 같은 쓰기 요청을 식별해 timeout 후 재시도된 POST가 같은 비즈니스 결과를 반환하도록 돕는 키입니다.
+- Kotlin/Spring Boot/DB 연결: Spring MVC controller에서 `Idempotency-Key` 헤더를 받고 DB unique index로 중복 생성을 막은 뒤 기존 결과를 반환하는 흐름으로 확인합니다.
 - 실패하면 생기는 문제: 결제, 포인트 적립, 재고 차감 같은 변경 작업에서 중복 데이터와 환불/정산 장애가 생깁니다.
-- 30분 실습: `/orders` POST를 두 번 호출했을 때 row가 2개 생기는 샘플을 만든 뒤, `Idempotency-Key` 헤더와 unique key로 같은 요청은 같은 결과를 돌려주도록 바꿔봅니다.
+- 30분 실습: `/orders` POST를 두 번 호출했을 때 row가 2개 생기는 샘플을 기록한 뒤, `Idempotency-Key` 헤더와 unique index 적용 전후 결과를 비교합니다.
+- 증거로 남길 것: 같은 request body를 두 번 보낸 로그, 생성된 row 수, unique index 적용 후 응답 status와 반환 order id를 기록합니다.
 - 현업 체크 질문: 이 API는 네트워크 타임아웃 후 자동 재시도되어도 같은 비즈니스 결과를 보장하는가?
 - 레퍼런스:
   - [RFC 9110 HTTP Semantics](https://datatracker.ietf.org/doc/html/rfc9110)
   - [MDN Idempotent](https://developer.mozilla.org/en-US/docs/Glossary/Idempotent)
 - 검색 키워드: HTTP idempotency POST retry, Idempotency-Key 결제 API 중복 방지
-
-## 5. 오늘의 CS Core & 백엔드 용어
-### CS Core: TCP 연결 생성과 timeout을 외부 API 호출 장애로 연결하기
-- 트랙: network
-- 왜 백엔드에 중요한가: 외부 API 장애는 연결 실패, 응답 지연, TLS 문제 중 어디에서 막혔는지에 따라 대응이 달라집니다.
-- 핵심 개념: TCP 연결은 handshake로 세션을 만든 뒤 데이터를 주고받으며, connect timeout과 read timeout은 실패 위치가 다릅니다.
-- 10~20분 확인: HTTP client 설정에서 connect timeout과 read timeout 값을 찾아보고, 장애 로그에 timeout 종류가 남는지 확인합니다.
-- 완료 기준: connect timeout과 read timeout을 구분한 메모 2줄과 현재 프로젝트 설정 위치를 남깁니다.
-- 면접 연결 질문: connect timeout과 read timeout은 장애 원인 추적에서 어떻게 다르게 해석해야 하는가?
-- 레퍼런스:
-  - [RFC 9293 TCP](https://datatracker.ietf.org/doc/html/rfc9293)
-  - [Spring REST Clients](https://docs.spring.io/spring-framework/reference/integration/rest-clients.html)
-
-### 백엔드 용어: Connection Pool
-- 한 줄 정의: DB나 외부 서버 연결을 매번 새로 만들지 않고 재사용하는 연결 묶음입니다.
-- 실무 상황: pool이 너무 작으면 요청이 대기하고, 너무 크면 DB나 외부 API 서버를 압박합니다.
-- 오해하면 생기는 문제: pool 크기를 키우면 항상 성능이 좋아진다고 보면 병목을 DB로 옮기고 장애 범위를 키울 수 있습니다.
-- Spring/API 연결: Spring Boot DataSource는 HikariCP 설정으로 maximumPoolSize와 connectionTimeout을 조정합니다.
-- 확인 질문: 현재 DB connection pool 대기 시간과 활성 connection 수를 보고 있는가?
-- 레퍼런스:
-  - [Spring Boot SQL Databases](https://docs.spring.io/spring-boot/reference/data/sql.html)
-  - [HikariCP](https://github.com/brettwooldridge/HikariCP)

@@ -17,7 +17,6 @@ from pathlib import Path
 
 DEFAULT_REPORT = "reports/briefs/kr-tech-daily.md"
 MAX_WARNING_CHARS = 6500
-DAILY_CS_TERM_SECTION_MAX_CHARS = 1500
 OSS_CANDIDATE_FILENAME = "kr-oss-contribution-opportunities.json"
 
 
@@ -28,8 +27,7 @@ DAILY_SECTIONS = [
     "오늘의 Spring Boot/JVM 학습",
     "이번 주 PS 성장 루틴",
     "오픈소스 기여 후보",
-    "주니어 백엔드 실무지식",
-    "오늘의 CS Core & 백엔드 용어",
+    "오늘의 백엔드 실무 충전",
 ]
 NEWS_DAILY_DEFAULT_MIN = 3
 NEWS_DAILY_SECTIONS_MAX = 5
@@ -190,30 +188,84 @@ NEWS_DAILY_GROWTH_FIELDS = [
 ]
 DAILY_PRACTICAL_FIELDS = [
     "실무 상황",
+    "왜 지금 알아야 하는가",
     "핵심 개념",
+    "CS Core 연결",
+    "오늘의 백엔드 용어",
+    "Kotlin/Spring Boot/DB 연결",
     "실패하면 생기는 문제",
     "30분 실습",
+    "증거로 남길 것",
     "현업 체크 질문",
     "레퍼런스",
     "검색 키워드",
 ]
-DAILY_CS_CORE_FIELDS = [
-    "트랙",
-    "왜 백엔드에 중요한가",
-    "핵심 개념",
-    "10~20분 확인",
-    "완료 기준",
-    "면접 연결 질문",
-    "레퍼런스",
+DAILY_PRACTICAL_BROAD_TITLE_PATTERNS = [
+    r"^주제:\s*백엔드\s*성능\s*최적화\s*$",
+    r"^주제:\s*REST\s*API\s*(?:알아보기|이해하기?)\s*$",
+    r"^주제:\s*JVM\s*(?:완전\s*정복|총정리|전체\s*구조)\s*$",
+    r"^주제:\s*DB\s*인덱스\s*(?:공부하기?|알아보기)\s*$",
+    r"^주제:\s*MSA\s*관측성\s*이해하기?\s*$",
+    r"^주제:\s*보안\s*공부하기?\s*$",
+    r"^주제:\s*성능\s*최적화\s*$",
 ]
-DAILY_BACKEND_TERM_FIELDS = [
-    "한 줄 정의",
-    "실무 상황",
-    "오해하면 생기는 문제",
-    "Spring/API 연결",
-    "확인 질문",
-    "레퍼런스",
+DAILY_PRACTICAL_VAGUE_PRACTICE_PATTERNS = [
+    r"공식\s*문서를\s*읽어본다",
+    r"개념을\s*정리한다",
+    r"예제를\s*찾아본다",
+    r"성능\s*최적화를\s*해본다",
+    r"전체\s*구조를\s*분석한다",
+    r"(?:공부|학습)해?\s*본다",
+    r"읽어본다",
+    r"살펴본다",
 ]
+DAILY_PRACTICAL_EVIDENCE_ACTION_PATTERNS = [
+    r"기록",
+    r"비교",
+    r"호출",
+    r"로그",
+    r"쿼리",
+    r"설정",
+    r"테스트",
+    r"재현",
+    r"측정",
+    r"\bcurl\b",
+    r"\bEXPLAIN\b",
+    r"\bSQL\b",
+    r"request\s*id",
+    r"trace",
+    r"latency",
+    r"metric",
+    r"row",
+    r"unique",
+    r"index",
+]
+DAILY_PRACTICAL_ALIGNMENT_STOPWORDS = {
+    "오늘",
+    "주제",
+    "실무",
+    "상황",
+    "핵심",
+    "개념",
+    "연결",
+    "백엔드",
+    "용어",
+    "문제",
+    "확인",
+    "한다",
+    "있다",
+    "있는",
+    "없는",
+    "위해",
+    "때문",
+    "spring",
+    "boot",
+    "kotlin",
+    "db",
+    "api",
+    "core",
+    "cs",
+}
 DAILY_NEWS_EMPTY_STATE = "오늘은 기준을 만족하는 한국 최신 개발/AI 뉴스가 없습니다."
 NEWS_DAILY_EMPTY_STATES = [
     "오늘은 기준을 만족하는 한국 개발/AI 뉴스가 없습니다.",
@@ -1095,6 +1147,12 @@ def validate_daily_tech(content: str, candidates_dir: Path) -> None:
     validate_common(content, min_links=2, allow_duplicate_links=True)
     require_sections(sections, DAILY_SECTIONS)
     validate_daily_section_duplicate_links(sections)
+    if re.search(r"^##\s+5\.", content, re.MULTILINE):
+        fail("Daily backend brief must not include an independent ## 5. section.")
+    if find_section(sections, "주니어 백엔드 실무지식") is not None:
+        fail("Daily backend brief must use 오늘의 백엔드 실무 충전, not 주니어 백엔드 실무지식.")
+    if find_section(sections, "오늘의 CS Core & 백엔드 용어") is not None:
+        fail("Daily backend brief must merge CS Core and backend term into section 4.")
     if find_section(sections, "한국 최신 개발/AI 뉴스") is not None:
         fail("Daily backend brief must not include 한국 최신 개발/AI 뉴스 section.")
 
@@ -1108,7 +1166,6 @@ def validate_daily_tech(content: str, candidates_dir: Path) -> None:
     validate_daily_ps_section(sections)
     validate_daily_oss_section(sections, candidates_dir)
     validate_daily_practical_section(sections)
-    validate_daily_cs_term_section(sections)
 
 
 def validate_daily_section_duplicate_links(sections: list[Section]) -> None:
@@ -1538,67 +1595,98 @@ def validate_daily_news(content: str) -> None:
 
 
 def validate_daily_practical_section(sections: list[Section]) -> None:
-    section = find_section(sections, "주니어 백엔드 실무지식")
+    section = find_section(sections, "오늘의 백엔드 실무 충전")
     if section is None:
-        fail("Daily tech brief must include 주니어 백엔드 실무지식 section.")
+        fail("Daily tech brief must include 오늘의 백엔드 실무 충전 section.")
 
     items = extract_items(section)
     if len(items) != 1:
-        fail("Backend practical knowledge section must include exactly one topic.")
+        fail("Backend practical recharge section must include exactly one topic.")
     item = items[0]
     if not item.title.startswith("주제:"):
-        fail("Backend practical knowledge topic must use a 주제 heading.")
+        fail("Backend practical recharge topic must use a 주제 heading.")
     missing = missing_bullet_fields(item.body, DAILY_PRACTICAL_FIELDS)
     if missing:
-        fail(f"Backend practical knowledge topic is missing field(s): {', '.join(missing)}")
-    require_markdown_link_in_text(item.body, "주니어 백엔드 실무지식")
+        fail(f"Backend practical recharge topic is missing field(s): {', '.join(missing)}")
+    require_markdown_link_in_text(item.body, "오늘의 백엔드 실무 충전")
     validate_learning_reference_domains(
         item.body,
         PRACTICAL_ALLOWED_URL_PREFIXES,
-        "주니어 백엔드 실무지식",
+        "오늘의 백엔드 실무 충전",
     )
-    if len(section.body) > 1200:
-        warn("Backend practical knowledge section may be too long for daily reading.")
+    validate_daily_practical_topic_shape(item)
+    validate_daily_practical_practice(item)
+    validate_daily_practical_alignment(item)
+    if len(section.body) > 1800:
+        warn("Backend practical recharge section may be too long for daily reading.")
 
 
-def validate_daily_cs_term_section(sections: list[Section]) -> None:
-    section = find_section(sections, "오늘의 CS Core & 백엔드 용어")
-    if section is None:
-        fail("Daily tech brief must include 오늘의 CS Core & 백엔드 용어 section.")
-
-    items = extract_items(section)
-    cs_item = next((item for item in items if item.title.startswith("CS Core:")), None)
-    term_item = next((item for item in items if item.title.startswith("백엔드 용어:")), None)
-    if cs_item is None:
-        fail("CS/term section must include a CS Core topic heading.")
-    if term_item is None:
-        fail("CS/term section must include a backend term heading.")
-
-    missing = missing_bullet_fields(cs_item.body, DAILY_CS_CORE_FIELDS)
-    if missing:
-        fail(f"CS Core topic is missing field(s): {', '.join(missing)}")
-    missing = missing_bullet_fields(term_item.body, DAILY_BACKEND_TERM_FIELDS)
-    if missing:
-        fail(f"Backend term is missing field(s): {', '.join(missing)}")
-
-    for item, context in (
-        (cs_item, "오늘의 CS Core"),
-        (term_item, "오늘의 백엔드 용어"),
-    ):
-        require_markdown_link_in_text(item.body, context)
-
-    if not bullet_field_value(cs_item.body, "10~20분 확인"):
-        fail("CS Core topic must include a concrete 10~20 minute check action.")
-    if not bullet_field_value(cs_item.body, "완료 기준"):
-        fail("CS Core topic must include done criteria.")
-    if not bullet_field_value(term_item.body, "오해하면 생기는 문제"):
-        fail("Backend term must include the risk of misunderstanding.")
-    if not bullet_field_value(term_item.body, "Spring/API 연결"):
-        fail("Backend term must include a Spring/API connection.")
-    if len(section.body) > DAILY_CS_TERM_SECTION_MAX_CHARS:
+def validate_daily_practical_topic_shape(item: Item) -> None:
+    oversized = [
+        pattern
+        for pattern in DAILY_PRACTICAL_BROAD_TITLE_PATTERNS
+        if re.search(pattern, item.title, flags=re.IGNORECASE)
+    ]
+    if oversized:
         fail(
-            "CS Core & backend term section is too long for daily reading: "
-            f"{len(section.body)} chars"
+            "Backend practical recharge topic is too broad: "
+            + ", ".join(oversized)
+        )
+
+
+def validate_daily_practical_practice(item: Item) -> None:
+    practice = bullet_field_block(item.body, "30분 실습")
+    if not practice:
+        fail("Backend practical recharge 30분 실습 field must not be empty.")
+    vague = [
+        pattern
+        for pattern in DAILY_PRACTICAL_VAGUE_PRACTICE_PATTERNS
+        if re.search(pattern, practice, flags=re.IGNORECASE)
+    ]
+    if vague:
+        fail(
+            "Backend practical recharge 30분 실습 is too vague: "
+            + ", ".join(vague)
+        )
+    if not matches_any_pattern(practice, DAILY_PRACTICAL_EVIDENCE_ACTION_PATTERNS):
+        fail("Backend practical recharge 30분 실습 must leave observable evidence.")
+
+
+def validation_tokens(text: str) -> set[str]:
+    tokens = re.findall(r"[A-Za-z0-9가-힣+#.]+", text.lower())
+    return {
+        token
+        for token in tokens
+        if len(token) >= 2
+        and not token.isdigit()
+        and token not in DAILY_PRACTICAL_ALIGNMENT_STOPWORDS
+    }
+
+
+def validate_daily_practical_alignment(item: Item) -> None:
+    practical_text = "\n".join(
+        [
+            item.title,
+            bullet_field_value(item.body, "실무 상황"),
+            bullet_field_value(item.body, "핵심 개념"),
+            bullet_field_value(item.body, "실패하면 생기는 문제"),
+            bullet_field_value(item.body, "30분 실습"),
+            bullet_field_value(item.body, "Kotlin/Spring Boot/DB 연결"),
+        ]
+    )
+    support_text = "\n".join(
+        [
+            bullet_field_value(item.body, "CS Core 연결"),
+            bullet_field_value(item.body, "오늘의 백엔드 용어"),
+        ]
+    )
+    if not support_text.strip():
+        fail("Backend practical recharge must include CS Core and backend term support text.")
+    shared_tokens = validation_tokens(practical_text) & validation_tokens(support_text)
+    if not shared_tokens:
+        warn(
+            "Backend practical recharge CS Core/term fields may be unrelated "
+            f"to the practical topic: {item.title}"
         )
 
 

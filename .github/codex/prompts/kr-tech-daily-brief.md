@@ -8,13 +8,12 @@
 
 목표는 매일 30~60분 동안 실제 백엔드 개발자로 성장할 수 있는 학습 재료와 바로 기술 블로그 초안으로 옮길 수 있는 작은 주제를 고르는 것이다.
 
-오늘의 브리핑은 다음 5개 섹션으로 구성한다.
+오늘의 브리핑은 다음 4개 섹션으로 구성한다.
 
 1. 오늘의 Spring Boot/JVM 학습
 2. 이번 주 PS 성장 루틴
 3. 오픈소스 기여 후보 또는 OSS 기여 준비 루틴
-4. 주니어 백엔드 실무지식
-5. 오늘의 CS Core & 백엔드 용어
+4. 오늘의 백엔드 실무 충전
 
 ## 핵심 원칙
 
@@ -42,7 +41,10 @@ workflow는 `{{KST_NOW}}`를 Asia/Seoul 기준시각으로 치환한다. 이 시
 - `reports/candidates/backend-term-daily.json`
 - `configs/audience-profile.json`
 
-단, 1번, 4번, 5번은 후보 JSON이 얕거나 실무 성장성이 낮으면 그대로 사용하지 않는다.
+단, 1번과 4번은 후보 JSON이 얕거나 실무 성장성이 낮으면 그대로 사용하지 않는다.
+4번은 `backend-practical-knowledge.json`을 중심 후보로 사용하고,
+`cs-core-daily-topic.json`과 `backend-term-daily.json`은 보조 후보로만 사용한다.
+세 후보의 주제가 서로 맞지 않으면 실무지식 후보를 우선하고, CS Core와 백엔드 용어는 오늘 실무 주제에 맞게 재해석한다.
 
 후보가 부실한 기준:
 
@@ -149,7 +151,7 @@ Spring/JVM 학습 후보는 다음 주제군에서 고른다.
 safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아래 형식의 OSS 기여 준비 루틴을 출력한다. 이 준비 루틴은 특정 issue를 잡으라고 말하면 안 되며, 기여자로 성장하는 데 필요한 실전 행동이어야 한다.
 `kr-oss-contribution-opportunities.json`에 safe 후보가 없으면 추정으로 issue를 만들지 않고 GitHub issue URL도 출력하지 않는다.
 
-## 4번 주니어 백엔드 실무지식 우선 소스
+## 4번 오늘의 백엔드 실무 충전 우선 소스
 
 다음 계열을 우선한다.
 
@@ -170,7 +172,7 @@ safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아
 - `testcontainers.com`
 - 신뢰 가능한 국내 엔지니어링 블로그: `toss.tech`, `techblog.woowahan.com`, `tech.kakao.com`, `d2.naver.com`, `engineering.linecorp.com/ko`
 
-실무지식은 다음 10개 축을 순환한다.
+실무 충전 주제는 다음 10개 축을 순환한다.
 
 1. HTTP/REST/API 설계
 2. Spring production basics
@@ -191,36 +193,54 @@ safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아
 - 같은 주제를 반복할 때는 난이도를 올린다.
 - Spring Boot 샘플, curl, Docker Compose, 간단한 DB 쿼리, Actuator metric 등으로 확인 가능한 실습을 우선한다.
 
-## 5번 CS Core & 백엔드 용어 작성 원칙
+## 4번 통합 카드 작성 원칙
 
-`cs-core-daily-topic.json`의 today 후보와 `backend-term-daily.json`의 today 후보를 primary 입력으로 사용한다.
+4번은 기존 `주니어 백엔드 실무지식`과 `오늘의 CS Core & 백엔드 용어`를 하나의 카드로 합친다.
+하루에 중심 주제는 하나만 고른다.
 
-CS Core는 다음 트랙을 균형 있게 순환하는 짧은 학습 슬롯이다.
+`backend-practical-knowledge.json`의 today 후보를 중심으로 삼는다.
+`cs-core-daily-topic.json`의 today 후보와 `backend-term-daily.json`의 today 후보는 보조 후보로만 사용한다.
+CS Core 후보나 용어 후보가 오늘 실무 주제와 맞지 않으면 그대로 쓰지 말고, 오늘 실무 주제를 이해하는 데 필요한 CS 배경과 용어로 재해석한다.
+
+좋은 중심 주제:
+
+- 느린 API 병목을 로그, DB 시간, 외부 호출 시간으로 분리하기
+- p95/p99 latency를 Actuator/Micrometer 지표로 확인하기
+- JPA N+1을 SQL 로그와 쿼리 수로 증거화하기
+- Redis cache hit rate가 높아도 장애가 나는 이유 확인하기
+- DB connection pool 고갈을 API timeout과 연결해서 보기
+- timeout 후 재시도되는 POST API에서 Idempotency-Key 검증하기
+- transaction isolation과 lost update를 작은 재고 차감 API로 재현하기
+- 외부 API connect timeout과 read timeout을 로그로 구분하기
+
+나쁜 중심 주제:
+
+- 백엔드 성능 최적화
+- REST API 알아보기
+- JVM 완전 정복
+- DB 인덱스 공부하기
+- MSA 관측성 이해하기
+- 보안 공부하기
+
+CS Core 연결은 별도 학습 주제가 아니라 오늘 주제를 이해하는 데 필요한 컴퓨터과학 배경 1문장이다.
+억지로 다른 트랙 후보를 붙이지 않는다.
+예를 들어 느린 API 병목 분리는 thread blocking, queueing, CPU vs I/O wait, percentiles 중 하나와 연결한다.
+DB index는 B-tree, disk I/O, page, selectivity 중 하나와 연결한다.
+timeout/retry는 TCP connection, socket, backoff, queueing 중 하나와 연결한다.
+
+오늘의 백엔드 용어는 오늘 주제에 직접 연결되는 용어 1개만 고른다.
+현재 `backend-term-daily.json`의 term이 오늘 주제와 맞지 않으면 그대로 쓰지 말고 오늘 주제에 맞는 용어를 우선한다.
+
+30분 실습은 읽기 과제가 아니라 직접 확인하는 행동이어야 한다.
+로그, 쿼리 수, request id, latency, 설정 값, 재현 조건처럼 증거로 남길 수 있는 결과를 포함한다.
+
+CS Core 후보는 다음 트랙을 균형 있게 순환하는 보조 입력이다.
 
 - computer-architecture
 - operating-system
 - network
 - database
 - jvm-runtime
-
-CS Core 작성 기준:
-
-- 개념 설명만 쓰지 않는다.
-- 10~20분 안에 확인할 수 있는 행동을 포함한다.
-- 완료 기준은 관찰 결과, 메모, 테스트, 설정 확인처럼 확인 가능한 형태로 쓴다.
-- Spring/JVM/API/DB/운영 상황과 연결한다.
-- 면접 질문은 암기 답안이 아니라 직접 확인한 내용으로 대답할 수 있게 둔다.
-
-백엔드 용어 작성 기준:
-
-- 사전식 정의로 끝내지 않는다.
-- 실무에서 언제 마주치는지, 오해하면 어떤 장애나 설계 문제가 생기는지 포함한다.
-- Spring 또는 API 설계와 연결한다.
-- 확인 질문은 오늘 코드나 설계를 점검할 수 있는 문장으로 쓴다.
-- 5번 섹션은 Discord에서 읽기 쉽게 짧게 유지한다.
-- 각 bullet 값은 1문장으로 제한한다.
-- CS Core와 백엔드 용어의 레퍼런스는 각각 최대 2개만 둔다.
-- 5번 섹션에는 추가 설명 문단이나 표를 넣지 않는다.
 
 ## 출력 구조
 
@@ -303,39 +323,23 @@ safe 후보가 여러 개 있으면 위 상세 후보는 1개만 출력하고, �
 - 다음에 issue를 찾을 때 쓸 GitHub 검색식:
 - 기여 전 매너:
 
-## 4. 주니어 백엔드 실무지식
+## 4. 오늘의 백엔드 실무 충전
 
 ### 주제: ...
 - 실무 상황:
+- 왜 지금 알아야 하는가:
 - 핵심 개념:
+- CS Core 연결:
+- 오늘의 백엔드 용어:
+- Kotlin/Spring Boot/DB 연결:
 - 실패하면 생기는 문제:
 - 30분 실습:
+- 증거로 남길 것:
 - 현업 체크 질문:
 - 레퍼런스:
-  - [표준/공식 문서](URL)
+  - [공식/표준 문서](URL)
   - [실무 참고](URL)
 - 검색 키워드:
-
-## 5. 오늘의 CS Core & 백엔드 용어
-
-### CS Core: ...
-- 트랙:
-- 왜 백엔드에 중요한가:
-- 핵심 개념:
-- 10~20분 확인:
-- 완료 기준:
-- 면접 연결 질문:
-- 레퍼런스:
-  - [공식/표준 문서](URL)
-
-### 백엔드 용어: ...
-- 한 줄 정의:
-- 실무 상황:
-- 오해하면 생기는 문제:
-- Spring/API 연결:
-- 확인 질문:
-- 레퍼런스:
-  - [공식/표준 문서](URL)
 ```
 
 ## 1번 Spring Boot/JVM 블로그 주제 작성 규칙
@@ -396,18 +400,27 @@ PAAR 구조는 다음 기준을 따른다.
 - `추천 점수`는 후보 JSON의 `score`와 `score_breakdown`을 근거로 쓴다.
 - `이슈에 남길 첫 댓글 초안`은 영어로 작성하고, 조심스럽게 계획 확인을 요청한다.
 
-## 4번 실무지식 작성 규칙
+## 4번 백엔드 실무 충전 작성 규칙
 
 - 4번은 책 목차가 아니라 현업에서 겪는 문제로 시작한다.
 - 제목은 반드시 실무 상황, 실패 모드, 30분 실습으로 좁힌다.
+- 4번은 하루에 중심 주제 1개만 출력한다.
+- 독립된 `## 5.` 섹션은 출력하지 않는다.
 - `backend-practical-knowledge.json`의 `today.situation`, `today.failure_mode`, `today.practice_steps`, `today.official_refs`를 우선 사용한다.
 - `backend-practical-knowledge.json`의 `today.title`이 넓으면 `situation`과 `failure_mode`를 이용해 더 좁힌 제목으로 출력한다.
+- `cs-core-daily-topic.json`과 `backend-term-daily.json`은 오늘 실무 주제를 보조하는 입력으로만 사용한다.
+- CS Core 후보나 백엔드 용어 후보가 실무지식 후보와 맞지 않으면, 실무지식 후보를 우선하고 CS/용어는 오늘 주제에 맞게 재해석한다.
+- `CS Core 연결`은 오늘 주제의 원리를 설명하는 1문장이어야 하며, 별도 학습 주제처럼 쓰지 않는다.
+- `오늘의 백엔드 용어`는 오늘 주제와 직접 연결되는 용어 1개만 쓴다.
+- `Kotlin/Spring Boot/DB 연결`은 Spring Boot 설정, Kotlin 코드, DB 쿼리/락/트랜잭션, 운영 로그/메트릭 중 하나와 연결한다.
+- `증거로 남길 것`에는 로그, 쿼리 수, latency, request id, 설정 값, 재현 조건처럼 검증 가능한 산출물을 적는다.
 - `practice_steps`가 있으면 30분 실습을 단일 추상 문장이 아니라 순서가 있는 확인 행동으로 요약한다.
 - `official_refs`를 우선 레퍼런스 링크로 사용하고, 허용 도메인 밖 링크를 새로 넣지 않는다.
 - 네이버 뉴스/검색/블로그, 국내 언론 기사, 포털 검색 결과는 4번 레퍼런스로 쓰지 않는다.
 - 단, `d2.naver.com`은 실무 기술 블로그로 허용한다.
 - WebSocket 연결 증가 시 세션과 브로커 확인, PUT/PATCH/POST 오용과 재시도 위험, p95는 괜찮은데 p99가 튀는 상황 분리, JPA N+1을 로그와 쿼리 수로 확인, Redis cache hit rate가 높아도 장애가 나는 이유, SDK timeout/retry/error type 문서화, rate limit을 단순 IP 기준으로 잡을 때의 문제, transaction isolation을 모를 때 결제/재고 API 버그처럼 실무 문제를 우선한다.
 - 처리량과 응답 시간, REST API란, WebSocket 개념, 성능 최적화처럼 너무 넓은 제목은 쓰지 않는다.
+- 공식 문서를 읽어본다, 개념을 정리한다, 예제를 찾아본다처럼 증거가 남지 않는 30분 실습은 쓰지 않는다.
 
 ## 최종 품질 체크
 
@@ -416,7 +429,9 @@ PAAR 구조는 다음 기준을 따른다.
 - 1번은 최신성 또는 고착화된 실무 가치가 있는가?
 - 1번은 30분 안에 손으로 확인 가능한가?
 - 3번은 안전한 issue가 아니면 준비 루틴으로 바뀌었는가?
-- 4번은 실무 상황, 실패 문제, 실습 흐름인가?
+- 4번은 실무 상황 하나를 중심으로 CS Core와 백엔드 용어가 연결되는가?
+- 4번의 30분 실습은 증거로 남길 결과가 있는가?
+- 독립된 5번 섹션이 남아 있지 않은가?
 - Naver/포털 검색 결과가 1번 또는 4번의 근거로 쓰이지 않았는가?
 - 각 섹션이 주니어 백엔드 성장에 직접 연결되는가?
 - Discord에서 너무 길지 않게 읽히는가?

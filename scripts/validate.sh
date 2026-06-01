@@ -216,7 +216,9 @@ if grep -Eq 'reports/candidates/kr-dev-ai-news.json|reports/candidates/kr-ai-tec
 fi
 grep -q 'reports/candidates/cs-core-daily-topic.json' .github/codex/prompts/kr-tech-daily-brief.md
 grep -q 'reports/candidates/backend-term-daily.json' .github/codex/prompts/kr-tech-daily-brief.md
-grep -q '오늘의 CS Core & 백엔드 용어' .github/codex/prompts/kr-tech-daily-brief.md
+grep -q '오늘의 백엔드 실무 충전' .github/codex/prompts/kr-tech-daily-brief.md
+grep -q 'CS Core 연결' .github/codex/prompts/kr-tech-daily-brief.md
+grep -q '오늘의 백엔드 용어' .github/codex/prompts/kr-tech-daily-brief.md
 grep -q '기술 블로그 제목 후보' .github/codex/prompts/kr-tech-daily-brief.md
 grep -q 'PAAR 글 목차' .github/codex/prompts/kr-tech-daily-brief.md
 grep -q '고정 커리큘럼' .github/codex/prompts/kr-tech-daily-brief.md
