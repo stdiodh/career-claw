@@ -303,8 +303,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          if git diff --quiet -- data/ps-progress.json; then
-            echo "No PS progress changes to commit."
+          if git diff --quiet -- data/ps-progress.json data/spring-jvm-blog-topic-progress.json; then
+            echo "No daily progress changes to commit."
             echo "ps_progress_changed=false" >> "${GITHUB_OUTPUT}"
             exit 0
           fi
@@ -314,8 +314,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add data/ps-progress.json
-          git commit -m "chore(ps): record daily Programmers assignment"
+          git add data/ps-progress.json data/spring-jvm-blog-topic-progress.json
+          git commit -m "chore(progress): record backend daily progress"
 
           for attempt in 1 2 3; do
             if git pull --rebase origin "${GITHUB_REF_NAME}" && git push; then

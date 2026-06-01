@@ -93,6 +93,8 @@ BACKEND_CORE_CS_CURRICULUM_PATH = Path("configs/backend-core-cs-curriculum.json"
 BACKEND_CORE_CS_OUTPUT_PATH = Path("reports/candidates/cs-core-daily-topic.json")
 BACKEND_TERMS_GLOSSARY_PATH = Path("configs/backend-terms-glossary.json")
 BACKEND_TERM_OUTPUT_PATH = Path("reports/candidates/backend-term-daily.json")
+SPRING_JVM_BLOG_TOPIC_PROGRESS_PATH = Path("data/spring-jvm-blog-topic-progress.json")
+SPRING_JVM_BLOG_TOPIC_RECENT_DAYS = 7
 CS_CORE_REQUIRED_TRACKS = {
     "computer-architecture",
     "operating-system",
@@ -551,6 +553,243 @@ WARNINGS: list[str] = []
 OSS_GATE_EXCLUSION_COUNTS: Counter[str] = Counter()
 OSS_REPOSITORY_DIAGNOSTICS: list[dict[str, object]] = []
 OSS_EXCLUDED_CANDIDATE_PREVIEW: list[dict[str, object]] = []
+
+SPRING_JVM_BLOG_TOPIC_REQUIRED_FIELDS = [
+    "title",
+    "track",
+    "level",
+    "one_line_question",
+    "problem_situation",
+    "official_doc_keywords",
+    "learning_steps_30m",
+    "practice_steps_30m",
+    "blog_title_candidates",
+    "paar_outline",
+    "done_criteria",
+    "next_topic",
+]
+SPRING_JVM_BLOG_TOPIC_POOL: list[dict[str, object]] = [
+    {
+        "title": "조회 API에도 `@Transactional(readOnly = true)`를 붙이는 이유",
+        "track": "Transaction/JPA/DB",
+        "level": "light",
+        "one_line_question": "조회만 하는 Service 메서드에도 트랜잭션을 명시해야 할까?",
+        "problem_situation": (
+            "조회 API에서 Entity를 수정하지 않는다고 생각했지만 같은 영속성 컨텍스트 안에서 "
+            "값이 바뀌면 flush와 dirty checking 동작을 오해할 수 있다."
+        ),
+        "core_concept": (
+            "`readOnly = true`는 조회 전용 트랜잭션 의도를 드러내고 JPA provider나 "
+            "DB 드라이버에 최적화 힌트로 전달될 수 있다."
+        ),
+        "official_doc_keywords": [
+            "Spring transaction read-only attribute",
+            "JPA flush",
+            "Hibernate dirty checking",
+        ],
+        "learning_steps_30m": [
+            "Spring Framework transaction 문서에서 read-only 속성 설명을 확인한다.",
+            "Hibernate dirty checking과 flush가 언제 동작하는지 공식 문서에서 확인한다.",
+        ],
+        "practice_steps_30m": [
+            "조회 Service에 `@Transactional`과 `@Transactional(readOnly = true)`를 각각 적용한다.",
+            "SQL 로그를 켜고 조회 중 Entity 값을 변경했을 때 flush/update 여부를 비교한다.",
+        ],
+        "blog_title_candidates": [
+            "조회 API에도 `@Transactional(readOnly = true)`를 붙이는 이유",
+            "readOnly 트랜잭션은 성능 옵션일까, 의도 표현일까?",
+            "Spring Boot 조회 로직에서 readOnly 트랜잭션 확인하기",
+        ],
+        "paar_outline": {
+            "problem": "조회 API인데도 트랜잭션을 붙여야 하는지 헷갈리는 상황을 제시한다.",
+            "analyze": "Spring transaction의 readOnly 의미와 JPA flush/dirty checking 흐름을 비교한다.",
+            "action": "간단한 Service 예제로 기본 트랜잭션과 readOnly 트랜잭션을 비교한다.",
+            "result": "readOnly는 만능 성능 옵션이 아니라 조회 의도 표현과 최적화 힌트로 정리한다.",
+        },
+        "done_criteria": [
+            "readOnly 트랜잭션이 해결하려는 문제를 한 문장으로 설명한다.",
+            "SQL 로그 또는 테스트 결과를 블로그 초안에 기록한다.",
+        ],
+        "next_topic": "트랜잭션 전파 옵션 중 `REQUIRED`와 `REQUIRES_NEW` 차이를 작은 예제로 확인한다.",
+        "official_refs": [
+            {
+                "title": "Spring Framework Transaction Management",
+                "url": "https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html",
+                "source_type": "official",
+            },
+            {
+                "title": "Hibernate User Guide - Dirty Checking",
+                "url": "https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#pc-dirtychecking",
+                "source_type": "official",
+            },
+        ],
+    },
+    {
+        "title": "Actuator health endpoint를 운영에서 그대로 노출하면 왜 위험할까?",
+        "track": "Observability/Actuator/Micrometer/OpenTelemetry",
+        "level": "light",
+        "one_line_question": "운영 health endpoint는 누구에게 어디까지 보여줘야 할까?",
+        "problem_situation": (
+            "health endpoint가 외부에 과하게 노출되면 DB, Redis, disk 같은 내부 상태가 "
+            "장애 단서나 공격 표면으로 드러날 수 있다."
+        ),
+        "core_concept": (
+            "Spring Boot Actuator health group과 show-details 설정은 관측성과 정보 노출 "
+            "위험 사이의 균형을 정하는 운영 설정이다."
+        ),
+        "official_doc_keywords": [
+            "Spring Boot Actuator health endpoint",
+            "management.endpoint.health.show-details",
+            "health groups",
+        ],
+        "learning_steps_30m": [
+            "Spring Boot Actuator 문서에서 health endpoint와 show-details 설정을 확인한다.",
+            "readiness/liveness health group이 어떤 운영 상황에 쓰이는지 확인한다.",
+        ],
+        "practice_steps_30m": [
+            "로컬 Spring Boot 앱에서 Actuator health endpoint를 켜고 기본 응답을 기록한다.",
+            "`show-details` 설정을 바꾼 뒤 외부에 노출되는 정보 차이를 curl로 비교한다.",
+        ],
+        "blog_title_candidates": [
+            "Actuator health endpoint를 운영에서 그대로 노출하면 왜 위험할까?",
+            "Spring Boot health endpoint에서 show-details를 확인하는 이유",
+            "운영 health check는 어디까지 공개해야 할까?",
+        ],
+        "paar_outline": {
+            "problem": "health endpoint를 외부에 그대로 열었을 때 내부 상태가 노출되는 상황을 제시한다.",
+            "analyze": "Actuator health endpoint와 show-details 설정의 의미를 공식 문서 기준으로 정리한다.",
+            "action": "curl로 설정 전후 응답을 비교하고 노출 정보 차이를 기록한다.",
+            "result": "운영 health endpoint는 확인 대상과 공개 범위를 분리해야 한다는 판단 기준을 정리한다.",
+        },
+        "done_criteria": [
+            "show-details 설정별 health 응답 차이를 기록한다.",
+            "외부 공개 health와 내부 관측 health를 분리해야 하는 이유를 설명한다.",
+        ],
+        "next_topic": "다음에는 readiness와 liveness probe를 Kubernetes 배포 상황에 연결해 확인한다.",
+        "official_refs": [
+            {
+                "title": "Spring Boot Actuator Endpoints",
+                "url": "https://docs.spring.io/spring-boot/reference/actuator/endpoints.html",
+                "source_type": "official",
+            },
+            {
+                "title": "Spring Boot Actuator Endpoint Security",
+                "url": "https://docs.spring.io/spring-boot/reference/actuator/endpoints.html#actuator.endpoints.security",
+                "source_type": "official",
+            },
+        ],
+    },
+    {
+        "title": "Kotlin null-safety는 Spring MVC 요청 값에서 어디까지 지켜질까?",
+        "track": "Kotlin + Spring",
+        "level": "light",
+        "one_line_question": "Kotlin non-null 타입이면 요청 값 누락을 항상 막아줄까?",
+        "problem_situation": (
+            "Controller DTO의 Kotlin non-null 타입만 믿으면 Jackson 역직렬화, Bean Validation, "
+            "기본값 처리 경계에서 예상과 다른 400/500 응답을 만들 수 있다."
+        ),
+        "core_concept": (
+            "Kotlin null-safety는 컴파일 타임 타입 시스템이지만 HTTP 요청은 런타임 데이터이므로 "
+            "Spring MVC binding과 validation 경계에서 다시 확인해야 한다."
+        ),
+        "official_doc_keywords": [
+            "Spring Kotlin null-safety",
+            "Spring MVC validation",
+            "Kotlin null safety",
+        ],
+        "learning_steps_30m": [
+            "Spring Framework Kotlin 지원 문서에서 null-safety 관련 설명을 확인한다.",
+            "Kotlin 공식 문서에서 nullable/non-null 타입과 런타임 경계를 확인한다.",
+        ],
+        "practice_steps_30m": [
+            "non-null 필드가 있는 request DTO를 만들고 필드 누락 요청의 응답 상태를 기록한다.",
+            "`@field:NotBlank` 추가 전후의 validation 응답 차이를 MockMvc 테스트로 비교한다.",
+        ],
+        "blog_title_candidates": [
+            "Kotlin null-safety는 Spring MVC 요청 값에서 어디까지 지켜질까?",
+            "Spring Boot 요청 DTO에서 non-null 타입만 믿으면 안 되는 이유",
+            "Kotlin DTO와 Bean Validation 경계를 작은 테스트로 확인하기",
+        ],
+        "paar_outline": {
+            "problem": "Kotlin non-null 타입만으로 요청 검증이 끝난다고 오해하는 상황을 제시한다.",
+            "analyze": "Kotlin 타입 시스템과 Spring MVC binding/validation의 책임 경계를 비교한다.",
+            "action": "DTO 누락 요청과 Bean Validation 추가 전후 응답을 테스트로 비교한다.",
+            "result": "요청 데이터 검증은 Kotlin 타입과 validation을 함께 설계해야 한다고 정리한다.",
+        },
+        "done_criteria": [
+            "누락 요청의 응답 상태와 예외를 테스트 결과로 기록한다.",
+            "non-null 타입과 Bean Validation의 역할 차이를 설명한다.",
+        ],
+        "next_topic": "다음에는 Jackson Kotlin module과 default parameter 처리 차이를 확인한다.",
+        "official_refs": [
+            {
+                "title": "Spring Framework Kotlin Support",
+                "url": "https://docs.spring.io/spring-framework/reference/languages/kotlin.html",
+                "source_type": "official",
+            },
+            {
+                "title": "Kotlin Null Safety",
+                "url": "https://kotlinlang.org/docs/null-safety.html",
+                "source_type": "official",
+            },
+        ],
+    },
+    {
+        "title": "Testcontainers로 Repository 테스트의 DB 차이를 어떻게 줄일까?",
+        "track": "Testing",
+        "level": "light",
+        "one_line_question": "Repository 테스트는 H2로 충분할까, 실제 DB 컨테이너가 필요할까?",
+        "problem_situation": (
+            "H2로 통과한 Repository 테스트가 PostgreSQL의 SQL 문법, 인덱스, transaction 동작 차이로 "
+            "운영 DB에서 실패할 수 있다."
+        ),
+        "core_concept": (
+            "Testcontainers는 테스트 시 실제 DB와 가까운 컨테이너를 띄워 데이터 접근 계층의 "
+            "환경 차이를 줄이는 도구다."
+        ),
+        "official_doc_keywords": [
+            "Spring Boot Testcontainers",
+            "service connections",
+            "Testcontainers PostgreSQL module",
+        ],
+        "learning_steps_30m": [
+            "Spring Boot Testcontainers 문서에서 service connection 설정을 확인한다.",
+            "Testcontainers PostgreSQL module 문서에서 컨테이너 생성 방식을 확인한다.",
+        ],
+        "practice_steps_30m": [
+            "Repository 테스트 하나를 PostgreSQLContainer 기반으로 실행한다.",
+            "H2와 PostgreSQL에서 같은 쿼리/DDL이 어떻게 다르게 동작하는지 실패 또는 로그를 비교한다.",
+        ],
+        "blog_title_candidates": [
+            "Testcontainers로 Repository 테스트의 DB 차이를 어떻게 줄일까?",
+            "H2로 통과한 Repository 테스트를 PostgreSQL 컨테이너로 다시 확인하기",
+            "Spring Boot Repository 테스트에 Testcontainers를 붙여보는 이유",
+        ],
+        "paar_outline": {
+            "problem": "H2 테스트는 통과했지만 실제 DB에서 다르게 동작하는 상황을 제시한다.",
+            "analyze": "in-memory DB 테스트와 실제 DB 컨테이너 테스트의 장단점을 비교한다.",
+            "action": "Repository 테스트를 PostgreSQLContainer로 실행하고 결과 차이를 기록한다.",
+            "result": "DB 호환성이 중요한 테스트는 실제 DB에 가까운 환경으로 검증해야 한다고 정리한다.",
+        },
+        "done_criteria": [
+            "Repository 테스트가 컨테이너 DB로 실행되는 로그를 남긴다.",
+            "H2와 PostgreSQL 테스트의 차이 또는 선택 기준을 정리한다.",
+        ],
+        "next_topic": "다음에는 Flyway/Liquibase migration을 Testcontainers 테스트와 함께 확인한다.",
+        "official_refs": [
+            {
+                "title": "Spring Boot Testcontainers",
+                "url": "https://docs.spring.io/spring-boot/reference/testing/testcontainers.html",
+                "source_type": "official",
+            },
+            {
+                "title": "Testcontainers PostgreSQL Module",
+                "url": "https://testcontainers.com/modules/postgresql/",
+                "source_type": "official",
+            },
+        ],
+    },
+]
 
 
 def record_warning(message: str) -> None:
@@ -5409,6 +5648,198 @@ def oss_source_error_type_counts() -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
+def empty_spring_jvm_blog_topic_progress() -> dict[str, object]:
+    return {
+        "version": 1,
+        "updated_at": "",
+        "last_selected": {},
+        "recent": [],
+    }
+
+
+def load_spring_jvm_blog_topic_progress(
+    path: Path = SPRING_JVM_BLOG_TOPIC_PROGRESS_PATH,
+) -> dict[str, object]:
+    if not path.exists():
+        return empty_spring_jvm_blog_topic_progress()
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        record_warning(f"invalid Spring/JVM blog topic progress file: {path}")
+        return empty_spring_jvm_blog_topic_progress()
+    if not isinstance(payload, dict):
+        record_warning(f"Spring/JVM blog topic progress root must be an object: {path}")
+        return empty_spring_jvm_blog_topic_progress()
+    return payload
+
+
+def recent_spring_jvm_blog_topics(
+    progress: dict[str, object],
+    current_time: datetime,
+) -> list[dict[str, str]]:
+    raw_recent = progress.get("recent", [])
+    if not isinstance(raw_recent, list):
+        return []
+    cutoff_date = current_time.date() - timedelta(days=SPRING_JVM_BLOG_TOPIC_RECENT_DAYS - 1)
+    recent: list[dict[str, str]] = []
+    for raw_item in raw_recent:
+        if not isinstance(raw_item, dict):
+            continue
+        date_text = str(raw_item.get("date", "")).strip()
+        try:
+            selected_date = datetime.strptime(date_text, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if selected_date < cutoff_date:
+            continue
+        title = str(raw_item.get("title", "")).strip()
+        track = str(raw_item.get("track", "")).strip()
+        if title or track:
+            recent.append({"date": date_text, "title": title, "track": track})
+    return recent
+
+
+def spring_jvm_blog_topic_missing_fields(topic: dict[str, object]) -> list[str]:
+    missing = [
+        field
+        for field in SPRING_JVM_BLOG_TOPIC_REQUIRED_FIELDS
+        if not topic.get(field)
+    ]
+    if len(topic.get("official_doc_keywords", [])) < 2:
+        missing.append("official_doc_keywords>=2")
+    if len(topic.get("learning_steps_30m", [])) < 2:
+        missing.append("learning_steps_30m>=2")
+    if len(topic.get("practice_steps_30m", [])) < 2:
+        missing.append("practice_steps_30m>=2")
+    if len(topic.get("blog_title_candidates", [])) != 3:
+        missing.append("blog_title_candidates=3")
+    outline = topic.get("paar_outline", {})
+    if not isinstance(outline, dict):
+        missing.append("paar_outline")
+    else:
+        for field in ("problem", "analyze", "action", "result"):
+            if not outline.get(field):
+                missing.append(f"paar_outline.{field}")
+    return sorted(set(missing))
+
+
+def ordered_spring_jvm_blog_topic_pool(current_time: datetime) -> list[dict[str, object]]:
+    pool = SPRING_JVM_BLOG_TOPIC_POOL
+    if not pool:
+        return []
+    start = int(current_time.strftime("%Y%m%d")) % len(pool)
+    return pool[start:] + pool[:start]
+
+
+def select_spring_jvm_blog_topic(
+    current_time: datetime,
+) -> tuple[dict[str, object], dict[str, object]]:
+    progress = load_spring_jvm_blog_topic_progress()
+    recent = recent_spring_jvm_blog_topics(progress, current_time)
+    recent_titles = {item["title"] for item in recent if item.get("title")}
+    recent_tracks = {item["track"] for item in recent if item.get("track")}
+    fallback_reasons: list[str] = []
+    ordered_pool = ordered_spring_jvm_blog_topic_pool(current_time)
+    eligible = [
+        topic
+        for topic in ordered_pool
+        if str(topic.get("title", "")).strip() not in recent_titles
+        and str(topic.get("track", "")).strip() not in recent_tracks
+        and not spring_jvm_blog_topic_missing_fields(topic)
+    ]
+    if eligible:
+        selected = dict(eligible[0])
+        selection_reason = "selected_non_recent_track_and_title"
+    else:
+        complete_topics = [
+            topic
+            for topic in ordered_pool
+            if not spring_jvm_blog_topic_missing_fields(topic)
+        ]
+        if complete_topics:
+            selected = dict(complete_topics[0])
+            selection_reason = "fallback_reused_recent_track_or_title"
+            fallback_reasons.append("recent-window-exhausted")
+        elif ordered_pool:
+            selected = dict(ordered_pool[0])
+            selection_reason = "fallback_missing_required_fields"
+            missing = spring_jvm_blog_topic_missing_fields(selected)
+            fallback_reasons.append("missing-required-fields:" + ",".join(missing))
+        else:
+            selected = {}
+            selection_reason = "fallback_no_topic_pool"
+            fallback_reasons.append("topic-pool-empty")
+
+    diagnostics = {
+        "selection_reason": selection_reason,
+        "fallback_used": bool(fallback_reasons),
+        "fallback_reasons": fallback_reasons,
+        "recent_window_days": SPRING_JVM_BLOG_TOPIC_RECENT_DAYS,
+        "recent_titles": sorted(recent_titles),
+        "recent_tracks": sorted(recent_tracks),
+        "candidate_pool_size": len(ordered_pool),
+        "selected_missing_fields": spring_jvm_blog_topic_missing_fields(selected)
+        if selected
+        else SPRING_JVM_BLOG_TOPIC_REQUIRED_FIELDS,
+    }
+    return selected, diagnostics
+
+
+def write_spring_jvm_blog_topic_progress(
+    selected: dict[str, object],
+    generated_at: datetime,
+    path: Path = SPRING_JVM_BLOG_TOPIC_PROGRESS_PATH,
+) -> None:
+    if not selected:
+        return
+    progress = load_spring_jvm_blog_topic_progress(path)
+    recent = recent_spring_jvm_blog_topics(progress, generated_at)
+    today = generated_at.strftime("%Y-%m-%d")
+    entry = {
+        "date": today,
+        "title": str(selected.get("title", "")).strip(),
+        "track": str(selected.get("track", "")).strip(),
+    }
+    recent = [
+        item
+        for item in recent
+        if not (item.get("date") == today and item.get("title") == entry["title"])
+    ]
+    recent.append(entry)
+    payload = {
+        "version": 1,
+        "updated_at": format_kst(generated_at),
+        "last_selected": entry,
+        "recent": recent[-SPRING_JVM_BLOG_TOPIC_RECENT_DAYS:],
+    }
+    write_json_file(path, payload)
+
+
+def build_spring_jvm_blog_topic_payload(
+    mode: str,
+    generated_at: datetime,
+    source_candidates: list[Candidate] | list[OssIssueCandidate],
+) -> dict[str, object]:
+    today, diagnostics = select_spring_jvm_blog_topic(generated_at)
+    source_items = [
+        serialize_candidate(candidate)
+        for candidate in source_candidates
+        if isinstance(candidate, Candidate)
+    ]
+    diagnostics["source_candidate_count"] = len(source_items)
+    items = [today] if today else []
+    return {
+        "schema_version": 2,
+        "category": SPRING_JVM_STUDY_CATEGORY_ID,
+        "generated_at": format_kst(generated_at),
+        **common_candidate_metadata(mode, generated_at, items),
+        "today": today,
+        "items": items,
+        "source_items": source_items,
+        "diagnostics": diagnostics,
+    }
+
+
 def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, object]:
     item = {
         "title": candidate.title,
@@ -5981,6 +6412,11 @@ def write_category_output(
         radar_payload = write_weekly_career_site_radar_payload(generated_at)
         payload = build_disabled_weekly_career_compat_payload(category_id, generated_at)
         WEEKLY_CAREER_LAST_PAYLOAD = payload
+    elif category_id == SPRING_JVM_STUDY_CATEGORY_ID:
+        payload = build_spring_jvm_blog_topic_payload(mode, generated_at, candidates)
+        today = payload.get("today", {})
+        if update_cache and isinstance(today, dict):
+            write_spring_jvm_blog_topic_progress(today, generated_at)
     elif category_id == OSS_CATEGORY_ID:
         items = [
             serialize_oss_issue_candidate(candidate)
@@ -6039,6 +6475,11 @@ def write_category_output(
             f"{WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH}"
         )
         print(f"Wrote disabled weekly career candidate payload: {output_path}")
+        return
+    if category_id == SPRING_JVM_STUDY_CATEGORY_ID:
+        today = payload.get("today", {})
+        title = str(today.get("title", "")) if isinstance(today, dict) else ""
+        print(f"Wrote Spring/JVM blog topic candidate ({title}): {output_path}")
         return
     print(f"Wrote {len(candidates)} candidate(s): {output_path}")
 

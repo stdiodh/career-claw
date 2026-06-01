@@ -87,6 +87,7 @@ grep -q 'reports/ops/\*.md' .github/workflows/kr-tech-daily.yml
 grep -q 'retention-days: 14' .github/workflows/kr-tech-daily.yml
 grep -q 'Commit Programmers assignment progress' .github/workflows/kr-tech-daily.yml
 grep -q 'data/ps-progress.json' .github/workflows/kr-tech-daily.yml
+grep -q 'data/spring-jvm-blog-topic-progress.json' .github/workflows/kr-tech-daily.yml
 grep -q 'git push' .github/workflows/kr-tech-daily.yml
 grep -q 'commit-ps-progress' .github/workflows/kr-tech-daily.yml
 grep -q 'ps_progress_commit_attempted' .github/workflows/kr-tech-daily.yml
@@ -261,6 +262,7 @@ required_files=(
   "configs/programmers-ps-curriculum.json"
   "data/oss-progress.json"
   "data/ps-progress.json"
+  "data/spring-jvm-blog-topic-progress.json"
   "docs/daily-growth-ops.md"
   "docs/daily-spring-jvm-blog-topic-policy.md"
   "docs/oss-candidate-policy.md"
@@ -279,6 +281,12 @@ required_files=(
   "scripts/validate-career-feed-brief.py"
   "scripts/write-news-daily-run-summary.py"
   "tests/fixtures/kr-tech-daily-valid.md"
+  "tests/fixtures/kr-tech-daily-invalid-blog-title-count.md"
+  "tests/fixtures/kr-tech-daily-invalid-paar-action-missing.md"
+  "tests/fixtures/kr-tech-daily-invalid-fixed-plan.md"
+  "tests/fixtures/kr-tech-daily-invalid-oversized-title.md"
+  "tests/fixtures/kr-tech-daily-invalid-reference-domain.md"
+  "tests/fixtures/kr-tech-daily-invalid-extension-field.md"
   "tests/fixtures/kr-tech-news-daily-valid.md"
   "tests/fixtures/kr-tech-news-daily-valid-sparse.md"
   "tests/fixtures/kr-tech-news-daily-valid-empty.md"
@@ -457,11 +465,20 @@ news_url = "https://news.naver.com/article/123"
 search_url = "https://search.naver.com/search.naver?query=spring"
 blog_url = "https://blog.naver.com/example/123"
 media_url = "https://www.etnews.com/20260529000123"
+aws_docs_url = "https://docs.aws.amazon.com/elasticbeanstalk/latest/dg/create_deploy_Java.html"
+aws_marketing_url = "https://aws.amazon.com/architecture/"
+kotlin_docs_url = "https://kotlinlang.org/docs/null-safety.html"
 
 if validator.blocked_learning_domain(d2_url) != "":
     raise SystemExit("d2.naver.com must not be blocked for practical knowledge references")
 if not validator.is_allowed_url_prefix(d2_url, validator.PRACTICAL_ALLOWED_URL_PREFIXES):
     raise SystemExit("d2.naver.com must be allowed for practical knowledge references")
+if not validator.is_allowed_url_prefix(aws_docs_url, validator.SPRING_OFFICIAL_ALLOWED_URL_PREFIXES):
+    raise SystemExit("docs.aws.amazon.com must be allowed for Spring/JVM learning references")
+if validator.is_allowed_url_prefix(aws_marketing_url, validator.SPRING_ALLOWED_URL_PREFIXES):
+    raise SystemExit("aws.amazon.com must not be broadly allowed for Spring/JVM learning references")
+if not validator.is_allowed_url_prefix(kotlin_docs_url, validator.SPRING_OFFICIAL_ALLOWED_URL_PREFIXES):
+    raise SystemExit("Kotlin official docs must be allowed for Spring/JVM learning references")
 if not validator.blocked_learning_domain(news_url):
     raise SystemExit("news.naver.com must be blocked for learning references")
 if not validator.blocked_learning_domain(search_url):
@@ -648,12 +665,53 @@ if missing:
     raise SystemExit("daily-backend dry-run did not create candidate file(s): " + ", ".join(missing))
 
 for path in [
+    Path("reports/candidates/spring-study-topic.json"),
     Path("reports/candidates/cs-core-daily-topic.json"),
     Path("reports/candidates/backend-term-daily.json"),
 ]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if payload.get("candidate_count") != 1 or not isinstance(payload.get("today"), dict):
         raise SystemExit(f"{path} must contain candidate_count=1 and a today object")
+
+spring_payload = json.loads(Path("reports/candidates/spring-study-topic.json").read_text(encoding="utf-8"))
+spring_today = spring_payload.get("today", {})
+if not isinstance(spring_today, dict):
+    raise SystemExit("spring-study-topic.json must include a today object")
+required_spring_fields = {
+    "track",
+    "level",
+    "one_line_question",
+    "problem_situation",
+    "official_doc_keywords",
+    "learning_steps_30m",
+    "practice_steps_30m",
+    "blog_title_candidates",
+    "paar_outline",
+    "done_criteria",
+    "next_topic",
+}
+missing_spring_fields = sorted(
+    field for field in required_spring_fields if not spring_today.get(field)
+)
+if missing_spring_fields:
+    raise SystemExit(
+        "spring-study-topic.json today misses required field(s): "
+        + ", ".join(missing_spring_fields)
+    )
+if len(spring_today.get("learning_steps_30m", [])) < 2:
+    raise SystemExit("spring-study-topic.json must include at least 2 learning steps")
+if len(spring_today.get("practice_steps_30m", [])) < 2:
+    raise SystemExit("spring-study-topic.json must include at least 2 practice steps")
+if len(spring_today.get("blog_title_candidates", [])) != 3:
+    raise SystemExit("spring-study-topic.json must include exactly 3 blog title candidates")
+outline = spring_today.get("paar_outline", {})
+if not isinstance(outline, dict) or not {"problem", "analyze", "action", "result"} <= set(outline):
+    raise SystemExit("spring-study-topic.json PAAR outline is incomplete")
+spring_diagnostics = spring_payload.get("diagnostics", {})
+if not isinstance(spring_diagnostics, dict):
+    raise SystemExit("spring-study-topic.json must include diagnostics")
+if "fallback_used" not in spring_diagnostics or "fallback_reasons" not in spring_diagnostics:
+    raise SystemExit("spring-study-topic.json diagnostics must include fallback state")
 
 oss_payload = json.loads(Path("reports/candidates/kr-oss-contribution-opportunities.json").read_text(encoding="utf-8"))
 if oss_payload.get("verification_policy", "").find("safe_to_recommend=true") == -1:
@@ -966,6 +1024,12 @@ PY
 
 echo "==> Checking fixtures"
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-valid.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-invalid-blog-title-count.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-invalid-paar-action-missing.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-invalid-fixed-plan.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-invalid-oversized-title.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-invalid-reference-domain.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
+expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-daily-invalid-extension-field.md --type daily-tech --candidates-dir tests/fixtures/candidates-empty
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-sparse.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-empty.md --type daily-news

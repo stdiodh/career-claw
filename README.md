@@ -48,6 +48,8 @@ Daily 수집 소스 정책:
 - 1번 `오늘의 Spring Boot/JVM 학습`은 매일 하나의 작은 Kotlin/Spring Boot/JVM/DB/Cloud/운영 개념을 고릅니다.
 - 이 섹션은 단순 링크 추천이 아니라 기술 블로그 작성을 위한 문제 상황, 30분 학습, 30분 실습, PAAR 글 목차를 함께 제공합니다.
 - 고정된 2주 커리큘럼이 아니라 KST 기준 매일 후보와 공식 레퍼런스를 바탕으로 동적으로 생성합니다.
+- `spring-study-topic.json`은 `today` 객체에 track, level, 30분 학습/실습 단계, 제목 후보, PAAR 목차, 완료 기준, 다음 주제를 포함합니다.
+- `data/spring-jvm-blog-topic-progress.json`으로 최근 7일 내 같은 track/title 반복을 피합니다.
 - `backend-practical-knowledge.json`, `cs-core-daily-topic.json`, `backend-term-daily.json`은 계속 생성하지만 최종 출력은 하나의 실무 충전 카드로 합칩니다.
 - 오늘의 백엔드 실무 충전은 실무 상황 하나를 중심으로 CS Core와 백엔드 용어를 연결해 30분 안에 확인 가능한 작은 실습으로 마무리합니다.
 - 실무지식 curriculum은 `situation`, `failure_mode`, `practice_steps`, `official_refs`를 포함해 브리핑 모델이 실패 상황과 30분 실습을 데이터에서 직접 읽도록 합니다.

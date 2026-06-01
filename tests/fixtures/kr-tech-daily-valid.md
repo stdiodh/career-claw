@@ -11,8 +11,12 @@
 - 실제 개발 문제: 조회 API에서 Entity를 수정하지 않는다고 생각했지만 같은 영속성 컨텍스트 안에서 값이 바뀌면 변경 감지와 flush 동작을 오해할 수 있습니다.
 - 핵심 개념: `readOnly = true`는 조회 전용 트랜잭션 의도를 드러내고 JPA provider나 DB 드라이버에 최적화 힌트로 전달될 수 있으며, 오늘은 성능 마법 버튼이 아니라 변경 감지 흐름을 확인하는 출발점으로 봅니다.
 - 공식 문서 확인 포인트: Spring transaction read-only attribute, JPA flush, Hibernate dirty checking
-- 30분 학습: Spring Framework transaction 문서에서 read-only 속성 설명을 확인하고, JPA flush와 dirty checking 흐름을 3문장으로 정리합니다.
-- 30분 실습: 간단한 조회 Service에 `@Transactional`과 `@Transactional(readOnly = true)`를 각각 적용하고 SQL 로그로 flush/update 여부를 비교합니다.
+- 30분 학습:
+  - Spring Framework transaction 문서에서 read-only 속성 설명을 확인합니다.
+  - JPA flush와 Hibernate dirty checking 흐름을 3문장으로 정리합니다.
+- 30분 실습:
+  - 간단한 조회 Service에 `@Transactional`과 `@Transactional(readOnly = true)`를 각각 적용합니다.
+  - SQL 로그로 flush/update 여부를 비교합니다.
 - 기술 블로그 제목 후보:
   1. 조회 API에도 `@Transactional(readOnly = true)`를 붙이는 이유
   2. readOnly 트랜잭션은 성능 옵션일까, 의도 표현일까?

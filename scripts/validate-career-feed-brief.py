@@ -132,8 +132,8 @@ DAILY_STUDY_FIELDS = [
 ]
 DAILY_STUDY_PAAR_FIELDS = ["Problem", "Analyze", "Action", "Result"]
 DAILY_STUDY_FIXED_PLAN_PATTERNS = [
-    r"\bDay\s*1\b",
-    r"\bDay\s*2\b",
+    r"Day\s*1",
+    r"Day\s*2",
     r"2\s*주",
     r"14\s*일",
     r"커리큘럼\s*전체",
@@ -144,6 +144,7 @@ DAILY_STUDY_OVERSIZED_TITLE_PATTERNS = [
     r"전체\s*구조",
     r"마스터하기",
 ]
+DAILY_STUDY_ACTION_FIELDS = ["30분 학습", "30분 실습"]
 DAILY_PS_FIELDS = [
     "이번 주 주제",
     "이번 주 목표",
@@ -614,7 +615,7 @@ OSS_CONTRIBUTION_TYPE_ALIASES = {
     "bug-repro": ["bug-repro", "bug repro", "재현"],
     "sample": ["sample", "샘플", "예제"],
 }
-SPRING_ALLOWED_URL_PREFIXES = [
+SPRING_OFFICIAL_ALLOWED_URL_PREFIXES = [
     "spring.io",
     "docs.spring.io",
     "docs.jboss.org/hibernate",
@@ -625,7 +626,7 @@ SPRING_ALLOWED_URL_PREFIXES = [
     "blogs.oracle.com",
     "opentelemetry.io",
     "micrometer.io",
-    "kotlinlang.org",
+    "kotlinlang.org/docs",
     "docs.gradle.org",
     "testcontainers.com",
     "docs.docker.com",
@@ -633,15 +634,20 @@ SPRING_ALLOWED_URL_PREFIXES = [
     "postgresql.org",
     "dev.mysql.com",
     "docs.aws.amazon.com",
-    "aws.amazon.com",
     "cloud.google.com",
     "learn.microsoft.com",
+]
+SPRING_ENGINEERING_BLOG_ALLOWED_URL_PREFIXES = [
     "toss.tech",
     "techblog.woowahan.com",
     "tech.kakao.com",
     "d2.naver.com",
     "engineering.linecorp.com",
 ]
+SPRING_ALLOWED_URL_PREFIXES = (
+    SPRING_OFFICIAL_ALLOWED_URL_PREFIXES
+    + SPRING_ENGINEERING_BLOG_ALLOWED_URL_PREFIXES
+)
 PRACTICAL_ALLOWED_URL_PREFIXES = [
     "datatracker.ietf.org",
     "developer.mozilla.org",
@@ -1012,6 +1018,16 @@ def bullet_field_block(text: str, field: str) -> str:
     return ""
 
 
+def count_nested_action_items(block: str) -> int:
+    return len(
+        re.findall(
+            r"^\s*(?:-\s+|\d+\.\s+)\S",
+            block,
+            flags=re.MULTILINE,
+        )
+    )
+
+
 def markdown_link_urls(text: str) -> list[str]:
     return re.findall(r"\[[^\]]+\]\((https?://[^)]+)\)", text)
 
@@ -1342,6 +1358,11 @@ def validate_daily_study_blog_topic_shape(item: Item) -> None:
     title_count = len(re.findall(r"^\s*\d+\.\s+\S", titles_block, flags=re.MULTILINE))
     if title_count != 3:
         fail("Spring Boot/JVM study section must include exactly 3 blog title candidates.")
+
+    for field in DAILY_STUDY_ACTION_FIELDS:
+        block = bullet_field_block(item.body, field)
+        if count_nested_action_items(block) < 2:
+            fail(f"Spring Boot/JVM study section must include at least 2 concrete {field} actions.")
 
     paar_block = bullet_field_block(item.body, "PAAR 글 목차")
     missing_paar = [
