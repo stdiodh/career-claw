@@ -1,5 +1,7 @@
 # Career Feed 운영 가이드
 
+레거시 파일 제거 기준은 [LEGACY.md](../LEGACY.md)를 따른다.
+
 ## 운영 경로
 
 | 경로 | 실행 | 산출물 |
@@ -29,6 +31,7 @@ Daily Growth 운영 요약과 artifact 해석 방법은 `docs/daily-growth-ops.m
 - shortlist 생성: `python3 scripts/build-daily-news-shortlist.py`
 - prompt budget 기록: `python3 scripts/estimate-prompt-budget.py`
 - quality report 기록: `python3 scripts/evaluate-news-daily-quality.py`
+- run summary 기록: `python3 scripts/write-news-daily-run-summary.py`
 - prompt: `.github/codex/prompts/kr-tech-news-daily.md`
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-news-daily.md --type daily-news`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY`

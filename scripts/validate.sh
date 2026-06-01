@@ -1056,8 +1056,6 @@ python3 scripts/update-oss-progress.py --status >/dev/null
 
 echo "==> Checking removed references"
 blocked_terms=(
-  "leg""acy"
-  "Leg""acy"
   "FREE_""MODE"
   "AI_LIGHT_""MODE"
   "AI_SEARCH_""MODE"

@@ -6,6 +6,8 @@ Career Feed는 GitHub Actions, 후보 수집 스크립트, Codex 편집, Discord
 
 현재 운영 경로는 4개만 유지합니다.
 
+레거시 파일 제거 기준은 [LEGACY.md](./LEGACY.md)를 따른다.
+
 | 경로 | Workflow | 목적 |
 | --- | --- | --- |
 | Daily Backend Brief | `.github/workflows/kr-tech-daily.yml` | 평일 백엔드 학습/PS/OSS/실무 충전 브리핑 |
@@ -83,6 +85,13 @@ Daily OSS 후보 정책:
 - 첫 30분 액션은 읽기, 재현, 문서 위치 확인, 로컬 빌드 확인처럼 PR 전 확인 행동으로 제한하며, validator는 PR 생성/전체 구현/전체 리팩터링 표현을 거부합니다.
 - 작업 전 issue에 짧고 조심스러운 영어 댓글 초안을 남기는 것을 권장합니다. 댓글, assign, label 변경 같은 GitHub issue mutation은 자동 수행하지 않습니다.
 
+관련 문서:
+
+- `docs/backend-growth-curriculum.md`
+- `docs/daily-growth-ops.md`
+- `docs/daily-spring-jvm-blog-topic-policy.md`
+- `docs/oss-candidate-policy.md`
+
 ## Korea Dev/AI News Daily
 
 - workflow: `.github/workflows/kr-tech-news-daily.yml`
@@ -90,6 +99,8 @@ Daily OSS 후보 정책:
 - collector: `python3 scripts/collect-kr-feeds.py --mode daily-news`
 - shortlist: `python3 scripts/build-daily-news-shortlist.py`
 - token budget: `python3 scripts/estimate-prompt-budget.py`
+- quality report: `python3 scripts/evaluate-news-daily-quality.py`
+- run summary: `python3 scripts/write-news-daily-run-summary.py`
 - validator: `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-news-daily.md --type daily-news`
 - report: `reports/briefs/kr-tech-news-daily.md`
 - Discord secret: `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY`
@@ -265,6 +276,8 @@ git diff --check
 
 ```text
 repository-root/
+├─ LEGACY.md
+├─ README.md
 ├─ .github/
 │  ├─ codex/prompts/
 │  │  ├─ kr-tech-daily-brief.md
@@ -283,24 +296,37 @@ repository-root/
 │  ├─ kr-sources.json
 │  ├─ oss-repositories.json
 │  ├─ programmers-ps-curriculum.json
-│  └─ weekly-career-site-radar.json
+│  ├─ weekly-career-site-radar.json
+│  └─ weekly-career-sources.json
 ├─ data/
 │  ├─ oss-progress.json
-│  └─ ps-progress.json
+│  ├─ ps-progress.json
+│  └─ spring-jvm-blog-topic-progress.json
+├─ docs/
+│  ├─ backend-growth-curriculum.md
+│  ├─ daily-growth-ops.md
+│  ├─ daily-spring-jvm-blog-topic-policy.md
+│  ├─ legacy-inventory.md
+│  ├─ operations.md
+│  └─ oss-candidate-policy.md
 ├─ reports/
 │  ├─ briefs/
 │  ├─ candidates/
 │  └─ ops/
 ├─ scripts/
+│  ├─ build-daily-news-shortlist.py
 │  ├─ check-workflow-schedules.py
 │  ├─ collect-kr-feeds.py
+│  ├─ estimate-prompt-budget.py
+│  ├─ evaluate-news-daily-quality.py
 │  ├─ render-weekly-career-site-radar.py
 │  ├─ select-ps-problem.py
 │  ├─ send-discord.py
 │  ├─ update-oss-progress.py
 │  ├─ update-ps-progress.py
 │  ├─ validate-career-feed-brief.py
-│  └─ validate.sh
+│  ├─ validate.sh
+│  └─ write-news-daily-run-summary.py
 └─ tests/fixtures/
    ├─ kr-backend-career-weekly-valid.md
    ├─ kr-tech-daily-valid.md
@@ -311,6 +337,7 @@ repository-root/
 
 ## 운영 정책
 
+- `app/`와 `infra/`는 현재 README 운영 경로에는 포함하지 않지만 HIGH 위험 영역이므로 이번 레거시 정리에서 삭제하지 않고 `docs/legacy-inventory.md`에 UNKNOWN으로 남깁니다.
 - `reports/` 산출물은 기본적으로 저장소에 커밋하지 않습니다.
 - 원본 URL을 보존합니다.
 - 긴 요약보다 사용자의 다음 행동과 원문 접근성을 우선합니다.
