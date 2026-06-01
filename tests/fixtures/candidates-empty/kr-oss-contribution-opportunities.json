@@ -9,6 +9,7 @@
     "filtered_items_count": 0,
     "gate_exclusion_counts": {},
     "source_error_type_counts": {},
+    "excluded_candidates_preview": [],
     "linked_work_verification": "graphql_required",
     "fallback_when_empty": "oss-preparation-routine"
   },

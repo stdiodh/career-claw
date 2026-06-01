@@ -535,6 +535,7 @@ required_profile_fields = [
     "preferred_contribution_types",
     "contribution_guide",
     "search_urls",
+    "search_queries",
     "local_check_hints",
     "docs_or_test_hints",
     "junior_notes",
@@ -554,6 +555,7 @@ for repository, profile in profiles_by_repo.items():
         "avoid_title_keywords",
         "preferred_contribution_types",
         "search_urls",
+        "search_queries",
         "local_check_hints",
         "docs_or_test_hints",
     ):
@@ -564,6 +566,11 @@ for repository, profile in profiles_by_repo.items():
     preferred = set(profile.get("preferred_contribution_types", []))
     if not preferred <= allowed_types:
         raise SystemExit(f"repository profile has unsupported contribution type: {repository}")
+    for query in profile.get("search_queries", []):
+        if not isinstance(query, dict) or not str(query.get("name", "")).strip() or not str(query.get("query", "")).strip():
+            raise SystemExit(f"repository profile has invalid search query: {repository}")
+        if "repo:" in str(query.get("query", "")):
+            raise SystemExit(f"repository profile search query must not hardcode repo scope: {repository}")
 
 print("OSS repository config smoke check passed")
 PY

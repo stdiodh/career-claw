@@ -16,6 +16,7 @@ VALID_DAILY_FIXTURE = ROOT / "tests" / "fixtures" / "kr-tech-daily-valid.md"
 VALIDATOR = ROOT / "scripts" / "validate-career-feed-brief.py"
 SAFE_URL = "https://github.com/spring-projects/spring-boot/issues/12345"
 OTHER_URL = "https://github.com/spring-projects/spring-boot/issues/67890"
+EXCLUDED_URL = "https://github.com/spring-projects/spring-boot/issues/33333"
 
 
 def replace_oss_section(content: str, section: str) -> str:
@@ -104,12 +105,38 @@ def candidate_payload(url: str = SAFE_URL, *, safe: bool = True) -> dict[str, ob
         "schema_version": 3,
         "category": "kr-oss-contribution-opportunities",
         "candidate_count": 1 if safe else 0,
-        "diagnostics": {"safe_items_count": 1 if safe else 0},
+        "diagnostics": {
+            "safe_items_count": 1 if safe else 0,
+            "source_error_type_counts": {},
+            "excluded_candidates_preview": [
+                {
+                    "repository": "spring-projects/spring-boot",
+                    "issue_number": 33333,
+                    "title": "Excluded assigned docs issue",
+                    "url": EXCLUDED_URL,
+                    "labels": ["type: documentation"],
+                    "reason": "assigned",
+                    "reason_detail": "Issue has an assignee, so it is not safe for first contribution recommendation.",
+                }
+            ],
+        },
         "items": [
             {
                 "title": "Improve getting started documentation",
                 "url": url,
                 "repository": "spring-projects/spring-boot",
+                "repository_priority": "A",
+                "repository_initial_fit_score": 82,
+                "repository_ecosystem_tags": ["spring", "backend"],
+                "repository_junior_notes": "문서와 테스트 재현 우선",
+                "repository_local_check_hints": ["./gradlew test"],
+                "repository_docs_or_test_hints": ["spring-boot docs"],
+                "issue_number": 12345,
+                "labels": ["status: ideal-for-contribution"],
+                "author_association": "MEMBER",
+                "created_at": "2026-05-01 09:00:00 KST",
+                "updated_at": "2026-05-30 09:00:00 KST",
+                "last_activity_at": "2026-05-30 09:00:00 KST",
                 "difficulty_band": "p5_like",
                 "contribution_type": "docs",
                 "score": 92,
@@ -122,13 +149,22 @@ def candidate_payload(url: str = SAFE_URL, *, safe: bool = True) -> dict[str, ob
                     "portfolio_value": 4,
                 },
                 "safety_checks": {
-                    "open_issue": True,
-                    "no_assignee": True,
-                    "no_linked_pr": True,
-                    "no_linked_branch": True,
-                    "no_claim_comment": True,
-                    "linked_work_verified": True,
+                    "is_open": True,
+                    "has_no_assignee": True,
+                    "has_no_linked_work": True,
+                    "linked_work_check_complete": True,
+                    "has_no_claim_comment": True,
+                    "has_beginner_or_maintainer_signal": True,
+                    "matches_preferred_type": True,
+                    "has_no_avoid_label": True,
+                    "has_no_avoid_keyword": True,
                 },
+                "junior_fit_evidence": ["preferred contribution type: docs"],
+                "maintainer_signal": "maintainer-authored",
+                "risk": "low",
+                "first_30_minute_action": "CONTRIBUTING 문서에서 빌드 명령을 확인합니다.",
+                "suggested_first_comment": "Hi team, I am interested in looking into this issue.",
+                "search_source": "profile_query:docs q=repo:spring-projects/spring-boot is:issue is:open no:assignee documentation",
                 "safe_to_recommend": safe,
             }
         ]
@@ -218,7 +254,7 @@ def test_empty_candidate_rejects_issue_url() -> None:
     markdown = replace_oss_section(base, oss_candidate_section())
     assert_fails(
         run_validator(markdown, candidate_payload(safe=False)),
-        "OSS candidate JSON has no safe candidate",
+        "not safe_to_recommend=true",
     )
 
 
@@ -227,7 +263,16 @@ def test_hallucinated_issue_url_is_rejected() -> None:
     markdown = replace_oss_section(base, oss_candidate_section(OTHER_URL))
     assert_fails(
         run_validator(markdown, candidate_payload()),
-        "OSS issue URL is not present",
+        "not safe_to_recommend=true",
+    )
+
+
+def test_excluded_issue_url_is_rejected() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    markdown = replace_oss_section(base, oss_candidate_section(EXCLUDED_URL))
+    assert_fails(
+        run_validator(markdown, candidate_payload()),
+        "excluded or not safe_to_recommend=true",
     )
 
 
@@ -235,6 +280,50 @@ def test_fallback_routine_passes_without_safe_candidate() -> None:
     base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
     markdown = replace_oss_section(base, fallback_oss_section())
     assert_passes(run_validator(markdown, candidate_payload(safe=False)))
+
+
+def test_fallback_routine_rejects_invented_issue_url() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    section = fallback_oss_section() + f"\n- 링크: [Issue 보기]({OTHER_URL})"
+    markdown = replace_oss_section(base, section)
+    assert_fails(
+        run_validator(markdown, candidate_payload(safe=False)),
+        "not safe_to_recommend=true",
+    )
+
+
+def test_first_action_rejects_overscoped_pr_wording() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    section = oss_candidate_section().replace(
+        "CONTRIBUTING 문서에서 빌드 명령을 확인하고 관련 docs 위치를 메모합니다.",
+        "바로 PR을 만들고 전체 구현을 진행합니다.",
+    )
+    markdown = replace_oss_section(base, section)
+    assert_fails(
+        run_validator(markdown, candidate_payload()),
+        "forbidden phrase",
+    )
+
+
+def test_safe_candidate_missing_score_is_rejected() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    section = oss_candidate_section().replace("- 추천 점수: 92/100\n", "")
+    markdown = replace_oss_section(base, section)
+    assert_fails(
+        run_validator(markdown, candidate_payload()),
+        "추천 점수",
+    )
+
+
+def test_safe_candidate_payload_missing_required_field_is_rejected() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    payload = candidate_payload()
+    del payload["items"][0]["search_source"]  # type: ignore[index]
+    markdown = replace_oss_section(base, oss_candidate_section())
+    assert_fails(
+        run_validator(markdown, payload),
+        "missing field",
+    )
 
 
 def main() -> int:
@@ -245,7 +334,12 @@ def main() -> int:
         test_safe_candidate_without_maintainer_text_passes,
         test_empty_candidate_rejects_issue_url,
         test_hallucinated_issue_url_is_rejected,
+        test_excluded_issue_url_is_rejected,
         test_fallback_routine_passes_without_safe_candidate,
+        test_fallback_routine_rejects_invented_issue_url,
+        test_first_action_rejects_overscoped_pr_wording,
+        test_safe_candidate_missing_score_is_rejected,
+        test_safe_candidate_payload_missing_required_field_is_rejected,
     ]
     for test in tests:
         test()

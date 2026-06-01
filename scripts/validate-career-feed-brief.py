@@ -530,11 +530,63 @@ DAILY_OSS_FORBIDDEN_PATTERNS = [
 ]
 DAILY_OSS_FIRST_ACTION_FORBIDDEN_PATTERNS = [
     r"create\s*PR",
+    r"open\s*PR\s*immediately",
     r"PR\s*(?:생성|작성|만들)",
     r"implement\s+full\s+fix",
     r"전체\s*(?:수정|구현)",
+    r"전체\s*구현",
+    r"전체\s*리팩터링",
+    r"바로\s*PR",
     r"refactor\s+whole\s+module",
     r"모듈\s*전체\s*리팩터",
+]
+OSS_REQUIRED_SAFE_FIELDS = [
+    "repository",
+    "repository_priority",
+    "repository_initial_fit_score",
+    "repository_ecosystem_tags",
+    "repository_junior_notes",
+    "repository_local_check_hints",
+    "repository_docs_or_test_hints",
+    "issue_number",
+    "title",
+    "url",
+    "labels",
+    "author_association",
+    "created_at",
+    "updated_at",
+    "last_activity_at",
+    "contribution_type",
+    "difficulty_band",
+    "score",
+    "score_breakdown",
+    "safe_to_recommend",
+    "safety_checks",
+    "junior_fit_evidence",
+    "maintainer_signal",
+    "risk",
+    "first_30_minute_action",
+    "suggested_first_comment",
+    "search_source",
+]
+OSS_SCORE_BREAKDOWN_FIELDS = [
+    "technical_fit",
+    "external_contribution_signal",
+    "scope_clarity",
+    "validation_feasibility",
+    "maintainer_signal",
+    "portfolio_value",
+]
+OSS_SAFETY_CHECK_FIELDS = [
+    "is_open",
+    "has_no_assignee",
+    "has_no_linked_work",
+    "linked_work_check_complete",
+    "has_no_claim_comment",
+    "has_beginner_or_maintainer_signal",
+    "matches_preferred_type",
+    "has_no_avoid_label",
+    "has_no_avoid_keyword",
 ]
 DAILY_OSS_STATUS_REQUIRED_GROUPS = {
     "assignee absence": [
@@ -840,6 +892,15 @@ def safe_oss_candidates_by_url(payload: dict[str, object]) -> dict[str, dict[str
             continue
         if raw_item.get("safe_to_recommend") is not True:
             continue
+        missing_fields = [
+            field
+            for field in OSS_REQUIRED_SAFE_FIELDS
+            if field not in raw_item
+            or raw_item.get(field) is None
+            or (isinstance(raw_item.get(field), str) and not str(raw_item.get(field)).strip())
+        ]
+        if missing_fields:
+            fail(f"safe_to_recommend OSS candidate is missing field(s): {', '.join(missing_fields)}")
         if str(raw_item.get("exclusion_reason") or raw_item.get("exclude_reason") or "").strip():
             fail("safe_to_recommend OSS candidate must not include an exclusion reason.")
         url = str(raw_item.get("url") or raw_item.get("source_url") or "").strip()
@@ -847,8 +908,23 @@ def safe_oss_candidates_by_url(payload: dict[str, object]) -> dict[str, dict[str
             fail("safe_to_recommend OSS candidate must include a GitHub issue URL.")
         if "score_breakdown" not in raw_item or not isinstance(raw_item["score_breakdown"], dict):
             fail("safe_to_recommend OSS candidate must include score_breakdown.")
+        missing_score_fields = [
+            field for field in OSS_SCORE_BREAKDOWN_FIELDS if field not in raw_item["score_breakdown"]
+        ]
+        if missing_score_fields:
+            fail(f"safe_to_recommend OSS candidate score_breakdown is missing field(s): {', '.join(missing_score_fields)}")
         if "safety_checks" not in raw_item or not isinstance(raw_item["safety_checks"], dict):
             fail("safe_to_recommend OSS candidate must include safety_checks.")
+        missing_safety_fields = [
+            field for field in OSS_SAFETY_CHECK_FIELDS if field not in raw_item["safety_checks"]
+        ]
+        if missing_safety_fields:
+            fail(f"safe_to_recommend OSS candidate safety_checks is missing field(s): {', '.join(missing_safety_fields)}")
+        failed_safety_fields = [
+            field for field in OSS_SAFETY_CHECK_FIELDS if raw_item["safety_checks"].get(field) is not True
+        ]
+        if failed_safety_fields:
+            fail(f"safe_to_recommend OSS candidate has failed safety check(s): {', '.join(failed_safety_fields)}")
         candidates[normalize_github_issue_url(url)] = raw_item
     diagnostics = payload.get("diagnostics", {})
     if diagnostics and not isinstance(diagnostics, dict):
@@ -861,6 +937,30 @@ def safe_oss_candidates_by_url(payload: dict[str, object]) -> dict[str, dict[str
         if expected_safe_count != len(candidates):
             fail("OSS candidate JSON safe_items_count does not match safe items.")
     return candidates
+
+
+def unsafe_oss_issue_urls(payload: dict[str, object]) -> set[str]:
+    urls: set[str] = set()
+    raw_items = payload.get("items", [])
+    if isinstance(raw_items, list):
+        for raw_item in raw_items:
+            if not isinstance(raw_item, dict) or raw_item.get("safe_to_recommend") is True:
+                continue
+            url = str(raw_item.get("url") or "").strip()
+            if GITHUB_ISSUE_URL_RE.fullmatch(url):
+                urls.add(normalize_github_issue_url(url))
+
+    diagnostics = payload.get("diagnostics", {})
+    if isinstance(diagnostics, dict):
+        preview = diagnostics.get("excluded_candidates_preview", [])
+        if isinstance(preview, list):
+            for raw_item in preview:
+                if not isinstance(raw_item, dict):
+                    continue
+                url = str(raw_item.get("url") or "").strip()
+                if GITHUB_ISSUE_URL_RE.fullmatch(url):
+                    urls.add(normalize_github_issue_url(url))
+    return urls
 
 
 def candidate_text_value(candidate: dict[str, object], *keys: str) -> str:
@@ -1272,7 +1372,9 @@ def validate_daily_oss_section(sections: list[Section], candidates_dir: Path) ->
     section = find_section(sections, "오픈소스 기여 후보")
     if section is None:
         fail("Daily tech brief must include 오픈소스 기여 후보 section.")
-    safe_candidates = safe_oss_candidates_by_url(read_oss_candidate_payload(candidates_dir))
+    oss_payload = read_oss_candidate_payload(candidates_dir)
+    safe_candidates = safe_oss_candidates_by_url(oss_payload)
+    unsafe_issue_urls = unsafe_oss_issue_urls(oss_payload)
 
     found_forbidden = [
         pattern
@@ -1282,10 +1384,19 @@ def validate_daily_oss_section(sections: list[Section], candidates_dir: Path) ->
     if found_forbidden:
         fail(f"OSS section contains forbidden phrase(s): {', '.join(found_forbidden)}")
 
-    issue_urls = sorted({normalize_github_issue_url(url) for url in github_issue_urls(section.body)})
+    issue_urls = []
+    for url in github_issue_urls(section.body):
+        normalized = normalize_github_issue_url(url)
+        if normalized not in issue_urls:
+            issue_urls.append(normalized)
     has_issue_link = bool(issue_urls)
-    if len(issue_urls) > 1:
-        fail("OSS section must include at most one GitHub issue URL.")
+    if len(issue_urls) > 3:
+        fail("OSS section must include at most three GitHub issue URLs.")
+    for issue_url in issue_urls:
+        if issue_url in unsafe_issue_urls:
+            fail(f"OSS section links to issue URL that is excluded or not safe_to_recommend=true: {issue_url}")
+        if issue_url not in safe_candidates:
+            fail(f"OSS section links to issue URL that is not safe_to_recommend=true: {issue_url}")
     if has_issue_link and DAILY_OSS_EMPTY_STATE in section.body:
         fail("OSS section must not mix an issue URL with the empty-state prep routine.")
     if not safe_candidates and has_issue_link:
@@ -1311,12 +1422,18 @@ def validate_daily_oss_section(sections: list[Section], candidates_dir: Path) ->
         if missing:
             fail(f"OSS prep routine is missing field(s): {', '.join(missing)}")
         return
-    if not issue_urls:
+    primary_issue_urls = [
+        normalize_github_issue_url(url)
+        for url in github_issue_urls(item.body)
+    ]
+    if not primary_issue_urls:
         fail("OSS candidate must include a GitHub issue URL.")
-    issue_url = issue_urls[0]
+    if len(set(primary_issue_urls)) > 1:
+        fail("OSS primary candidate must include exactly one GitHub issue URL.")
+    issue_url = primary_issue_urls[0]
     candidate = safe_candidates.get(issue_url)
     if candidate is None:
-        fail("OSS issue URL is not present in safe_to_recommend candidate JSON items.")
+        fail(f"OSS section links to issue URL that is not safe_to_recommend=true: {issue_url}")
 
     if not re.search(r"P[45]-like", item.body):
         fail("OSS candidate must include P5-like or P4-like difficulty band.")

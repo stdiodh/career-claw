@@ -119,6 +119,12 @@
         "https://github.com/spring-projects/spring-security/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22status%3A+ideal-for-contribution%22",
         "https://github.com/spring-projects/spring-security/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22in%3A+docs%22"
       ],
+      "search_queries": [
+        {"name": "ideal_for_contribution", "query": "is:issue is:open no:assignee label:\"status: ideal-for-contribution\""},
+        {"name": "docs", "query": "is:issue is:open no:assignee label:\"in: docs\""},
+        {"name": "testing", "query": "is:issue is:open no:assignee label:\"in: testing\""},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      ],
       "local_check_hints": ["./gradlew test", "./gradlew :docs:asciidoctor"],
       "docs_or_test_hints": ["docs", "samples", "config 관련 테스트", "oauth2 관련 테스트"],
       "junior_notes": "인증/인가 문서, sample, 테스트 재현처럼 보안 취약점이 아닌 학습 가치가 큰 이슈를 우선합니다."
@@ -146,6 +152,12 @@
       "search_urls": [
         "https://github.com/spring-projects/spring-restdocs/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+documentation",
         "https://github.com/spring-projects/spring-restdocs/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+sample"
+      ],
+      "search_queries": [
+        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
+        {"name": "sample", "query": "is:issue is:open no:assignee sample"},
+        {"name": "test", "query": "is:issue is:open no:assignee test"},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
       ],
       "local_check_hints": ["./gradlew test", "./gradlew docs"],
       "docs_or_test_hints": ["docs", "samples", "src/test", "reference documentation snippets"],
@@ -201,6 +213,12 @@
         "https://github.com/spring-projects/spring-boot/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22status%3A+ideal-for-contribution%22",
         "https://github.com/spring-projects/spring-boot/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22type%3A+documentation%22"
       ],
+      "search_queries": [
+        {"name": "ideal_for_contribution", "query": "is:issue is:open no:assignee label:\"status: ideal-for-contribution\""},
+        {"name": "first_timers", "query": "is:issue is:open no:assignee label:\"status: first-timers-only\""},
+        {"name": "documentation", "query": "is:issue is:open no:assignee label:\"type: documentation\""},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      ],
       "local_check_hints": ["./gradlew test", "./gradlew :spring-boot-project:spring-boot-docs:asciidoctor"],
       "docs_or_test_hints": ["spring-boot-project/spring-boot-docs", "spring-boot-project/spring-boot-autoconfigure 테스트", "Actuator 테스트"],
       "junior_notes": "reference docs, Kotlin 사용, Actuator/Config/Logging처럼 실무 백엔드 학습과 연결되는 작은 이슈를 우선합니다."
@@ -238,6 +256,12 @@
         "https://github.com/gradle/gradle/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22good+first+issue%22",
         "https://github.com/gradle/gradle/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22a%3Adocumentation%22"
       ],
+      "search_queries": [
+        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"good first issue\""},
+        {"name": "help_wanted", "query": "is:issue is:open no:assignee label:\"help wanted\""},
+        {"name": "documentation", "query": "is:issue is:open no:assignee label:\"a:documentation\""},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      ],
       "local_check_hints": ["./gradlew test", "./gradlew docs:docs"],
       "docs_or_test_hints": ["platforms/documentation", "subprojects/core/src/test", "Kotlin DSL samples"],
       "junior_notes": "빌드 오류 이해, Kotlin DSL, Java plugin 문서/테스트처럼 백엔드 개발자 생산성과 직접 연결되는 이슈를 우선합니다."
@@ -257,6 +281,12 @@
       "search_urls": [
         "https://github.com/ktorio/ktor-documentation/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+documentation",
         "https://github.com/ktorio/ktor-documentation/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+sample"
+      ],
+      "search_queries": [
+        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
+        {"name": "sample", "query": "is:issue is:open no:assignee sample"},
+        {"name": "tutorial", "query": "is:issue is:open no:assignee tutorial"},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
       ],
       "local_check_hints": ["README의 문서 빌드 절차 확인"],
       "docs_or_test_hints": ["topics/server", "topics/client", "codeSnippets", "tutorials"],
@@ -288,6 +318,12 @@
         "https://github.com/quarkusio/quarkus/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22good+first+issue%22",
         "https://github.com/quarkusio/quarkus/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22kind%2Fdocumentation%22"
       ],
+      "search_queries": [
+        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"good first issue\""},
+        {"name": "documentation", "query": "is:issue is:open no:assignee label:\"kind/documentation\""},
+        {"name": "testing", "query": "is:issue is:open no:assignee label:\"area/testing\""},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      ],
       "local_check_hints": ["./mvnw -DskipTests install", "./mvnw test"],
       "docs_or_test_hints": ["docs/src/main/asciidoc", "integration-tests", "extensions/*/deployment/src/test"],
       "junior_notes": "logging, OIDC/security, config, testing 문서와 재현 테스트처럼 범위를 작은 모듈로 제한할 수 있는 이슈를 우선합니다."
@@ -307,6 +343,12 @@
       "search_urls": [
         "https://github.com/testcontainers/testcontainers-java/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22good+first+issue%22",
         "https://github.com/testcontainers/testcontainers-java/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+documentation"
+      ],
+      "search_queries": [
+        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"good first issue\""},
+        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
+        {"name": "spring_boot_examples", "query": "is:issue is:open no:assignee \"Spring Boot\" example"},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
       ],
       "local_check_hints": ["./gradlew test", "./gradlew docs"],
       "docs_or_test_hints": ["docs", "examples", "modules/*/src/test"],
@@ -328,6 +370,12 @@
         "https://github.com/micronaut-projects/micronaut-core/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22info%3A+good+first+issue%22",
         "https://github.com/micronaut-projects/micronaut-core/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22help+wanted%22"
       ],
+      "search_queries": [
+        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"info: good first issue\""},
+        {"name": "help_wanted", "query": "is:issue is:open no:assignee label:\"help wanted\""},
+        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      ],
       "local_check_hints": ["./gradlew test", "./gradlew docs"],
       "docs_or_test_hints": ["src/main/docs", "test-suite", "http-server tests"],
       "junior_notes": "DI, HTTP, configuration, Kotlin example처럼 Spring과 비교 학습하기 좋은 작은 문서/테스트 이슈를 우선합니다."
@@ -348,6 +396,12 @@
         "https://github.com/spring-projects/spring-framework/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22status%3A+ideal-for-contribution%22",
         "https://github.com/spring-projects/spring-framework/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22type%3A+documentation%22"
       ],
+      "search_queries": [
+        {"name": "ideal_for_contribution", "query": "is:issue is:open no:assignee label:\"status: ideal-for-contribution\""},
+        {"name": "documentation", "query": "is:issue is:open no:assignee label:\"type: documentation\""},
+        {"name": "javadoc", "query": "is:issue is:open no:assignee Javadoc"},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      ],
       "local_check_hints": ["./gradlew test", "./gradlew docs"],
       "docs_or_test_hints": ["framework-docs", "spring-web 테스트", "spring-test 테스트", "Javadoc"],
       "junior_notes": "진입 장벽이 높으므로 reference docs, Javadoc, Kotlin docs, 최소 재현 sample처럼 작은 범위만 신중하게 봅니다."
@@ -367,6 +421,11 @@
       "search_urls": [
         "https://github.com/ktorio/ktor/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22good+first+issue%22"
       ],
+      "search_queries": [
+        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"good first issue\""},
+        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      ],
       "local_check_hints": ["./gradlew test"],
       "docs_or_test_hints": ["ktor-server", "ktor-client", "ktor-test-host"],
       "junior_notes": "Daily 후보를 밀어내지 않는 weekly observation 대상입니다."
@@ -385,6 +444,11 @@
       "contribution_guide": "README와 CONTRIBUTING.md를 확인하되 weekly observation 대상으로만 봅니다.",
       "search_urls": [
         "https://github.com/Kotlin/kotlinx.coroutines/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+documentation"
+      ],
+      "search_queries": [
+        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
+        {"name": "guide", "query": "is:issue is:open no:assignee guide"},
+        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
       ],
       "local_check_hints": ["./gradlew test"],
       "docs_or_test_hints": ["docs", "guide 예제", "coroutines test"],

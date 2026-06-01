@@ -524,15 +524,33 @@ OSS_PREFERRED_CONTRIBUTION_TYPES = {
     "error-message",
 }
 OSS_SCORE_EXCLUDE_THRESHOLD = 65
+OSS_EXCLUDED_PREVIEW_LIMIT = 5
 OSS_REPOSITORY_TIE_ORDER = {
     "spring-projects/spring-security": 0,
     "spring-projects/spring-restdocs": 1,
     "spring-projects/spring-boot": 2,
 }
+OSS_EXCLUSION_REASON_DETAILS = {
+    "assigned": "Issue has an assignee, so it is not safe for first contribution recommendation.",
+    "claimed_in_comments": "Issue has a visible work-claim signal in the body or comments.",
+    "linked_work_exists": "Issue already has linked PR or branch work.",
+    "linked_work_check_incomplete": "Linked PR/branch verification did not complete.",
+    "avoid_label": "Issue has a label excluded by the repository profile.",
+    "avoid_keyword": "Issue title or scope matches an excluded keyword.",
+    "not_beginner_signal": "Issue lacks maintainer or beginner-friendly contribution signal.",
+    "unsafe_security_topic": "Issue appears security-sensitive or release-blocking and is not suitable for recommendation.",
+    "low_score": "Issue scored below the Daily recommendation threshold.",
+    "unsupported_contribution_type": "Issue does not match this repository's preferred contribution types.",
+    "fetch_error": "Issue could not be verified with enough confidence.",
+    "not_open": "Issue is not open.",
+    "not_issue": "GitHub search returned a pull request item instead of an issue.",
+    "missing_required_fields": "Issue payload did not include the required title, URL, or number.",
+}
 SOURCE_ERRORS: list[dict[str, str]] = []
 WARNINGS: list[str] = []
 OSS_GATE_EXCLUSION_COUNTS: Counter[str] = Counter()
 OSS_REPOSITORY_DIAGNOSTICS: list[dict[str, object]] = []
+OSS_EXCLUDED_CANDIDATE_PREVIEW: list[dict[str, object]] = []
 
 
 def record_warning(message: str) -> None:
@@ -955,6 +973,37 @@ def repository_profile_for(repository: str, oss_config: dict[str, object]) -> di
 
 def repository_profile_values(profile: dict[str, object], key: str) -> list[str]:
     return category_values(profile, key)
+
+
+def repository_profile_search_queries(
+    profile: dict[str, object],
+    current_time: datetime,
+) -> list[dict[str, str]]:
+    raw_queries = profile.get("search_queries", [])
+    if not isinstance(raw_queries, list):
+        raw_queries = []
+
+    updated_since = (current_time - timedelta(days=30)).strftime("%Y-%m-%d")
+    queries: list[dict[str, str]] = []
+    for index, raw_query in enumerate(raw_queries):
+        if not isinstance(raw_query, dict):
+            continue
+        name = str(raw_query.get("name", f"query_{index + 1}")).strip() or f"query_{index + 1}"
+        query = str(raw_query.get("query", "")).strip()
+        if not query:
+            continue
+        query = query.replace("<computed_30_days_ago>", updated_since).replace(
+            "{updated_since}",
+            updated_since,
+        )
+        queries.append({"name": name, "query": query})
+
+    if queries:
+        return queries
+
+    return [
+        {"name": "profile_default", "query": "is:issue is:open no:assignee"},
+    ]
 
 
 def repository_priority_score(priority: str) -> int:
@@ -3369,6 +3418,58 @@ def fetch_github_issues(repository: str, token: str | None) -> list[dict[str, ob
     return [item for item in payload if isinstance(item, dict)]
 
 
+def github_repository_search_query(repository: str, query: str) -> str:
+    cleaned = " ".join(query.split())
+    if f"repo:{repository}" in cleaned:
+        return cleaned
+    return f"repo:{repository} {cleaned}".strip()
+
+
+def fetch_github_search_issues(
+    repository: str,
+    query: str,
+    token: str | None,
+    search_name: str,
+) -> list[dict[str, object]] | None:
+    scoped_query = github_repository_search_query(repository, query)
+    params = urllib.parse.urlencode(
+        {
+            "q": scoped_query,
+            "sort": "updated",
+            "order": "desc",
+            "per_page": 50,
+        }
+    )
+    payload = fetch_github_api_json(
+        f"https://api.github.com/search/issues?{params}",
+        token,
+        repository,
+        f"issue search {search_name}",
+    )
+    if payload is None:
+        return None
+    if not isinstance(payload, dict):
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub search response was not an object for {search_name}.",
+            category=OSS_CATEGORY_ID,
+            source_type="github_search",
+            error_type="schema_error",
+        )
+        return None
+    raw_items = payload.get("items", [])
+    if not isinstance(raw_items, list):
+        record_source_error(
+            f"GitHub {repository}",
+            f"GitHub search response items were not a list for {search_name}.",
+            category=OSS_CATEGORY_ID,
+            source_type="github_search",
+            error_type="schema_error",
+        )
+        return None
+    return [item for item in raw_items if isinstance(item, dict)]
+
+
 def fetch_github_issue_comments(
     repository: str,
     issue_number: int,
@@ -3600,7 +3701,100 @@ def claim_comment_author(comments: list[dict[str, object]] | None) -> str:
 
 
 def record_oss_gate_exclusion(reason: str) -> None:
-    OSS_GATE_EXCLUSION_COUNTS[reason] += 1
+    OSS_GATE_EXCLUSION_COUNTS[stable_oss_exclusion_reason(reason)] += 1
+
+
+def stable_oss_exclusion_reason(reason: str) -> str:
+    mapping = {
+        "pull-request-item": "not_issue",
+        "not-open": "not_open",
+        "missing-required-issue-fields": "missing_required_fields",
+        "external-author-without-maintainer-triage": "not_beginner_signal",
+        "claim-in-issue-body": "claimed_in_comments",
+        "claim-comment": "claimed_in_comments",
+        "claim-comment-check-unknown": "fetch_error",
+        "blocked-label-or-title": "avoid_label",
+        "repository-avoid-label": "avoid_label",
+        "repository-avoid-title-keyword": "avoid_keyword",
+        "security-or-release-blocker": "unsafe_security_topic",
+        "security-vulnerability": "unsafe_security_topic",
+        "release-blocker": "unsafe_security_topic",
+        "deep-internals-or-major-api": "avoid_keyword",
+        "deep-internals": "avoid_keyword",
+        "major-api-or-breaking-change": "avoid_keyword",
+        "design-or-epic": "avoid_keyword",
+        "no-beginner-difficulty-signal": "not_beginner_signal",
+        "linked-work": "linked_work_exists",
+        "linked-work-check-unknown": "linked_work_check_incomplete",
+        "unsupported-contribution-type": "unsupported_contribution_type",
+        "score-below-65": "low_score",
+    }
+    normalized = reason.strip().replace("-", "_")
+    return mapping.get(reason, mapping.get(normalized, normalized or "fetch_error"))
+
+
+def record_excluded_oss_candidate(
+    reason: str,
+    repository: str,
+    issue: dict[str, object] | None,
+    *,
+    reason_detail: str = "",
+) -> None:
+    stable_reason = stable_oss_exclusion_reason(reason)
+    OSS_GATE_EXCLUSION_COUNTS[stable_reason] += 1
+    if issue is None or len(OSS_EXCLUDED_CANDIDATE_PREVIEW) >= OSS_EXCLUDED_PREVIEW_LIMIT:
+        return
+
+    title = truncate_text(strip_html(str(issue.get("title", ""))), TITLE_LIMIT)
+    url = str(issue.get("html_url", "")).strip()
+    number = issue.get("number", 0)
+    try:
+        issue_number = int(number)
+    except (TypeError, ValueError):
+        issue_number = 0
+    if not title and not url and issue_number <= 0:
+        return
+    if any(
+        item.get("repository") == repository
+        and item.get("issue_number") == issue_number
+        and item.get("reason") == stable_reason
+        for item in OSS_EXCLUDED_CANDIDATE_PREVIEW
+    ):
+        return
+
+    labels = label_names(issue)
+    if stable_reason == "unsafe_security_topic":
+        title = "Security-sensitive issue redacted"
+        url = ""
+        labels = []
+    OSS_EXCLUDED_CANDIDATE_PREVIEW.append(
+        {
+            "repository": repository,
+            "issue_number": issue_number,
+            "title": title,
+            "url": url,
+            "labels": labels,
+            "reason": stable_reason,
+            "reason_detail": reason_detail
+            or OSS_EXCLUSION_REASON_DETAILS.get(stable_reason, "Issue was excluded by the OSS safety gate."),
+        }
+    )
+
+
+def exclude_oss_issue(
+    reason: str,
+    repository: str,
+    issue: dict[str, object] | None,
+    *,
+    reason_detail: str = "",
+) -> None:
+    record_excluded_oss_candidate(
+        reason,
+        repository,
+        issue,
+        reason_detail=reason_detail,
+    )
+    return None
 
 
 def infer_contribution_type(text: str) -> str:
@@ -4620,14 +4814,13 @@ def build_oss_issue_candidate(
     issue: dict[str, object],
     token: str | None,
     current_time: datetime,
+    search_source: str = "",
 ) -> OssIssueCandidate | None:
     if "pull_request" in issue:
-        record_oss_gate_exclusion("pull-request-item")
-        return None
+        return exclude_oss_issue("pull-request-item", repository, issue)
     state = str(issue.get("state", "")).strip()
     if state != "open":
-        record_oss_gate_exclusion("not-open")
-        return None
+        return exclude_oss_issue("not-open", repository, issue)
 
     title = truncate_text(strip_html(str(issue.get("title", ""))), TITLE_LIMIT)
     html_url = str(issue.get("html_url", "")).strip()
@@ -4637,8 +4830,7 @@ def build_oss_issue_candidate(
     except (TypeError, ValueError):
         issue_number = 0
     if not title or not html_url or issue_number <= 0:
-        record_oss_gate_exclusion("missing-required-issue-fields")
-        return None
+        return exclude_oss_issue("missing-required-issue-fields", repository, issue)
 
     labels = label_names(issue)
     repository_profile = repository_profile_for(repository, oss_config)
@@ -4690,39 +4882,29 @@ def build_oss_issue_candidate(
     searchable = f"{repository} {title} {summary} {' '.join(labels)}"
     label_title_text = f"{' '.join(labels)} {title}"
     if not maintainer_qualified:
-        record_oss_gate_exclusion("external-author-without-maintainer-triage")
-        return None
+        return exclude_oss_issue("external-author-without-maintainer-triage", repository, issue)
     if has_assignee:
-        record_oss_gate_exclusion("assigned")
-        return None
+        return exclude_oss_issue("assigned", repository, issue)
     if text_contains_any(f"{title} {raw_body}", OSS_CLAIM_KEYWORDS):
-        record_oss_gate_exclusion("claim-in-issue-body")
-        return None
+        return exclude_oss_issue("claim-in-issue-body", repository, issue)
     if text_contains_any(label_title_text, OSS_BLOCKED_LABEL_TITLE_KEYWORDS):
-        record_oss_gate_exclusion("blocked-label-or-title")
-        return None
+        return exclude_oss_issue("blocked-label-or-title", repository, issue)
     if text_contains_any(" ".join(labels), repository_avoid_labels):
-        record_oss_gate_exclusion("repository-avoid-label")
-        return None
+        return exclude_oss_issue("repository-avoid-label", repository, issue)
     if text_contains_any(title, repository_avoid_title_keywords):
-        record_oss_gate_exclusion("repository-avoid-title-keyword")
-        return None
+        return exclude_oss_issue("repository-avoid-title-keyword", repository, issue)
     if text_contains_any(searchable, OSS_SECURITY_KEYWORDS + OSS_RELEASE_BLOCKER_KEYWORDS):
-        record_oss_gate_exclusion("security-or-release-blocker")
-        return None
+        return exclude_oss_issue("security-or-release-blocker", repository, issue)
     if text_contains_any(searchable, OSS_DEEP_INTERNALS_KEYWORDS + OSS_MAJOR_API_KEYWORDS):
-        record_oss_gate_exclusion("deep-internals-or-major-api")
-        return None
+        return exclude_oss_issue("deep-internals-or-major-api", repository, issue)
     if text_contains_any(searchable, OSS_DESIGN_KEYWORDS):
-        record_oss_gate_exclusion("design-or-epic")
-        return None
+        return exclude_oss_issue("design-or-epic", repository, issue)
     if not (
         difficulty_model_matches(difficulty_model, "p5_like", labels, searchable)
         or text_contains_any(" ".join(labels), repository_beginner_labels)
         or difficulty_model_matches(difficulty_model, "p4_like", labels, searchable)
     ):
-        record_oss_gate_exclusion("no-beginner-difficulty-signal")
-        return None
+        return exclude_oss_issue("no-beginner-difficulty-signal", repository, issue)
 
     contribution_type = infer_contribution_type(searchable)
     comments_payload: list[dict[str, object]] | None = []
@@ -4742,26 +4924,24 @@ def build_oss_issue_candidate(
             comments_checked_count = len(comments_payload)
             claim_author = claim_comment_author(comments_payload)
         if claim_author:
-            record_oss_gate_exclusion("claim-comment")
-            return None
+            return exclude_oss_issue("claim-comment", repository, issue)
     linked_work_result = fetch_github_linked_work_check(repository, issue_number, token)
     if linked_work_result is None:
         linked_prs_count = 0
         linked_branches_count = 0
         linked_work_check = "unknown"
         has_linked_work = False
-        record_oss_gate_exclusion("linked-work-check-unknown")
     else:
         linked_prs_count = linked_work_result.linked_prs_count
         linked_branches_count = linked_work_result.linked_branches_count
         linked_work_check = linked_work_result.check_status
         has_linked_work = linked_work_result.has_linked_work
-        if has_linked_work:
-            record_oss_gate_exclusion("linked-work")
-        elif linked_work_check != "verified":
-            record_oss_gate_exclusion("linked-work-check-unknown")
     if claim_comment_check != "checked":
-        record_oss_gate_exclusion("claim-comment-check-unknown")
+        return exclude_oss_issue("claim-comment-check-unknown", repository, issue)
+    if has_linked_work:
+        return exclude_oss_issue("linked-work", repository, issue)
+    if linked_work_check != "verified":
+        return exclude_oss_issue("linked-work-check-unknown", repository, issue)
     safe_to_recommend = (
         state == "open"
         and maintainer_qualified
@@ -4774,9 +4954,9 @@ def build_oss_issue_candidate(
         and contribution_type in repository_preferred_types
     )
     if contribution_type not in repository_preferred_types:
-        record_oss_gate_exclusion("unsupported-contribution-type")
-    if has_linked_work or not safe_to_recommend:
-        return None
+        return exclude_oss_issue("unsupported-contribution-type", repository, issue)
+    if not safe_to_recommend:
+        return exclude_oss_issue("fetch_error", repository, issue)
 
     body_is_clear = len(raw_body) >= 80 or text_contains_any(
         searchable,
@@ -4826,31 +5006,21 @@ def build_oss_issue_candidate(
     )
     if exclude_reason or score < OSS_SCORE_EXCLUDE_THRESHOLD:
         if score < OSS_SCORE_EXCLUDE_THRESHOLD:
-            record_oss_gate_exclusion("score-below-65")
+            record_excluded_oss_candidate("score-below-65", repository, issue)
         for reason in (value.strip() for value in exclude_reason.split(",")):
             if reason:
-                record_oss_gate_exclusion(reason)
+                record_excluded_oss_candidate(reason, repository, issue)
         return None
     safety_checks = {
-        "open_issue": state == "open",
-        "configured_repository": bool(repository_profile),
-        "no_assignee": not has_assignee,
-        "no_linked_pr": linked_prs_count == 0,
-        "no_linked_branch": linked_branches_count == 0,
-        "no_claim_comment": not claim_author and claim_comment_check == "checked",
-        "maintainer_or_beginner_label": maintainer_qualified,
-        "preferred_contribution_type": contribution_type in repository_preferred_types,
-        "no_avoid_label": not text_contains_any(" ".join(labels), repository_avoid_labels),
-        "no_avoid_title_keyword": not text_contains_any(title, repository_avoid_title_keywords),
-        "linked_work_verified": linked_work_check == "verified",
-        "not_high_risk_scope": not text_contains_any(
-            searchable,
-            OSS_SECURITY_KEYWORDS
-            + OSS_RELEASE_BLOCKER_KEYWORDS
-            + OSS_DEEP_INTERNALS_KEYWORDS
-            + OSS_MAJOR_API_KEYWORDS
-            + OSS_DESIGN_KEYWORDS,
-        ),
+        "is_open": state == "open",
+        "has_no_assignee": not has_assignee,
+        "has_no_linked_work": linked_prs_count == 0 and linked_branches_count == 0 and not has_linked_work,
+        "linked_work_check_complete": linked_work_check == "verified",
+        "has_no_claim_comment": not claim_author and claim_comment_check == "checked",
+        "has_beginner_or_maintainer_signal": maintainer_qualified,
+        "matches_preferred_type": contribution_type in repository_preferred_types,
+        "has_no_avoid_label": not text_contains_any(" ".join(labels), repository_avoid_labels),
+        "has_no_avoid_keyword": not text_contains_any(title, repository_avoid_title_keywords),
     }
     junior_fit_evidence = junior_fit_evidence_for_issue(
         repository_priority=repository_priority,
@@ -4941,11 +5111,61 @@ def build_oss_issue_candidate(
         ),
         risk_reason=risk_reason,
         suggested_first_comment=suggested_first_comment_for_issue(),
-        search_source=repository_search_urls[0]
-        if repository_search_urls
-        else f"https://github.com/{repository}/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee",
+        search_source=search_source
+        or (
+            repository_search_urls[0]
+            if repository_search_urls
+            else f"https://github.com/{repository}/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee"
+        ),
         score=score,
     )
+
+
+def collect_profile_github_issues(
+    repository: str,
+    repository_profile: dict[str, object],
+    token: str | None,
+    current_time: datetime,
+) -> tuple[list[tuple[dict[str, object], str]], list[dict[str, object]]]:
+    issues: list[tuple[dict[str, object], str]] = []
+    diagnostics: list[dict[str, object]] = []
+    seen_issue_urls: set[str] = set()
+
+    for search_query in repository_profile_search_queries(repository_profile, current_time):
+        search_name = search_query["name"]
+        raw_query = search_query["query"]
+        scoped_query = github_repository_search_query(repository, raw_query)
+        fetched = fetch_github_search_issues(repository, raw_query, token, search_name)
+        diagnostics.append(
+            {
+                "name": search_name,
+                "query": scoped_query,
+                "items_fetched": len(fetched) if fetched is not None else 0,
+                "status": "ok" if fetched is not None else "failed",
+            }
+        )
+        if fetched is None:
+            record_excluded_oss_candidate(
+                "fetch_error",
+                repository,
+                None,
+                reason_detail=f"GitHub search failed for profile query: {search_name}",
+            )
+            continue
+        for issue in fetched:
+            issue_url = str(issue.get("html_url", "")).strip()
+            issue_number = str(issue.get("number", "")).strip()
+            dedupe_key = issue_url or f"{repository}#{issue_number}"
+            if not dedupe_key or dedupe_key in seen_issue_urls:
+                continue
+            seen_issue_urls.add(dedupe_key)
+            issues.append(
+                (
+                    issue,
+                    f"profile_query:{search_name} q={scoped_query}",
+                )
+            )
+    return issues, diagnostics
 
 
 def collect_oss_issue_candidates(
@@ -4954,6 +5174,7 @@ def collect_oss_issue_candidates(
 ) -> list[OssIssueCandidate]:
     OSS_GATE_EXCLUSION_COUNTS.clear()
     OSS_REPOSITORY_DIAGNOSTICS.clear()
+    OSS_EXCLUDED_CANDIDATE_PREVIEW.clear()
     oss_config = load_oss_repositories_config()
     repositories = configured_repositories(category, oss_config)
     difficulty_model = oss_config.get("difficulty_model", {})
@@ -4967,17 +5188,23 @@ def collect_oss_issue_candidates(
             record_warning(f"invalid GitHub repository id: {repository}")
             continue
         repository_profile = repository_profile_for(repository, oss_config)
-        issues = fetch_github_issues(repository, token)
+        issue_sources, search_diagnostics = collect_profile_github_issues(
+            repository,
+            repository_profile,
+            token,
+            current_time,
+        )
         OSS_REPOSITORY_DIAGNOSTICS.append(
             {
                 "repository": repository,
                 "priority": str(repository_profile.get("priority", "")).strip().upper(),
                 "initial_fit_score": repository_initial_fit_score(repository_profile),
                 "ecosystem_tags": repository_profile_values(repository_profile, "ecosystem_tags"),
-                "issues_fetched": len(issues),
+                "issues_fetched": len(issue_sources),
+                "search_queries": search_diagnostics,
             }
         )
-        for issue in issues:
+        for issue, search_source in issue_sources:
             candidate = build_oss_issue_candidate(
                 category,
                 difficulty_model,
@@ -4986,6 +5213,7 @@ def collect_oss_issue_candidates(
                 issue,
                 token,
                 current_time,
+                search_source,
             )
             if (
                 candidate
@@ -5145,6 +5373,40 @@ def common_candidate_metadata(
         "source_errors": SOURCE_ERRORS,
         "warnings": WARNINGS,
     }
+
+
+def stable_source_error_type(error: dict[str, str]) -> str:
+    raw_type = str(error.get("error_type", "")).strip().lower()
+    source_type = str(error.get("source_type", "")).strip().lower()
+    message = str(error.get("error", "")).strip().lower()
+    combined = f"{raw_type} {source_type} {message}"
+
+    if "rate_limit" in raw_type or "rate limit" in combined:
+        return "rate_limit"
+    if "token_missing" in raw_type or "unauthorized" in combined or "(401)" in combined:
+        return "unauthorized"
+    if "comment" in combined:
+        return "comment_fetch_failed"
+    if "graphql" in combined or "linked work" in combined:
+        return "linked_work_check_failed"
+    if "repository_access" in raw_type:
+        return "repository_fetch_failed"
+    if "issue search" in combined or "issues" in combined:
+        return "issue_fetch_failed"
+    if "schema_error" in raw_type or "invalid_response" in raw_type or "json" in combined:
+        return "schema_error"
+    if "request_failed" in raw_type:
+        return "repository_fetch_failed"
+    return "unknown"
+
+
+def oss_source_error_type_counts() -> dict[str, int]:
+    counts = Counter(
+        stable_source_error_type(error)
+        for error in SOURCE_ERRORS
+        if error.get("category") == OSS_CATEGORY_ID
+    )
+    return dict(sorted(counts.items()))
 
 
 def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, object]:
@@ -5725,11 +5987,7 @@ def write_category_output(
             for candidate in candidates
             if isinstance(candidate, OssIssueCandidate) and candidate.safe_to_recommend
         ]
-        source_error_types = Counter(
-            str(error.get("error_type", "unknown"))
-            for error in SOURCE_ERRORS
-            if error.get("category") == OSS_CATEGORY_ID
-        )
+        source_error_type_counts = oss_source_error_type_counts()
         payload = {
             "schema_version": 3,
             "category": category_id,
@@ -5752,11 +6010,12 @@ def write_category_output(
                 "repository_count": len(OSS_REPOSITORY_DIAGNOSTICS),
                 "repositories": OSS_REPOSITORY_DIAGNOSTICS,
                 "gate_exclusion_counts": dict(sorted(OSS_GATE_EXCLUSION_COUNTS.items())),
-                "source_error_type_counts": dict(sorted(source_error_types.items())),
-                "github_api_error_count": sum(source_error_types.values()),
-                "github_rate_limit_error_count": int(source_error_types.get("github_rate_limit", 0)),
+                "source_error_type_counts": source_error_type_counts,
+                "excluded_candidates_preview": OSS_EXCLUDED_CANDIDATE_PREVIEW[:OSS_EXCLUDED_PREVIEW_LIMIT],
+                "github_api_error_count": sum(source_error_type_counts.values()),
+                "github_rate_limit_error_count": int(source_error_type_counts.get("rate_limit", 0)),
                 "github_repository_access_error_count": int(
-                    source_error_types.get("github_repository_access_failed", 0)
+                    source_error_type_counts.get("repository_fetch_failed", 0)
                 ),
                 "linked_work_verification": "graphql_required",
                 "fallback_when_empty": "oss-preparation-routine",

@@ -5,7 +5,9 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import json
 import sys
+import tempfile
 import urllib.error
 from datetime import datetime
 from email.message import Message
@@ -58,6 +60,9 @@ PROFILED_OSS_CONFIG = {
             "avoid_title_keywords": ["compiler redesign"],
             "preferred_contribution_types": ["docs", "test"],
             "contribution_guide": "CONTRIBUTING.adoc",
+            "search_queries": [
+                {"name": "docs", "query": "is:issue is:open no:assignee documentation"}
+            ],
             "local_check_hints": ["./gradlew test"],
             "docs_or_test_hints": ["spring-boot docs"],
             "junior_notes": "문서와 테스트 재현 우선",
@@ -70,6 +75,7 @@ CURRENT_TIME = datetime(2026, 6, 1, 9, 0, tzinfo=KST)
 def reset_gate() -> None:
     collector.SOURCE_ERRORS.clear()
     collector.OSS_GATE_EXCLUSION_COUNTS.clear()
+    collector.OSS_EXCLUDED_CANDIDATE_PREVIEW.clear()
     collector.fetch_github_issue_comments = (
         lambda repository, issue_number, token, expected_count=0: []
     )
@@ -145,7 +151,8 @@ def test_safe_maintainer_authored_issue() -> None:
         "maintainer_signal": 10,
         "portfolio_value": 10,
     }
-    assert candidate.safety_checks["linked_work_verified"] is True
+    assert candidate.safety_checks["linked_work_check_complete"] is True
+    assert candidate.safety_checks["has_no_linked_work"] is True
     assert "Please let me know" in candidate.suggested_first_comment
 
 
@@ -184,7 +191,7 @@ def test_repository_profile_is_reflected_in_candidate_evidence() -> None:
     assert serialized["repository_priority"] == "A"
     assert serialized["repository_initial_fit_score"] == 82
     assert serialized["score_breakdown"]["technical_fit"] == 28
-    assert serialized["safety_checks"]["no_assignee"] is True
+    assert serialized["safety_checks"]["has_no_assignee"] is True
     assert serialized["first_30_minute_action"] == serialized["first_30_min_action"]
     assert serialized["suggested_first_comment"]
     assert serialized["junior_fit_evidence"]
@@ -199,7 +206,8 @@ def test_repository_avoid_label_is_excluded() -> None:
         PROFILED_OSS_CONFIG,
     )
     assert candidate is None
-    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("repository-avoid-label", 0) == 1
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("avoid_label", 0) == 1
+    assert collector.OSS_EXCLUDED_CANDIDATE_PREVIEW[0]["reason"] == "avoid_label"
 
 
 def test_repository_avoid_title_keyword_is_excluded() -> None:
@@ -209,7 +217,7 @@ def test_repository_avoid_title_keyword_is_excluded() -> None:
         PROFILED_OSS_CONFIG,
     )
     assert candidate is None
-    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("repository-avoid-title-keyword", 0) == 1
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("avoid_keyword", 0) == 1
 
 
 def test_repository_preferred_contribution_types_are_required() -> None:
@@ -223,11 +231,11 @@ def test_repository_preferred_contribution_types_are_required() -> None:
         PROFILED_OSS_CONFIG,
     )
     assert candidate is None
-    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("unsupported-contribution-type", 0) == 1
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("unsupported_contribution_type", 0) == 1
 
 
 def test_pull_request_item_is_excluded() -> None:
-    assert_excluded("pull-request-item", issue_payload(pull_request={"url": "https://api.github.com/pr"}))
+    assert_excluded("not_issue", issue_payload(pull_request={"url": "https://api.github.com/pr"}))
 
 
 def test_assigned_issue_is_excluded() -> None:
@@ -243,7 +251,7 @@ def test_claim_comment_is_excluded() -> None:
     )
     candidate = build_candidate(issue_payload(comments=1))
     assert candidate is None
-    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("claim-comment", 0) == 1
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("claimed_in_comments", 0) == 1
 
 
 def test_linked_work_unknown_is_excluded() -> None:
@@ -251,7 +259,7 @@ def test_linked_work_unknown_is_excluded() -> None:
     collector.fetch_github_linked_work_check = lambda repository, issue_number, token: None
     candidate = build_candidate(issue_payload())
     assert candidate is None
-    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("linked-work-check-unknown", 0) == 1
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("linked_work_check_incomplete", 0) == 1
 
 
 def test_linked_branch_is_excluded() -> None:
@@ -268,7 +276,7 @@ def test_linked_branch_is_excluded() -> None:
     )
     candidate = build_candidate(issue_payload())
     assert candidate is None
-    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("linked-work", 0) == 1
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("linked_work_exists", 0) == 1
 
 
 def test_linked_pr_is_excluded() -> None:
@@ -285,7 +293,7 @@ def test_linked_pr_is_excluded() -> None:
     )
     candidate = build_candidate(issue_payload())
     assert candidate is None
-    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("linked-work", 0) == 1
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("linked_work_exists", 0) == 1
 
 
 def test_graphql_missing_token_records_diagnostic() -> None:
@@ -293,6 +301,7 @@ def test_graphql_missing_token_records_diagnostic() -> None:
     result = collector.fetch_github_graphql_json("query { viewer { login } }", {}, None, "owner/repo", "test")
     assert result is None
     assert collector.SOURCE_ERRORS[-1]["error_type"] == "github_graphql_token_missing"
+    assert collector.stable_source_error_type(collector.SOURCE_ERRORS[-1]) == "unauthorized"
 
 
 def test_rest_rate_limit_records_diagnostic() -> None:
@@ -319,7 +328,7 @@ def test_rest_rate_limit_records_diagnostic() -> None:
     finally:
         collector.urllib.request.urlopen = original_urlopen
     assert result is None
-    assert collector.SOURCE_ERRORS[-1]["error_type"] == "github_rate_limit"
+    assert collector.stable_source_error_type(collector.SOURCE_ERRORS[-1]) == "rate_limit"
 
 
 def test_rest_repository_access_failure_records_diagnostic() -> None:
@@ -344,7 +353,60 @@ def test_rest_repository_access_failure_records_diagnostic() -> None:
     finally:
         collector.urllib.request.urlopen = original_urlopen
     assert result is None
-    assert collector.SOURCE_ERRORS[-1]["error_type"] == "github_repository_access_failed"
+    assert collector.stable_source_error_type(collector.SOURCE_ERRORS[-1]) == "repository_fetch_failed"
+
+
+def test_source_error_type_counts_are_stable() -> None:
+    reset_gate()
+    collector.record_source_error(
+        "GitHub owner/repo",
+        "GitHub API request failed for issue search docs (403): API rate limit exceeded",
+        category=collector.OSS_CATEGORY_ID,
+        source_type="github_search",
+        error_type="github_rate_limit",
+    )
+    assert collector.oss_source_error_type_counts() == {"rate_limit": 1}
+
+
+def test_profile_search_queries_drive_collection() -> None:
+    reset_gate()
+    collected_queries: list[str] = []
+    original_fetch = collector.fetch_github_search_issues
+
+    def fake_fetch(repository: str, query: str, token: str | None, search_name: str):
+        del token, search_name
+        collected_queries.append(collector.github_repository_search_query(repository, query))
+        return [issue_payload()]
+
+    try:
+        collector.fetch_github_search_issues = fake_fetch
+        profile = PROFILED_OSS_CONFIG["repository_profiles"][0]
+        issue_sources, diagnostics = collector.collect_profile_github_issues(
+            "spring-projects/spring-boot",
+            profile,
+            "token",
+            CURRENT_TIME,
+        )
+    finally:
+        collector.fetch_github_search_issues = original_fetch
+    assert len(issue_sources) == 1
+    assert "repo:spring-projects/spring-boot" in collected_queries[0]
+    assert issue_sources[0][1].startswith("profile_query:docs")
+    assert diagnostics[0]["status"] == "ok"
+
+
+def test_empty_oss_payload_keeps_diagnostics() -> None:
+    reset_gate()
+    with tempfile.TemporaryDirectory() as tmp:
+        output_dir = Path(tmp) / "candidates"
+        category = {"id": collector.OSS_CATEGORY_ID}
+        collector.write_category_output(output_dir, category, CURRENT_TIME, [], "daily-backend")
+        payload = json.loads((output_dir / f"{collector.OSS_CATEGORY_ID}.json").read_text(encoding="utf-8"))
+    diagnostics = payload["diagnostics"]
+    assert diagnostics["safe_items_count"] == 0
+    assert diagnostics["source_error_type_counts"] == {}
+    assert diagnostics["excluded_candidates_preview"] == []
+    assert diagnostics["fallback_when_empty"] == "oss-preparation-routine"
 
 
 def main() -> int:
@@ -364,6 +426,9 @@ def main() -> int:
         test_graphql_missing_token_records_diagnostic,
         test_rest_rate_limit_records_diagnostic,
         test_rest_repository_access_failure_records_diagnostic,
+        test_source_error_type_counts_are_stable,
+        test_profile_search_queries_drive_collection,
+        test_empty_oss_payload_keeps_diagnostics,
     ]
     for test in tests:
         test()

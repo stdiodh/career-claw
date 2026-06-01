@@ -33,7 +33,8 @@ Daily 후보는 아래 순서로 Spring 생태계를 먼저 보고, 이후 JVM/K
 - `avoid_labels`: 있으면 추천하지 않는 label입니다.
 - `avoid_title_keywords`: 제목에 있으면 추천하지 않는 키워드입니다.
 - `contribution_guide`: 기여 전 확인할 가이드입니다.
-- `search_urls`: 다음 탐색에 사용할 GitHub 검색식입니다.
+- `search_queries`: collector가 실제로 실행하는 profile-driven GitHub 검색 규칙입니다. runtime에서 `repo:<repository>`를 붙여 저장소 범위를 고정합니다.
+- `search_urls`: 사람이 다음 탐색에 참고할 GitHub 검색 URL입니다.
 - `local_check_hints`: 첫 30분 로컬 확인에 쓸 명령이나 확인 경로입니다.
 - `docs_or_test_hints`: 문서 또는 테스트 위치를 좁히는 힌트입니다.
 - `junior_notes`: 왜 주니어 백엔드 개발자에게 적합하거나 조심해야 하는지 적습니다.
@@ -57,6 +58,21 @@ Daily 후보는 아래 순서로 Spring 생태계를 먼저 보고, 이후 JVM/K
 - 64점 이하: Daily 추천 제외
 
 후보 JSON에는 `score`, `score_breakdown`, `repository_initial_fit_score`, `repository_priority`, `repository_ecosystem_tags`, `repository_local_check_hints`, `repository_docs_or_test_hints`, `repository_junior_notes`, `junior_fit_evidence`를 남겨 Markdown 생성과 validator가 근거를 확인할 수 있게 합니다.
+
+## 수집과 Diagnostics
+
+collector는 저장소별 `search_queries`를 순서대로 실행하고, 각 후보에 `search_source`를 남깁니다. 이 값은 어떤 profile query가 후보를 발견했는지 설명하는 근거입니다. `search_urls`는 문서와 수동 확인용 참고 URL이며, 실제 수집 기준은 `search_queries`입니다.
+
+후보 JSON의 `diagnostics`에는 항상 다음 정보를 남깁니다.
+
+- `repositories_checked`: 확인한 저장소 목록
+- `safe_items_count`: 추천 가능한 후보 수
+- `filtered_items_count`: gate에서 제외된 후보 수
+- `gate_exclusion_counts`: `assigned`, `claimed_in_comments`, `linked_work_exists`, `linked_work_check_incomplete`, `avoid_label`, `avoid_keyword`, `not_beginner_signal`, `unsafe_security_topic`, `low_score`, `unsupported_contribution_type`, `fetch_error` 같은 안정적인 제외 reason count
+- `excluded_candidates_preview`: 제외 후보를 최대 5개만 보여주는 작은 preview
+- `source_error_type_counts`: `rate_limit`, `unauthorized`, `repository_fetch_failed`, `issue_fetch_failed`, `linked_work_check_failed`, `comment_fetch_failed`, `schema_error`, `unknown` 기준의 source error count
+
+보안 취약점처럼 민감한 제외 후보는 제목이나 세부 내용을 그대로 노출하지 않고 generic reason만 남깁니다.
 
 ## Safe Candidate Gate
 
@@ -118,6 +134,10 @@ Daily 후보는 아래 순서로 Spring 생태계를 먼저 보고, 이후 JVM/K
 ## Fallback 동작
 
 안전한 후보가 없으면 특정 issue URL을 만들거나 추정하지 않습니다. Daily Brief는 `오늘의 OSS 기여 준비 루틴`을 출력합니다.
+
+안전한 후보가 여러 개 있어도 Daily Backend Brief는 상세 후보 1개만 렌더링합니다. 후보 JSON에는 여러 safe candidate를 유지할 수 있고, Daily Brief는 필요할 때 보조 후보를 최대 2개까지 짧게 덧붙입니다. 이렇게 해서 "top 3" 의도는 유지하되 Discord 메시지는 길어지지 않게 합니다.
+
+Markdown의 issue URL은 `kr-oss-contribution-opportunities.json`의 `safe_to_recommend=true` item URL만 사용할 수 있습니다. `excluded_candidates_preview`에 있는 URL이나 `safe_to_recommend=false` item URL은 추천 섹션에 넣으면 validator가 실패합니다.
 
 준비 루틴은 다음과 같은 30분 행동 중 하나여야 합니다.
 
