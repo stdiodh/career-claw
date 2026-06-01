@@ -217,6 +217,9 @@ fi
 grep -q 'reports/candidates/cs-core-daily-topic.json' .github/codex/prompts/kr-tech-daily-brief.md
 grep -q 'reports/candidates/backend-term-daily.json' .github/codex/prompts/kr-tech-daily-brief.md
 grep -q '오늘의 CS Core & 백엔드 용어' .github/codex/prompts/kr-tech-daily-brief.md
+grep -q '기술 블로그 제목 후보' .github/codex/prompts/kr-tech-daily-brief.md
+grep -q 'PAAR 글 목차' .github/codex/prompts/kr-tech-daily-brief.md
+grep -q '고정 커리큘럼' .github/codex/prompts/kr-tech-daily-brief.md
 if ! grep -Eq '3(~|-)5개' .github/codex/prompts/kr-tech-news-daily.md; then
   echo "News Daily prompt must include the 3~5개 output rule." >&2
   exit 1
@@ -257,6 +260,7 @@ required_files=(
   "data/oss-progress.json"
   "data/ps-progress.json"
   "docs/daily-growth-ops.md"
+  "docs/daily-spring-jvm-blog-topic-policy.md"
   "docs/oss-candidate-policy.md"
   ".github/codex/prompts/kr-tech-news-daily.md"
   ".github/workflows/kr-tech-news-daily.yml"

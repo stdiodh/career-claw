@@ -119,12 +119,32 @@ DAILY_FORBIDDEN_PATTERNS = [
     r"긴급 체크",
 ]
 DAILY_STUDY_FIELDS = [
+    "오늘의 한 줄 질문",
     "왜 지금 볼 만한가",
+    "실제 개발 문제",
     "핵심 개념",
+    "공식 문서 확인 포인트",
+    "30분 학습",
     "30분 실습",
+    "기술 블로그 제목 후보",
+    "PAAR 글 목차",
     "완료 기준",
-    "확장해서 볼 것",
+    "다음에 이어서 볼 주제",
     "레퍼런스",
+]
+DAILY_STUDY_PAAR_FIELDS = ["Problem", "Analyze", "Action", "Result"]
+DAILY_STUDY_FIXED_PLAN_PATTERNS = [
+    r"\bDay\s*1\b",
+    r"\bDay\s*2\b",
+    r"2\s*주",
+    r"14\s*일",
+    r"커리큘럼\s*전체",
+]
+DAILY_STUDY_OVERSIZED_TITLE_PATTERNS = [
+    r"완전\s*정복",
+    r"총정리",
+    r"전체\s*구조",
+    r"마스터하기",
 ]
 DAILY_PS_FIELDS = [
     "이번 주 주제",
@@ -493,6 +513,7 @@ OSS_CONTRIBUTION_TYPE_ALIASES = {
 SPRING_ALLOWED_URL_PREFIXES = [
     "spring.io",
     "docs.spring.io",
+    "docs.jboss.org/hibernate",
     "github.com/spring-projects/",
     "grpc.io",
     "openjdk.org",
@@ -505,6 +526,17 @@ SPRING_ALLOWED_URL_PREFIXES = [
     "testcontainers.com",
     "docs.docker.com",
     "kubernetes.io",
+    "postgresql.org",
+    "dev.mysql.com",
+    "docs.aws.amazon.com",
+    "aws.amazon.com",
+    "cloud.google.com",
+    "learn.microsoft.com",
+    "toss.tech",
+    "techblog.woowahan.com",
+    "tech.kakao.com",
+    "d2.naver.com",
+    "engineering.linecorp.com",
 ]
 PRACTICAL_ALLOWED_URL_PREFIXES = [
     "datatracker.ietf.org",
@@ -809,6 +841,25 @@ def bullet_field_value(text: str, field: str) -> str:
     return match.group(1).strip() if match else ""
 
 
+def bullet_field_block(text: str, field: str) -> str:
+    lines = text.splitlines()
+    field_re = re.compile(rf"^(\s*)-\s*{re.escape(field)}\s*:\s*(.*)$")
+    bullet_field_re = re.compile(r"^(\s*)-\s*[^:\n]+:\s*.*$")
+    for index, line in enumerate(lines):
+        match = field_re.match(line)
+        if not match:
+            continue
+        field_indent = len(match.group(1))
+        block = [match.group(2).strip()]
+        for next_line in lines[index + 1 :]:
+            next_match = bullet_field_re.match(next_line)
+            if next_match and len(next_match.group(1)) <= field_indent:
+                break
+            block.append(next_line)
+        return "\n".join(block).strip()
+    return ""
+
+
 def markdown_link_urls(text: str) -> list[str]:
     return re.findall(r"\[[^\]]+\]\((https?://[^)]+)\)", text)
 
@@ -1095,12 +1146,54 @@ def validate_daily_study_section(sections: list[Section]) -> None:
         fail(f"Spring Boot/JVM study topic is missing field(s): {', '.join(missing)}")
     if re.search(r"^\s*-\s*검색 키워드\s*:", item.body, re.MULTILINE):
         fail("Spring Boot/JVM study section must use 완료 기준, not 검색 키워드.")
+    if re.search(r"^\s*-\s*확장해서 볼 것\s*:", item.body, re.MULTILINE):
+        fail("Spring Boot/JVM study section must use 다음에 이어서 볼 주제.")
+    validate_daily_study_blog_topic_shape(item)
     validate_item_markdown_link(item)
     validate_learning_reference_domains(
         item.body,
         SPRING_ALLOWED_URL_PREFIXES,
         "오늘의 Spring Boot/JVM 학습",
     )
+
+
+def validate_daily_study_blog_topic_shape(item: Item) -> None:
+    text = f"{item.title}\n{item.body}"
+    found_fixed_plan = [
+        pattern
+        for pattern in DAILY_STUDY_FIXED_PLAN_PATTERNS
+        if re.search(pattern, text, flags=re.IGNORECASE)
+    ]
+    if found_fixed_plan:
+        fail(
+            "Spring Boot/JVM study section must not use fixed curriculum wording: "
+            + ", ".join(found_fixed_plan)
+        )
+
+    oversized = [
+        pattern
+        for pattern in DAILY_STUDY_OVERSIZED_TITLE_PATTERNS
+        if re.search(pattern, text, flags=re.IGNORECASE)
+    ]
+    if oversized:
+        fail(
+            "Spring Boot/JVM study section uses an oversized blog topic expression: "
+            + ", ".join(oversized)
+        )
+
+    titles_block = bullet_field_block(item.body, "기술 블로그 제목 후보")
+    title_count = len(re.findall(r"^\s*\d+\.\s+\S", titles_block, flags=re.MULTILINE))
+    if title_count != 3:
+        fail("Spring Boot/JVM study section must include exactly 3 blog title candidates.")
+
+    paar_block = bullet_field_block(item.body, "PAAR 글 목차")
+    missing_paar = [
+        field
+        for field in DAILY_STUDY_PAAR_FIELDS
+        if not re.search(rf"^\s*-\s*{re.escape(field)}\s*:", paar_block, flags=re.MULTILINE)
+    ]
+    if missing_paar:
+        fail(f"Spring Boot/JVM PAAR outline is missing field(s): {', '.join(missing_paar)}")
 
 
 def validate_daily_ps_section(sections: list[Section]) -> None:

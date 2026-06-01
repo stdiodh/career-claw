@@ -5,15 +5,28 @@
 - API 버전 호환성과 HTTP 재시도 의미를 작게 검증하며 해시 루틴을 이어갑니다.
 
 ## 1. 오늘의 Spring Boot/JVM 학습
-### 주제: Spring Framework 7 API Versioning으로 v1/v2 컨트롤러 분리하기
-- 왜 지금 볼 만한가: Spring Framework 7의 API versioning은 REST API 진화와 하위 호환성 유지 연습에 바로 연결됩니다.
-- 핵심 개념: 요청 버전 위치를 정하고 컨트롤러 매핑에서 지원 버전을 선언해 미지원 버전 요청을 분리합니다.
-- 30분 실습: `API-Version` 헤더 기반 v1/v2 컨트롤러를 만들고, MockMvc로 v1, v2, v3 요청 상태 코드를 비교합니다.
-- 완료 기준: v1과 v2 응답이 분리되고 지원하지 않는 v3 요청이 실패하는 테스트가 남습니다.
-- 확장해서 볼 것: path segment 방식, deprecated version 응답 헤더, RestClient 기본 버전 설정
+### 주제: 조회 API에도 `@Transactional(readOnly = true)`를 붙이는 이유
+- 오늘의 한 줄 질문: 조회만 하는 Service 메서드에도 트랜잭션을 명시해야 할까?
+- 왜 지금 볼 만한가: JPA 기반 Spring Boot 애플리케이션에서 조회 로직은 자주 작성되므로, `readOnly = true`를 성능 옵션으로 외우기보다 조회 의도와 flush 흐름을 함께 이해할 가치가 있습니다.
+- 실제 개발 문제: 조회 API에서 Entity를 수정하지 않는다고 생각했지만 같은 영속성 컨텍스트 안에서 값이 바뀌면 변경 감지와 flush 동작을 오해할 수 있습니다.
+- 핵심 개념: `readOnly = true`는 조회 전용 트랜잭션 의도를 드러내고 JPA provider나 DB 드라이버에 최적화 힌트로 전달될 수 있으며, 오늘은 성능 마법 버튼이 아니라 변경 감지 흐름을 확인하는 출발점으로 봅니다.
+- 공식 문서 확인 포인트: Spring transaction read-only attribute, JPA flush, Hibernate dirty checking
+- 30분 학습: Spring Framework transaction 문서에서 read-only 속성 설명을 확인하고, JPA flush와 dirty checking 흐름을 3문장으로 정리합니다.
+- 30분 실습: 간단한 조회 Service에 `@Transactional`과 `@Transactional(readOnly = true)`를 각각 적용하고 SQL 로그로 flush/update 여부를 비교합니다.
+- 기술 블로그 제목 후보:
+  1. 조회 API에도 `@Transactional(readOnly = true)`를 붙이는 이유
+  2. readOnly 트랜잭션은 성능 옵션일까, 의도 표현일까?
+  3. Spring Boot 조회 로직에서 readOnly 트랜잭션 확인하기
+- PAAR 글 목차:
+  - Problem: 조회 API인데도 트랜잭션을 붙여야 하는지 헷갈리는 상황을 제시합니다.
+  - Analyze: Spring transaction의 readOnly 의미와 JPA flush/dirty checking 흐름을 비교합니다.
+  - Action: 간단한 Service 예제로 기본 트랜잭션과 readOnly 트랜잭션을 비교합니다.
+  - Result: readOnly는 만능 성능 옵션이 아니라 조회 의도 표현과 최적화 힌트로 이해해야 한다는 결론을 정리합니다.
+- 완료 기준: readOnly 트랜잭션이 해결하려는 문제를 한 문장으로 설명하고, SQL 로그 또는 테스트 결과를 블로그 초안에 기록합니다.
+- 다음에 이어서 볼 주제: 트랜잭션 전파 옵션 중 `REQUIRED`와 `REQUIRES_NEW`의 차이를 작은 예제로 확인합니다.
 - 레퍼런스:
-  - [공식 문서](https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-config/api-version.html)
-  - [릴리즈 노트](https://spring.io/blog/2025/11/13/spring-framework-7-0-general-availability)
+  - [Spring Framework 공식 문서](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html)
+  - [Hibernate 공식 문서](https://docs.jboss.org/hibernate/orm/current/userguide/html_single/Hibernate_User_Guide.html#pc-dirtychecking)
 
 ## 2. 이번 주 PS 성장 루틴
 - 이번 주 주제: 해시

@@ -45,6 +45,9 @@ Daily 수집 소스 정책:
 
 - `spring-study-topic.json`은 `spring-jvm-study-topics` 카테고리에서 생성하며 Naver query를 사용하지 않습니다.
 - Spring/JVM 학습 후보는 Spring 공식 블로그, Spring 문서, OpenJDK/Inside Java, Micrometer/OpenTelemetry 등 공식·표준 레퍼런스를 우선합니다.
+- 1번 `오늘의 Spring Boot/JVM 학습`은 매일 하나의 작은 Kotlin/Spring Boot/JVM/DB/Cloud/운영 개념을 고릅니다.
+- 이 섹션은 단순 링크 추천이 아니라 기술 블로그 작성을 위한 문제 상황, 30분 학습, 30분 실습, PAAR 글 목차를 함께 제공합니다.
+- 고정된 2주 커리큘럼이 아니라 KST 기준 매일 후보와 공식 레퍼런스를 바탕으로 동적으로 생성합니다.
 - 실무지식 curriculum은 `situation`, `failure_mode`, `practice_steps`, `official_refs`를 포함해 브리핑 모델이 실패 상황과 30분 실습을 데이터에서 직접 읽도록 합니다.
 - CS Core curriculum은 `configs/backend-core-cs-curriculum.json`에서 KST 날짜 기반으로 1개 topic을 선택하며, computer architecture, OS, network, database, JVM runtime 트랙을 순환합니다.
 - 백엔드 용어 glossary는 `configs/backend-terms-glossary.json`에서 KST 날짜 기반으로 1개 term을 선택하며, 정의보다 실무 상황, 오해 위험, Spring/API 연결을 우선합니다.
