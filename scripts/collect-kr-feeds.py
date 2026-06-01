@@ -406,6 +406,8 @@ WEEKLY_CAREER_LAST_CATEGORY_PAYLOADS: dict[str, dict[str, object]] = {}
 OSS_BEGINNER_KEYWORDS = [
     "documentation",
     "docs",
+    "javadoc",
+    "kdoc",
     "sample",
     "example",
     "test",
@@ -413,6 +415,8 @@ OSS_BEGINNER_KEYWORDS = [
     "repro",
     "typo",
     "validation",
+    "error message",
+    "comprehensibility",
 ]
 OSS_BEGINNER_TRIAGE_LABELS = [
     "first-timers-only",
@@ -420,7 +424,12 @@ OSS_BEGINNER_TRIAGE_LABELS = [
     "good first issue",
     "help wanted",
     "status: ideal-for-contribution",
+    "ideal-for-contribution",
+    "status: first-timers-only",
     "good first contribution",
+    "documentation",
+    "docs",
+    "info: good first issue",
 ]
 OSS_DIRECT_SPRING_KEYWORDS = [
     "Spring Boot",
@@ -430,6 +439,12 @@ OSS_DIRECT_SPRING_KEYWORDS = [
     "Spring AI",
     "Spring Framework",
     "Spring Data",
+    "Spring REST Docs",
+    "Gradle",
+    "Ktor",
+    "Quarkus",
+    "Testcontainers",
+    "Micronaut",
     "PetClinic",
     "spring-boot",
     "spring-framework",
@@ -439,6 +454,9 @@ OSS_DIRECT_SPRING_KEYWORDS = [
     "spring-security",
     "spring-ai",
     "spring-petclinic",
+    "spring-restdocs",
+    "testcontainers-java",
+    "micronaut-core",
 ]
 OSS_MAINTAINER_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
 OSS_SECURITY_KEYWORDS = ["security vulnerability", "CVE"]
@@ -450,10 +468,25 @@ OSS_DEEP_INTERNALS_KEYWORDS = [
     "compiler backend",
     "IR backend",
 ]
-OSS_DESIGN_KEYWORDS = ["design proposal", "RFC", "epic", "requires design"]
+OSS_DESIGN_KEYWORDS = [
+    "design proposal",
+    "RFC",
+    "epic",
+    "requires design",
+    "needs design",
+    "needs decision",
+]
 OSS_DUPLICATE_KEYWORDS = ["duplicate", "invalid", "superseded"]
-OSS_MAJOR_API_KEYWORDS = ["major API", "breaking change"]
+OSS_MAJOR_API_KEYWORDS = ["major API", "breaking change", "breaking-change"]
 OSS_BLOCKED_LABEL_TITLE_KEYWORDS = [
+    "team-only",
+    "blocked",
+    "on-hold",
+    "pending-design-work",
+    "needs-design",
+    "needs-decision",
+    "internal-feedback",
+    "waiting-for-internal-feedback",
     "security",
     "CVE",
     "release blocker",
@@ -463,11 +496,17 @@ OSS_BLOCKED_LABEL_TITLE_KEYWORDS = [
 ]
 OSS_CLAIM_KEYWORDS = [
     "I'll take this",
+    "I'll work on this",
     "I will take this",
+    "I will work on this",
     "I'm working on this",
     "I am working on this",
     "working on this",
     "I can work on this",
+    "can I take this",
+    "can i take this",
+    "I'd like to work on this",
+    "I would like to work on this",
     "assign me",
     "please assign",
     "제가 해보겠습니다",
@@ -475,7 +514,21 @@ OSS_CLAIM_KEYWORDS = [
     "제가 맡겠습니다",
     "제가 진행해보겠습니다",
 ]
-OSS_PREFERRED_CONTRIBUTION_TYPES = {"docs", "test", "bug-repro", "sample"}
+OSS_PREFERRED_CONTRIBUTION_TYPES = {
+    "docs",
+    "test",
+    "bug-repro",
+    "sample",
+    "javadoc",
+    "kdoc",
+    "error-message",
+}
+OSS_SCORE_EXCLUDE_THRESHOLD = 65
+OSS_REPOSITORY_TIE_ORDER = {
+    "spring-projects/spring-security": 0,
+    "spring-projects/spring-restdocs": 1,
+    "spring-projects/spring-boot": 2,
+}
 SOURCE_ERRORS: list[dict[str, str]] = []
 WARNINGS: list[str] = []
 OSS_GATE_EXCLUSION_COUNTS: Counter[str] = Counter()
@@ -582,6 +635,7 @@ class OssIssueCandidate:
     repository: str
     issue_number: int
     repository_priority: str
+    repository_initial_fit_score: int
     repository_ecosystem_tags: list[str]
     repository_contribution_guide: str
     repository_local_check_hints: list[str]
@@ -608,6 +662,7 @@ class OssIssueCandidate:
     comments_checked_count: int
     created_at: datetime | None
     updated_at: datetime | None
+    last_activity_at: datetime | None
     summary: str
     contribution_type: str
     junior_fit_score: int
@@ -617,6 +672,8 @@ class OssIssueCandidate:
     risk_score: int
     exclude_reason: str
     difficulty_band: str
+    score_breakdown: dict[str, int]
+    safety_checks: dict[str, bool]
     why_beginner_friendly: str
     junior_fit_evidence: list[str]
     first_30_min_action: str
@@ -624,7 +681,10 @@ class OssIssueCandidate:
     claim_comment_author: str
     safe_to_recommend: bool
     status_check: str
+    maintainer_signal: str
     risk_reason: str
+    suggested_first_comment: str
+    search_source: str
     score: int
 
 
@@ -899,6 +959,21 @@ def repository_profile_values(profile: dict[str, object], key: str) -> list[str]
 
 def repository_priority_score(priority: str) -> int:
     return {"A": 20, "B": 10, "C": 0}.get(priority.upper(), 0)
+
+
+def repository_priority_rank(priority: str) -> int:
+    return {"A": 3, "B": 2, "C": 1}.get(priority.upper(), 0)
+
+
+def repository_tie_rank(repository: str) -> int:
+    return -OSS_REPOSITORY_TIE_ORDER.get(repository, 100)
+
+
+def repository_initial_fit_score(profile: dict[str, object]) -> int:
+    try:
+        return int(profile.get("initial_fit_score", 0) or 0)
+    except (TypeError, ValueError):
+        return 0
 
 
 def difficulty_model_values(
@@ -3530,6 +3605,12 @@ def record_oss_gate_exclusion(reason: str) -> None:
 
 def infer_contribution_type(text: str) -> str:
     lowered = text.lower()
+    if text_contains_any(lowered, ["javadoc"]):
+        return "javadoc"
+    if text_contains_any(lowered, ["kdoc"]):
+        return "kdoc"
+    if text_contains_any(lowered, ["error message", "error-message", "comprehensibility"]):
+        return "error-message"
     if text_contains_any(lowered, ["documentation", "docs", "doc", "getting started"]):
         return "docs"
     if text_contains_any(lowered, ["test", "tests", "testing"]):
@@ -4053,6 +4134,12 @@ def beginner_reason_for_band(difficulty_band: str, contribution_type: str) -> st
 def first_action_for_contribution_type(contribution_type: str) -> str:
     if contribution_type == "docs":
         return "관련 문서 위치를 찾고 오탈자, 설명 누락, 예제 실행 여부를 확인한다."
+    if contribution_type == "javadoc":
+        return "관련 Javadoc 위치와 기존 테스트/문서 표현을 확인하고 수정 범위를 메모한다."
+    if contribution_type == "kdoc":
+        return "관련 KDoc 위치와 Kotlin 예제 문맥을 확인하고 수정 범위를 메모한다."
+    if contribution_type == "error-message":
+        return "오류 메시지를 발생시키는 최소 조건과 관련 테스트 위치를 먼저 확인한다."
     if contribution_type == "sample":
         return "예제 프로젝트를 실행하고 README 절차와 실제 동작 차이를 기록한다."
     if contribution_type == "test":
@@ -4090,6 +4177,28 @@ def pre_contribution_etiquette_for_issue() -> str:
         "작업 전 이슈에 "
         "“문서 위치를 확인해보고 작은 PR을 준비해도 괜찮을까요?”라고 짧게 확인한다."
     )
+
+
+def suggested_first_comment_for_issue() -> str:
+    return (
+        "Hi team, I am interested in looking into this issue.\n\n"
+        "My initial plan is to:\n\n"
+        "* check the related documentation or test location,\n"
+        "* confirm the current behavior locally,\n"
+        "* propose a small docs/test/example-focused change if the scope looks right.\n\n"
+        "Please let me know if this direction sounds reasonable."
+    )
+
+
+def maintainer_signal_for_issue(
+    maintainer_authored: bool,
+    maintainer_triaged: bool,
+) -> str:
+    if maintainer_authored:
+        return "maintainer-authored"
+    if maintainer_triaged:
+        return "maintainer-triaged"
+    return "unverified"
 
 
 def junior_fit_evidence_for_issue(
@@ -4162,17 +4271,86 @@ def status_check_for_issue(
     return "이고, ".join(checks) + "입니다." if checks else ""
 
 
+def oss_score_breakdown(
+    *,
+    repository_initial_fit_score: int,
+    repository_priority: str,
+    contribution_type: str,
+    preferred_contribution_types: set[str],
+    labels: list[str],
+    searchable: str,
+    positive_title_match: bool,
+    maintainer_authored: bool,
+    maintainer_triaged: bool,
+    body_is_clear: bool,
+    comments: int,
+    updated_at: datetime | None,
+    current_time: datetime,
+    local_check_hints: list[str],
+    docs_or_test_hints: list[str],
+) -> dict[str, int]:
+    label_text = " ".join(labels)
+    beginner_signal = text_contains_any(label_text, OSS_BEGINNER_TRIAGE_LABELS)
+    preferred_type = contribution_type in preferred_contribution_types
+    recent = updated_at is not None and current_time - updated_at <= timedelta(days=120)
+    spring_or_backend = text_contains_any(searchable, OSS_DIRECT_SPRING_KEYWORDS + BACKEND_KEYWORDS)
+
+    technical_fit = min(
+        30,
+        int(max(repository_initial_fit_score, 0) * 0.22)
+        + (6 if preferred_type else 0)
+        + (4 if spring_or_backend else 0)
+        + (2 if positive_title_match else 0),
+    )
+    external_contribution_signal = min(
+        20,
+        (10 if beginner_signal else 0)
+        + (5 if comments <= 10 else 0)
+        + (5 if recent else 0),
+    )
+    scope_clarity = min(
+        15,
+        (7 if preferred_type else 0)
+        + (5 if body_is_clear else 0)
+        + (3 if contribution_type in {"docs", "sample", "test", "bug-repro", "javadoc", "kdoc", "error-message"} else 0),
+    )
+    validation_feasibility = min(
+        15,
+        (7 if local_check_hints else 0)
+        + (6 if docs_or_test_hints else 0)
+        + (2 if contribution_type in {"docs", "sample", "test", "bug-repro", "javadoc", "kdoc", "error-message"} else 0),
+    )
+    maintainer_signal = 10 if maintainer_authored else 8 if maintainer_triaged else 0
+    portfolio_value = min(
+        10,
+        {"A": 6, "B": 4, "C": 2}.get(repository_priority.upper(), 0)
+        + (4 if spring_or_backend else 0),
+    )
+    return {
+        "technical_fit": technical_fit,
+        "external_contribution_signal": external_contribution_signal,
+        "scope_clarity": scope_clarity,
+        "validation_feasibility": validation_feasibility,
+        "maintainer_signal": maintainer_signal,
+        "portfolio_value": portfolio_value,
+    }
+
+
 def oss_issue_scores(
     category: dict[str, object],
     *,
     difficulty_model: dict[str, object],
     repository_priority: str,
+    repository_initial_fit_score: int,
     repository_beginner_labels: list[str],
     repository_avoid_labels: list[str],
     repository_avoid_title_keywords: list[str],
     preferred_contribution_types: set[str],
+    local_check_hints: list[str],
+    docs_or_test_hints: list[str],
     title_text: str,
     text: str,
+    positive_title_match: bool,
     labels: list[str],
     label_title_text: str,
     assignees_count: int,
@@ -4187,7 +4365,7 @@ def oss_issue_scores(
     current_time: datetime,
     state: str,
     is_pull_request: bool,
-) -> tuple[int, int, int, int, int, str, str, str, str, str, int]:
+) -> tuple[int, int, int, int, int, str, str, dict[str, int], str, str, str, int]:
     label_text = " ".join(labels)
     searchable = f"{label_text} {text}"
     positive_labels = category_values(category, "positive_labels")
@@ -4371,10 +4549,30 @@ def oss_issue_scores(
         ),
         0,
     )
-    score = positive_score - penalty_score
+    del positive_score
+    score_breakdown = oss_score_breakdown(
+        repository_initial_fit_score=repository_initial_fit_score,
+        repository_priority=repository_priority,
+        contribution_type=contribution_type,
+        preferred_contribution_types=preferred_contribution_types,
+        labels=labels,
+        searchable=searchable,
+        positive_title_match=positive_title_match,
+        maintainer_authored=maintainer_authored,
+        maintainer_triaged=maintainer_qualified and not maintainer_authored,
+        body_is_clear=body_is_clear,
+        comments=comments,
+        updated_at=updated_at,
+        current_time=current_time,
+        local_check_hints=local_check_hints,
+        docs_or_test_hints=docs_or_test_hints,
+    )
+    score = sum(score_breakdown.values())
     exclude_reasons = []
     if difficulty_band not in {"p5_like", "p4_like"}:
         exclude_reasons.append(difficulty_band)
+    if score < OSS_SCORE_EXCLUDE_THRESHOLD:
+        exclude_reasons.append("score-below-65")
     hard_exclude_reasons = {
         "external-author-without-maintainer-triage",
         "assigned",
@@ -4406,6 +4604,7 @@ def oss_issue_scores(
         penalty_score,
         ",".join(dict.fromkeys(exclude_reasons)),
         difficulty_band,
+        score_breakdown,
         beginner_reason_for_band(difficulty_band, contribution_type),
         first_action_for_contribution_type(contribution_type),
         risk_reason,
@@ -4444,12 +4643,17 @@ def build_oss_issue_candidate(
     labels = label_names(issue)
     repository_profile = repository_profile_for(repository, oss_config)
     repository_priority = str(repository_profile.get("priority", "")).strip().upper()
+    repository_initial_score = repository_initial_fit_score(repository_profile)
     repository_ecosystem_tags = repository_profile_values(repository_profile, "ecosystem_tags")
     repository_beginner_labels = repository_profile_values(repository_profile, "beginner_labels")
     repository_avoid_labels = repository_profile_values(repository_profile, "avoid_labels")
     repository_avoid_title_keywords = repository_profile_values(
         repository_profile,
         "avoid_title_keywords",
+    )
+    repository_positive_title_keywords = repository_profile_values(
+        repository_profile,
+        "positive_title_keywords",
     )
     repository_preferred_types = {
         value
@@ -4462,6 +4666,7 @@ def build_oss_issue_candidate(
     repository_local_check_hints = repository_profile_values(repository_profile, "local_check_hints")
     repository_docs_or_test_hints = repository_profile_values(repository_profile, "docs_or_test_hints")
     repository_junior_notes = str(repository_profile.get("junior_notes", "")).strip()
+    repository_search_urls = repository_profile_values(repository_profile, "search_urls")
     author = github_login(issue)
     author_association = str(issue.get("author_association", "")).strip().upper()
     trusted_maintainers = trusted_maintainers_for(repository, oss_config)
@@ -4585,6 +4790,7 @@ def build_oss_issue_candidate(
         risk_score,
         exclude_reason,
         difficulty_band,
+        score_breakdown,
         why_beginner_friendly,
         first_30_min_action,
         risk_reason,
@@ -4593,12 +4799,16 @@ def build_oss_issue_candidate(
         category,
         difficulty_model=difficulty_model,
         repository_priority=repository_priority,
+        repository_initial_fit_score=repository_initial_score,
         repository_beginner_labels=repository_beginner_labels,
         repository_avoid_labels=repository_avoid_labels,
         repository_avoid_title_keywords=repository_avoid_title_keywords,
         preferred_contribution_types=repository_preferred_types,
+        local_check_hints=repository_local_check_hints,
+        docs_or_test_hints=repository_docs_or_test_hints,
         title_text=title,
         text=searchable,
+        positive_title_match=text_contains_any(title, repository_positive_title_keywords),
         labels=labels,
         label_title_text=label_title_text,
         assignees_count=assignees_count,
@@ -4614,6 +4824,34 @@ def build_oss_issue_candidate(
         state=state,
         is_pull_request=False,
     )
+    if exclude_reason or score < OSS_SCORE_EXCLUDE_THRESHOLD:
+        if score < OSS_SCORE_EXCLUDE_THRESHOLD:
+            record_oss_gate_exclusion("score-below-65")
+        for reason in (value.strip() for value in exclude_reason.split(",")):
+            if reason:
+                record_oss_gate_exclusion(reason)
+        return None
+    safety_checks = {
+        "open_issue": state == "open",
+        "configured_repository": bool(repository_profile),
+        "no_assignee": not has_assignee,
+        "no_linked_pr": linked_prs_count == 0,
+        "no_linked_branch": linked_branches_count == 0,
+        "no_claim_comment": not claim_author and claim_comment_check == "checked",
+        "maintainer_or_beginner_label": maintainer_qualified,
+        "preferred_contribution_type": contribution_type in repository_preferred_types,
+        "no_avoid_label": not text_contains_any(" ".join(labels), repository_avoid_labels),
+        "no_avoid_title_keyword": not text_contains_any(title, repository_avoid_title_keywords),
+        "linked_work_verified": linked_work_check == "verified",
+        "not_high_risk_scope": not text_contains_any(
+            searchable,
+            OSS_SECURITY_KEYWORDS
+            + OSS_RELEASE_BLOCKER_KEYWORDS
+            + OSS_DEEP_INTERNALS_KEYWORDS
+            + OSS_MAJOR_API_KEYWORDS
+            + OSS_DESIGN_KEYWORDS,
+        ),
+    }
     junior_fit_evidence = junior_fit_evidence_for_issue(
         repository_priority=repository_priority,
         repository_ecosystem_tags=repository_ecosystem_tags,
@@ -4638,6 +4876,7 @@ def build_oss_issue_candidate(
         repository=repository,
         issue_number=issue_number,
         repository_priority=repository_priority,
+        repository_initial_fit_score=repository_initial_score,
         repository_ecosystem_tags=repository_ecosystem_tags,
         repository_contribution_guide=repository_contribution_guide,
         repository_local_check_hints=repository_local_check_hints,
@@ -4664,6 +4903,7 @@ def build_oss_issue_candidate(
         comments_checked_count=comments_checked_count,
         created_at=created_at,
         updated_at=updated_at,
+        last_activity_at=updated_at,
         summary=summary,
         contribution_type=contribution_type,
         junior_fit_score=junior_fit_score,
@@ -4673,6 +4913,8 @@ def build_oss_issue_candidate(
         risk_score=risk_score,
         exclude_reason=exclude_reason,
         difficulty_band=difficulty_band,
+        score_breakdown=score_breakdown,
+        safety_checks=safety_checks,
         why_beginner_friendly=why_beginner_friendly,
         junior_fit_evidence=junior_fit_evidence,
         first_30_min_action=first_action_for_issue(
@@ -4693,7 +4935,15 @@ def build_oss_issue_candidate(
             comments_count=comments_count,
             has_claim_comment=False,
         ),
+        maintainer_signal=maintainer_signal_for_issue(
+            maintainer_authored,
+            maintainer_triaged,
+        ),
         risk_reason=risk_reason,
+        suggested_first_comment=suggested_first_comment_for_issue(),
+        search_source=repository_search_urls[0]
+        if repository_search_urls
+        else f"https://github.com/{repository}/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee",
         score=score,
     )
 
@@ -4722,6 +4972,7 @@ def collect_oss_issue_candidates(
             {
                 "repository": repository,
                 "priority": str(repository_profile.get("priority", "")).strip().upper(),
+                "initial_fit_score": repository_initial_fit_score(repository_profile),
                 "ecosystem_tags": repository_profile_values(repository_profile, "ecosystem_tags"),
                 "issues_fetched": len(issues),
             }
@@ -4751,9 +5002,11 @@ def collect_oss_issue_candidates(
     return sorted(
         candidates,
         key=lambda item: (
-            1 if item.difficulty_band == "p5_like" else 0,
+            1 if item.safe_to_recommend else 0,
             item.score,
+            repository_priority_rank(item.repository_priority),
             item.updated_at or datetime.min.replace(tzinfo=KST),
+            repository_tie_rank(item.repository),
         ),
         reverse=True,
     )[:max(max_candidates, 0)]
@@ -4895,7 +5148,7 @@ def common_candidate_metadata(
 
 
 def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, object]:
-    return {
+    item = {
         "title": candidate.title,
         "url": candidate.url,
         "source_url": candidate.source_url,
@@ -4904,6 +5157,7 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "repository": candidate.repository,
         "issue_number": candidate.issue_number,
         "repository_priority": candidate.repository_priority,
+        "repository_initial_fit_score": candidate.repository_initial_fit_score,
         "repository_ecosystem_tags": candidate.repository_ecosystem_tags,
         "repository_contribution_guide": candidate.repository_contribution_guide,
         "repository_local_check_hints": candidate.repository_local_check_hints,
@@ -4931,6 +5185,9 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "has_linked_work": candidate.has_linked_work,
         "created_at": format_kst(candidate.created_at) if candidate.created_at else "",
         "updated_at": format_kst(candidate.updated_at) if candidate.updated_at else "",
+        "last_activity_at": format_kst(candidate.last_activity_at)
+        if candidate.last_activity_at
+        else "",
         "summary": candidate.summary,
         "contribution_type": candidate.contribution_type,
         "junior_fit_score": candidate.junior_fit_score,
@@ -4938,18 +5195,28 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "kotlin_spring_fit_score": candidate.kotlin_spring_fit_score,
         "first_pr_potential_score": candidate.first_pr_potential_score,
         "risk_score": candidate.risk_score,
-        "exclude_reason": candidate.exclude_reason,
         "difficulty_band": candidate.difficulty_band,
+        "score_breakdown": candidate.score_breakdown,
+        "safety_checks": candidate.safety_checks,
         "why_beginner_friendly": candidate.why_beginner_friendly,
         "junior_fit_evidence": candidate.junior_fit_evidence,
         "first_30_min_action": candidate.first_30_min_action,
+        "first_30_minute_action": candidate.first_30_min_action,
         "first_30m_action": candidate.first_30_min_action,
         "pre_contribution_etiquette": candidate.pre_contribution_etiquette,
         "safe_to_recommend": candidate.safe_to_recommend,
         "status_check": candidate.status_check,
+        "maintainer_signal": candidate.maintainer_signal,
+        "risk": candidate.risk_reason,
         "risk_reason": candidate.risk_reason,
+        "suggested_first_comment": candidate.suggested_first_comment,
+        "search_source": candidate.search_source,
         "score": candidate.score,
     }
+    if candidate.exclude_reason:
+        item["exclusion_reason"] = candidate.exclude_reason
+        item["exclude_reason"] = candidate.exclude_reason
+    return item
 
 
 def serialize_candidate(candidate: Candidate | OssIssueCandidate) -> dict[str, object]:
@@ -5464,17 +5731,24 @@ def write_category_output(
             if error.get("category") == OSS_CATEGORY_ID
         )
         payload = {
-            "schema_version": 2,
+            "schema_version": 3,
             "category": category_id,
             "generated_at": format_kst(generated_at),
             **common_candidate_metadata(mode, generated_at, items),
             "verification_policy": (
-                "Only safe_to_recommend=true issues are included in items. "
-                "Maintainer authorship or maintainer triage, assignee absence, linked work absence, "
-                "and claim comment absence must all be verified."
+                "Items are safe_to_recommend=true issues collected from current GitHub issue state. "
+                "Maintainer authorship or beginner-friendly maintainer triage, assignee absence, "
+                "linked work absence, claim comment absence, preferred contribution type, and "
+                "score >= 65 must all be verified."
             ),
             "diagnostics": {
+                "repositories_checked": [
+                    str(item.get("repository", ""))
+                    for item in OSS_REPOSITORY_DIAGNOSTICS
+                    if str(item.get("repository", "")).strip()
+                ],
                 "safe_items_count": len(items),
+                "filtered_items_count": sum(OSS_GATE_EXCLUSION_COUNTS.values()),
                 "repository_count": len(OSS_REPOSITORY_DIAGNOSTICS),
                 "repositories": OSS_REPOSITORY_DIAGNOSTICS,
                 "gate_exclusion_counts": dict(sorted(OSS_GATE_EXCLUSION_COUNTS.items())),

@@ -114,40 +114,38 @@ Spring/JVM 학습 후보는 다음 주제군에서 고른다.
 
 우선 대상 저장소:
 
-- `spring-projects/spring-boot`
-- `spring-projects/spring-framework`
 - `spring-projects/spring-security`
-- `spring-projects/spring-data-commons`
-- `spring-projects/spring-data-jpa`
-- `spring-projects/spring-data-relational`
-- `spring-projects/spring-ai`
-- `spring-projects/spring-ai-examples`
-- `spring-projects/spring-grpc`
-- `spring-projects/spring-modulith`
-- `spring-projects/spring-petclinic`
-- `micrometer-metrics/micrometer`
-- `open-telemetry/opentelemetry-java-instrumentation`
-- `JetBrains/kotlin`
-- `Kotlin/kotlinx.coroutines`
-- `Kotlin/kotlinx.serialization`
-- `JetBrains/Exposed`
+- `spring-projects/spring-restdocs`
+- `spring-projects/spring-boot`
+- `gradle/gradle`
+- `ktorio/ktor-documentation`
+- `quarkusio/quarkus`
+- `testcontainers/testcontainers-java`
+- `micronaut-projects/micronaut-core`
+- `spring-projects/spring-framework`
+
+`ktorio/ktor`, `Kotlin/kotlinx.coroutines`는 weekly observation 성격의 C 후보로만 본다. 위 primary 저장소보다 앞세우지 않는다.
 
 추천 가능한 issue 조건:
 
 - open issue여야 한다.
+- 고정 issue 번호를 추정해서 쓰지 않는다. 매 실행의 `kr-oss-contribution-opportunities.json`이 현재 GitHub issue 상태를 확인한 결과다.
 - 후보 JSON의 `items`에 들어 있고 `safe_to_recommend=true`여야 한다.
 - `링크`의 Issue URL은 반드시 해당 safe candidate의 `url` 값을 그대로 사용한다.
-- `왜 시도해볼 만한가`는 `junior_fit_evidence`, `repository_priority`, `repository_junior_notes`, `repository_docs_or_test_hints`, `contribution_type`을 근거로 쓴다.
+- `왜 시도해볼 만한가`는 `junior_fit_evidence`, `repository_priority`, `repository_initial_fit_score`, `repository_junior_notes`, `repository_docs_or_test_hints`, `contribution_type`, `score_breakdown`을 근거로 쓴다.
 - assignee가 없어야 한다.
 - linked PR/branch가 없어야 한다.
 - 댓글에서 누군가 작업 의사를 밝힌 흔적이 없어야 한다.
 - maintainer/member/collaborator가 열었거나 maintainer가 beginner-friendly로 triage한 issue여야 한다.
-- `good first issue`, `help wanted`, `status: ideal-for-contribution`, `documentation`, `docs`, `test`, `sample`, `reproducer`, `getting started` 계열이면 가점이다.
-- CVE, security vulnerability, release blocker, breaking change, major API, deep internals, RFC, epic, design proposal은 제외한다.
+- docs, examples, tests, reproducer sample, Javadoc/KDoc, error message, 작고 범위가 명확한 bug fix 계열이면 가점이다.
+- `good first issue`, `help wanted`, `ideal-for-contribution`, `first-timers-only`, `documentation`, `docs`, `testing`, `javadoc`, `kdoc`, `sample`, `example`, `bug`, `reproducible`, `comprehensibility` 계열이면 가점이다.
+- CVE, security vulnerability, release blocker, breaking change, major API, deep internals, RFC, epic, broad design proposal, blocked/on-hold/internal/team-only 성격은 제외한다.
+- 100점 모델은 technical_fit 30, external_contribution_signal 20, scope_clarity 15, validation_feasibility 15, maintainer_signal 10, portfolio_value 10이다. `score`가 64 이하인 후보는 오늘 추천하지 않는다.
 - 첫 30분 액션은 PR 작성이 아니라 읽기, 빌드, 재현, 테스트 위치 확인, 문서 위치 확인, CONTRIBUTING 확인으로 제한한다.
+- 첫 댓글 초안은 영어로 짧게 쓰고, "I will take this issue"처럼 강하게 점유하지 않는다. 작은 docs/test/example 중심 확인 계획이 괜찮은지 묻는다.
 
 safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아래 형식의 OSS 기여 준비 루틴을 출력한다. 이 준비 루틴은 특정 issue를 잡으라고 말하면 안 되며, 기여자로 성장하는 데 필요한 실전 행동이어야 한다.
-`kr-oss-contribution-opportunities.json`의 `items`가 비어 있으면 추정으로 issue를 만들지 않고 GitHub issue URL도 출력하지 않는다.
+`kr-oss-contribution-opportunities.json`에 safe 후보가 없으면 추정으로 issue를 만들지 않고 GitHub issue URL도 출력하지 않는다.
 
 ## 4번 주니어 백엔드 실무지식 우선 소스
 
@@ -266,12 +264,19 @@ CS Core 작성 기준:
 - 난이도 밴드: P5-like / P4-like
 - 저장소:
 - 기여 유형:
+- 추천 점수:
 - 왜 시도해볼 만한가:
 - 첫 30분 액션:
 - 기여 전 매너:
 - 확인할 파일/키워드:
 - 주의할 점:
+- 이슈에 남길 첫 댓글 초안:
 - 링크: [Issue 보기](URL)
+
+safe 후보가 여러 개 있으면 위 상세 후보는 1개만 출력하고, 보조 후보는 최대 2개만 짧게 덧붙인다.
+
+- 보조 후보 1:
+- 보조 후보 2:
 
 안전한 issue 후보가 없으면 아래 구조로 대체한다.
 
@@ -332,10 +337,13 @@ CS Core 작성 기준:
 
 - safe issue가 있으면 issue를 추천한다.
 - safe issue가 없으면 준비 루틴을 추천한다.
+- issue 번호를 추정하거나 과거에 봤던 고정 issue 번호를 쓰지 않는다.
 - 후보를 추천할 때 `상태 확인`에는 maintainer/triage 근거, 담당자 없음, linked PR/branch 없음, claim 댓글 없음이 드러나야 한다.
 - 이미 assignee가 있는 issue, linked PR이 있는 issue, 댓글에서 누군가 맡겠다고 한 issue, CVE/security/release blocker는 추천하지 않는다.
 - 첫 30분 액션에 PR을 만든다, 전체 구조를 파악한다 같은 표현을 쓰지 않는다.
 - 좋은 첫 30분 액션은 CONTRIBUTING 문서에서 빌드/테스트 명령 확인, 관련 모듈 테스트 실행, 재현 조건 정리, docs/asciidoc 위치 확인, 관련 test class 1~2개 찾기, DCO/Signed-off-by 요구 여부 확인, issue에 남길 짧은 범위 확인 댓글 초안 작성이다.
+- `추천 점수`는 후보 JSON의 `score`와 `score_breakdown`을 근거로 쓴다.
+- `이슈에 남길 첫 댓글 초안`은 영어로 작성하고, 조심스럽게 계획 확인을 요청한다.
 
 ## 4번 실무지식 작성 규칙
 

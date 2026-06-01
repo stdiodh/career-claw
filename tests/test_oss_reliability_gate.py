@@ -45,13 +45,13 @@ DIFFICULTY_MODEL = {
         "positive_keywords": ["configuration"],
     },
 }
-OSS_CONFIG = {"trusted_maintainers": {}}
 PROFILED_OSS_CONFIG = {
     "trusted_maintainers": {},
     "repository_profiles": [
         {
             "repository": "spring-projects/spring-boot",
             "priority": "A",
+            "initial_fit_score": 82,
             "ecosystem_tags": ["spring", "backend"],
             "beginner_labels": ["status: ideal-for-contribution"],
             "avoid_labels": ["component: compiler"],
@@ -108,7 +108,7 @@ def build_candidate(issue: dict[str, object], oss_config: dict[str, object] | No
     return collector.build_oss_issue_candidate(
         CATEGORY,
         DIFFICULTY_MODEL,
-        oss_config or OSS_CONFIG,
+        oss_config or PROFILED_OSS_CONFIG,
         "spring-projects/spring-boot",
         issue,
         "token",
@@ -136,6 +136,17 @@ def test_safe_maintainer_authored_issue() -> None:
     assert candidate.linked_work_check == "verified"
     assert candidate.linked_prs_count == 0
     assert candidate.linked_branches_count == 0
+    assert candidate.score >= 85
+    assert candidate.score_breakdown == {
+        "technical_fit": 28,
+        "external_contribution_signal": 20,
+        "scope_clarity": 15,
+        "validation_feasibility": 15,
+        "maintainer_signal": 10,
+        "portfolio_value": 10,
+    }
+    assert candidate.safety_checks["linked_work_verified"] is True
+    assert "Please let me know" in candidate.suggested_first_comment
 
 
 def test_safe_maintainer_triaged_issue() -> None:
@@ -159,6 +170,7 @@ def test_repository_profile_is_reflected_in_candidate_evidence() -> None:
     candidate = build_candidate(issue_payload(), PROFILED_OSS_CONFIG)
     assert candidate is not None
     assert candidate.repository_priority == "A"
+    assert candidate.repository_initial_fit_score == 82
     assert candidate.repository_ecosystem_tags == ["spring", "backend"]
     assert candidate.repository_local_check_hints == ["./gradlew test"]
     assert candidate.repository_docs_or_test_hints == ["spring-boot docs"]
@@ -170,6 +182,11 @@ def test_repository_profile_is_reflected_in_candidate_evidence() -> None:
     assert any("docs/test hint: spring-boot docs" in item for item in candidate.junior_fit_evidence)
     serialized = collector.serialize_oss_issue_candidate(candidate)
     assert serialized["repository_priority"] == "A"
+    assert serialized["repository_initial_fit_score"] == 82
+    assert serialized["score_breakdown"]["technical_fit"] == 28
+    assert serialized["safety_checks"]["no_assignee"] is True
+    assert serialized["first_30_minute_action"] == serialized["first_30_min_action"]
+    assert serialized["suggested_first_comment"]
     assert serialized["junior_fit_evidence"]
     assert serialized["repository_local_check_hints"] == ["./gradlew test"]
     assert serialized["repository_docs_or_test_hints"] == ["spring-boot docs"]

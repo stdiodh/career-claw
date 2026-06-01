@@ -434,11 +434,13 @@ DAILY_OSS_FIELDS = [
     "난이도 밴드",
     "저장소",
     "기여 유형",
+    "추천 점수",
     "왜 시도해볼 만한가",
     "첫 30분 액션",
     "기여 전 매너",
     "확인할 파일/키워드",
     "주의할 점",
+    "이슈에 남길 첫 댓글 초안",
     "링크",
 ]
 DAILY_OSS_FORBIDDEN_PATTERNS = [
@@ -453,6 +455,14 @@ DAILY_OSS_FORBIDDEN_PATTERNS = [
     r"\bapprove\b",
     r"\breject\b",
     r"리뷰\s*승인",
+]
+DAILY_OSS_FIRST_ACTION_FORBIDDEN_PATTERNS = [
+    r"create\s*PR",
+    r"PR\s*(?:생성|작성|만들)",
+    r"implement\s+full\s+fix",
+    r"전체\s*(?:수정|구현)",
+    r"refactor\s+whole\s+module",
+    r"모듈\s*전체\s*리팩터",
 ]
 DAILY_OSS_STATUS_REQUIRED_GROUPS = {
     "assignee absence": [
@@ -746,10 +756,26 @@ def safe_oss_candidates_by_url(payload: dict[str, object]) -> dict[str, dict[str
             continue
         if raw_item.get("safe_to_recommend") is not True:
             continue
+        if str(raw_item.get("exclusion_reason") or raw_item.get("exclude_reason") or "").strip():
+            fail("safe_to_recommend OSS candidate must not include an exclusion reason.")
         url = str(raw_item.get("url") or raw_item.get("source_url") or "").strip()
         if not GITHUB_ISSUE_URL_RE.fullmatch(url):
             fail("safe_to_recommend OSS candidate must include a GitHub issue URL.")
+        if "score_breakdown" not in raw_item or not isinstance(raw_item["score_breakdown"], dict):
+            fail("safe_to_recommend OSS candidate must include score_breakdown.")
+        if "safety_checks" not in raw_item or not isinstance(raw_item["safety_checks"], dict):
+            fail("safe_to_recommend OSS candidate must include safety_checks.")
         candidates[normalize_github_issue_url(url)] = raw_item
+    diagnostics = payload.get("diagnostics", {})
+    if diagnostics and not isinstance(diagnostics, dict):
+        fail("OSS candidate JSON diagnostics must be an object.")
+    if isinstance(diagnostics, dict) and "safe_items_count" in diagnostics:
+        try:
+            expected_safe_count = int(diagnostics.get("safe_items_count", 0))
+        except (TypeError, ValueError):
+            fail("OSS candidate JSON diagnostics.safe_items_count must be numeric.")
+        if expected_safe_count != len(candidates):
+            fail("OSS candidate JSON safe_items_count does not match safe items.")
     return candidates
 
 
@@ -1160,6 +1186,11 @@ def validate_daily_oss_section(sections: list[Section], candidates_dir: Path) ->
     first_action = bullet_field_value(item.body, "첫 30분 액션")
     if re.match(r"`?(PR\s*생성|코드\s*수정|구현)", first_action, flags=re.IGNORECASE):
         fail("OSS 첫 30분 액션 must not start with PR creation or code editing.")
+    if any(
+        re.search(pattern, first_action, flags=re.IGNORECASE)
+        for pattern in DAILY_OSS_FIRST_ACTION_FORBIDDEN_PATTERNS
+    ):
+        fail("OSS 첫 30분 액션 must stay before PR creation or broad implementation.")
     validate_item_markdown_link(item)
     validate_oss_candidate_alignment(item, candidate, issue_url)
 
@@ -1200,6 +1231,12 @@ def validate_oss_candidate_alignment(
         fail("OSS candidate 첫 30분 액션 field must not be empty.")
     if not bullet_field_value(item.body, "기여 전 매너"):
         fail("OSS candidate 기여 전 매너 field must not be empty.")
+    if not bullet_field_value(item.body, "추천 점수"):
+        fail("OSS candidate 추천 점수 field must not be empty.")
+    if not bullet_field_value(item.body, "주의할 점"):
+        fail("OSS candidate 주의할 점 field must not be empty.")
+    if not bullet_field_value(item.body, "이슈에 남길 첫 댓글 초안"):
+        fail("OSS candidate first comment draft field must not be empty.")
 
 
 def validate_news_item_identity(

@@ -60,17 +60,20 @@ Daily 수집 소스 정책:
 
 Daily OSS 후보 정책:
 
+- OSS 후보는 framework OSS 기여 가이드에 맞춰 매 실행마다 현재 GitHub issue 상태를 확인한 뒤 추천합니다. 고정 issue 번호를 추정해 쓰지 않습니다.
+- primary 저장소는 Spring Security, Spring REST Docs, Spring Boot를 먼저 보고, 이후 Gradle, Ktor Documentation, Quarkus, Testcontainers Java, Micronaut Core, Spring Framework 순서로 확장합니다.
 - OSS 후보는 maintainer/member/collaborator가 올렸거나 maintainer가 초보자용으로 분류한 open issue만 추천합니다.
-- `configs/oss-repositories.json`의 저장소별 priority, ecosystem tag, beginner label, avoid label/title keyword, 선호 기여 유형, 로컬 확인 힌트를 scoring과 후보 evidence에 반영합니다.
+- `configs/oss-repositories.json`의 저장소별 priority, initial fit score, ecosystem tag, beginner label, avoid label/title keyword, 선호 기여 유형, 검색식, 로컬 확인 힌트를 100점 scoring과 후보 evidence에 반영합니다.
 - 저장소 profile 관리 기준은 `docs/oss-candidate-policy.md`에 정리합니다.
 - assignee가 있거나 linked PR/branch가 있거나 누군가 댓글로 작업 의사를 밝힌 이슈는 추천하지 않습니다.
 - linked work 확인이 불완전하면 추천하지 않습니다.
 - linked PR/branch 확인은 GitHub GraphQL 보조 검증을 통과해야 하며, 검증이 실패하거나 불완전하면 추천하지 않습니다.
 - GitHub API 실패, rate limit, repository 접근 실패는 후보 JSON의 `diagnostics`와 `source_errors`에 남깁니다.
+- 후보 JSON은 `generated_at_kst`, `candidate_count`, `items`, `diagnostics`, `source_errors`를 포함하고, 각 후보에는 `score`, `score_breakdown`, `safety_checks`, `first_30_minute_action`, `suggested_first_comment`를 포함합니다.
 - Daily Backend validator는 `kr-oss-contribution-opportunities.json`을 함께 읽고, Markdown의 OSS issue URL이 `safe_to_recommend=true` 후보 URL과 다르면 실패합니다.
 - 안전한 후보가 없으면 특정 issue를 추천하지 않고 OSS 기여 준비 루틴을 출력합니다.
-- 첫 30분 액션은 읽기, 재현, 문서 위치 확인, 로컬 빌드 확인처럼 PR 전 확인 행동으로 제한합니다.
-- 작업 전 issue에 짧게 확인 댓글을 남기는 것을 권장합니다.
+- 첫 30분 액션은 읽기, 재현, 문서 위치 확인, 로컬 빌드 확인처럼 PR 전 확인 행동으로 제한하며, validator는 PR 생성/전체 구현/전체 리팩터링 표현을 거부합니다.
+- 작업 전 issue에 짧고 조심스러운 영어 댓글 초안을 남기는 것을 권장합니다. 댓글, assign, label 변경 같은 GitHub issue mutation은 자동 수행하지 않습니다.
 
 ## Korea Dev/AI News Daily
 

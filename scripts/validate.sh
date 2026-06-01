@@ -474,21 +474,23 @@ import json
 from pathlib import Path
 
 required = {
-    "spring-projects/spring-boot",
-    "spring-projects/spring-framework",
     "spring-projects/spring-security",
-    "spring-projects/spring-data-jpa",
-    "spring-projects/spring-ai",
-    "spring-projects/spring-grpc",
-    "spring-projects/spring-modulith",
-    "micrometer-metrics/micrometer",
-    "open-telemetry/opentelemetry-java-instrumentation",
+    "spring-projects/spring-restdocs",
+    "spring-projects/spring-boot",
+    "gradle/gradle",
+    "ktorio/ktor-documentation",
+    "quarkusio/quarkus",
+    "testcontainers/testcontainers-java",
+    "micronaut-projects/micronaut-core",
+    "spring-projects/spring-framework",
+}
+observation = {
+    "ktorio/ktor",
     "Kotlin/kotlinx.coroutines",
-    "Kotlin/kotlinx.serialization",
-    "JetBrains/Exposed",
 }
 config = json.loads(Path("configs/oss-repositories.json").read_text(encoding="utf-8"))
 repositories = set(config.get("repositories", []))
+weekly_observation_repositories = set(config.get("weekly_observation_repositories", []))
 trusted = config.get("trusted_maintainers", {})
 profiles = config.get("repository_profiles", [])
 if not isinstance(trusted, dict):
@@ -497,9 +499,12 @@ if not isinstance(profiles, list):
     raise SystemExit("configs/oss-repositories.json repository_profiles must be a list")
 
 missing_repositories = sorted(required - repositories)
-missing_trusted = sorted(required - set(trusted.keys()))
+missing_observation = sorted(observation - weekly_observation_repositories)
+missing_trusted = sorted((required | observation) - set(trusted.keys()))
 if missing_repositories:
     raise SystemExit("oss-repositories.json is missing required repositories: " + ", ".join(missing_repositories))
+if missing_observation:
+    raise SystemExit("oss-repositories.json is missing observation repositories: " + ", ".join(missing_observation))
 if missing_trusted:
     raise SystemExit("oss-repositories.json trusted_maintainers is missing repository key(s): " + ", ".join(missing_trusted))
 
@@ -513,18 +518,22 @@ if missing_profiles:
     raise SystemExit("oss-repositories.json repository_profiles is missing repository key(s): " + ", ".join(missing_profiles))
 
 required_profile_fields = [
+    "display_name",
     "priority",
+    "initial_fit_score",
     "ecosystem_tags",
     "beginner_labels",
+    "positive_title_keywords",
     "avoid_labels",
     "avoid_title_keywords",
     "preferred_contribution_types",
     "contribution_guide",
+    "search_urls",
     "local_check_hints",
     "docs_or_test_hints",
     "junior_notes",
 ]
-allowed_types = {"docs", "test", "sample", "bug-repro"}
+allowed_types = {"docs", "test", "sample", "bug-repro", "javadoc", "kdoc", "error-message"}
 for repository, profile in profiles_by_repo.items():
     missing_fields = [field for field in required_profile_fields if not profile.get(field)]
     if missing_fields:
@@ -534,14 +543,18 @@ for repository, profile in profiles_by_repo.items():
     for list_field in (
         "ecosystem_tags",
         "beginner_labels",
+        "positive_title_keywords",
         "avoid_labels",
         "avoid_title_keywords",
         "preferred_contribution_types",
+        "search_urls",
         "local_check_hints",
         "docs_or_test_hints",
     ):
         if not isinstance(profile.get(list_field), list) or not profile.get(list_field):
             raise SystemExit(f"repository profile field must be a non-empty list: {repository} {list_field}")
+    if not isinstance(profile.get("initial_fit_score"), int) or not 0 <= profile["initial_fit_score"] <= 100:
+        raise SystemExit(f"repository profile has invalid initial_fit_score: {repository}")
     preferred = set(profile.get("preferred_contribution_types", []))
     if not preferred <= allowed_types:
         raise SystemExit(f"repository profile has unsupported contribution type: {repository}")
