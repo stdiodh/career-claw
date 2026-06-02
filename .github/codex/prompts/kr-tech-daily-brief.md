@@ -148,7 +148,8 @@ Spring/JVM 학습 후보는 다음 주제군에서 고른다.
 - 100점 모델은 technical_fit 30, external_contribution_signal 20, scope_clarity 15, validation_feasibility 15, maintainer_signal 10, portfolio_value 10이다. `score`가 64 이하인 후보는 오늘 추천하지 않는다.
 - 첫 30분 액션은 PR 작성이 아니라 읽기, 빌드, 재현, 테스트 위치 확인, 문서 위치 확인, CONTRIBUTING 확인으로 제한한다.
 - 첫 댓글 초안은 영어로 짧게 쓰고, "I will take this issue"처럼 강하게 점유하지 않는다. 작은 docs/test/example 중심 확인 계획이 괜찮은지 묻는다.
-- 후보 JSON은 여러 safe candidate를 유지할 수 있지만 Daily Brief는 상세 후보 1개만 작성한다. safe 후보가 더 있으면 보조 후보를 최대 2개까지만 짧게 표시한다.
+- 후보 JSON은 여러 safe candidate를 유지할 수 있지만 Daily Brief는 상세 후보 1개만 작성한다. 보조 후보는 출력하지 않는다.
+- OSS 섹션에는 추천한 상세 후보의 GitHub issue URL 1개만 포함한다.
 
 safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아래 형식의 OSS 기여 준비 루틴을 출력한다. 이 준비 루틴은 특정 issue를 잡으라고 말하면 안 되며, 기여자로 성장하는 데 필요한 실전 행동이어야 한다.
 `kr-oss-contribution-opportunities.json`에 safe 후보가 없으면 추정으로 issue를 만들지 않고 GitHub issue URL도 출력하지 않는다.
@@ -314,10 +315,7 @@ CS Core 후보는 다음 트랙을 균형 있게 순환하는 보조 입력이�
 - 이슈에 남길 첫 댓글 초안:
 - 링크: [Issue 보기](URL)
 
-safe 후보가 여러 개 있으면 위 상세 후보는 1개만 출력하고, 보조 후보는 최대 2개만 짧게 덧붙인다. 보조 후보도 반드시 safe candidate JSON에서 온 후보여야 하며 제외 후보 URL을 쓰지 않는다.
-
-- 보조 후보 1:
-- 보조 후보 2:
+safe 후보가 여러 개 있어도 위 상세 후보 1개만 출력하고, 보조 후보나 추가 GitHub issue 링크는 출력하지 않는다.
 
 안전한 issue 후보가 없으면 아래 구조로 대체한다.
 

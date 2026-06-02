@@ -57,13 +57,22 @@ python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 ./scripts/validate.sh
 ```
 
+## Backend Daily 재전송
+
+오늘 Backend Daily 생성이 validator에서 실패해 Discord 전송 전 중단됐다면 아래 순서로 다시 실행합니다.
+
+1. `Actions > Daily Korea Tech Brief > Run workflow`를 엽니다.
+2. `dry_run=true`, `force_send=false`로 artifact와 validator 결과를 먼저 확인합니다.
+3. 성공을 확인한 뒤 `dry_run=false`, `force_send=true`로 오늘분을 전송합니다.
+
 ## News Daily 재전송
 
 오늘 뉴스 생성이 validator에서 실패해 Discord 전송 전 중단됐다면 아래 순서로 다시 실행합니다.
 
 1. `Actions > Daily Korea Dev AI News > Run workflow`를 엽니다.
-2. `dry_run=true`, `force_send=false`로 artifact와 validator 결과를 먼저 확인합니다.
-3. 성공을 확인한 뒤 `dry_run=false`, `force_send=true`로 오늘분을 전송합니다.
+2. `dry_run=true`, `force_send=false`로 artifact와 `news-daily-validation-report.md`를 먼저 확인합니다.
+3. 실패하면 `kr-tech-news-daily.md`, shortlist, validation report를 함께 확인합니다.
+4. validator 성공을 확인한 뒤 `dry_run=false`, `force_send=true`로 오늘분을 전송합니다.
 
 ## 필요한 Secrets
 

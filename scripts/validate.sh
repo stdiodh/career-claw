@@ -97,6 +97,9 @@ grep -q 'oss_filtered_out_count' .github/workflows/kr-tech-daily.yml
 grep -q 'oss_source_errors_count' .github/workflows/kr-tech-daily.yml
 grep -q 'selected_oss_issue_url' .github/workflows/kr-tech-daily.yml
 grep -q 'OSS 후보 상태' .github/workflows/kr-tech-daily.yml
+grep -q 'backend-daily-validation-report.md' .github/workflows/kr-tech-daily.yml
+grep -q 'cat "${validation_report}" >> "${GITHUB_STEP_SUMMARY}"' .github/workflows/kr-tech-daily.yml
+grep -q 'validator error: ${validation_error}' .github/workflows/kr-tech-daily.yml
 if grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY\|kr-dev-ai-news.json\|kr-ai-tech-news.json' .github/workflows/kr-tech-daily.yml; then
   echo "Backend Daily workflow must not use the news webhook or news candidate files." >&2
   exit 1
@@ -139,6 +142,9 @@ grep -q 'Wait until 09:05 KST before Discord send' .github/workflows/kr-tech-new
 grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/kr-tech-news-daily.yml
 grep -q 'target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:05:00" +%s)"' .github/workflows/kr-tech-news-daily.yml
 grep -q 'news-daily-run-summary.json' .github/workflows/kr-tech-news-daily.yml
+grep -q 'news-daily-validation-report.md' .github/workflows/kr-tech-news-daily.yml
+grep -q 'cat "${validation_report}" >> "${GITHUB_STEP_SUMMARY}"' .github/workflows/kr-tech-news-daily.yml
+grep -q 'validator error: ${validation_error}' .github/workflows/kr-tech-news-daily.yml
 grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/kr-tech-news-daily.yml
 grep -q 'if: always()' .github/workflows/kr-tech-news-daily.yml
 grep -q 'reports/ops/\*.json' .github/workflows/kr-tech-news-daily.yml

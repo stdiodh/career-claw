@@ -135,7 +135,7 @@ collector는 저장소별 `search_queries`를 순서대로 실행하고, 각 후
 
 안전한 후보가 없으면 특정 issue URL을 만들거나 추정하지 않습니다. Daily Brief는 `오늘의 OSS 기여 준비 루틴`을 출력합니다.
 
-안전한 후보가 여러 개 있어도 Daily Backend Brief는 상세 후보 1개만 렌더링합니다. 후보 JSON에는 여러 safe candidate를 유지할 수 있고, Daily Brief는 필요할 때 보조 후보를 최대 2개까지 짧게 덧붙입니다. 이렇게 해서 "top 3" 의도는 유지하되 Discord 메시지는 길어지지 않게 합니다.
+안전한 후보가 여러 개 있어도 Daily Backend Brief는 상세 후보 1개만 렌더링합니다. 후보 JSON에는 여러 safe candidate를 유지할 수 있지만, Daily Brief에는 추천한 상세 후보의 GitHub issue URL 1개만 포함합니다.
 
 Markdown의 issue URL은 `kr-oss-contribution-opportunities.json`의 `safe_to_recommend=true` item URL만 사용할 수 있습니다. `excluded_candidates_preview`에 있는 URL이나 `safe_to_recommend=false` item URL은 추천 섹션에 넣으면 validator가 실패합니다.
 
