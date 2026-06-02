@@ -1,6 +1,16 @@
 {
   "version": 1,
-  "updated_at": "",
-  "last_selected": {},
-  "recent": []
+  "updated_at": "2026-06-02 10:15:40 KST",
+  "last_selected": {
+    "date": "2026-06-02",
+    "title": "Kotlin null-safety는 Spring MVC 요청 값에서 어디까지 지켜질까?",
+    "track": "Kotlin + Spring"
+  },
+  "recent": [
+    {
+      "date": "2026-06-02",
+      "title": "Kotlin null-safety는 Spring MVC 요청 값에서 어디까지 지켜질까?",
+      "track": "Kotlin + Spring"
+    }
+  ]
 }
