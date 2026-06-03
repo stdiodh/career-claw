@@ -8,6 +8,7 @@ import difflib
 import json
 import re
 import urllib.parse
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -23,6 +24,7 @@ DEFAULT_OUTPUT_FILE = Path("reports/candidates/kr-tech-news-shortlist.json")
 DEFAULT_TECH_MAX_ITEMS = 8
 DEFAULT_INVESTMENT_MAX_ITEMS = 4
 DEFAULT_MAX_ITEMS = DEFAULT_TECH_MAX_ITEMS + DEFAULT_INVESTMENT_MAX_ITEMS
+MAX_ITEMS_PER_DOMAIN = 2
 TEXT_LIMIT = 160
 
 TECH_CATEGORIES = {
@@ -431,19 +433,33 @@ def public_item(item: dict[str, object]) -> dict[str, object]:
     return {key: value for key, value in item.items() if not key.startswith("_")}
 
 
+def item_domain(item: dict[str, object]) -> str:
+    parsed = urllib.parse.urlsplit(str(item.get("url", "")))
+    domain = parsed.netloc.lower()
+    return domain[4:] if domain.startswith("www.") else domain
+
+
 def select_track_items(
     candidates: list[dict[str, object]],
     track: str,
     max_items: int,
     selected: list[dict[str, object]],
+    domain_counts: Counter[str] | None = None,
 ) -> list[dict[str, object]]:
+    if domain_counts is None:
+        domain_counts = Counter(item_domain(item) for item in selected if item_domain(item))
     items: list[dict[str, object]] = []
     for candidate in candidates:
         if candidate.get("track") != track:
             continue
         if is_duplicate(candidate, selected + items):
             continue
+        domain = item_domain(candidate)
+        if domain and domain_counts[domain] >= MAX_ITEMS_PER_DOMAIN:
+            continue
         items.append(candidate)
+        if domain:
+            domain_counts[domain] += 1
         if len(items) >= max(0, max_items):
             break
     return items
@@ -488,12 +504,14 @@ def build_shortlist(
         reverse=True,
     )
 
-    tech_items = select_track_items(candidates, "tech", tech_max_items, [])
+    domain_counts: Counter[str] = Counter()
+    tech_items = select_track_items(candidates, "tech", tech_max_items, [], domain_counts)
     investment_items = select_track_items(
         candidates,
         "investment",
         investment_max_items,
         tech_items,
+        domain_counts,
     )
     flat_items = sorted(
         tech_items + investment_items,

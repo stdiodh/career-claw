@@ -396,7 +396,7 @@ NEWS_DAILY_GROWTH_ACTION_PATTERNS = [
     r"포트폴리오",
     r"면접\s*질문",
     r"GitHub\s*issue",
-    r"\bTIL\b",
+    r"\bTIL(?:로|을|를|에)?\s*(?:작성|정리|기록|남기)",
 ]
 NEWS_DAILY_VAGUE_ACTION_PATTERNS = [
     r"관련\s*내용을\s*읽어본다",
