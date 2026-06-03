@@ -1,16 +1,21 @@
 {
   "version": 1,
-  "updated_at": "2026-06-02 10:15:40 KST",
+  "updated_at": "2026-06-03 10:44:45 KST",
   "last_selected": {
-    "date": "2026-06-02",
-    "title": "Kotlin null-safety는 Spring MVC 요청 값에서 어디까지 지켜질까?",
-    "track": "Kotlin + Spring"
+    "date": "2026-06-03",
+    "title": "Testcontainers로 Repository 테스트의 DB 차이를 어떻게 줄일까?",
+    "track": "Testing"
   },
   "recent": [
     {
       "date": "2026-06-02",
       "title": "Kotlin null-safety는 Spring MVC 요청 값에서 어디까지 지켜질까?",
       "track": "Kotlin + Spring"
+    },
+    {
+      "date": "2026-06-03",
+      "title": "Testcontainers로 Repository 테스트의 DB 차이를 어떻게 줄일까?",
+      "track": "Testing"
     }
   ]
 }
