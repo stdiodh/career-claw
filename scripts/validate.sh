@@ -299,6 +299,7 @@ required_files=(
   "tests/fixtures/kr-tech-news-daily-valid-tech-investment.md"
   "tests/fixtures/kr-tech-news-daily-valid-quality-score-4.md"
   "tests/fixtures/kr-tech-news-daily-valid-tech-only.md"
+  "tests/fixtures/kr-tech-news-daily-valid-checklist-action.md"
   "tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md"
   "tests/fixtures/kr-tech-news-daily-invalid-investment-advice.md"
   "tests/fixtures/kr-tech-news-daily-invalid-related-stock.md"
@@ -1042,6 +1043,7 @@ python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-investment.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-quality-score-4.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-tech-only.md --type daily-news
+python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-valid-checklist-action.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-duplicate-url.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-investment-advice.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-related-stock.md --type daily-news
