@@ -13,7 +13,7 @@ Kotlin/Spring Boot 백엔드 주니어가 매일 아침 5분 안에 읽을 국�
 
 원본 후보 파일은 shortlist가 비었거나 명백히 부족할 때만 fallback으로 참고한다.
 
-기준시각은 Runtime Context의 `KST_NOW`, 출력 경로는 `OUTPUT_FILE`을 사용한다.
+기준시각은 Runtime Context의 `KST_NOW`, 출력 경로는 `OUTPUT_FILE`을 사용한다. 최종 Markdown에는 `Runtime Context` 또는 `KST_NOW` 문자열을 그대로 쓰지 말고 실제 KST 시각을 쓴다.
 
 ## 선별 알고리즘
 
@@ -61,7 +61,7 @@ Kotlin/Spring Boot 백엔드 주니어가 매일 아침 5분 안에 읽을 국�
 ```markdown
 # Career Feed - Tech & Investment Daily
 
-기준시각: Runtime Context의 KST_NOW
+기준시각: 2026-06-03 09:00:00 KST
 
 오늘의 흐름:
 - 오늘 기술과 시장에서 같이 보이는 흐름을 1문장으로 요약한다.

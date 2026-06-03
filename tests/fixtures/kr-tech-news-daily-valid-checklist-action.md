@@ -12,7 +12,7 @@
 - 출처/게시: checklist-tech.example.com / 2026-06-03 08:30 KST
 - 핵심: AI 에이전트 배포 과정에서 timeout, log, rollback 조건을 함께 관리하는 기능이 공개됐습니다.
 - 백엔드 주니어 관점: 배포 자동화는 기능 추가보다 장애 시 되돌릴 조건을 먼저 정리하는 습관이 중요합니다.
-- 내가 뭘 배워야 하는가: 30분 동안 작은 메모로 에이전트형 기능의 호출 흐름과 장애 시 롤백 포인트를 그린다.
+- 내가 뭘 배워야 하는가: 25분 동안 작은 Spring Boot 예제로 타임아웃과 재시도 정책을 바꿔 보며 실패 응답 차이를 기록한다.
 - 더 볼 키워드: AI agent deployment, rollback, observability
 - 링크: [원문 보기](https://checklist-tech.example.com/news/agent-deploy)
 

@@ -404,6 +404,41 @@ NEWS_DAILY_VAGUE_ACTION_PATTERNS = [
     r"공부해본다",
     r"살펴본다",
 ]
+NEWS_DAILY_ACTION_TIMEBOX_PATTERN = r"\b(?:1\d|2\d|30)\s*분"
+NEWS_DAILY_ACTION_VERB_PATTERNS = [
+    r"만들",
+    r"작성",
+    r"정리",
+    r"기록",
+    r"메모",
+    r"그리",
+    r"바꿔|바꾸",
+    r"비교",
+    r"검증",
+    r"확인",
+    r"적",
+    r"남기",
+    r"실험",
+]
+NEWS_DAILY_ACTION_TECH_ANCHOR_PATTERNS = [
+    r"Spring\s*Boot",
+    r"\bAPI\b",
+    r"타임아웃|timeout",
+    r"재시도|retry",
+    r"실패|응답",
+    r"롤백",
+    r"로그",
+    r"권한|인증",
+    r"호출",
+    r"배포|승인",
+    r"캐시",
+    r"지연|latency",
+    r"비용",
+    r"스키마|데이터|적재|조회",
+    r"큐|queue",
+    r"관측|observability",
+    r"\bSDK\b",
+]
 NEWS_DAILY_OFFICIAL_TECH_BLOG_DOMAINS = {
     "d2.naver.com",
     "tech.kakao.com",
@@ -765,9 +800,13 @@ def read_report(path: Path) -> str:
 
 
 def validate_timestamp(content: str) -> None:
-    if "기준시각:" not in content:
+    match = re.search(r"기준시각:\s*(.+)", content)
+    if not match:
         fail("Missing 기준시각 field.")
-    if not re.search(r"기준시각:\s*.+KST", content):
+    timestamp = match.group(1).strip()
+    if "Runtime Context" in timestamp or "KST_NOW" in timestamp:
+        fail("기준시각 must use the resolved KST timestamp, not a runtime placeholder.")
+    if not re.search(r"\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(?::\d{2})?\s+KST", timestamp):
         fail("기준시각 must include a KST timestamp.")
 
 
@@ -1642,7 +1681,13 @@ def is_specific_growth_action(text: str) -> bool:
         return False
     if matches_any_pattern(text, NEWS_DAILY_VAGUE_ACTION_PATTERNS):
         return False
-    return matches_any_pattern(text, NEWS_DAILY_GROWTH_ACTION_PATTERNS)
+    if matches_any_pattern(text, NEWS_DAILY_GROWTH_ACTION_PATTERNS):
+        return True
+    return (
+        bool(re.search(NEWS_DAILY_ACTION_TIMEBOX_PATTERN, text))
+        and matches_any_pattern(text, NEWS_DAILY_ACTION_VERB_PATTERNS)
+        and matches_any_pattern(text, NEWS_DAILY_ACTION_TECH_ANCHOR_PATTERNS)
+    )
 
 
 def is_vague_technology_link(text: str) -> bool:
