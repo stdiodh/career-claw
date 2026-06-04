@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "updated_at": "2026-06-03 10:44:45 KST",
+  "updated_at": "2026-06-04 10:47:00 KST",
   "last_selected": {
-    "date": "2026-06-03",
-    "title": "Testcontainers로 Repository 테스트의 DB 차이를 어떻게 줄일까?",
-    "track": "Testing"
+    "date": "2026-06-04",
+    "title": "조회 API에도 `@Transactional(readOnly = true)`를 붙이는 이유",
+    "track": "Transaction/JPA/DB"
   },
   "recent": [
     {
@@ -16,6 +16,11 @@
       "date": "2026-06-03",
       "title": "Testcontainers로 Repository 테스트의 DB 차이를 어떻게 줄일까?",
       "track": "Testing"
+    },
+    {
+      "date": "2026-06-04",
+      "title": "조회 API에도 `@Transactional(readOnly = true)`를 붙이는 이유",
+      "track": "Transaction/JPA/DB"
     }
   ]
 }
