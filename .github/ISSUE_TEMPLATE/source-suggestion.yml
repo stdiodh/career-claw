@@ -1,0 +1,26 @@
+name: 정보 출처 제안
+description: 백엔드 학습, 커리어, 채용, 인턴, 대외활동 정보 출처를 제안합니다.
+title: "[출처 제안] "
+body:
+  - type: input
+    id: source
+    attributes:
+      label: 추천하는 정보 출처
+      description: 이름과 URL을 함께 적어 주세요.
+      placeholder: 예) 공식 채용 페이지, 기술 블로그, 커뮤니티 공지 URL
+    validations:
+      required: true
+  - type: textarea
+    id: provided-info
+    attributes:
+      label: 어떤 정보를 제공하는지
+      description: 채용, 인턴, 대외활동, 기술 글, 학습 자료 등 정보 유형을 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: helpful-reason
+    attributes:
+      label: 왜 백엔드 지망생에게 도움이 되는지
+      description: 이 출처가 어떤 학습 또는 커리어 준비에 도움이 되는지 적어 주세요.
+    validations:
+      required: true

@@ -1,8 +1,24 @@
 # Career Feed
 
-Career Feed는 GitHub Actions, Codex, Discord Webhook으로 개발자 커리어 브리핑을 자동 생성하고 전송하는 프로젝트입니다.
+Career Feed는 백엔드 지망생과 주니어 개발자가 "무엇부터 공부하고, 어떤 채용/인턴/대외활동 정보를 보고, 어떤 OSS 기회와 실무 지식을 따라가야 하는지"를 덜 막막하게 만들기 위한 오픈소스 성장 피드입니다.
+
+GitHub Actions, OpenAI API, Discord Webhook을 사용해 백엔드 학습 주제, PS 루틴, OSS 기여 후보, 한국 개발/AI 뉴스, 커리어 사이트 레이더를 자동 생성·검증·전송합니다.
+
+이 프로젝트는 아직 초기 단계지만, 백엔드 지망생의 정보 과부하와 시작점 부재 문제를 공개 저장소에서 성실하게 다루고, 재사용 가능한 학습·커리어 브리핑 workflow로 발전시키는 것을 목표로 합니다.
 
 상시 실행 서버, Discord Gateway Bot, Slash Command, 데이터베이스, 웹 대시보드는 현재 운영 범위에 포함하지 않습니다. 현재 운영은 정적 설정 파일, GitHub Actions artifact, Discord Webhook 전송을 중심으로 구성합니다.
+
+## 왜 만들었나요?
+
+백엔드 지망생은 정보가 부족해서가 아니라, 정보가 너무 흩어져 있어서 어디서 시작해야 할지 모르는 경우가 많습니다. Career Feed는 이 막막함을 줄이기 위해 학습 주제, 커리어 정보, OSS 기여 후보, 실무 지식을 반복 가능한 브리핑 형태로 정리합니다.
+
+## Who this helps
+
+- 백엔드 개발자가 되고 싶지만 학습 순서를 잡기 어려운 사람
+- Spring Boot/JVM 기반 백엔드 로드맵을 꾸준히 따라가고 싶은 사람
+- 채용, 인턴, 대외활동, OSS 기여 후보를 한 곳에서 보고 싶은 사람
+- Discord 커뮤니티나 스터디에서 매일/매주 성장 피드를 운영하고 싶은 사람
+- 정보 과부하 때문에 무엇부터 해야 할지 막막한 주니어 개발자
 
 ## 프로젝트 소개
 
@@ -139,6 +155,24 @@ repository-root/
 | [Backend Growth Curriculum](./docs/backend-growth-curriculum.md) | CS Core와 백엔드 용어 curriculum 운영 기준 |
 | [OSS 후보 저장소 정책](./docs/oss-candidate-policy.md) | OSS 저장소 profile, scoring, safe candidate gate |
 | [레거시 제거 정책](./LEGACY.md) | 레거시 파일 분류와 삭제 기준 |
+
+## Maintainer
+
+- @stdiodh: primary maintainer
+  - GitHub Actions workflow 관리
+  - OpenAI API 기반 브리핑 생성/검증
+  - 백엔드 학습 주제와 커리어 소스 관리
+  - Discord 전송 운영
+  - 문서화와 로드맵 관리
+
+## Roadmap
+
+- 공개 샘플 브리핑 추가
+- 백엔드 지망생 고민/질문 issue template 추가
+- good first issue 기반 OSS 기여 후보 큐레이션 개선
+- Spring/JVM 학습 로드맵 개선
+- Discord 커뮤니티 운영 가이드 문서화
+- 브리핑 결과 검증 로직 개선
 
 ## 운영 정책 요약
 

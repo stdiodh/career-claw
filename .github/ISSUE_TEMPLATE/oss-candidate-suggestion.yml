@@ -1,0 +1,32 @@
+name: OSS 기여 후보 제안
+description: 백엔드 학습과 연결되는 오픈소스 기여 후보를 제안합니다.
+title: "[OSS 제안] "
+body:
+  - type: input
+    id: repository-url
+    attributes:
+      label: 추천 OSS 저장소 URL
+      placeholder: 예) https://github.com/example/project
+    validations:
+      required: true
+  - type: textarea
+    id: beginner-friendly
+    attributes:
+      label: good first issue 또는 beginner-friendly 여부
+      description: 관련 label, issue URL, 초보 기여자 안내 문서가 있다면 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: backend-relevance
+    attributes:
+      label: 백엔드 학습과의 관련성
+      description: Spring, JVM, DB, API, observability 등 어떤 백엔드 학습과 연결되는지 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: cautions
+    attributes:
+      label: 주의할 점
+      description: 난이도, 오래된 issue, 활발하지 않은 저장소, 기여 가이드 부재 등 주의할 점을 적어 주세요.
+    validations:
+      required: false
