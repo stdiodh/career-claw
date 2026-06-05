@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "updated_at": "2026-06-04 10:47:00 KST",
+  "updated_at": "2026-06-05 13:54:25 KST",
   "last_selected": {
-    "date": "2026-06-04",
-    "title": "조회 API에도 `@Transactional(readOnly = true)`를 붙이는 이유",
-    "track": "Transaction/JPA/DB"
+    "date": "2026-06-05",
+    "title": "Actuator health endpoint를 운영에서 그대로 노출하면 왜 위험할까?",
+    "track": "Observability/Actuator/Micrometer/OpenTelemetry"
   },
   "recent": [
     {
@@ -21,6 +21,11 @@
       "date": "2026-06-04",
       "title": "조회 API에도 `@Transactional(readOnly = true)`를 붙이는 이유",
       "track": "Transaction/JPA/DB"
+    },
+    {
+      "date": "2026-06-05",
+      "title": "Actuator health endpoint를 운영에서 그대로 노출하면 왜 위험할까?",
+      "track": "Observability/Actuator/Micrometer/OpenTelemetry"
     }
   ]
 }
