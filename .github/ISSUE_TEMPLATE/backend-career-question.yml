@@ -1,7 +1,16 @@
 name: 백엔드 커리어 질문
 description: 백엔드 학습이나 커리어 준비에서 막막한 점을 공유합니다.
 title: "[질문] "
+labels:
+  - question
+  - backend-career
 body:
+  - type: markdown
+    attributes:
+      value: |
+        백엔드 학습이나 커리어 준비에서 막막한 점을 공유해 주세요.
+        이 이슈는 비난이나 평가가 아니라, 더 나은 학습·커리어 브리핑을 만들기 위한 자료로 사용됩니다.
+
   - type: textarea
     id: current-situation
     attributes:
@@ -10,20 +19,25 @@ body:
       placeholder: 예) Java 문법을 공부했고 Spring Boot 프로젝트를 시작하려는 단계입니다.
     validations:
       required: true
+
   - type: textarea
     id: blocker
     attributes:
       label: 가장 막막한 점
       description: 어디서 막혔는지, 무엇을 결정하기 어려운지 적어 주세요.
+      placeholder: 예) 프로젝트 주제를 어떻게 정해야 할지 모르겠습니다.
     validations:
       required: true
+
   - type: textarea
     id: desired-help
     attributes:
       label: 원하는 도움
       description: 로드맵, 자료 추천, 실무 주제, 커리어 정보 등 원하는 도움을 적어 주세요.
+      placeholder: 예) Spring Boot 프로젝트를 시작하기 전 최소 학습 순서를 알고 싶습니다.
     validations:
       required: true
+
   - type: input
     id: stack
     attributes:
