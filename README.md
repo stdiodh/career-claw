@@ -12,6 +12,8 @@ GitHub Actions, OpenAI API, Discord Webhook을 사용해 백엔드 학습 주제
 
 백엔드 지망생은 정보가 부족해서가 아니라, 정보가 너무 흩어져 있어서 어디서 시작해야 할지 모르는 경우가 많습니다. Career Feed는 이 막막함을 줄이기 위해 학습 주제, 커리어 정보, OSS 기여 후보, 실무 지식을 반복 가능한 브리핑 형태로 정리합니다.
 
+이 저장소는 백엔드 지망생의 고충을 이슈와 제안으로 수집하고, 반복 가능한 브리핑·가이드·설정으로 다시 공개 지식화하는 것을 지향합니다.
+
 ## Who this helps
 
 - 백엔드 개발자가 되고 싶지만 학습 순서를 잡기 어려운 사람
@@ -20,23 +22,14 @@ GitHub Actions, OpenAI API, Discord Webhook을 사용해 백엔드 학습 주제
 - Discord 커뮤니티나 스터디에서 매일/매주 성장 피드를 운영하고 싶은 사람
 - 정보 과부하 때문에 무엇부터 해야 할지 막막한 주니어 개발자
 
-## 프로젝트 소개
+## What it generates
 
-이 저장소는 매일 또는 수동 실행으로 아래 정보를 생성합니다.
-
-- 백엔드 학습, PS 루틴, OSS 기여 후보, 실무 지식 브리핑
-- 한국 개발/AI 뉴스 피드
-- 백엔드 커리어 사이트 레이더
-- Programmers 풀이 진행도 기록
-
-## 핵심 기능
-
-| 기능 | 설명 |
+| 산출물 | 설명 |
 | --- | --- |
-| Daily Backend Brief | Spring Boot/JVM 학습, PS 루틴, OSS 기여 후보, 백엔드 실무 충전 브리핑 |
-| Korea Dev/AI News Daily | 한국 개발/AI 뉴스와 기술 수요 관찰 피드 |
-| Backend Career Site Radar | 공식 채용 사이트, 채용·인턴 플랫폼, 대외활동/대회 플랫폼 확인용 수동 브리핑 |
-| Mark PS Solved | `data/ps-progress.json`에 Programmers 풀이 진행도 기록 |
+| Daily Backend Brief | Spring Boot/JVM 학습, Programmers PS 루틴, Spring/JVM/Kotlin OSS 기여 후보, 주니어 백엔드 실무 지식, CS Core/백엔드 용어를 묶은 일일 브리핑 |
+| Korea Dev/AI News Daily | 한국 개발/AI 뉴스와 기술 수요를 관찰하고, sparse/empty 정책과 validator를 거쳐 전송하는 일일 뉴스 피드 |
+| Backend Career Site Radar | 공식 채용 사이트, 채용·인턴 플랫폼, 대외활동/해커톤/공모전 플랫폼을 수동으로 점검하는 백엔드 커리어 레이더 |
+| Mark PS Solved | `data/ps-progress.json`에 Programmers 풀이 진행도를 기록하는 수동 workflow |
 
 ## 운영 Workflow 요약
 
@@ -53,56 +46,30 @@ GitHub Actions, OpenAI API, Discord Webhook을 사용해 백엔드 학습 주제
 
 | 경로 | 실행 시간 |
 | --- | --- |
-| Daily Backend Brief | 평일 08:05 KST 시작, 09:00 KST 전송. 09:25 KST catch-up 실행 |
-| Korea Dev/AI News Daily | 평일 08:15 KST 시작, 09:05 KST 전송. 09:30 KST catch-up 실행 |
+| Daily Backend Brief | 평일 08:05 KST 시작, 09:00 KST 전송, 09:25 KST catch-up |
+| Korea Dev/AI News Daily | 평일 08:15 KST 시작, 09:05 KST 전송, 09:30 KST catch-up |
 | Backend Career Site Radar | 자동 실행 없음 |
 | Mark PS Solved | 자동 실행 없음 |
 
 ## 빠른 시작
 
-1. GitHub Actions secrets를 등록합니다.
-2. Actions 탭에서 필요한 workflow가 enabled 상태인지 확인합니다.
-3. Daily workflow는 먼저 `dry_run=true`, `force_send=false`로 실행해 artifact와 validator 결과를 확인합니다.
-4. 로컬에서는 아래 최소 검증을 실행합니다.
-
-```bash
-python3 scripts/check-workflow-schedules.py
-python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
-python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
-python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
-./scripts/validate.sh
-```
-
-## Backend Daily 재전송
-
-오늘 Backend Daily 생성이 validator에서 실패해 Discord 전송 전 중단됐다면 아래 순서로 다시 실행합니다.
-
-1. `Actions > Daily Korea Tech Brief > Run workflow`를 엽니다.
-2. `dry_run=true`, `force_send=false`로 artifact와 validator 결과를 먼저 확인합니다.
-3. 성공을 확인한 뒤 `dry_run=false`, `force_send=true`로 오늘분을 전송합니다.
-
-## News Daily 재전송
-
-오늘 뉴스 생성이 validator에서 실패해 Discord 전송 전 중단됐다면 아래 순서로 다시 실행합니다.
-
-1. `Actions > Daily Korea Dev AI News > Run workflow`를 엽니다.
-2. `dry_run=true`, `force_send=false`로 artifact와 `news-daily-validation-report.md`를 먼저 확인합니다.
-3. 실패하면 `kr-tech-news-daily.md`, shortlist, validation report를 함께 확인합니다.
-4. validator 성공을 확인한 뒤 `dry_run=false`, `force_send=true`로 오늘분을 전송합니다.
+1. 저장소를 fork 또는 clone합니다.
+2. 필요한 GitHub Actions secrets를 등록합니다.
+3. Daily workflow는 먼저 `dry_run=true`, `force_send=false`로 실행합니다.
+4. 생성된 artifacts와 validation reports를 확인합니다.
+5. 검증이 성공한 뒤에만 Discord 전송을 실행합니다.
 
 ## 필요한 Secrets
 
-| 구분 | Secrets |
-| --- | --- |
-| Daily Backend Brief | `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_DAILY` |
-| Korea Dev/AI News Daily | `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` |
-| Backend Career Site Radar | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` |
-| Mark PS Solved | 없음 |
-
-선택 secret:
-
-- `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`: Korea Dev/AI News Daily 품질 향상용입니다.
-- `DISCORD_WEBHOOK_CAREER_FEED_OPS`: workflow 실패 알림용입니다. 없어도 실패 알림만 skip합니다.
+| Secret | 필수 여부 | 용도 |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | 필수 | Daily Backend Brief, Korea Dev/AI News Daily 생성 |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | 필수 | Daily Backend Brief 전송 |
+| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | 필수 | Korea Dev/AI News Daily 전송 |
+| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | 필수 | Backend Career Site Radar 전송 |
+| `NAVER_CLIENT_ID` | 선택 | Korea Dev/AI News Daily 후보 품질 개선 |
+| `NAVER_CLIENT_SECRET` | 선택 | Korea Dev/AI News Daily 후보 품질 개선 |
+| `DISCORD_WEBHOOK_CAREER_FEED_OPS` | 선택 | workflow 실패 알림. 없으면 실패 알림만 skip |
 
 Secret 값, API Key, Webhook URL은 코드, 문서 예시, 커밋 로그에 저장하지 않습니다.
 
@@ -128,7 +95,7 @@ git diff --check
 
 ```text
 repository-root/
-├─ .github/          # Codex prompts, GitHub Actions workflows
+├─ .github/          # Codex prompts, GitHub Actions workflows, issue templates
 ├─ configs/          # 수집 소스, 커리큘럼, OSS, site radar 설정
 ├─ data/             # PS/OSS/Spring topic 진행도 JSON
 ├─ docs/             # 운영 정책과 상세 가이드
@@ -154,6 +121,10 @@ repository-root/
 | [Spring/JVM 블로그 주제 정책](./docs/daily-spring-jvm-blog-topic-policy.md) | Spring/JVM 학습 주제 선택과 validator 기준 |
 | [Backend Growth Curriculum](./docs/backend-growth-curriculum.md) | CS Core와 백엔드 용어 curriculum 운영 기준 |
 | [OSS 후보 저장소 정책](./docs/oss-candidate-policy.md) | OSS 저장소 profile, scoring, safe candidate gate |
+| [커뮤니티 활용 가이드](./docs/community-guide.md) | 개인/스터디/멘토링에서 Career Feed를 재사용하는 방법 |
+| [Maintainer Guide](./docs/maintainer-guide.md) | dry-run, 검증, secret 안전, issue 제안 검토 체크리스트 |
+| [GitHub Labels](./docs/github-labels.md) | issue/PR 분류에 사용할 권장 label |
+| [Codex OSS Program Application Notes](./docs/oss-program-application.md) | Codex Open Source Support Program 신청용 정리 문구 |
 | [레거시 제거 정책](./LEGACY.md) | 레거시 파일 분류와 삭제 기준 |
 
 ## Maintainer
@@ -165,20 +136,44 @@ repository-root/
   - Discord 전송 운영
   - 문서화와 로드맵 관리
 
+## Contributing
+
+기여 방식은 [CONTRIBUTING.md](./CONTRIBUTING.md)를 봅니다.
+
+Career Feed에는 아래 방식으로 기여할 수 있습니다.
+
+- 백엔드 학습 주제 제안
+- 커리어 정보 출처 제안
+- OSS 기여 후보 제안
+- 깨진 링크/수집 실패 제보
+- 백엔드 커리어 고민 공유
+- 문서 개선
+
 ## Roadmap
 
 - 공개 샘플 브리핑 추가
-- 백엔드 지망생 고민/질문 issue template 추가
+- 백엔드 지망생 고민/질문 issue template 개선
 - good first issue 기반 OSS 기여 후보 큐레이션 개선
 - Spring/JVM 학습 로드맵 개선
 - Discord 커뮤니티 운영 가이드 문서화
 - 브리핑 결과 검증 로직 개선
+- API 사용량과 prompt budget 리포트 개선
+- 중복 전송 방지와 실패 알림 개선
+
+## API usage policy
+
+Career Feed는 OpenAI API를 사용해 브리핑 초안, 요약, 후보 정리, 검증 보조 산출물을 생성합니다. 자동 댓글, 자동 PR 생성, 자동 assign, 자동 label 변경, 무검토 배포에는 사용하지 않습니다. 생성 결과는 workflow validator와 maintainer 검토 흐름을 거쳐 사용합니다.
 
 ## 운영 정책 요약
 
 - Backend Daily와 News Daily는 `dry_run`, `force_send`, delivery lock, catch-up schedule로 누락과 중복 전송 위험을 줄입니다.
 - News Daily는 기준을 만족하는 뉴스가 3개 미만이어도 sparse/empty 정책에 맞으면 정상 성공으로 봅니다.
+- Programmers PS 루틴은 정적 config와 progress 파일만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않습니다.
 - OSS 후보는 GitHub issue 기반으로 추천만 하며 댓글, PR 생성, assign, label 변경은 자동 수행하지 않습니다.
 - OpenJDK/JBS는 Spring OSS 난이도 모델 참고로만 사용하고 직접 수집하지 않습니다.
 - `app/`와 `infra/`는 현재 README 운영 경로에는 포함하지 않지만 HIGH 위험 영역이므로 레거시 정리에서 삭제하지 않습니다.
 - 레거시 파일 제거 기준은 [LEGACY.md](./LEGACY.md)를 따릅니다.
+
+## License
+
+This project is licensed under the MIT License.
