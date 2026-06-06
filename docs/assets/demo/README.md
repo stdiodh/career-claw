@@ -2,15 +2,15 @@
 
 ## Purpose
 
-This directory stores redacted screenshots and GIF files used by the README and demo documentation.
+This directory stores redacted screenshots and GIF files used by the demo documentation.
 
 The assets should show how Career Feed is operated through GitHub Actions, validation artifacts, generated briefs, and Discord Webhook delivery.
 
 They should not make the project look like a web dashboard, hosted service, Gateway Bot, Slash Command product, or hiring recommendation platform.
 
-If no reviewed assets are ready, keep only `.gitkeep`.
+The current assets are mock redacted screenshots.
 
-assets will be added after redacted capture.
+They do not contain live GitHub, Discord, webhook, token, or account data.
 
 ## Allowed assets
 
@@ -91,7 +91,7 @@ Do not create nested folders unless a future documentation change needs them.
 ## Review checklist
 
 - The file exists in `docs/assets/demo/`.
-- README or demo docs link only to files that exist.
+- Documentation links only to files that exist.
 - The asset uses redacted or mock data.
 - No webhook, token, API key, credential, private URL, or personal identifier is visible.
 - Discord server, channel, user, and avatar details are hidden.
@@ -111,8 +111,6 @@ After adding or replacing images, run:
 find docs/assets/demo -maxdepth 1 -type f -print
 du -h docs/assets/demo/*
 ```
-
-If only `.gitkeep` exists, the size command is optional.
 
 Document in the PR whether image or GIF assets were added.
 

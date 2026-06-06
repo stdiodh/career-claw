@@ -41,9 +41,17 @@ These scenes are enough to explain what happens when the project runs.
 
 They show inputs, validation, generated output, and final delivery without pretending that there is a separate application UI.
 
-If screenshots are not ready, keep only the asset directory README and `.gitkeep`.
+The repository includes mock redacted demo assets for these scenes.
 
-assets will be added after redacted capture.
+They are illustrative screenshots, not live GitHub or Discord captures.
+
+![GitHub Actions workflow dispatch mock](assets/demo/github-actions-dispatch-redacted.png)
+
+![Actions summary and artifacts mock](assets/demo/actions-summary-redacted.png)
+
+![Validation report and generated brief mock](assets/demo/validation-report-redacted.png)
+
+![Discord briefing mock](assets/demo/discord-brief-redacted.png)
 
 ## Recommended demo flow
 
@@ -218,7 +226,7 @@ Recommended paths:
 
 Only link files that actually exist.
 
-If assets are not ready, keep `.gitkeep` and document that assets will be added after redacted capture.
+When replacing assets, update only links to files that actually exist.
 
 Do not create placeholder image files.
 
