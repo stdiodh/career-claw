@@ -16,10 +16,34 @@ LINE_COUNT_MINIMUMS = {
     "README.md": 100,
     "docs/ecosystem-importance.md": 50,
     "docs/oss-program-application.md": 60,
-    "CONTRIBUTING.md": 40,
+    "CONTRIBUTING.md": 80,
+    "CODE_OF_CONDUCT.md": 60,
+    "docs/contributing/README.md": 40,
+    "docs/contributing/good-suggestion-criteria.md": 70,
+    "docs/contributing/source-suggestion-guide.md": 70,
+    "docs/contributing/oss-candidate-guide.md": 70,
+    "docs/contributing/backend-career-question-guide.md": 50,
+    "docs/contributing/review-policy.md": 60,
     "SECURITY.md": 30,
     "LICENSE": 20,
+    "scripts/check-doc-format.py": 100,
+    "scripts/validate.sh": 300,
 }
+
+MARKDOWN_FILES = [
+    "README.md",
+    "docs/ecosystem-importance.md",
+    "docs/oss-program-application.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "docs/contributing/README.md",
+    "docs/contributing/good-suggestion-criteria.md",
+    "docs/contributing/source-suggestion-guide.md",
+    "docs/contributing/oss-candidate-guide.md",
+    "docs/contributing/backend-career-question-guide.md",
+    "docs/contributing/review-policy.md",
+    "SECURITY.md",
+]
 
 README_HEADINGS = [
     "# career-feed",
@@ -76,6 +100,104 @@ APPLICATION_HEADINGS = [
     "## Final checklist before submission",
 ]
 
+CODE_OF_CONDUCT_HEADINGS = [
+    "# Code of Conduct",
+    "## Our standard",
+    "## Expected behavior",
+    "## Unacceptable behavior",
+    "## Project-specific expectations",
+    "## Respect for beginners",
+    "## Respect for maintainers",
+    "## Source and suggestion etiquette",
+    "## Automation safety",
+    "## Reporting concerns",
+    "## Enforcement approach",
+    "## Scope",
+    "## Maintainer notes",
+]
+
+CONTRIBUTING_INDEX_HEADINGS = [
+    "# Contribution Guide Index",
+    "## Start here",
+    "## Contribution paths",
+    "## Suggestion quality",
+    "## Regional and language expansion",
+    "## Maintainer review",
+    "## Related documents",
+]
+
+GOOD_SUGGESTION_HEADINGS = [
+    "# Good Suggestion Criteria",
+    "## Summary",
+    "## What a good suggestion includes",
+    "## What makes a suggestion hard to review",
+    "## Good examples",
+    "## Weak examples",
+    "## Region and language metadata",
+    "## Evidence and source quality",
+    "## Maintainer checklist",
+]
+
+SOURCE_SUGGESTION_HEADINGS = [
+    "# Source Suggestion Guide",
+    "## What counts as a source",
+    "## Recommended source types",
+    "## Source quality checklist",
+    "## Region-specific source suggestions",
+    "## Examples of strong source suggestions",
+    "## Examples of weak source suggestions",
+    "## Sources that may be rejected",
+    "## Privacy and scraping boundaries",
+    "## Maintainer review flow",
+]
+
+OSS_CANDIDATE_HEADINGS = [
+    "# OSS Candidate Suggestion Guide",
+    "## Purpose",
+    "## What makes an OSS candidate useful",
+    "## Beginner-friendly signals",
+    "## Backend relevance",
+    "## Safety boundaries",
+    "## Good examples",
+    "## Weak examples",
+    "## What Career Feed will not do",
+    "## Maintainer checklist",
+]
+
+BACKEND_CAREER_QUESTION_HEADINGS = [
+    "# Backend Career Question Guide",
+    "## Purpose",
+    "## What to include",
+    "## Good question examples",
+    "## Weak question examples",
+    "## Personal information safety",
+    "## How questions improve Career Feed",
+    "## Maintainer review",
+]
+
+REVIEW_POLICY_HEADINGS = [
+    "# Maintainer Review Policy",
+    "## Review principles",
+    "## What maintainers look for",
+    "## Why suggestions may be declined",
+    "## Automation review boundaries",
+    "## Regional expansion review",
+    "## Documentation review",
+    "## Security review",
+    "## Decision outcomes",
+]
+
+REQUIRED_README_LINKS = [
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "docs/contributing/README.md",
+    "docs/contributing/good-suggestion-criteria.md",
+    "docs/contributing/source-suggestion-guide.md",
+    "docs/contributing/oss-candidate-guide.md",
+    "docs/contributing/backend-career-question-guide.md",
+    "docs/contributing/review-policy.md",
+]
+
 ISSUE_TEMPLATE_FILES = [
     ".github/ISSUE_TEMPLATE/backend-career-question.yml",
     ".github/ISSUE_TEMPLATE/config.yml",
@@ -130,6 +252,13 @@ def check_required_headings(path: str, headings: list[str]) -> None:
     missing = [heading for heading in headings if heading not in text.splitlines()]
     if missing:
         fail(f"{path} misses required heading(s): {', '.join(missing)}")
+
+
+def check_readme_links() -> None:
+    text = read_text("README.md")
+    missing = [link for link in REQUIRED_README_LINKS if link not in text]
+    if missing:
+        fail(f"README.md misses required contribution link(s): {', '.join(missing)}")
 
 
 def check_literal_newline_strings(paths: list[str]) -> None:
@@ -221,14 +350,24 @@ def check_issue_template_yaml() -> None:
 def main() -> int:
     docs = list(LINE_COUNT_MINIMUMS)
     all_targets = docs + ISSUE_TEMPLATE_FILES
-    markdown_docs = [path for path in docs if path != "LICENSE"]
 
     check_line_counts()
     check_required_headings("README.md", README_HEADINGS)
     check_required_headings("docs/ecosystem-importance.md", ECOSYSTEM_HEADINGS)
     check_required_headings("docs/oss-program-application.md", APPLICATION_HEADINGS)
-    check_literal_newline_strings(all_targets)
-    for path in markdown_docs:
+    check_required_headings("CODE_OF_CONDUCT.md", CODE_OF_CONDUCT_HEADINGS)
+    check_required_headings("docs/contributing/README.md", CONTRIBUTING_INDEX_HEADINGS)
+    check_required_headings("docs/contributing/good-suggestion-criteria.md", GOOD_SUGGESTION_HEADINGS)
+    check_required_headings("docs/contributing/source-suggestion-guide.md", SOURCE_SUGGESTION_HEADINGS)
+    check_required_headings("docs/contributing/oss-candidate-guide.md", OSS_CANDIDATE_HEADINGS)
+    check_required_headings(
+        "docs/contributing/backend-career-question-guide.md",
+        BACKEND_CAREER_QUESTION_HEADINGS,
+    )
+    check_required_headings("docs/contributing/review-policy.md", REVIEW_POLICY_HEADINGS)
+    check_readme_links()
+    check_literal_newline_strings(MARKDOWN_FILES)
+    for path in MARKDOWN_FILES:
         check_compressed_markdown(path)
     check_mit_license()
     check_hidden_unicode(all_targets)
