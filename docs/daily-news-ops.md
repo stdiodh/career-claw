@@ -24,7 +24,8 @@ Korea Dev/AI News Daily는 평일 오전에 한국 개발/AI 뉴스를 정리해
 - `reports/candidates/kr-ai-tech-news.json`
 - `reports/candidates/kr-tech-news-shortlist.json`
 
-Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist인 `kr-tech-news-shortlist.json`을 중심으로 사용합니다.
+Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist인 `kr-tech-news-shortlist.json`을 중심으로
+사용합니다.
 
 ## 뉴스 정책
 
@@ -63,8 +64,10 @@ Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist인 
 
 ## 운영 점검 파일
 
-- `reports/ops/news-daily-token-budget.json`: raw 후보 수, shortlist 수, prompt 문자 수, rough token 추정치
-- `reports/ops/news-daily-validation-report.md`: validator 상태, 오류 한 줄, stdout/stderr 마지막 30줄
+- `reports/ops/news-daily-token-budget.json`: raw 후보 수, shortlist 수, prompt 문자 수, rough
+  token 추정치
+- `reports/ops/news-daily-validation-report.md`: validator 상태, 오류 한 줄, stdout/stderr 마지막
+  30줄
 - `reports/ops/news-daily-quality-report.json`: 비중, 성장 행동, 투자 조언 위험, token 효율
 - `reports/ops/news-daily-run-summary.json`: 선택 수, bridge 여부, 성장 판단, quality summary
 
@@ -76,16 +79,16 @@ Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist인 
 News Daily를 수동으로 다시 보낼 때는 먼저 검증 run과 전송 run을 분리합니다.
 
 1. `Actions > Daily Korea Dev AI News > Run workflow`를 엽니다.
-2. `dry_run=true`, `force_send=false`로 실행해 후보 수집, shortlist 생성, Codex Markdown 생성, validator,
-   artifact 업로드를 확인합니다.
+2. `dry_run=true`, `force_send=false`로 실행해 후보 수집, shortlist 생성, Codex Markdown 생성,
+   validator, artifact 업로드를 확인합니다.
 3. artifact에서 `reports/ops/news-daily-validation-report.md`를 열어 validator가 통과했는지 확인합니다.
 4. 실패하면 같은 artifact의 `reports/briefs/kr-tech-news-daily.md`,
-   `reports/candidates/kr-tech-news-shortlist.json`, `reports/ops/news-daily-validation-report.md`를
-   함께 확인합니다.
+   `reports/candidates/kr-tech-news-shortlist.json`,
+   `reports/ops/news-daily-validation-report.md`를 함께 확인합니다.
 5. validator 통과 후에만 `dry_run=false`, `force_send=true`로 한 번 전송합니다.
 
-`dry_run=true`에서는 Discord 전송과 delivery lock 저장을 하지 않습니다. `force_send=true`는 오늘 delivery lock이 있어도
-생성, 검증, 전송을 수행하며, 전송 성공 시 delivery lock을 저장합니다.
+`dry_run=true`에서는 Discord 전송과 delivery lock 저장을 하지 않습니다. `force_send=true`는 오늘 delivery
+lock이 있어도 생성, 검증, 전송을 수행하며, 전송 성공 시 delivery lock을 저장합니다.
 
 schedule 실행은 09:05 KST 전송 대기 단계가 있지만, `workflow_dispatch` 수동 실행에서는 이 wait 단계를 실행하지 않습니다.
 

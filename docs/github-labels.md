@@ -12,4 +12,5 @@
 | `enhancement` | 개선 제안 |
 | `security` | 보안/민감 정보 관련 |
 
-필요하면 maintainer가 GitHub UI나 `gh label create`로 수동 생성합니다. Label 생성은 브리핑 workflow 동작에 필수 조건이 아닙니다.
+필요하면 maintainer가 GitHub UI나 `gh label create`로 수동 생성합니다. Label 생성은 브리핑 workflow 동작에 필수
+조건이 아닙니다.

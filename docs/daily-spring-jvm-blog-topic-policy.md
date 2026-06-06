@@ -1,6 +1,7 @@
 # Daily Spring/JVM Blog Topic Policy
 
-이 문서는 Daily Backend Brief의 1번 `오늘의 Spring Boot/JVM 학습` 섹션을 하루 1개 기술 블로그 주제로 운영하기 위한 기준입니다.
+이 문서는 Daily Backend Brief의 1번 `오늘의 Spring Boot/JVM 학습` 섹션을 하루 1개 기술 블로그 주제로 운영하기 위한
+기준입니다.
 
 ## 목적
 
@@ -61,8 +62,8 @@
 ## 허용 레퍼런스 정책
 
 - 우선순위는 공식 문서, 표준 문서, 릴리즈 노트입니다.
-- Spring, Hibernate, OpenJDK, Kotlin 공식 문서, Gradle, Micrometer, OpenTelemetry, Docker, Kubernetes,
-  주요 Cloud 공식 문서를 우선합니다.
+- Spring, Hibernate, OpenJDK, Kotlin 공식 문서, Gradle, Micrometer, OpenTelemetry, Docker,
+  Kubernetes, 주요 Cloud 공식 문서를 우선합니다.
 - AWS는 `docs.aws.amazon.com` 문서를 우선하며 `aws.amazon.com` 전체 도메인을 일반 허용하지 않습니다.
 - 보조 레퍼런스는 신뢰 가능한 엔지니어링 블로그만 허용합니다.
 - Naver 뉴스/검색/블로그, 일반 언론, 홍보성 페이지는 1번 섹션 레퍼런스로 사용하지 않습니다.

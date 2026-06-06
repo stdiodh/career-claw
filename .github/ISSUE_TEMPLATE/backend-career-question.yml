@@ -16,8 +16,10 @@ body:
     id: current-situation
     attributes:
       label: 현재 상황
-      description: 현재 학습 단계, 경험, 준비 중인 목표를 적어 주세요.
-      placeholder: 예) Java 문법을 공부했고 Spring Boot 프로젝트를 시작하려는 단계입니다.
+      description: >-
+        현재 학습 단계, 경험, 준비 중인 목표를 적어 주세요.
+      placeholder: >-
+        예) Java 문법을 공부했고 Spring Boot 프로젝트를 시작하려는 단계입니다.
     validations:
       required: true
 
@@ -25,8 +27,10 @@ body:
     id: blocker
     attributes:
       label: 가장 막막한 점
-      description: 어디서 막혔는지, 무엇을 결정하기 어려운지 적어 주세요.
-      placeholder: 예) 프로젝트 주제를 어떻게 정해야 할지 모르겠습니다.
+      description: >-
+        어디서 막혔는지, 무엇을 결정하기 어려운지 적어 주세요.
+      placeholder: >-
+        예) 프로젝트 주제를 어떻게 정해야 할지 모르겠습니다.
     validations:
       required: true
 
@@ -36,7 +40,8 @@ body:
       label: 원하는 도움
       description: >-
         로드맵, 자료 추천, 실무 주제, 커리어 정보 등 원하는 도움을 적어 주세요.
-      placeholder: 예) Spring Boot 프로젝트를 시작하기 전 최소 학습 순서를 알고 싶습니다.
+      placeholder: >-
+        예) Spring Boot 프로젝트를 시작하기 전 최소 학습 순서를 알고 싶습니다.
     validations:
       required: true
 

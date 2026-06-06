@@ -16,7 +16,8 @@ body:
     id: repository-url
     attributes:
       label: 추천 OSS 저장소 URL
-      placeholder: https://github.com/owner/repository
+      placeholder: >-
+        https://github.com/owner/repository
     validations:
       required: true
 
@@ -26,7 +27,8 @@ body:
       label: 관련 issue URL
       description: >-
         good first issue 또는 beginner-friendly issue가 있다면 적어 주세요.
-      placeholder: https://github.com/owner/repository/issues/1
+      placeholder: >-
+        https://github.com/owner/repository/issues/1
     validations:
       required: false
 
@@ -45,7 +47,8 @@ body:
     id: backend-relevance
     attributes:
       label: 백엔드 학습과의 관련성
-      description: 이 저장소나 이슈가 백엔드 학습에 왜 도움이 되는지 적어 주세요.
+      description: >-
+        이 저장소나 이슈가 백엔드 학습에 왜 도움이 되는지 적어 주세요.
     validations:
       required: true
 

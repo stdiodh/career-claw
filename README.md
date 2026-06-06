@@ -1,21 +1,21 @@
 # Career Feed
 
-Career Feed는 백엔드 지망생과 주니어 개발자가 "무엇부터 공부하고, 어떤 채용/인턴/대외활동 정보를 보고, 어떤 OSS 기회와 실무 지식을 따라가야 하는지"를 덜 막막하게
-만들기 위한 오픈소스 성장 피드입니다.
+Career Feed는 백엔드 지망생과 주니어 개발자가 "무엇부터 공부하고, 어떤 채용/인턴/대외활동 정보를 보고, 어떤 OSS 기회와 실무 지식을 따라가야
+하는지"를 덜 막막하게 만들기 위한 오픈소스 성장 피드입니다.
 
-GitHub Actions, OpenAI API, Discord Webhook을 사용해 백엔드 학습 주제, PS 루틴, OSS 기여 후보, 한국 개발/AI 뉴스, 커리어 사이트
-레이더를 자동 생성·검증·전송합니다.
+GitHub Actions, OpenAI API, Discord Webhook을 사용해 백엔드 학습 주제, PS 루틴, OSS 기여 후보, 한국 개발/AI
+뉴스, 커리어 사이트 레이더를 자동 생성·검증·전송합니다.
 
-이 프로젝트는 아직 초기 단계지만, 백엔드 지망생의 정보 과부하와 시작점 부재 문제를 공개 저장소에서 성실하게 다루고, 재사용 가능한 학습·커리어 브리핑 workflow로
-발전시키는 것을 목표로 합니다.
+이 프로젝트는 아직 초기 단계지만, 백엔드 지망생의 정보 과부하와 시작점 부재 문제를 공개 저장소에서 성실하게 다루고, 재사용 가능한 학습·커리어 브리핑
+workflow로 발전시키는 것을 목표로 합니다.
 
-상시 실행 서버, Discord Gateway Bot, Slash Command, 데이터베이스, 웹 대시보드는 현재 운영 범위에 포함하지 않습니다. 현재 운영은 정적 설정 파일,
-GitHub Actions artifact, Discord Webhook 전송을 중심으로 구성합니다.
+상시 실행 서버, Discord Gateway Bot, Slash Command, 데이터베이스, 웹 대시보드는 현재 운영 범위에 포함하지 않습니다. 현재
+운영은 정적 설정 파일, GitHub Actions artifact, Discord Webhook 전송을 중심으로 구성합니다.
 
 ## 왜 만들었나요?
 
-백엔드 지망생은 정보가 부족해서가 아니라, 정보가 너무 흩어져 있어서 어디서 시작해야 할지 모르는 경우가 많습니다. Career Feed는 이 막막함을 줄이기 위해 학습 주제,
-커리어 정보, OSS 기여 후보, 실무 지식을 반복 가능한 브리핑 형태로 정리합니다.
+백엔드 지망생은 정보가 부족해서가 아니라, 정보가 너무 흩어져 있어서 어디서 시작해야 할지 모르는 경우가 많습니다. Career Feed는 이 막막함을 줄이기
+위해 학습 주제, 커리어 정보, OSS 기여 후보, 실무 지식을 반복 가능한 브리핑 형태로 정리합니다.
 
 이 저장소는 백엔드 지망생의 고충을 이슈와 제안으로 수집하고, 반복 가능한 브리핑·가이드·설정으로 다시 공개 지식화하는 것을 지향합니다.
 
@@ -167,13 +167,14 @@ Career Feed에는 아래 방식으로 기여할 수 있습니다.
 
 ## API usage policy
 
-Career Feed는 OpenAI API를 사용해 브리핑 초안, 요약, 후보 정리, 검증 보조 산출물을 생성합니다. 자동 댓글, 자동 PR 생성, 자동 assign, 자동
-label 변경, 무검토 배포에는 사용하지 않습니다. 생성 결과는 workflow validator와 maintainer 검토 흐름을 거쳐 사용합니다.
+Career Feed는 OpenAI API를 사용해 브리핑 초안, 요약, 후보 정리, 검증 보조 산출물을 생성합니다. 자동 댓글, 자동 PR 생성, 자동
+assign, 자동 label 변경, 무검토 배포에는 사용하지 않습니다. 생성 결과는 workflow validator와 maintainer 검토 흐름을 거쳐
+사용합니다.
 
 ## 운영 정책 요약
 
-- Backend Daily와 News Daily는 `dry_run`, `force_send`, delivery lock, catch-up schedule로 누락과 중복 전송
-  위험을 줄입니다.
+- Backend Daily와 News Daily는 `dry_run`, `force_send`, delivery lock, catch-up schedule로
+  누락과 중복 전송 위험을 줄입니다.
 - News Daily는 기준을 만족하는 뉴스가 3개 미만이어도 sparse/empty 정책에 맞으면 정상 성공으로 봅니다.
 - Programmers PS 루틴은 정적 config와 progress 파일만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않습니다.
 - OSS 후보는 GitHub issue 기반으로 추천만 하며 댓글, PR 생성, assign, label 변경은 자동 수행하지 않습니다.

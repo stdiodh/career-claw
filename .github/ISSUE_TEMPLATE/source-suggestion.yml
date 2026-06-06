@@ -16,8 +16,10 @@ body:
     id: source-url
     attributes:
       label: 추천하는 정보 출처
-      description: URL을 적어 주세요.
-      placeholder: https://example.com
+      description: >-
+        URL을 적어 주세요.
+      placeholder: >-
+        https://example.com
     validations:
       required: true
 
@@ -34,7 +36,8 @@ body:
     id: usefulness
     attributes:
       label: 왜 백엔드 지망생에게 도움이 되나요?
-      description: 이 출처가 어떤 문제를 줄여 주는지 적어 주세요.
+      description: >-
+        이 출처가 어떤 문제를 줄여 주는지 적어 주세요.
     validations:
       required: true
 
