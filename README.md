@@ -157,6 +157,16 @@ GitHub Actions로 실제 브리핑을 운영하려면 필요한 secrets를 먼�
 
 처음에는 Discord 전송을 바로 켜기보다 dry-run artifacts와 validation reports를 확인하는 것을 권장합니다.
 
+## Usage and demo
+
+Career Feed is operated through GitHub Actions, validation artifacts, and Discord Webhook delivery.
+
+To see how to run it and what the output looks like, read the [Usage guide](docs/usage.md) and [Demo guide](docs/demo.md).
+
+The demo intentionally uses redacted or mock data.
+
+Do not publish real webhook URLs, tokens, private Discord channel names, or personal identifiers in screenshots.
+
 ## Required secrets
 
 다음 값은 GitHub Secrets 또는 로컬 환경변수로만 다룹니다.
@@ -220,6 +230,8 @@ README에서 링크하는 문서는 실제 저장소에 존재하는 문서만 �
 | --- | --- |
 | [docs/ecosystem-importance.md](docs/ecosystem-importance.md) | 백엔드 생태계에서 Career Feed가 갖는 의미와 한계 |
 | [docs/oss-program-application.md](docs/oss-program-application.md) | Codex Open Source Support Program 신청용 답변 초안 |
+| [docs/usage.md](docs/usage.md) | GitHub Actions, dry-run, artifacts, Discord 전송 사용 가이드 |
+| [docs/demo.md](docs/demo.md) | redacted demo screenshot과 GIF 준비 가이드 |
 | [docs/daily-backend-brief.md](docs/daily-backend-brief.md) | Daily Backend Brief 운영 방식 |
 | [docs/daily-news-ops.md](docs/daily-news-ops.md) | Korea Dev/AI News Daily 운영 방식 |
 | [docs/career-site-radar.md](docs/career-site-radar.md) | Backend Career Site Radar 운영 방식 |
