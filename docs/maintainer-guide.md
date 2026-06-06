@@ -1,44 +1,82 @@
 # Maintainer Guide
 
+이 문서는 Career Feed maintainer가 daily/weekly workflow를 안전하게 운영하기 위한 체크리스트입니다.
+
 ## Daily workflow dry-run checklist
 
-- `dry_run=true`, `force_send=false`로 먼저 실행합니다.
-- 생성된 briefing artifact와 validation report를 확인합니다.
-- Discord 전송 전 delivery lock과 skip reason artifact를 확인합니다.
+전송 전에 다음을 확인합니다.
 
-## Validation-before-send checklist
+- `dry_run=true`로 실행했는가?
+- `force_send=false`로 실행했는가?
+- 생성된 artifact를 확인했는가?
+- validator가 실패하지 않았는가?
+- 중복 전송 가능성이 없는가?
+- Discord Webhook URL이 로그에 노출되지 않았는가?
 
-- `python3 scripts/check-workflow-schedules.py`
-- `python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run`
-- `python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run`
-- `python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run`
-- `./scripts/validate.sh`
+## Validation before send
+
+가능한 경우 다음 명령을 확인합니다.
+
+    git diff --check
+    python3 scripts/check-workflow-schedules.py
+    ./scripts/validate.sh
+
+Daily Backend Brief:
+
+    python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
+
+Korea Dev/AI News Daily:
+
+    python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
+
+Backend Career Site Radar:
+
+    python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
+    python3 scripts/render-weekly-career-site-radar.py
 
 ## Secrets safety checklist
 
-- `OPENAI_API_KEY`, Discord Webhook URL, GitHub token, Naver credentials를 문서나 commit에
-  남기지 않습니다.
-- sample command에는 secret 값을 직접 쓰지 않습니다.
-- 공개 이슈에 secret 원문을 요청하지 않습니다.
+다음 값은 절대 커밋하지 않습니다.
+
+- OpenAI API key
+- Discord Webhook URL
+- GitHub token
+- Naver API credentials
+
+노출이 의심되면 즉시 secret을 폐기하고 재발급합니다.
 
 ## What not to automate
 
-- 외부 저장소 자동 댓글
-- 외부 저장소 자동 PR
-- 자동 assign 또는 label 변경
-- maintainer 검토 없는 공식 답변
-- maintainer 검토 없는 Discord 전송
+Career Feed는 다음 행동을 자동화하지 않습니다.
 
-## How to review issue suggestions
+- 외부 저장소에 댓글 작성
+- 외부 저장소에 PR 생성
+- 외부 저장소 issue assign
+- 외부 저장소 label 변경
+- 사용자의 커리어 판단 단정
+- 채용 공고의 합격 가능성 평가
 
-- 출처 URL이 공개적으로 확인 가능한지 확인합니다.
-- 백엔드 지망생 또는 주니어 개발자에게 실제 도움이 되는지 확인합니다.
-- 광고성, 중복, 오래된 정보 가능성을 확인합니다.
-- 반복 가능한 브리핑 workflow에 넣을 수 있는지 판단합니다.
+## Issue suggestion review
 
-## How to select OSS candidates safely
+제안을 검토할 때 다음을 확인합니다.
 
-- 저장소의 `CONTRIBUTING`, build guide, test command를 확인합니다.
-- good first issue 또는 beginner-friendly label만으로 난이도를 단정하지 않습니다.
-- 오래된 issue, 응답 없는 저장소, 재현 불가능한 이슈는 후보에서 낮게 평가합니다.
-- 외부 프로젝트에 부담을 주지 않는 방식으로 접근합니다.
+- 백엔드 지망생에게 실제로 도움이 되는가?
+- 출처가 공개적이고 확인 가능한가?
+- 광고성 목적이 강하지 않은가?
+- 업데이트 빈도가 너무 낮지 않은가?
+- beginner-friendly 여부를 설명할 수 있는가?
+- workflow scope를 지나치게 넓히지 않는가?
+
+## OSS candidate review
+
+OSS 후보는 추천만 합니다.
+
+외부 저장소에 실제 기여하기 전에는 다음을 직접 확인해야 합니다.
+
+- README
+- CONTRIBUTING
+- build guide
+- test command
+- issue context
+- license
+- 최근 commit과 issue 활동
