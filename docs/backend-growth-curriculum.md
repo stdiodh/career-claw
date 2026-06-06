@@ -4,7 +4,8 @@
 
 ## 목적
 
-Daily Backend Brief는 기존 Spring Boot/JVM 학습, Programmers PS, OSS 기여 후보, 주니어 실무지식 구조를 유지하면서 매일 짧은 CS Core와 백엔드 용어 학습을 함께 보냅니다.
+Daily Backend Brief는 기존 Spring Boot/JVM 학습, Programmers PS, OSS 기여 후보, 주니어 실무지식 구조를 유지하면서 매일 짧은 CS
+Core와 백엔드 용어 학습을 함께 보냅니다.
 
 이 슬롯은 면접 암기장을 만들기 위한 기능이 아닙니다. 매일 10~20분 안에 확인할 수 있는 행동, 완료 기준, Spring/API/DB/운영 연결을 남기는 것이 목적입니다.
 

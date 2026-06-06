@@ -1,5 +1,6 @@
 name: 정보 출처 제안
-description: 백엔드 학습, 커리어, 채용, 대외활동 관련 정보 출처를 제안합니다.
+description: >-
+  백엔드 학습, 커리어, 채용, 대외활동 관련 정보 출처를 제안합니다.
 title: "[출처 제안] "
 labels:
   - source
@@ -24,7 +25,8 @@ body:
     id: source-type
     attributes:
       label: 어떤 정보를 제공하나요?
-      description: 채용, 인턴, 대외활동, 기술 블로그, 학습 자료, 뉴스 등으로 설명해 주세요.
+      description: >-
+        채용, 인턴, 대외활동, 기술 블로그, 학습 자료, 뉴스 등으로 설명해 주세요.
     validations:
       required: true
 
@@ -40,6 +42,7 @@ body:
     id: notes
     attributes:
       label: 주의할 점
-      description: 광고성 여부, 로그인 필요 여부, 업데이트 빈도, 중복 가능성 등을 적어 주세요.
+      description: >-
+        광고성 여부, 로그인 필요 여부, 업데이트 빈도, 중복 가능성 등을 적어 주세요.
     validations:
       required: false

@@ -2,7 +2,8 @@
 
 ## 지원 범위
 
-Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반의 자동 브리핑 workflow를 운영합니다. 현재 상시 실행 서버, 데이터베이스, 웹 대시보드, Discord Gateway Bot은 운영 범위에 포함하지 않습니다.
+Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반의 자동 브리핑 workflow를 운영합니다. 현재 상시 실행 서버,
+데이터베이스, 웹 대시보드, Discord Gateway Bot은 운영 범위에 포함하지 않습니다.
 
 ## 민감 정보
 

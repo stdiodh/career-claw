@@ -33,7 +33,8 @@
 - `done_criteria`
 - `next_topic`
 
-필수 필드를 채우지 못하거나 최근 7일 회피 조건 때문에 fallback을 쓰면 `diagnostics.fallback_used`와 `diagnostics.fallback_reasons`에 이유를 남깁니다.
+필수 필드를 채우지 못하거나 최근 7일 회피 조건 때문에 fallback을 쓰면 `diagnostics.fallback_used`와
+`diagnostics.fallback_reasons`에 이유를 남깁니다.
 
 ## 제외 기준
 
@@ -60,7 +61,8 @@
 ## 허용 레퍼런스 정책
 
 - 우선순위는 공식 문서, 표준 문서, 릴리즈 노트입니다.
-- Spring, Hibernate, OpenJDK, Kotlin 공식 문서, Gradle, Micrometer, OpenTelemetry, Docker, Kubernetes, 주요 Cloud 공식 문서를 우선합니다.
+- Spring, Hibernate, OpenJDK, Kotlin 공식 문서, Gradle, Micrometer, OpenTelemetry, Docker, Kubernetes,
+  주요 Cloud 공식 문서를 우선합니다.
 - AWS는 `docs.aws.amazon.com` 문서를 우선하며 `aws.amazon.com` 전체 도메인을 일반 허용하지 않습니다.
 - 보조 레퍼런스는 신뢰 가능한 엔지니어링 블로그만 허용합니다.
 - Naver 뉴스/검색/블로그, 일반 언론, 홍보성 페이지는 1번 섹션 레퍼런스로 사용하지 않습니다.
