@@ -14,6 +14,7 @@ expect_fail() {
 echo "==> Checking Python syntax"
 python3 -m py_compile \
   scripts/build-daily-news-shortlist.py \
+  scripts/check-doc-format.py \
   scripts/check-workflow-schedules.py \
   scripts/collect-kr-feeds.py \
   scripts/evaluate-news-daily-quality.py \
@@ -31,6 +32,9 @@ test -f .github/workflows/kr-tech-daily.yml
 test -f .github/workflows/kr-tech-news-daily.yml
 test -f .github/workflows/kr-backend-career-weekly.yml
 test -f .github/workflows/mark-ps-solved.yml
+
+echo "==> Checking document formatting"
+python3 scripts/check-doc-format.py
 
 removed_workflows=(
   ".github/workflows/ai-brief-""manual.yml"

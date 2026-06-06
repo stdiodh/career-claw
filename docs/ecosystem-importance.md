@@ -2,60 +2,162 @@
 
 ## Summary
 
-Career Feed는 백엔드 런타임, 프레임워크, 라이브러리처럼 직접적인 production dependency가 되는 프로젝트는 아닙니다.
+Career Feed is an early-stage public OSS project for backend career growth automation.
 
-대신 백엔드 지망생과 주니어 개발자가 생태계에 진입할 때 겪는 정보 과부하, 학습 순서 부재, 커리어 정보 단절, OSS 기여 진입 장벽을 줄이기 위한 공개 성장 인프라를 목표로 합니다.
+It is not a backend runtime, framework, database, or production dependency.
 
-이 프로젝트의 중요성은 “얼마나 많은 애플리케이션이 이 패키지에 의존하는가”보다 “백엔드 생태계에 새로 들어오는 사람들이 더 꾸준하고 안전하게 학습·기여 루틴을 만들 수 있는가”에 있습니다.
+Its value is different: it helps people entering the backend ecosystem build a steady and safer learning routine.
+
+The project uses GitHub Actions, OpenAI API, and Discord Webhook to generate and validate maintainable briefs for backend learners, junior developers, study groups, and mentoring communities.
 
 ## Problem
 
-백엔드 지망생은 많은 정보를 접하지만, 그 정보를 실제 행동으로 바꾸기 어렵습니다.
+Backend learners often do not fail because information is unavailable.
 
-대표적인 문제는 다음과 같습니다.
+They struggle because information is scattered across tutorials, job posts, OSS repositories, newsletters, Discord communities, and news sites.
 
-- 학습 주제가 흩어져 있어 무엇부터 공부해야 하는지 판단하기 어렵습니다.
-- 채용 공고와 인턴 공고를 읽어도 요구 역량을 학습 계획으로 바꾸기 어렵습니다.
-- OSS에 기여하고 싶어도 beginner-friendly issue를 찾고 맥락을 이해하기 어렵습니다.
-- 기술 뉴스와 실무 지식이 빠르게 변해 꾸준히 추적하기 어렵습니다.
-- 스터디나 멘토링 그룹에서 반복되는 질문을 체계적으로 축적하기 어렵습니다.
+This creates repeated friction.
 
-Career Feed는 이 문제를 매일 또는 매주 반복 가능한 브리핑 workflow로 다룹니다.
+- It is hard to decide what to study today.
+- It is hard to connect job requirements to a learning plan.
+- It is hard to find beginner-friendly OSS candidates.
+- It is hard to maintain a Programmers PS routine without manual tracking.
+- It is hard to separate useful backend career signals from general tech noise.
+- It is hard for study maintainers to produce consistent daily or weekly prompts.
+
+Career Feed tries to reduce this friction with small, repeatable, reviewable automation.
 
 ## Position in the backend ecosystem
 
-Career Feed는 백엔드 생태계의 핵심 패키지나 프레임워크가 아닙니다.
+Career Feed does not sit in the critical path of production applications.
 
-더 정확한 위치는 다음과 같습니다.
+Applications do not import it as a library.
 
-- 백엔드 입문자와 주니어 개발자를 위한 onboarding assistant
-- Spring Boot/JVM 중심 학습 루틴을 정리하는 curriculum companion
-- 채용, 인턴, 대외활동, 기술 뉴스, OSS 후보를 묶는 career radar
-- Discord 스터디나 멘토링 그룹이 재사용할 수 있는 maintainer automation example
-- OpenAI API와 GitHub Actions를 안전하게 결합하는 small OSS workflow example
+Services do not deploy it as infrastructure.
 
-즉, 이 프로젝트는 백엔드 생태계의 코드 실행 기반이 아니라 성장과 진입을 돕는 공개 운영 기반을 지향합니다.
+Instead, Career Feed sits near the onboarding layer of the backend ecosystem.
+
+It organizes learning topics, career signals, OSS candidates, and practical backend knowledge into briefs that humans can review and reuse.
+
+This makes it closer to public growth infrastructure than to a production dependency.
+
+## Why this matters
+
+The backend ecosystem depends not only on frameworks and libraries, but also on the people who learn, maintain, document, and contribute to them.
+
+If new learners cannot build a routine, they are less likely to keep studying.
+
+If junior developers cannot find approachable OSS candidates, they are less likely to contribute.
+
+If study groups cannot maintain consistent prompts, learning communities become harder to sustain.
+
+Career Feed matters because it helps reduce these small but persistent barriers.
+
+The importance is not measured by how many applications depend on this repository.
+
+The importance is whether people entering the backend ecosystem can build more consistent and safer learning and contribution habits.
+
+## Who benefits
+
+Career Feed is intended to help the following groups.
+
+- Backend learners preparing with Java, Spring Boot, JVM, Kotlin, databases, and cloud topics
+- Junior backend developers who want a practical study routine
+- Discord study maintainers who need repeatable daily or weekly prompts
+- Mentors who want reusable briefing material for career guidance
+- Maintainers who want a cautious way to collect OSS candidate suggestions
+- Community organizers who want to surface Korean development and AI news without overclaiming impact
+
+The project does not claim that every generated item is the best choice for every learner.
+
+It provides a structured starting point.
+
+## What Career Feed does not claim
+
+Career Feed does not claim to be a widely adopted backend library.
+
+It does not claim large user numbers, large organization usage, high download counts, or broad production adoption.
+
+It does not claim to replace mentors, hiring managers, curriculum designers, or maintainers.
+
+It does not claim to evaluate a person's ability or hiring potential.
+
+It does not claim that OpenAI API output is correct without review.
+
+It does not claim to perform OSS contribution on behalf of users.
+
+Career Feed does not create automatic comments, automatic pull requests, automatic assigns, or automatic label changes in external repositories.
 
 ## Honest limitations
 
-현재 이 프로젝트는 초기 단계입니다.
+Career Feed is early-stage.
 
-공개 사용 지표가 크지 않고, stars, forks, downloads, organization adoption 같은 외부 지표를 내세울 수 없습니다.
+Usage metrics are intentionally not exaggerated.
 
-따라서 이 프로젝트는 이미 널리 쓰이는 핵심 OSS가 아니라, 초기 단계지만 실제 문제를 성실하게 다루는 maintainer automation OSS로 설명해야 합니다.
+The quality of a brief depends on the quality of sources, prompts, validation checks, and maintainer review.
+
+Some days may produce sparse or empty news results when the available sources do not meet the policy.
+
+OSS candidate recommendations can be stale if an external repository changes its issue state, contribution guide, or maintainer policy.
+
+The project is not a replacement for reading official documentation, building real projects, or receiving feedback from experienced engineers.
+
+These limitations are documented so that the project remains honest and reviewable.
 
 ## How API credits help
 
-API credits는 새로운 기능을 무분별하게 늘리는 데 쓰지 않습니다.
+API credits help the maintainer produce reviewable drafts and summaries with lower manual overhead.
 
-다음과 같이 maintainer가 검토할 수 있는 보조 산출물을 만드는 데 사용합니다.
+Expected uses include the following.
 
-- daily/weekly 브리핑 초안 생성
-- 백엔드 학습 주제 우선순위화
-- 채용·인턴·대외활동 정보 요약
-- OSS 후보의 beginner-friendly 여부 정리
-- issue로 접수된 고민 분류와 답변 초안 생성
-- 브리핑 결과 검증 리포트 요약
-- 문서 개선 초안 생성
+- Drafting Daily Backend Brief content
+- Summarizing Korea Dev/AI News candidates
+- Prioritizing Spring Boot, JVM, Kotlin, and backend study topics
+- Organizing Programmers PS routine prompts
+- Reviewing beginner-friendly OSS candidate notes
+- Creating validation summaries that a maintainer can inspect
+- Grouping issue submissions into useful briefing themes
 
-자동 댓글, 자동 PR, 자동 assign, 자동 label 변경, 무검토 배포에는 사용하지 않습니다.
+API credits are not used for unchecked public actions.
+
+They are not used to publish without review.
+
+They are not used to post automatic comments to external repositories.
+
+They are not used to open automatic pull requests in external repositories.
+
+They are not used to assign issues or change labels in external repositories.
+
+## Safety and maintainer review
+
+Career Feed keeps automation boundaries narrow.
+
+GitHub Actions generate and validate briefs.
+
+Discord Webhook delivery is controlled by workflow inputs, validation, dry-run behavior, and delivery lock policy.
+
+Sensitive values such as API keys, tokens, webhook URLs, and organization identifiers must stay in GitHub Secrets or local environment variables.
+
+Maintainer review is required for policy changes, new sources, and changes that could affect what is sent to Discord.
+
+External repository respect is a core policy.
+
+Career Feed may recommend that a human look at an OSS repository or issue.
+
+Career Feed does not automatically comment, create PRs, assign issues, or change labels in that repository.
+
+## Suggested wording for applications
+
+Use wording that is honest about the project's stage and role.
+
+Suggested short wording:
+
+> Career Feed is an early-stage public OSS automation project that helps backend learners and junior developers reduce information overload by generating reviewable daily and weekly briefs for study topics, PS routines, OSS candidate discovery, Korean development and AI news, and backend career signals.
+
+Suggested ecosystem wording:
+
+> Career Feed is not a production backend dependency like a runtime, framework, or library. Its ecosystem value is in reducing onboarding friction for people entering the backend field, helping them build consistent and safer learning and contribution routines.
+
+Suggested safety wording:
+
+> API credits are used only to generate maintainer-reviewable drafts, validation summaries, topic prioritization, and OSS candidate notes. The project does not use automation to comment, open PRs, assign issues, change labels in external repositories, or deploy unchecked output.

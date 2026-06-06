@@ -1,6 +1,5 @@
 name: 정보 출처 제안
-description: >-
-  백엔드 학습, 커리어, 채용, 대외활동 관련 정보 출처를 제안합니다.
+description: 백엔드 학습, 커리어, 채용, 대외활동 관련 정보 출처를 제안합니다.
 title: "[출처 제안] "
 labels:
   - source
@@ -10,42 +9,34 @@ body:
     attributes:
       value: |
         Career Feed에 추가하면 좋을 정보 출처를 제안해 주세요.
-        공개적으로 확인 가능한 출처를 우선합니다.
 
+        공개적으로 확인 가능한 출처를 우선합니다.
   - type: input
     id: source-url
     attributes:
       label: 추천하는 정보 출처
-      description: >-
-        URL을 적어 주세요.
-      placeholder: >-
-        https://example.com
+      description: URL을 적어 주세요.
+      placeholder: https://example.com
     validations:
       required: true
-
   - type: textarea
     id: source-type
     attributes:
       label: 어떤 정보를 제공하나요?
-      description: >-
-        채용, 인턴, 대외활동, 기술 블로그, 학습 자료, 뉴스 등으로 설명해 주세요.
+      description: 채용, 인턴, 대외활동, 기술 블로그, 학습 자료, 뉴스 등으로 설명해 주세요.
     validations:
       required: true
-
   - type: textarea
     id: usefulness
     attributes:
       label: 왜 백엔드 지망생에게 도움이 되나요?
-      description: >-
-        이 출처가 어떤 문제를 줄여 주는지 적어 주세요.
+      description: 이 출처가 어떤 문제를 줄여 주는지 적어 주세요.
     validations:
       required: true
-
   - type: textarea
     id: notes
     attributes:
       label: 주의할 점
-      description: >-
-        광고성 여부, 로그인 필요 여부, 업데이트 빈도, 중복 가능성 등을 적어 주세요.
+      description: 광고성 여부, 로그인 필요 여부, 업데이트 빈도, 중복 가능성 등을 적어 주세요.
     validations:
       required: false

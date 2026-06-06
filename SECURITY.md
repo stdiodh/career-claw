@@ -1,25 +1,90 @@
 # Security Policy
 
-## 지원 범위
+## Supported scope
 
-Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반의 자동 브리핑 workflow를 운영합니다. 현재
-상시 실행 서버, 데이터베이스, 웹 대시보드, Discord Gateway Bot은 운영 범위에 포함하지 않습니다.
+Career Feed의 현재 운영 범위는 GitHub Actions, OpenAI API, Discord Webhook 기반 자동 브리핑 workflow입니다.
 
-## 민감 정보
+보안 정책은 이 범위 안의 문서, workflow 설정, script, secret 사용 방식, Discord 전송 정책을 중심으로 다룹니다.
 
-다음 값은 코드, 문서 예시, 커밋 로그, 이슈, PR에 포함하면 안 됩니다.
+Daily Backend Brief, Korea Dev/AI News Daily, Backend Career Site Radar, Mark PS Solved workflow가 주요 대상입니다.
+
+## Not in scope
+
+현재 다음 항목은 운영 범위 밖입니다.
+
+- 상시 실행 서버
+- 데이터베이스
+- 웹 대시보드
+- Discord Gateway Bot
+- Slash Command
+- 사용자 계정 시스템
+- 채용 매칭 서비스
+
+이 범위 밖 시스템에 대한 취약점 보고는 Career Feed 저장소의 현재 보안 범위에 해당하지 않을 수 있습니다.
+
+## Sensitive information
+
+다음 값은 공개 issue, PR, commit, log, 문서 예시에 포함하지 마세요.
 
 - OpenAI API key
 - Discord Webhook URL
 - GitHub token
 - Naver API credentials
-- 기타 서비스 credentials
+- OpenAI organization ID
+- 개인 이메일
+- 기타 credentials
 
-## 취약점 또는 민감 정보 노출 제보
+Secret은 GitHub Secrets 또는 로컬 환경변수로만 다룹니다.
 
-민감 정보가 노출되었거나 보안 문제가 의심된다면 공개 이슈에 secret 값을 직접 올리지 말고, maintainer에게 먼저 연락해 주세요.
+실제 값을 README, docs, issue template, test fixture에 넣지 마세요.
 
-## 자동화 정책
+## Reporting a vulnerability or secret exposure
 
-Career Feed는 외부 저장소에 자동 댓글, 자동 PR, 자동 assign, 자동 label 변경을 하지 않습니다. OSS 후보는 추천과 검증 보조
-목적으로만 사용합니다.
+민감 정보가 노출되었거나 취약점을 발견했다면 공개 issue에 secret 값을 붙여 넣지 마세요.
+
+가능하면 maintainer에게 먼저 비공개로 제보해 주세요.
+
+제보에는 다음 정보를 포함하면 도움이 됩니다.
+
+- 영향을 받는 파일이나 workflow
+- 노출 또는 취약점의 유형
+- 재현 가능한 최소 설명
+- secret 값 자체를 제외한 관련 정황
+
+노출된 credential은 즉시 폐기하고 새 값으로 교체해야 합니다.
+
+## Automation boundaries
+
+Career Feed는 자동화 범위를 좁게 유지합니다.
+
+OpenAI API는 maintainer가 검토 가능한 브리핑 초안, 검증 리포트, 학습 주제 우선순위화, OSS 후보 정리에 사용합니다.
+
+Career Feed는 외부 저장소에 자동 댓글을 작성하지 않습니다.
+
+Career Feed는 외부 저장소에 자동 PR을 만들지 않습니다.
+
+Career Feed는 외부 저장소 issue를 자동 assign하지 않습니다.
+
+Career Feed는 외부 저장소 label을 자동 변경하지 않습니다.
+
+Career Feed는 무검토 배포를 목표로 하지 않습니다.
+
+## Maintainer response
+
+Maintainer는 보고된 문제를 확인하고 영향 범위를 판단합니다.
+
+Secret 노출이 의심되면 우선 credential 폐기와 교체를 진행합니다.
+
+문서나 workflow 정책이 문제라면 작은 수정으로 복구합니다.
+
+필요하면 README, CONTRIBUTING, issue template, workflow 설명을 업데이트합니다.
+
+## Safe handling checklist
+
+- Secret 값을 공개 issue에 붙여 넣지 않습니다.
+- API key, token, webhook URL을 commit하지 않습니다.
+- Discord Webhook URL을 스크린샷이나 로그에 노출하지 않습니다.
+- GitHub Actions log에 민감 정보가 출력되지 않도록 합니다.
+- 외부 저장소 자동 댓글, 자동 PR, 자동 assign, 자동 label 변경을 추가하지 않습니다.
+- OpenAI API output은 maintainer가 검토 가능한 초안으로만 사용합니다.
+- 검증 명령을 실행할 때 로컬 환경변수 출력에 주의합니다.

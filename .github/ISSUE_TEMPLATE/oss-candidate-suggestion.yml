@@ -1,6 +1,5 @@
 name: OSS 기여 후보 제안
-description: >-
-  백엔드 지망생이 살펴볼 만한 오픈소스 저장소나 이슈를 제안합니다.
+description: 백엔드 지망생이 살펴볼 만한 오픈소스 저장소나 이슈를 제안합니다.
 title: "[OSS 후보] "
 labels:
   - oss-candidate
@@ -10,28 +9,23 @@ body:
     attributes:
       value: |
         백엔드 지망생이나 주니어 개발자가 살펴볼 만한 OSS 저장소 또는 이슈를 제안해 주세요.
-        Career Feed는 외부 저장소에 자동 댓글, PR, assign, label 변경을 하지 않고 후보 추천만 합니다.
 
+        Career Feed는 외부 저장소에 자동 댓글, PR, assign, label 변경을 하지 않고 후보 추천만 합니다.
   - type: input
     id: repository-url
     attributes:
       label: 추천 OSS 저장소 URL
-      placeholder: >-
-        https://github.com/owner/repository
+      placeholder: https://github.com/owner/repository
     validations:
       required: true
-
   - type: input
     id: issue-url
     attributes:
       label: 관련 issue URL
-      description: >-
-        good first issue 또는 beginner-friendly issue가 있다면 적어 주세요.
-      placeholder: >-
-        https://github.com/owner/repository/issues/1
+      description: good first issue 또는 beginner-friendly issue가 있다면 적어 주세요.
+      placeholder: https://github.com/owner/repository/issues/1
     validations:
       required: false
-
   - type: dropdown
     id: beginner-friendly
     attributes:
@@ -42,21 +36,17 @@ body:
         - 잘 모르겠습니다
     validations:
       required: true
-
   - type: textarea
     id: backend-relevance
     attributes:
       label: 백엔드 학습과의 관련성
-      description: >-
-        이 저장소나 이슈가 백엔드 학습에 왜 도움이 되는지 적어 주세요.
+      description: 이 저장소나 이슈가 백엔드 학습에 왜 도움이 되는지 적어 주세요.
     validations:
       required: true
-
   - type: textarea
     id: cautions
     attributes:
       label: 주의할 점
-      description: >-
-        난이도, 빌드 환경, 언어, 응답 속도, 기여 가이드 유무 등을 적어 주세요.
+      description: 난이도, 빌드 환경, 언어, 응답 속도, 기여 가이드 유무 등을 적어 주세요.
     validations:
       required: false
