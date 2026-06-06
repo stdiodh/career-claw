@@ -16,6 +16,9 @@ LINE_COUNT_MINIMUMS = {
     "README.md": 100,
     "docs/ecosystem-importance.md": 50,
     "docs/oss-program-application.md": 60,
+    "docs/usage.md": 80,
+    "docs/demo.md": 80,
+    "docs/assets/demo/README.md": 40,
     "CONTRIBUTING.md": 80,
     "CODE_OF_CONDUCT.md": 60,
     "docs/contributing/README.md": 40,
@@ -34,6 +37,9 @@ MARKDOWN_FILES = [
     "README.md",
     "docs/ecosystem-importance.md",
     "docs/oss-program-application.md",
+    "docs/usage.md",
+    "docs/demo.md",
+    "docs/assets/demo/README.md",
     "CONTRIBUTING.md",
     "CODE_OF_CONDUCT.md",
     "docs/contributing/README.md",
@@ -98,6 +104,56 @@ APPLICATION_HEADINGS = [
     "## Copy-ready longer answer",
     "## Additional note",
     "## Final checklist before submission",
+]
+
+USAGE_HEADINGS = [
+    "# Usage Guide",
+    "## Overview",
+    "## Who should use this",
+    "## Before you start",
+    "## Repository setup",
+    "## Required GitHub secrets",
+    "## Running local validation",
+    "## Running a workflow manually",
+    "## Recommended first run: dry-run",
+    "## Reading validation artifacts",
+    "## Sending to Discord",
+    "## Marking PS progress",
+    "## Common operating modes",
+    "## What to check after a run",
+    "## Troubleshooting",
+    "## Safety checklist",
+    "## Related documents",
+]
+
+DEMO_HEADINGS = [
+    "# Demo Guide",
+    "## Purpose",
+    "## Demo scope",
+    "## What the demo should show",
+    "## Recommended demo flow",
+    "## Screenshot checklist",
+    "## GIF checklist",
+    "## Video recording guidance",
+    "## Redaction rules",
+    "## Example demo storyboard",
+    "## Example captions",
+    "## What not to show",
+    "## Asset naming convention",
+    "## Keeping demo assets up to date",
+    "## Related documents",
+]
+
+DEMO_ASSETS_HEADINGS = [
+    "# Demo Assets",
+    "## Purpose",
+    "## Allowed assets",
+    "## Preferred formats",
+    "## Size guidance",
+    "## Redaction requirements",
+    "## File naming",
+    "## Review checklist",
+    "## Updating assets",
 ]
 
 CODE_OF_CONDUCT_HEADINGS = [
@@ -188,6 +244,8 @@ REVIEW_POLICY_HEADINGS = [
 ]
 
 REQUIRED_README_LINKS = [
+    "docs/usage.md",
+    "docs/demo.md",
     "CONTRIBUTING.md",
     "CODE_OF_CONDUCT.md",
     "docs/contributing/README.md",
@@ -355,6 +413,9 @@ def main() -> int:
     check_required_headings("README.md", README_HEADINGS)
     check_required_headings("docs/ecosystem-importance.md", ECOSYSTEM_HEADINGS)
     check_required_headings("docs/oss-program-application.md", APPLICATION_HEADINGS)
+    check_required_headings("docs/usage.md", USAGE_HEADINGS)
+    check_required_headings("docs/demo.md", DEMO_HEADINGS)
+    check_required_headings("docs/assets/demo/README.md", DEMO_ASSETS_HEADINGS)
     check_required_headings("CODE_OF_CONDUCT.md", CODE_OF_CONDUCT_HEADINGS)
     check_required_headings("docs/contributing/README.md", CONTRIBUTING_INDEX_HEADINGS)
     check_required_headings("docs/contributing/good-suggestion-criteria.md", GOOD_SUGGESTION_HEADINGS)

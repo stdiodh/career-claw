@@ -1,0 +1,315 @@
+# Usage Guide
+
+## Overview
+
+Career Feed is not an installed desktop app, hosted dashboard, Discord Gateway Bot, or Slash Command service.
+
+It is operated through GitHub Actions workflows that generate reviewable Markdown briefs, upload validation artifacts, and optionally send the reviewed result to Discord through Webhook delivery.
+
+The usual operating loop is intentionally small.
+
+1. Fork or clone the repository.
+2. Register the required GitHub Secrets.
+3. Run local validation with `./scripts/validate.sh`.
+4. Open the GitHub Actions tab.
+5. Select the workflow you want to test.
+6. Run the workflow manually in dry-run or artifact-only mode.
+7. Review the Actions summary and uploaded artifacts.
+8. Enable Discord delivery only after the generated brief looks correct.
+9. Update Programmers PS progress with `Mark PS Solved` when needed.
+
+The output is a Markdown briefing and, when delivery is enabled, a Discord message rendered from that briefing.
+
+`reports/` files are generated artifacts and are not normally committed.
+
+## Who should use this
+
+Use this guide if you maintain a Career Feed fork, run the workflows for a study group, or want to understand what happens after pressing `Run workflow`.
+
+It is also useful for reviewers who need to verify that a documentation or workflow change did not alter the operating model.
+
+Career Feed is aimed at backend learners, junior backend developers, mentors, and study groups that want a repeatable daily or weekly briefing workflow.
+
+It does not replace human review.
+
+The maintainer should still read validation reports, inspect generated briefs, and decide whether Discord delivery is appropriate.
+
+## Before you start
+
+Confirm that the repository is the Career Feed repository you intend to operate.
+
+Do not test against a private Discord channel that contains personal messages or private server names unless the output will never be published.
+
+Use a test Discord server or a private test channel for the first live delivery.
+
+Never paste real API keys, webhook URLs, or credentials into issue comments, pull requests, screenshots, or documents.
+
+The first run should be a dry-run or artifact-only run.
+
+For daily workflows, dry-run generates and validates artifacts without sending to Discord.
+
+For Backend Career Site Radar, set `send_to_discord` to `false` when you want to inspect the artifact first.
+
+For Mark PS Solved, confirm the target problem id before running because the workflow commits `data/ps-progress.json` when a change is detected.
+
+## Repository setup
+
+Start from a fork or clone of the repository.
+
+```bash
+git clone https://github.com/stdiodh/career-feed.git
+cd career-feed
+./scripts/validate.sh
+```
+
+If you operate a fork, enable GitHub Actions for that fork before relying on scheduled runs.
+
+GitHub scheduled workflows run from the default branch.
+
+If you are testing workflow changes in a pull request branch, prefer manual `workflow_dispatch` runs and artifact review.
+
+Keep `reports/` out of commits unless a specific fixture or example file is intentionally added through a review.
+
+## Required GitHub secrets
+
+Register secrets in `Settings > Secrets and variables > Actions`.
+
+Only secret names are documented here.
+
+Never write real values in Markdown, commit messages, Actions logs, screenshots, issues, or PR comments.
+
+| Secret | Required | Used by |
+| --- | --- | --- |
+| `OPENAI_API_KEY` | Yes | AI-assisted brief generation and summarization |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Yes for Daily Backend Discord delivery | Daily Backend Brief |
+| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Yes for News Daily Discord delivery | Korea Dev/AI News Daily |
+| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Yes for Site Radar Discord delivery | Backend Career Site Radar |
+| `NAVER_CLIENT_ID` | Optional | Korean news candidate collection or quality improvement |
+| `NAVER_CLIENT_SECRET` | Optional | Korean news candidate collection or quality improvement |
+| `DISCORD_WEBHOOK_CAREER_FEED_OPS` | Optional | Failure notification to an ops webhook |
+
+`NAVER_CLIENT_ID` and `NAVER_CLIENT_SECRET` are optional because the news workflow can still rely on configured feeds and fallback sources.
+
+`DISCORD_WEBHOOK_CAREER_FEED_OPS` is optional.
+
+If it is missing, failure notification should be skipped without making the whole workflow fail.
+
+## Running local validation
+
+Run local validation before changing documentation, workflow policy, prompts, or scripts.
+
+```bash
+./scripts/validate.sh
+```
+
+For documentation-only checks, the format checker is also useful.
+
+```bash
+python3 scripts/check-doc-format.py
+git diff --check
+```
+
+Local validation may generate files under `reports/`.
+
+Those generated files are operating artifacts, not source files.
+
+Do not commit them unless a task explicitly asks for a fixture or public example.
+
+If validation fails, read the first failing message and fix that cause first.
+
+Avoid changing unrelated workflow or script behavior while working on usage documentation.
+
+## Running a workflow manually
+
+Open the repository on GitHub and go to `Actions`.
+
+Select the workflow that matches the operating path you want to test.
+
+Use `Run workflow` from the workflow page.
+
+Confirm the branch, input values, and delivery options before starting the run.
+
+Daily workflows can run on schedule, but manual runs are safer for first verification because you can choose dry-run inputs and inspect artifacts immediately.
+
+The active operating workflows are listed below.
+
+| Operating path | GitHub Actions workflow | Main output |
+| --- | --- | --- |
+| Daily Backend Brief | Daily Korea Tech Brief | `reports/briefs/kr-tech-daily.md` |
+| Korea Dev/AI News Daily | Daily Korea Dev AI News | `reports/briefs/kr-tech-news-daily.md` |
+| Backend Career Site Radar | Backend Career Site Radar | `reports/briefs/kr-backend-career-weekly.md` |
+| Mark PS Solved | Mark PS Solved | `data/ps-progress.json` |
+
+## Recommended first run: dry-run
+
+Start with dry-run or artifact-only mode so you can inspect the generated content before Discord delivery.
+
+For Daily Backend Brief, run `Daily Korea Tech Brief` with `dry_run=true` and `force_send=false`.
+
+Check the generated brief, candidate JSON files, validation report, and run summary.
+
+Discord delivery and delivery lock creation should not happen in this mode.
+
+For Korea Dev/AI News Daily, run `Daily Korea Dev AI News` with `dry_run=true` and `force_send=false`.
+
+Check the shortlist, token budget, quality report, validation report, generated brief, and run summary.
+
+Sparse or empty news days can still be valid when the policy is satisfied.
+
+For Backend Career Site Radar, run `Backend Career Site Radar` with `send_to_discord=false`.
+
+Check the rendered site radar artifact before enabling delivery.
+
+For Mark PS Solved, there is no dry-run input in the workflow.
+
+Use local status checks before running the workflow if you only want to inspect progress.
+
+```bash
+python3 scripts/update-ps-progress.py --status
+```
+
+## Reading validation artifacts
+
+Open the completed Actions run and inspect the summary first.
+
+Then download or open the uploaded artifact for the run.
+
+For Daily Backend Brief, the most important files are the generated brief, candidate JSON files, `backend-daily-validation-report.md`, and `backend-daily-run-summary.md`.
+
+For Korea Dev/AI News Daily, check `kr-tech-news-daily.md`, `kr-tech-news-shortlist.json`, `news-daily-token-budget.json`, `news-daily-quality-report.json`, `news-daily-validation-report.md`, and `news-daily-run-summary.md`.
+
+For Backend Career Site Radar, check `weekly-career-site-radar.json` and `kr-backend-career-weekly.md`.
+
+Artifacts should show what was generated, what was skipped, whether Discord delivery was attempted, and whether validation passed.
+
+If a validation report fails, do not send the brief to Discord.
+
+Fix the underlying issue or rerun after the source data is acceptable.
+
+## Sending to Discord
+
+After a dry-run looks correct, run the workflow with Discord delivery enabled.
+
+For Daily Backend Brief and Korea Dev/AI News Daily, set `dry_run=false`.
+
+Use `force_send=true` only when you intentionally want to send despite an existing delivery lock.
+
+For normal manual delivery after a reviewed dry-run, `force_send=true` is often used for a one-time verified send.
+
+For repeated same-day checks, keep `force_send=false` so the delivery lock can prevent duplicate delivery.
+
+For Backend Career Site Radar, set `send_to_discord=true`.
+
+The Discord message should look like a briefing, not a chat bot conversation.
+
+It should include the generated sections, source links where applicable, and concise Korean guidance for the intended audience.
+
+If Discord delivery fails, inspect the Actions log for a missing secret message, send script error, or rate-limit retry failure.
+
+Do not publish the log if it contains secret-like strings.
+
+## Marking PS progress
+
+Career Feed does not crawl Programmers submissions.
+
+The PS routine uses static curriculum config and `data/ps-progress.json`.
+
+When you solve a problem and want the next daily routine to reflect that progress, run `Mark PS Solved`.
+
+Required input:
+
+- `problem_id`: Programmers problem id in the repository format, such as `programmers-42577`.
+
+Optional input:
+
+- `note`: short solve note for maintainers or study context.
+
+The workflow updates `data/ps-progress.json`, commits it, and pushes the change when the progress file changed.
+
+If the problem was already marked solved, the workflow may complete without a new commit.
+
+## Common operating modes
+
+| Mode | When to use | Recommended inputs |
+| --- | --- | --- |
+| Local validation | Before opening a PR or changing docs/scripts | `./scripts/validate.sh` |
+| Daily Backend dry-run | First daily backend test or content review | `dry_run=true`, `force_send=false` |
+| News Daily dry-run | First news test or sparse/empty policy review | `dry_run=true`, `force_send=false` |
+| Site Radar artifact-only | Review static site radar output before sending | `send_to_discord=false` |
+| Reviewed Discord send | Send after artifacts and validation pass | Delivery enabled for the selected workflow |
+| PS progress update | Record a solved Programmers problem | `problem_id` and optional `note` |
+
+These modes are intentionally narrow.
+
+They do not start a server, open a dashboard, create Discord slash commands, or change external repositories.
+
+## What to check after a run
+
+Check the run status in GitHub Actions.
+
+Read the Actions summary and uploaded artifacts.
+
+Confirm that validation passed before using the generated brief.
+
+Confirm that generated links are relevant and safe for the target section.
+
+Confirm that dry-run did not send to Discord.
+
+Confirm that a real send delivered exactly once to the intended test or operating channel.
+
+Confirm that delivery lock behavior matches the selected inputs.
+
+Confirm that `reports/` generated files are not staged for commit.
+
+For PS progress updates, confirm that only the expected progress file changed.
+
+## Troubleshooting
+
+If a secret is missing, the relevant workflow step should print a clear missing secret message.
+
+Register the secret in GitHub Actions settings and rerun the workflow.
+
+If a Discord message does not arrive, confirm that the workflow was not run in dry-run or artifact-only mode.
+
+Then check the webhook secret name, delivery lock status, and send step outcome.
+
+If only a dry-run artifact exists and nothing was delivered, that is expected for `dry_run=true` or `send_to_discord=false`.
+
+Review the artifact, then run again with delivery enabled when the content is acceptable.
+
+If it is a sparse or empty news day, check the News Daily validation report and quality report.
+
+Sparse or empty output can be a successful run when the brief says why there were too few qualifying items and follows the policy.
+
+If a validation report fails, do not force delivery.
+
+Use the reported file path, section name, or validation error to fix the source, prompt, fixture, or generated content.
+
+If PS progress commit fails, check whether GitHub Actions has write permission, whether the branch is protected, and whether `data/ps-progress.json` actually changed.
+
+If a workflow only runs manually and not on schedule, confirm that the workflow has a schedule, is enabled on the default branch, and has not been disabled by repository inactivity.
+
+Backend Career Site Radar and Mark PS Solved are manual operating paths by design.
+
+## Safety checklist
+
+- Do not expose real webhook URLs in logs, issues, PRs, screenshots, or documents.
+- Do not expose API keys, tokens, Naver credentials, or Discord webhook values.
+- Redact Discord server names, channel names, usernames, avatars, user ids, and private URLs in screenshots.
+- Do not add automatic comments, PRs, assigns, or label changes to external repositories.
+- Do not treat workflow success as enough; inspect the validation report and generated brief.
+- Start with dry-run or artifact-only mode for a new setup.
+- Use a test Discord channel before operating a public or shared channel.
+- Keep generated `reports/` artifacts out of normal commits.
+- Do not make Career Feed look like a web dashboard, hosted matching service, Gateway Bot, or Slash Command product.
+
+## Related documents
+
+- [README.md](../README.md)
+- [Demo guide](demo.md)
+- [Daily Backend Brief](daily-backend-brief.md)
+- [Korea Dev/AI News Daily](daily-news-ops.md)
+- [Backend Career Site Radar](career-site-radar.md)
+- [Local validation guide](local-validation.md)
+- [Operations guide](operations.md)
+- [Security policy](../SECURITY.md)
