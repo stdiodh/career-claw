@@ -28,19 +28,23 @@
 - 같은 날짜 lock이 있고 `force_send=false`이면 Discord 전송을 skip합니다.
 - Discord 429/5xx는 `scripts/send-discord.py`에서 재시도합니다.
 - 실패 알림 선택 secret은 `DISCORD_WEBHOOK_CAREER_FEED_OPS`입니다. 없으면 실패 알림만 skip합니다.
-- GitHub Actions scheduled workflow는 부하에 따라 지연되거나 실행이 누락될 수 있으므로 catch-up schedule과 delivery lock으로 보완합니다.
+- GitHub Actions scheduled workflow는 부하에 따라 지연되거나 실행이 누락될 수 있으므로 catch-up schedule과
+  delivery lock으로 보완합니다.
 
 ## Actions 체크리스트
 
 1. `Settings > Secrets and variables > Actions`에 필요한 secrets를 등록합니다.
 2. `Settings > Actions > General`에서 Actions 실행이 허용되어 있는지 확인합니다.
 3. Actions 탭에서 4개 운영 경로가 enabled 상태인지 확인합니다.
-4. Backend Daily와 News Daily를 먼저 `dry_run=true`, `force_send=false`로 실행해 artifact와 validator를 확인합니다.
+4. Backend Daily와 News Daily를 먼저 `dry_run=true`, `force_send=false`로 실행해 artifact와
+   validator를 확인합니다.
 5. 실제 전송 검증은 `dry_run=false`, `force_send=true`로 실행합니다.
 6. 같은 날 다시 `dry_run=false`, `force_send=false`로 실행해 delivery lock skip을 확인합니다.
 7. 이후 Backend Daily는 평일 09:00 KST 전후, News Daily는 평일 09:05 KST 전후에 도착합니다.
 
-GitHub Actions scheduled workflow는 default branch의 최신 workflow 파일을 기준으로 실행됩니다. Public repository는 장기간 활동이 없으면 scheduled workflow가 자동 비활성화될 수 있으므로 Actions 탭에서 workflow 상태를 확인합니다.
+GitHub Actions scheduled workflow는 default branch의 최신 workflow 파일을 기준으로 실행됩니다. Public
+repository는 장기간 활동이 없으면 scheduled workflow가 자동 비활성화될 수 있으므로 Actions 탭에서 workflow 상태를
+확인합니다.
 
 ## Mark PS Solved
 
@@ -66,4 +70,5 @@ python3 scripts/check-workflow-schedules.py
 git diff --check
 ```
 
-`reports/` 아래 생성 산출물은 기본적으로 커밋하지 않습니다. Secret 값, API Key, Webhook URL은 코드와 문서 예시에 남기지 않습니다.
+`reports/` 아래 생성 산출물은 기본적으로 커밋하지 않습니다. Secret 값, API Key, Webhook URL은 코드와 문서 예시에 남기지
+않습니다.

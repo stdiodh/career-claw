@@ -103,6 +103,8 @@
 
 ## Deferred
 
-- `app/`: README 운영 경로에는 없지만 Gradle, Docker, application source, test가 있는 HIGH 위험 영역입니다. AGENTS.md도 현재 단계에서 수정하지 말라고 명시하므로 이번 정리에서 삭제하지 않습니다.
-- `infra/`: compose, nginx, OpenClaw, deploy script가 있고 외부 배포 참조 가능성이 있는 HIGH 위험 영역입니다. 이번 정리에서 삭제하지 않습니다.
+- `app/`: README 운영 경로에는 없지만 Gradle, Docker, application source, test가 있는 HIGH 위험 영역입니다.
+  AGENTS.md도 현재 단계에서 수정하지 말라고 명시하므로 이번 정리에서 삭제하지 않습니다.
+- `infra/`: compose, nginx, OpenClaw, deploy script가 있고 외부 배포 참조 가능성이 있는 HIGH 위험 영역입니다.
+  이번 정리에서 삭제하지 않습니다.
 - ignored `reports/` 산출물: workflow와 로컬 검증이 생성하는 파일이며 저장소에는 `.gitkeep`만 유지합니다.

@@ -16,7 +16,8 @@
 
 ## Secrets safety checklist
 
-- `OPENAI_API_KEY`, Discord Webhook URL, GitHub token, Naver credentials를 문서나 commit에 남기지 않습니다.
+- `OPENAI_API_KEY`, Discord Webhook URL, GitHub token, Naver credentials를 문서나 commit에
+  남기지 않습니다.
 - sample command에는 secret 값을 직접 쓰지 않습니다.
 - 공개 이슈에 secret 원문을 요청하지 않습니다.
 

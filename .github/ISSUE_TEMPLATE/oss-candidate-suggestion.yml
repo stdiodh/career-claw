@@ -1,5 +1,6 @@
 name: OSS 기여 후보 제안
-description: 백엔드 지망생이 살펴볼 만한 오픈소스 저장소나 이슈를 제안합니다.
+description: >-
+  백엔드 지망생이 살펴볼 만한 오픈소스 저장소나 이슈를 제안합니다.
 title: "[OSS 후보] "
 labels:
   - oss-candidate
@@ -15,7 +16,8 @@ body:
     id: repository-url
     attributes:
       label: 추천 OSS 저장소 URL
-      placeholder: https://github.com/owner/repository
+      placeholder: >-
+        https://github.com/owner/repository
     validations:
       required: true
 
@@ -23,8 +25,10 @@ body:
     id: issue-url
     attributes:
       label: 관련 issue URL
-      description: good first issue 또는 beginner-friendly issue가 있다면 적어 주세요.
-      placeholder: https://github.com/owner/repository/issues/1
+      description: >-
+        good first issue 또는 beginner-friendly issue가 있다면 적어 주세요.
+      placeholder: >-
+        https://github.com/owner/repository/issues/1
     validations:
       required: false
 
@@ -43,7 +47,8 @@ body:
     id: backend-relevance
     attributes:
       label: 백엔드 학습과의 관련성
-      description: 이 저장소나 이슈가 백엔드 학습에 왜 도움이 되는지 적어 주세요.
+      description: >-
+        이 저장소나 이슈가 백엔드 학습에 왜 도움이 되는지 적어 주세요.
     validations:
       required: true
 
@@ -51,6 +56,7 @@ body:
     id: cautions
     attributes:
       label: 주의할 점
-      description: 난이도, 빌드 환경, 언어, 응답 속도, 기여 가이드 유무 등을 적어 주세요.
+      description: >-
+        난이도, 빌드 환경, 언어, 응답 속도, 기여 가이드 유무 등을 적어 주세요.
     validations:
       required: false

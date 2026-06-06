@@ -86,4 +86,3 @@ cd app
 ```bash
 docker compose -f infra/compose.yaml config
 ```
-
