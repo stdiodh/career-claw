@@ -2,71 +2,99 @@
 
 ## Welcome
 
-Career Feed는 백엔드 지망생과 주니어 개발자를 위한 공개 자동 브리핑 workflow입니다.
+Career Feed에 기여해 주셔서 감사합니다.
 
-기여는 프로젝트의 운영 범위를 작게 유지하면서도 학습자에게 실제로 도움이 되는 정보를 더 정확하게 만드는 방향을 환영합니다.
+Career Feed는 백엔드 지망생과 주니어 개발자가 학습 주제, 커리어 정보, OSS 후보, 기술 뉴스, PS 루틴을 덜 막막하게 탐색하도록 돕는 공개 workflow입니다.
 
-이 저장소는 초기 단계입니다.
+이 프로젝트는 초기 단계의 공개 OSS입니다.
 
-큰 사용 지표나 과장된 adoption을 만들기보다, 작은 개선을 검증 가능하게 쌓는 것을 우선합니다.
+큰 사용 지표나 과장된 adoption을 주장하지 않고, maintainer가 검토할 수 있는 작은 자동화와 문서 개선을 꾸준히 쌓는 것을 우선합니다.
+
+## Project purpose
+
+Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리핑 초안과 검증 가능한 자료를 만듭니다.
+
+주요 목적은 학습자에게 확정적인 정답을 주는 것이 아니라, 오늘 살펴볼 수 있는 학습·커리어 탐색의 시작점을 제공하는 것입니다.
+
+브리핑과 제안은 사람이 검토할 수 있는 자료로 취급합니다.
+
+외부 저장소나 외부 커뮤니티에 자동으로 행동하는 시스템이 아닙니다.
 
 ## Ways to contribute
 
-다음 기여를 환영합니다.
+다음과 같은 기여를 환영합니다.
 
 - 백엔드 학습 주제 제안
-- Spring Boot, JVM, Kotlin 로드맵 보완
+- Spring, JVM, DB, Redis, AWS, System Design 관련 roadmap 개선
 - Programmers PS 루틴 개선 제안
-- 주니어 백엔드 실무 지식 주제 제안
-- 채용, 인턴, 대외활동, 해커톤, 공모전 출처 제안
-- 한국 개발·AI 뉴스 출처 제안
-- OSS 기여 후보 저장소나 issue 제안
-- beginner-friendly 기준에 대한 의견
-- 깨진 링크 제보
-- 오래된 문서 수정
-- README, docs, issue template 개선
+- 채용, 인턴, 대외활동, 부트캠프, 컨퍼런스, 뉴스 출처 제안
+- 회사 기술 블로그와 공식 문서 출처 제안
+- beginner-friendly OSS 후보 제안
+- 깨진 링크 또는 오래된 출처 신고
+- 문서 개선
+- 검증 스크립트 개선
+- 지역 또는 언어 확장 아이디어 제안
 
-작은 문서 수정도 환영합니다.
+제안은 작고 검토 가능할수록 반영하기 쉽습니다.
+
+## What makes a good contribution
+
+좋은 기여는 무엇을 바꾸려는지 분명합니다.
+
+좋은 기여는 왜 백엔드 학습자나 주니어 개발자에게 도움이 되는지 설명합니다.
+
+좋은 기여는 공개적으로 확인 가능한 URL, 근거, 예시를 포함합니다.
+
+좋은 기여는 자동화를 바로 실행하라는 명령이 아니라, maintainer가 검토할 수 있는 자료를 제공합니다.
+
+좋은 기여는 secret, credential, private link, 개인 정보를 포함하지 않습니다.
+
+좋은 기여는 한 PR에 하나의 주제만 담습니다.
+
+상세 기준은 [Good suggestion criteria](docs/contributing/good-suggestion-criteria.md)를 참고해 주세요.
 
 ## Before opening an issue
 
 이슈를 열기 전에 README와 관련 문서를 먼저 확인해 주세요.
 
-이미 같은 제안이 있는지 기존 issue도 가볍게 확인해 주세요.
+이미 같은 제안이 있는지 기존 issue와 PR도 가볍게 확인해 주세요.
 
-제안하는 출처나 OSS 후보는 공개적으로 확인 가능한 링크를 포함해 주세요.
+제안하는 출처나 OSS 후보가 공개적으로 접근 가능한지 확인해 주세요.
 
-개인정보, secret, API key, token, webhook URL은 이슈에 포함하지 마세요.
+광고, 제휴, 자기 홍보 성격이 있다면 숨기지 말고 명확히 밝혀 주세요.
 
-## Issue templates
+민감 정보, API key, token, webhook URL, 개인 연락처는 이슈에 포함하지 마세요.
 
-현재 issue template은 다음 용도를 다룹니다.
+## Issue types
+
+현재 이슈는 다음 흐름을 중심으로 받습니다.
 
 - 백엔드 커리어 질문
 - 정보 출처 제안
 - OSS 기여 후보 제안
+- 문서 개선 제안
+- 깨진 링크 또는 오래된 출처 제보
+- 지역 또는 언어 확장 아이디어
 
-템플릿은 더 나은 브리핑을 만들기 위한 자료 수집용입니다.
+이슈 템플릿은 더 나은 브리핑을 만들기 위한 자료 수집용입니다.
 
 이슈를 작성한다고 해서 Career Feed가 외부 저장소에 자동 댓글, 자동 PR, 자동 assign, 자동 label 변경을 수행하지 않습니다.
-
-OSS 후보는 maintainer와 사용자가 검토할 수 있는 추천 정보로만 다룹니다.
 
 ## Pull request guidelines
 
 한 PR에는 하나의 주제를 담아 주세요.
 
-큰 기능, workflow 변경, 운영 정책 변경은 PR 전에 issue로 먼저 논의해 주세요.
+문서 수정 PR은 어떤 문서를 왜 바꾸는지 설명해 주세요.
 
-불필요한 리팩터링이나 대규모 포맷 변경은 피해주세요.
+큰 기능, 새 지역, 새 workflow, 자동화 정책 변경은 PR 전에 issue로 먼저 논의해 주세요.
+
+불필요한 리팩터링, 대규모 포맷 변경, 관련 없는 파일 변경은 피해주세요.
 
 요청한 범위와 직접 관련된 파일만 수정해 주세요.
 
-문서 변경은 실제 줄바꿈이 있는 Markdown으로 작성해 주세요.
-
-표의 각 행과 목록의 각 항목은 별도 줄로 작성해 주세요.
-
 코드나 script를 변경했다면 가능한 범위에서 관련 검증 명령을 함께 적어 주세요.
+
+이번 프로젝트의 기본 방향과 맞지 않는 PR은 수정 요청을 받거나 닫힐 수 있습니다.
 
 ## Local validation
 
@@ -76,14 +104,85 @@ OSS 후보는 maintainer와 사용자가 검토할 수 있는 추천 정보로�
 ./scripts/validate.sh
 ```
 
-문서나 issue template만 수정했다면 다음 명령도 유용합니다.
+문서만 수정했다면 다음 명령도 함께 확인해 주세요.
 
 ```bash
-ruby -e 'require "yaml"; ARGV.each { |p| YAML.load_file(p); puts "YAML OK: #{p}" }' .github/ISSUE_TEMPLATE/*.yml
 git diff --check
 ```
 
-검증을 실행하지 못했다면 PR 설명에 이유를 적어 주세요.
+문서 줄 수, 숨은 문자, README 링크 같은 추가 검증이 필요한 경우 PR 설명에 실행한 명령을 적어 주세요.
+
+검증을 실행하지 못했다면 이유를 명확히 적어 주세요.
+
+## Documentation contribution rules
+
+문서는 실제 줄바꿈이 있는 Markdown으로 작성합니다.
+
+한 줄짜리 압축 Markdown을 만들지 않습니다.
+
+escaped newline 문자열로 줄바꿈을 흉내 내지 않습니다.
+
+표의 각 행은 별도 줄로 작성합니다.
+
+목록의 각 항목은 별도 줄로 작성합니다.
+
+heading 앞뒤에는 빈 줄을 둡니다.
+
+fake metrics나 과장된 OSS 영향력 주장을 문서에 넣지 않습니다.
+
+자세한 문서 기여 흐름은 [Contribution guide index](docs/contributing/README.md)를 참고해 주세요.
+
+## Source suggestion rules
+
+정보 출처를 제안할 때는 URL, 출처 종류, 지역, 언어, 업데이트 주기, 주의점을 함께 적어 주세요.
+
+출처가 공개적으로 접근 가능한지 확인해 주세요.
+
+로그인 뒤 개인화된 정보만 제공하는 출처는 반영하기 어렵습니다.
+
+paywall 뒤에 핵심 정보가 있는 출처도 제한될 수 있습니다.
+
+불법 scraping이나 약관 위반 위험이 큰 출처는 받지 않습니다.
+
+자세한 기준은 [Source suggestion guide](docs/contributing/source-suggestion-guide.md)를 참고해 주세요.
+
+## OSS candidate suggestion rules
+
+OSS 후보를 제안할 때는 repository URL, 관련 issue URL, beginner-friendly signal, 백엔드 학습과의 관련성을 적어 주세요.
+
+좋은 후보는 공개 repository이고, license가 명확하며, README 또는 CONTRIBUTING이 있고, build/test 방법이 어느 정도 설명되어 있습니다.
+
+`good first issue`, `help wanted`, 작은 문서 수정, 작은 테스트 개선 같은 signal은 검토에 도움이 됩니다.
+
+Career Feed는 OSS 후보를 추천할 수 있지만 외부 저장소에 자동 PR, 자동 comment, 자동 assign, 자동 label 변경을 하지 않습니다.
+
+자세한 기준은 [OSS candidate suggestion guide](docs/contributing/oss-candidate-guide.md)를 참고해 주세요.
+
+## Backend career question rules
+
+백엔드 커리어 질문에는 현재 학습 단계, 관심 기술 스택, 목표, 시도해 본 것, 막힌 지점, 원하는 도움의 형태를 적어 주세요.
+
+질문은 평가나 비난을 위한 자료가 아닙니다.
+
+질문은 더 나은 학습·커리어 브리핑을 만들기 위한 자료입니다.
+
+전화번호, 주소, 주민등록번호, 사적인 계정, 비공개 회사 정보, API key, webhook URL은 올리지 마세요.
+
+자세한 작성 기준은 [Backend career question guide](docs/contributing/backend-career-question-guide.md)를 참고해 주세요.
+
+## International and regional suggestions
+
+지역 또는 언어 확장 제안은 환영하지만, 바로 workflow에 반영되지는 않습니다.
+
+새 지역 제안에는 region, locale, language, timezone, source reliability, public availability를 함께 적어 주세요.
+
+예를 들어 `region=jp`, `locale=ja-JP`, `language=ja`, `timezone=Asia/Tokyo`처럼 구체적으로 적으면 검토가 쉬워집니다.
+
+해당 지역의 공개 출처를 maintainer가 검토할 수 있는지도 중요합니다.
+
+모든 국가를 이미 지원한다고 주장하지 않습니다.
+
+지역 확장은 maintainer review와 source policy가 준비된 뒤에만 진행합니다.
 
 ## Secret safety
 
@@ -99,55 +198,56 @@ git diff --check
 
 필요한 값은 GitHub Secrets 또는 로컬 환경변수로만 다룹니다.
 
-민감 정보가 노출되었다면 공개 이슈에 값을 붙여 넣지 말고 maintainer에게 먼저 비공개로 알려 주세요.
+민감 정보가 노출되었다면 공개 이슈에 값을 붙여 넣지 말고 maintainer가 공개한 기존 연락 경로를 사용해 먼저 알려 주세요.
 
-## Scope boundaries
+## Automation boundaries
 
-현재 운영 범위는 GitHub Actions, OpenAI API, Discord Webhook 기반 자동 브리핑 workflow입니다.
+Career Feed는 maintainer-reviewed automation입니다.
 
-현재 범위에 포함하지 않는 항목은 다음과 같습니다.
+OpenAI API는 브리핑 초안, 검증 리포트, 학습 주제 우선순위화, OSS 후보 정리에 사용할 수 있습니다.
 
-- 상시 실행 서버
-- 데이터베이스
-- 웹 대시보드
-- Discord Gateway Bot
-- Slash Command
-- 외부 저장소 자동 댓글
-- 외부 저장소 자동 PR
-- 외부 저장소 자동 assign
-- 외부 저장소 자동 label 변경
+Career Feed는 외부 저장소에 자동 댓글을 작성하지 않습니다.
 
-이 범위를 넘는 변경은 먼저 issue에서 논의해야 합니다.
+Career Feed는 외부 저장소에 자동 PR을 만들지 않습니다.
 
-## Review policy
+Career Feed는 외부 저장소 issue를 자동 assign하지 않습니다.
 
-Maintainer는 다음 기준으로 issue와 PR을 검토합니다.
+Career Feed는 외부 저장소 label을 자동 변경하지 않습니다.
 
-- 변경이 Career Feed의 현재 운영 범위에 맞는가
-- secret이나 민감 정보가 포함되지 않았는가
-- fake metrics나 과장된 adoption 표현이 없는가
-- 외부 저장소 maintainer를 방해할 수 있는 자동화가 없는가
-- 검증 가능한 작은 변경인가
-- 문서와 workflow 설명이 실제 저장소 상태와 맞는가
+무검토 배포나 외부 maintainer에게 부담을 주는 자동화는 프로젝트 범위 밖입니다.
 
-OpenAI API 결과는 검토 가능한 초안으로만 다룹니다.
+## Maintainer review policy
 
-무검토 배포나 외부 저장소 자동 행동에는 사용하지 않습니다.
+Maintainer는 제안이 프로젝트 범위와 맞는지 확인합니다.
+
+Maintainer는 백엔드 학습자에게 실제로 도움이 되는지 확인합니다.
+
+Maintainer는 출처가 공개적이고 검증 가능한지 확인합니다.
+
+Maintainer는 개인정보, secret, credential 위험이 없는지 확인합니다.
+
+Maintainer는 특정 회사나 서비스 홍보로 오해될 가능성이 있는지 확인합니다.
+
+거절은 contributor 개인에 대한 평가가 아니라 프로젝트 범위, 안전성, 유지보수 가능성 기준에 따른 판단입니다.
+
+자세한 기준은 [Maintainer review policy](docs/contributing/review-policy.md)를 참고해 주세요.
 
 ## Code of Conduct
 
-참여자는 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)를 따라야 합니다.
+참여자는 [Code of Conduct](CODE_OF_CONDUCT.md)를 따라야 합니다.
 
-질문과 제안은 학습자를 평가하거나 비난하기 위한 것이 아닙니다.
+초보자 질문을 비난하지 않습니다.
 
-더 나은 학습·커리어 브리핑을 만들기 위한 자료로 다룹니다.
+지역, 언어, 배경, 경력 수준이 다른 contributor를 존중합니다.
 
-## Maintainer notes
+제안이 거절될 수 있으며, 거절은 사람에 대한 평가가 아닙니다.
 
-Maintainer는 프로젝트를 초기 단계의 공개 OSS로 정직하게 설명합니다.
+## Related documents
 
-사용 지표, 조직 사용, adoption, downloads, active users를 과장하지 않습니다.
-
-외부 저장소에 자동 댓글, 자동 PR, 자동 assign, 자동 label 변경을 하지 않는 정책을 유지합니다.
-
-제안된 출처와 OSS 후보는 사람이 검토할 수 있는 자료로만 반영합니다.
+- [Contribution guide index](docs/contributing/README.md)
+- [Good suggestion criteria](docs/contributing/good-suggestion-criteria.md)
+- [Source suggestion guide](docs/contributing/source-suggestion-guide.md)
+- [OSS candidate suggestion guide](docs/contributing/oss-candidate-guide.md)
+- [Backend career question guide](docs/contributing/backend-career-question-guide.md)
+- [Maintainer review policy](docs/contributing/review-policy.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)

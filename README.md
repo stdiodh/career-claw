@@ -227,6 +227,14 @@ README에서 링크하는 문서는 실제 저장소에 존재하는 문서만 �
 | [docs/local-validation.md](docs/local-validation.md) | 로컬 검증 명령과 확인 방법 |
 | [docs/oss-candidate-policy.md](docs/oss-candidate-policy.md) | OSS 후보 추천 정책 |
 | [docs/community-guide.md](docs/community-guide.md) | 스터디와 커뮤니티에서 재사용하는 방법 |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | 기여 방식과 PR/issue 작성 기준 |
+| [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | 커뮤니티 행동 기준 |
+| [docs/contributing/README.md](docs/contributing/README.md) | 기여 세부 문서 index |
+| [docs/contributing/good-suggestion-criteria.md](docs/contributing/good-suggestion-criteria.md) | 좋은 제안의 기준과 예시 |
+| [docs/contributing/source-suggestion-guide.md](docs/contributing/source-suggestion-guide.md) | 정보 출처 제안 가이드 |
+| [docs/contributing/oss-candidate-guide.md](docs/contributing/oss-candidate-guide.md) | OSS 후보 제안 가이드 |
+| [docs/contributing/backend-career-question-guide.md](docs/contributing/backend-career-question-guide.md) | 백엔드 커리어 질문 작성 가이드 |
+| [docs/contributing/review-policy.md](docs/contributing/review-policy.md) | maintainer review 기준 |
 
 ## Backend ecosystem importance
 
@@ -279,7 +287,13 @@ Secret, API key, token, webhook URL, 개인 이메일, OpenAI organization ID �
 
 ## Contributing
 
-기여 방법은 [CONTRIBUTING.md](CONTRIBUTING.md)를 확인해 주세요.
+Career Feed welcomes documentation improvements, source suggestions, backend learning topics, and beginner-friendly OSS candidate suggestions.
+
+기여하고 싶다면 먼저 [Contributing](CONTRIBUTING.md)을 확인해 주세요.
+
+커뮤니티 기대 사항은 [Code of Conduct](CODE_OF_CONDUCT.md)를 따릅니다.
+
+제안의 품질 기준과 세부 가이드는 [Contribution guide index](docs/contributing/README.md)에서 확인할 수 있습니다.
 
 환영하는 기여는 다음과 같습니다.
 
@@ -290,6 +304,18 @@ Secret, API key, token, webhook URL, 개인 이메일, OpenAI organization ID �
 - OSS 기여 후보 제안
 - 깨진 링크와 오래된 문서 제보
 - 브리핑 문구와 문서 개선
+
+세부 기준은 다음 문서를 참고해 주세요.
+
+- [Good suggestion criteria](docs/contributing/good-suggestion-criteria.md)
+- [Source suggestion guide](docs/contributing/source-suggestion-guide.md)
+- [OSS candidate suggestion guide](docs/contributing/oss-candidate-guide.md)
+- [Backend career question guide](docs/contributing/backend-career-question-guide.md)
+- [Maintainer review policy](docs/contributing/review-policy.md)
+
+Regional and language expansion suggestions are welcome when they include clear metadata such as region, locale, language, timezone, source reliability, and review caveats.
+
+새 지역 제안은 바로 workflow에 반영되는 것이 아니라 maintainer review를 거칩니다.
 
 큰 기능이나 운영 정책 변경은 PR 전에 issue로 먼저 논의해 주세요.
 
