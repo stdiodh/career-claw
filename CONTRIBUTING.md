@@ -96,6 +96,58 @@ Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리�
 
 이번 프로젝트의 기본 방향과 맞지 않는 PR은 수정 요청을 받거나 닫힐 수 있습니다.
 
+## Commit convention
+
+이 프로젝트는 Angular 스타일의 커밋 메시지를 권장합니다.
+
+기본 형식은 scope가 필요할 때 `type(scope): subject`를 사용합니다.
+
+scope가 필요 없다면 `type: subject`를 사용합니다.
+
+허용하는 type은 다음과 같습니다.
+
+- `feat`
+- `fix`
+- `docs`
+- `style`
+- `refactor`
+- `test`
+- `chore`
+
+문서만 바꾸는 PR은 대부분 `docs:`를 사용합니다.
+
+subject는 짧고 명확하게 작성합니다.
+
+subject 끝에는 마침표를 붙이지 않습니다.
+
+예시는 다음과 같습니다.
+
+```text
+docs: update demo asset guide
+docs(contributing): clarify PR checklist
+fix: correct broken documentation link
+test: add validator fixture
+chore: refresh generated report ignore rules
+```
+
+## Pull request template
+
+PR template 위치는 `.github/pull_request_template.md`입니다.
+
+PR을 열 때는 변경 내용, 변경 이유, 검증 결과를 반드시 채워 주세요.
+
+문서만 바꾼 PR도 `git diff --check` 결과를 적어 주세요.
+
+관련 문서 포맷 검증을 실행했다면 그 결과도 적어 주세요.
+
+secret, webhook, private identifier 체크박스는 직접 확인한 뒤 표시해 주세요.
+
+demo asset을 추가하거나 교체한 경우 redaction을 사람이 직접 확인했다고 적어 주세요.
+
+workflow, secrets, issue template, validator 정책을 바꾸는 PR은 범위를 명확히 적어 주세요.
+
+그런 변경은 가능하면 PR 전에 issue로 먼저 논의해 주세요.
+
 ## Local validation
 
 기본 검증 명령은 다음과 같습니다.
@@ -113,6 +165,22 @@ git diff --check
 문서 줄 수, 숨은 문자, README 링크 같은 추가 검증이 필요한 경우 PR 설명에 실행한 명령을 적어 주세요.
 
 검증을 실행하지 못했다면 이유를 명확히 적어 주세요.
+
+## File management
+
+`reports/` 아래 생성 산출물은 기본적으로 커밋하지 않습니다.
+
+demo asset은 `docs/assets/demo/`에만 둡니다.
+
+큰 mp4, raw recording, 긴 영상 파일은 저장소에 직접 커밋하지 않습니다.
+
+긴 영상은 GitHub Release asset, PR attachment, project page, external video link 등으로 분리해 주세요.
+
+placeholder 파일은 만들지 않습니다.
+
+링크를 맞추기 위해 빈 이미지 파일을 추가하지 않습니다.
+
+secret, token, webhook URL, private repository URL, 개인 식별자가 포함된 파일은 커밋하지 않습니다.
 
 ## Documentation contribution rules
 

@@ -232,6 +232,7 @@ README에서 링크하는 문서는 실제 저장소에 존재하는 문서만 �
 | [docs/oss-program-application.md](docs/oss-program-application.md) | Codex Open Source Support Program 신청용 답변 초안 |
 | [docs/usage.md](docs/usage.md) | GitHub Actions, dry-run, artifacts, Discord 전송 사용 가이드 |
 | [docs/demo.md](docs/demo.md) | redacted demo screenshot 준비와 노출 가이드 |
+| [docs/assets/demo/README.md](docs/assets/demo/README.md) | demo screenshot/GIF asset의 추가, 교체, 삭제, redaction, 크기 확인 절차 |
 | [docs/daily-backend-brief.md](docs/daily-backend-brief.md) | Daily Backend Brief 운영 방식 |
 | [docs/daily-news-ops.md](docs/daily-news-ops.md) | Korea Dev/AI News Daily 운영 방식 |
 | [docs/career-site-radar.md](docs/career-site-radar.md) | Backend Career Site Radar 운영 방식 |
