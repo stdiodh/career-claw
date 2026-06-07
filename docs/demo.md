@@ -1,222 +1,220 @@
-# Demo Guide
+# 데모 가이드
 
-## Purpose
+## 목적
 
-This document explains how to show what Career Feed produces after it runs.
+이 문서는 Career Feed를 실행하면 무엇이 만들어지고 어떤 화면으로 확인할 수 있는지 보여주기 위한 데모 가이드입니다.
 
-The demo should help a new maintainer understand the operating path without exposing private credentials, private Discord details, or misleading product claims.
+데모의 목적은 새 사용자가 GitHub Actions 실행, validation artifact 확인, 생성된 Markdown briefing, Discord Webhook 전송 결과를 빠르게 이해하도록 돕는 것입니다.
 
-The goal is to show the real shape of the workflow output: GitHub Actions input, validation artifacts, generated Markdown briefs, and a redacted Discord message.
+이 문서는 실제 운영 secret이나 private Discord 정보를 공개하지 않는 것을 전제로 합니다.
 
-The demo is documentation and asset guidance only.
+데모는 제품 홍보 화면이 아니라 운영 흐름을 설명하는 문서입니다.
 
-It does not add a web dashboard, Discord Gateway Bot, Slash Command, job matching service, or hosted application.
+Career Feed가 웹 대시보드, Discord Gateway Bot, Slash Command, 채용 매칭 서비스처럼 보이지 않게 유지합니다.
 
-## Demo scope
+## 데모 범위
 
-Career Feed is not a browser UI product.
+Career Feed는 브라우저에서 사용하는 웹 앱이 아닙니다.
 
-The demo should focus on GitHub Actions and Discord output instead of a dashboard walkthrough.
+따라서 데모의 중심은 GitHub Actions 화면, Actions summary, validation report, generated artifact, Discord output입니다.
 
-Prefer a redacted dry-run or mock data based output over a live run that shows real secrets.
+실제 secret을 사용하는 live run보다는 redacted screenshot 또는 mock data 기반 화면을 권장합니다.
 
-If a live Discord delivery is shown, use a test server or a carefully redacted screenshot.
+Discord 전송 화면은 실제 운영 서버가 아니라 테스트 서버 또는 redacted screenshot을 사용합니다.
 
-Do not show real webhook URLs, API keys, private Discord server names, private channel names, user ids, user avatars, account names, personal email, or private repository URLs.
+실제 Discord webhook URL, OpenAI API key, Naver credential, private Discord server name, private channel name, user id, avatar, account name, private repository URL은 보여주지 않습니다.
 
-The demo may mention that regional expansion is possible with reviewed source metadata, but it must not claim that every country or language is already supported.
+한국 외 지역 확장 가능성을 언급할 수는 있지만, 모든 국가나 언어를 이미 지원한다고 표현하지 않습니다.
 
-The demo must not imply that Career Feed writes comments, opens pull requests, assigns issues, or changes labels in external repositories.
+외부 저장소에 자동 댓글, 자동 PR, 자동 assign, 자동 label 변경을 하는 것처럼 보이면 안 됩니다.
 
-## What the demo should show
+## 데모에서 보여줄 것
 
-The recommended demo has four scenes.
+권장 데모는 네 장면으로 구성합니다.
 
 1. GitHub Actions에서 `workflow_dispatch`를 실행하는 장면.
 2. Actions summary 또는 validation report를 확인하는 장면.
 3. artifacts 또는 `reports/`에서 생성된 briefing을 확인하는 장면.
 4. Discord에 도착한 redacted briefing 예시를 확인하는 장면.
 
-These scenes are enough to explain what happens when the project runs.
+이 네 장면이면 Career Feed 실행 흐름을 충분히 설명할 수 있습니다.
 
-They show inputs, validation, generated output, and final delivery without pretending that there is a separate application UI.
+입력, 검증, 산출물, 최종 전송을 보여주되 별도 애플리케이션 UI가 있는 것처럼 표현하지 않습니다.
 
-The repository includes mock redacted demo assets for these scenes.
+현재 저장소에는 이 흐름을 설명하는 mock redacted screenshot이 포함되어 있습니다.
 
-They are illustrative screenshots, not live GitHub or Discord captures.
+아래 이미지는 실제 GitHub 또는 Discord live capture가 아니라 설명용 mock screenshot입니다.
 
-![GitHub Actions workflow dispatch mock](assets/demo/github-actions-dispatch-redacted.png)
+![GitHub Actions 수동 dry-run mock 화면](assets/demo/github-actions-dispatch-redacted.png)
 
-![Actions summary and artifacts mock](assets/demo/actions-summary-redacted.png)
+![Actions summary와 artifacts mock 화면](assets/demo/actions-summary-redacted.png)
 
-![Validation report and generated brief mock](assets/demo/validation-report-redacted.png)
+![Validation report와 generated brief preview mock 화면](assets/demo/validation-report-redacted.png)
 
-![Discord briefing mock](assets/demo/discord-brief-redacted.png)
+![Discord briefing mock 화면](assets/demo/discord-brief-redacted.png)
 
-## Recommended demo flow
+## 권장 데모 흐름
 
-For a short GIF, target 60~90 seconds.
+짧은 GIF를 만든다면 60~90초 이하를 기준으로 합니다.
 
-Keep the flow direct and avoid showing setup screens that contain credentials.
+다만 처음에는 GIF보다 정적 screenshot 3~4장을 우선합니다.
 
-Start from the GitHub Actions workflow page.
+GIF는 화면 전환 중 주소창, 계정명, 서버명, 사용자명, private URL이 스쳐 지나갈 수 있어 검토 부담이 큽니다.
 
-Select `Daily Korea Tech Brief` or `Daily Korea Dev AI News`.
+기본 흐름은 GitHub Actions workflow 화면에서 시작합니다.
 
-Open `Run workflow`.
+`Daily Korea Tech Brief` 또는 `Daily Korea Dev AI News` workflow를 선택합니다.
 
-Show the dry-run input or artifact-only delivery option.
+`Run workflow` 입력 화면에서 dry-run 또는 artifact-only 옵션을 보여줍니다.
 
-Start the workflow or show a completed redacted run.
+완료된 redacted run의 Actions summary를 엽니다.
 
-Open the Actions summary.
+업로드된 artifact 목록을 확인합니다.
 
-Open the uploaded artifact list.
+생성된 Markdown brief 또는 validation report를 미리 봅니다.
 
-Preview the generated Markdown brief.
+마지막으로 Discord에 도착한 redacted briefing 형태를 보여줍니다.
 
-End with a redacted Discord message that shows the briefing format.
+caption이나 callout은 짧게 사용합니다.
 
-Use short captions or callouts instead of long explanatory overlays.
+브라우저 주소창에 token, query parameter, private repository path, 계정별 URL이 보이면 캡처하지 않습니다.
 
-Avoid zooming into browser chrome if the address bar contains private repository paths, tokens, query parameters, or user account identifiers.
+## 스크린샷 체크리스트
 
-## Screenshot checklist
-
-Recommended screenshot files:
+권장 screenshot 파일은 다음과 같습니다.
 
 - `github-actions-dispatch-redacted.png`
 - `actions-summary-redacted.png`
 - `validation-report-redacted.png`
 - `discord-brief-redacted.png`
 
-Each screenshot must be reviewed before commit.
+각 screenshot은 commit 전에 사람이 직접 확인해야 합니다.
 
-Use redacted or mock data.
+redacted 또는 mock data 기반 화면만 사용합니다.
 
-Do not link a screenshot from README or this document unless the file exists in `docs/assets/demo/`.
+README나 이 문서에서 screenshot을 링크할 때는 해당 파일이 실제로 `docs/assets/demo/`에 존재해야 합니다.
 
-If the image is not ready, describe the intended asset and keep the asset file absent.
+이미지가 준비되지 않았다면 placeholder image를 만들지 말고 문서에 의도만 설명합니다.
 
-## GIF checklist
+## GIF 체크리스트
 
-Recommended GIF file:
+권장 GIF 파일명은 다음과 같습니다.
 
 - `career-feed-demo.gif`
 
-Keep the GIF 60~90 seconds or shorter.
+GIF는 60~90초 이하를 권장합니다.
 
-Keep the width at 1280px or lower when possible.
+가능하면 너비는 1280px 이하로 유지합니다.
 
-Do not show secrets, webhook URLs, private channels, usernames, avatars, user ids, or private repository URLs.
+secret, webhook URL, private channel, username, avatar, user id, private repository URL이 보이면 안 됩니다.
 
-Keep captions and callouts short.
+caption이나 callout은 짧게 유지합니다.
 
-Check the file size before committing.
+repository에 넣기 전에 파일 크기를 확인합니다.
 
-If the GIF is too large, prefer static screenshots in the README and put the video elsewhere.
+GIF가 너무 크면 README에는 GIF 대신 정적 screenshot과 외부 video link를 사용합니다.
 
-When storing a GIF in the repository, keep it as small as practical.
+repository에 GIF를 넣는다면 가능한 한 작게 유지합니다.
 
-A good target is 10MB or less.
+좋은 기준은 10MB 이하입니다.
 
-## Video recording guidance
+## 영상 녹화 가이드
 
-Do not commit large mp4 files directly to the repository by default.
+큰 mp4 파일은 repository에 직접 커밋하지 않는 것을 기본 원칙으로 합니다.
 
-If a longer video is needed, use a GitHub Release asset, PR attachment, project page, or external video link.
+긴 영상이 필요하면 GitHub Release asset, PR attachment, project page, external video link를 사용합니다.
 
-Prefer GIF or static screenshots in README because they are easier to review in a documentation PR.
+README에서는 무거운 영상보다 GIF 또는 정적 screenshot을 우선합니다.
 
-Do not record real secret entry.
+실제 secret 입력 장면은 녹화하지 않습니다.
 
-Avoid showing the GitHub Secrets screen.
+GitHub Secrets 화면은 가능한 한 보여주지 않습니다.
 
-Even secret names can provide operational hints, so prefer mock screens or written documentation for that part.
+secret 이름만 보여도 운영 힌트가 될 수 있으므로 mock 화면이나 문서 설명으로 대체합니다.
 
-Do not show browser address bars that contain tokens, query parameters, private repository paths, or account-specific URLs.
+브라우저 주소창에 token, query parameter, private repository path, account-specific URL이 보이면 안 됩니다.
 
-Do not include Discord direct messages or private server navigation.
+Discord direct message나 private server navigation은 포함하지 않습니다.
 
-## Redaction rules
+## Redaction 규칙
 
-Discord webhook URLs must not be visible.
+Discord webhook URL은 노출하지 않습니다.
 
-OpenAI API keys must not be visible.
+OpenAI API key는 노출하지 않습니다.
 
-Naver credentials must not be visible.
+Naver credential은 노출하지 않습니다.
 
-Discord server identifiers, channel identifiers, user identifiers, usernames, and avatars must not be visible.
+Discord server identifier, channel identifier, user identifier, username, avatar는 노출하지 않습니다.
 
-Personal direct messages, private email addresses, and account names must not be visible.
+개인 DM, private email, account name은 노출하지 않습니다.
 
-Private repository URLs must not be visible.
+private repository URL은 노출하지 않습니다.
 
-Browser address bars must not show token or query parameter values.
+브라우저 주소창에 token이나 query parameter가 보이면 안 됩니다.
 
-Actions logs must not be captured if they contain secret-like strings.
+Actions log에 secret-like 문자열이 보이면 캡처하지 않습니다.
 
-If a screenshot needs redaction, apply the redaction before adding it to `docs/assets/demo/`.
+redaction이 필요한 screenshot은 `docs/assets/demo/`에 넣기 전에 먼저 처리합니다.
 
-Use solid blocks or cropping for redaction rather than blur when the text might still be recoverable.
+텍스트가 복구될 수 있는 blur보다 crop 또는 solid block redaction을 우선합니다.
 
-## Example demo storyboard
+## 예시 데모 스토리보드
 
-| Time | Scene | What to show | Caption |
+| 시간 | 장면 | 보여줄 내용 | 캡션 |
 | --- | --- | --- | --- |
-| 0-10s | GitHub Actions | Select Daily Backend Brief workflow | Run the workflow manually in dry-run mode |
-| 10-25s | Workflow inputs | Show dry-run option | Start with dry-run before Discord delivery |
-| 25-45s | Actions summary | Show validation report | Review generated artifacts and validation output |
-| 45-65s | Report preview | Show generated brief artifact | Check the brief before sending |
-| 65-90s | Discord | Show redacted brief message | A reviewed brief can be delivered to Discord |
+| 0-10s | GitHub Actions | Daily Backend Brief workflow 선택 | dry-run mode로 workflow를 수동 실행합니다 |
+| 10-25s | Workflow inputs | dry-run 옵션 확인 | Discord 전송 전에는 dry-run으로 시작합니다 |
+| 25-45s | Actions summary | validation report 확인 | 생성된 artifact와 validation output을 검토합니다 |
+| 45-65s | Report preview | generated brief artifact 확인 | 전송 전에 brief 내용을 확인합니다 |
+| 65-90s | Discord | redacted brief message 확인 | 검토된 brief만 Discord로 전송합니다 |
 
-The same structure can be reused for Korea Dev/AI News Daily.
+같은 구조는 Korea Dev/AI News Daily에도 사용할 수 있습니다.
 
-For Backend Career Site Radar, replace the dry-run scene with `send_to_discord=false`.
+Backend Career Site Radar는 dry-run 장면 대신 `send_to_discord=false`를 보여줍니다.
 
-For Mark PS Solved, show the input form and the resulting `data/ps-progress.json` change only if the branch and account details are safe to reveal.
+Mark PS Solved는 branch와 account detail이 안전하게 가려진 경우에만 입력 form과 `data/ps-progress.json` 변경을 보여줍니다.
 
-## Example captions
+## 예시 캡션
 
-Use short captions that explain the operating model.
+운영 모델을 설명하는 짧은 caption을 사용합니다.
 
-- Run the workflow manually.
-- Start with dry-run.
-- Review validation artifacts.
-- Check the generated brief.
-- Send only after review.
-- Discord receives the reviewed briefing.
-- PS progress is updated by a manual workflow.
+- workflow를 수동으로 실행합니다.
+- 첫 실행은 dry-run으로 시작합니다.
+- validation artifacts를 검토합니다.
+- 생성된 brief를 확인합니다.
+- 검토 후에만 전송합니다.
+- Discord에는 검토된 briefing만 도착합니다.
+- PS progress는 수동 workflow로 갱신합니다.
 
-Avoid captions that imply a hosted dashboard, autonomous bot, or hiring recommendation engine.
+hosted dashboard, autonomous bot, hiring recommendation engine처럼 보이는 caption은 사용하지 않습니다.
 
-## What not to show
+## 보여주면 안 되는 것
 
-Do not show real secret values.
+실제 secret 값은 보여주지 않습니다.
 
-Do not show webhook URLs.
+webhook URL은 보여주지 않습니다.
 
-Do not show private Discord server names, channel names, usernames, avatars, or user ids.
+private Discord server name, channel name, username, avatar, user id는 보여주지 않습니다.
 
-Do not show private repository URLs or private organization names.
+private repository URL이나 private organization name은 보여주지 않습니다.
 
-Do not show Discord direct messages.
+Discord direct message는 보여주지 않습니다.
 
-Do not show fake adoption metrics, stars, forks, active users, downloads, or customer counts.
+stars, forks, active users, downloads, customer count 같은 fake metric은 쓰지 않습니다.
 
-Do not show an automated comment or PR being created in an external repository.
+외부 저장소에 자동 comment나 PR을 만드는 장면은 보여주지 않습니다.
 
-Do not show a Slash Command flow.
+Slash Command 흐름은 보여주지 않습니다.
 
-Do not show a web dashboard unless the project actually adds one in the future.
+프로젝트에 실제로 웹 대시보드가 추가되기 전까지 dashboard 화면을 만들지 않습니다.
 
-Do not include a screenshot that still has recoverable sensitive text under blur.
+blur 아래 민감 텍스트가 복구될 수 있는 screenshot은 포함하지 않습니다.
 
-## Asset naming convention
+## 에셋 이름 규칙
 
-Use the `docs/assets/demo/` directory for demo assets.
+demo asset은 `docs/assets/demo/` 디렉터리에 둡니다.
 
-Recommended paths:
+권장 경로는 다음과 같습니다.
 
 - `docs/assets/demo/github-actions-dispatch-redacted.png`
 - `docs/assets/demo/actions-summary-redacted.png`
@@ -224,40 +222,40 @@ Recommended paths:
 - `docs/assets/demo/discord-brief-redacted.png`
 - `docs/assets/demo/career-feed-demo.gif`
 
-Only link files that actually exist.
+실제로 존재하는 파일만 링크합니다.
 
-When replacing assets, update only links to files that actually exist.
+asset을 교체할 때도 실제로 존재하는 파일만 문서에서 링크합니다.
 
-Do not create placeholder image files.
+placeholder image는 만들지 않습니다.
 
-## Keeping demo assets up to date
+## 데모 에셋 최신화
 
-Review demo assets when workflow names, inputs, artifact names, or Discord message format changes.
+workflow 이름, input, artifact 이름, Discord message format이 바뀌면 demo asset도 검토합니다.
 
-Remove or replace screenshots that show outdated UI labels.
+오래된 UI label이 보이는 screenshot은 제거하거나 교체합니다.
 
-Keep screenshots focused on the smallest safe area that explains the step.
+각 screenshot은 해당 단계를 설명하는 최소한의 안전한 영역에 집중합니다.
 
-After adding or replacing an asset, verify the file exists.
+asset을 추가하거나 교체한 뒤에는 파일 존재 여부를 확인합니다.
 
 ```bash
 find docs/assets/demo -maxdepth 1 -type f -print
 ```
 
-If an image or GIF is added, check file size.
+이미지나 GIF를 추가했다면 파일 크기를 확인합니다.
 
 ```bash
 du -h docs/assets/demo/*
 ```
 
-Before a PR is merged, leave a review note confirming that sensitive information was checked manually.
+PR merge 전에는 민감 정보가 없음을 사람이 직접 확인했다는 내용을 남깁니다.
 
-## Related documents
+## 관련 문서
 
 - [README.md](../README.md)
-- [Usage guide](usage.md)
-- [Daily Backend Brief](daily-backend-brief.md)
-- [Korea Dev/AI News Daily](daily-news-ops.md)
-- [Backend Career Site Radar](career-site-radar.md)
-- [Local validation guide](local-validation.md)
-- [Security policy](../SECURITY.md)
+- [사용 가이드](usage.md)
+- [Daily Backend Brief 운영 문서](daily-backend-brief.md)
+- [Korea Dev/AI News Daily 운영 문서](daily-news-ops.md)
+- [Backend Career Site Radar 운영 문서](career-site-radar.md)
+- [로컬 검증 가이드](local-validation.md)
+- [보안 정책](../SECURITY.md)
