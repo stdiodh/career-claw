@@ -12,6 +12,21 @@ asset은 Career Feed가 GitHub Actions, validation artifacts, generated briefs, 
 
 실제 GitHub, Discord, webhook, token, account data를 포함하지 않습니다.
 
+## 현재 에셋 목록
+
+현재 이 디렉터리에 유지하는 PNG asset은 다음 4장입니다.
+
+- `github-actions-dispatch-redacted.png`
+- `actions-summary-redacted.png`
+- `validation-report-redacted.png`
+- `discord-brief-redacted.png`
+
+`career-feed-demo.gif`는 필수 asset이 아닙니다.
+
+GIF가 필요할 때만 선택 asset으로 추가합니다.
+
+GIF를 추가할 때도 redaction, 크기, 링크 검증 기준은 동일하게 적용합니다.
+
 ## 허용 에셋
 
 허용되는 asset은 redacted GitHub Actions screenshot, redacted Actions summary screenshot, redacted validation report screenshot, redacted generated briefing screenshot, redacted Discord briefing screenshot입니다.
@@ -115,3 +130,55 @@ du -h docs/assets/demo/*
 PR에는 image 또는 GIF asset 추가 여부를 적습니다.
 
 image 또는 GIF asset을 추가했다면 redaction을 사람이 직접 확인했다는 점을 적습니다.
+
+## 추가 절차
+
+새 demo asset을 추가할 때는 다음 순서를 따릅니다.
+
+1. 파일명이 소문자와 설명형 이름인지 확인합니다.
+2. 파일을 `docs/assets/demo/` 바로 아래에 둡니다.
+3. secret, token, webhook URL, private URL, username, avatar, user id, private channel 또는 server 정보가 보이지 않는지 확인합니다.
+4. blur만 사용하지 말고 crop 또는 solid redaction block을 우선합니다.
+5. 파일 크기를 확인합니다.
+6. README 또는 관련 문서에 링크를 추가합니다.
+7. 링크가 실제 파일을 가리키는지 확인합니다.
+8. PR template에 demo asset 추가 여부와 redaction 직접 확인 여부를 적습니다.
+
+추가 후 확인에 사용할 수 있는 명령은 다음과 같습니다.
+
+```bash
+find docs/assets/demo -maxdepth 1 -type f -print
+du -h docs/assets/demo/*
+rg -n "docs/assets/demo|assets/demo" README.md CONTRIBUTING.md docs/assets/demo/README.md docs/demo.md
+git diff --check
+```
+
+## 교체 절차
+
+같은 workflow, 같은 화면, 같은 문서 링크를 더 최신 이미지로 바꾸는 경우 기존 파일명을 유지합니다.
+
+의미가 달라지거나 다른 화면을 설명하는 경우 새 파일명을 사용합니다.
+
+오래된 asset은 혼란을 줄 수 있으므로 여러 버전으로 남기지 않습니다.
+
+교체 후 문서 caption과 링크가 현재 workflow 이름, input, artifact, message shape과 맞는지 확인합니다.
+
+교체한 asset도 redaction을 다시 직접 확인합니다.
+
+## 삭제 절차
+
+asset을 삭제할 때는 다음 순서를 따릅니다.
+
+1. 먼저 README와 docs에서 해당 asset 링크를 제거합니다.
+2. 파일을 삭제합니다.
+3. `rg`로 남은 링크가 없는지 확인합니다.
+4. `find`로 현재 asset 목록을 확인합니다.
+5. PR 설명에 삭제 이유를 적습니다.
+
+삭제 후 확인에 사용할 수 있는 명령은 다음과 같습니다.
+
+```bash
+rg -n "deleted-file-name|docs/assets/demo|assets/demo" README.md docs CONTRIBUTING.md
+find docs/assets/demo -maxdepth 1 -type f -print
+git diff --check
+```
