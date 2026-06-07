@@ -1,82 +1,82 @@
-# Demo Assets
+# 데모 에셋
 
-## Purpose
+## 목적
 
-This directory stores redacted screenshots and GIF files used by the demo documentation.
+이 디렉터리는 demo 문서에서 사용하는 redacted screenshot과 GIF 파일을 보관합니다.
 
-The assets should show how Career Feed is operated through GitHub Actions, validation artifacts, generated briefs, and Discord Webhook delivery.
+asset은 Career Feed가 GitHub Actions, validation artifacts, generated briefs, Discord Webhook delivery로 운영되는 방식을 보여주기 위한 자료입니다.
 
-They should not make the project look like a web dashboard, hosted service, Gateway Bot, Slash Command product, or hiring recommendation platform.
+웹 대시보드, hosted service, Discord Gateway Bot, Slash Command product, 채용 추천 플랫폼처럼 보이게 만들면 안 됩니다.
 
-The current assets are mock redacted screenshots.
+현재 asset은 mock redacted screenshot 4장입니다.
 
-They do not contain live GitHub, Discord, webhook, token, or account data.
+실제 GitHub, Discord, webhook, token, account data를 포함하지 않습니다.
 
-## Allowed assets
+## 허용 에셋
 
-Allowed assets include redacted GitHub Actions screenshots, redacted Actions summary screenshots, redacted validation report screenshots, redacted generated briefing screenshots, and redacted Discord briefing screenshots.
+허용되는 asset은 redacted GitHub Actions screenshot, redacted Actions summary screenshot, redacted validation report screenshot, redacted generated briefing screenshot, redacted Discord briefing screenshot입니다.
 
-Mock data based screenshots are allowed when they accurately represent the operating flow.
+운영 흐름을 정확히 표현한다면 mock data 기반 screenshot도 사용할 수 있습니다.
 
-Short GIF demos are allowed when they are small enough for repository review.
+작고 검토 가능한 short GIF demo도 사용할 수 있습니다.
 
-Actual production screenshots are allowed only after sensitive information has been removed.
+실제 production screenshot은 민감 정보가 제거된 뒤에만 사용할 수 있습니다.
 
-Placeholder image files are not allowed.
+placeholder image file은 허용하지 않습니다.
 
-Do not add an image just so a link can exist.
+링크를 만들기 위해 빈 이미지 파일을 추가하지 않습니다.
 
-## Preferred formats
+## 권장 형식
 
-Prefer PNG or WebP for static screenshots.
+정적 screenshot은 PNG 또는 WebP를 우선합니다.
 
-Prefer GIF for short motion demos that need to appear inline in Markdown.
+Markdown에서 짧은 움직임을 보여줘야 할 때만 GIF를 사용합니다.
 
-Avoid committing mp4 files directly to the repository.
+mp4 파일은 repository에 직접 커밋하지 않습니다.
 
-For longer video, use a GitHub Release asset, PR attachment, project page, or external video link.
+긴 영상은 GitHub Release asset, PR attachment, project page, external video link를 사용합니다.
 
-Do not store raw screen recording files here.
+raw screen recording file은 이 디렉터리에 보관하지 않습니다.
 
-## Size guidance
+## 크기 기준
 
-Keep static screenshots as small as practical.
+정적 screenshot은 가능한 한 작게 유지합니다.
 
-Aim for 1MB or less per PNG or WebP when possible.
+PNG 또는 WebP는 가능하면 파일당 1MB 이하를 목표로 합니다.
 
-Keep GIF demos short.
+GIF demo는 짧게 유지합니다.
 
-Aim for 10MB or less when a GIF is committed to the repository.
+GIF를 repository에 넣는다면 가능하면 10MB 이하를 목표로 합니다.
 
-If a GIF is too large, use static screenshots in README and link to an external video or Release asset instead.
+GIF가 너무 크면 README에는 정적 screenshot을 사용하고 영상은 외부 링크나 Release asset으로 분리합니다.
 
-Crop screenshots to the relevant safe area before committing.
+commit 전에 screenshot을 필요한 안전 영역으로 crop합니다.
 
-## Redaction requirements
+## Redaction 요구사항
 
-Do not expose Discord webhook URLs.
+Discord webhook URL을 노출하지 않습니다.
 
-Do not expose OpenAI API keys.
+OpenAI API key를 노출하지 않습니다.
 
-Do not expose Naver credentials.
+Naver credential을 노출하지 않습니다.
 
-Do not expose Discord server names, channel names, usernames, avatars, user ids, or private invite details.
+Discord server name, channel name, username, avatar, user id, private invite detail을 노출하지 않습니다.
 
-Do not expose personal direct messages, private email addresses, account names, or private repository URLs.
+개인 DM, private email, account name, private repository URL을 노출하지 않습니다.
 
-Do not expose browser URLs that include tokens or query parameters.
+브라우저 URL에 token이나 query parameter가 보이면 안 됩니다.
 
-Do not capture Actions logs when secret-like strings are visible.
+secret-like 문자열이 보이는 Actions log는 캡처하지 않습니다.
 
-Use solid redaction blocks or crop sensitive areas.
+solid redaction block 또는 crop을 사용합니다.
 
-Do not rely on blur if text may still be recoverable.
+텍스트가 복구될 수 있는 blur에만 의존하지 않습니다.
 
-## File naming
+## 파일 이름
 
-Use descriptive lowercase filenames.
+파일명은 소문자와 설명형 이름을 사용합니다.
 
-Recommended names:
+권장 파일명은 다음과 같습니다.
 
 - `github-actions-dispatch-redacted.png`
 - `actions-summary-redacted.png`
@@ -84,34 +84,34 @@ Recommended names:
 - `discord-brief-redacted.png`
 - `career-feed-demo.gif`
 
-Keep files directly under `docs/assets/demo/`.
+파일은 `docs/assets/demo/` 바로 아래에 둡니다.
 
-Do not create nested folders unless a future documentation change needs them.
+미래 문서 변경이 필요하기 전까지 nested folder는 만들지 않습니다.
 
-## Review checklist
+## 리뷰 체크리스트
 
-- The file exists in `docs/assets/demo/`.
-- Documentation links only to files that exist.
-- The asset uses redacted or mock data.
-- No webhook, token, API key, credential, private URL, or personal identifier is visible.
-- Discord server, channel, user, and avatar details are hidden.
-- File size is reasonable for repository review.
-- The screenshot reflects the current workflow names, inputs, artifacts, and message shape.
-- A reviewer can understand what the asset shows without extra private context.
+- 파일이 `docs/assets/demo/`에 존재한다.
+- 문서 링크가 실제 존재하는 파일만 가리킨다.
+- asset이 redacted 또는 mock data를 사용한다.
+- webhook, token, API key, credential, private URL, personal identifier가 보이지 않는다.
+- Discord server, channel, user, avatar detail이 가려져 있다.
+- 파일 크기가 repository review에 무리가 없다.
+- screenshot이 현재 workflow 이름, input, artifact, message shape을 반영한다.
+- reviewer가 private context 없이 asset 의미를 이해할 수 있다.
 
-## Updating assets
+## 에셋 업데이트
 
-Update assets when workflow names, workflow inputs, artifact names, validation reports, or Discord message format changes.
+workflow 이름, workflow input, artifact 이름, validation report, Discord message format이 바뀌면 asset을 업데이트합니다.
 
-Delete obsolete assets instead of keeping multiple stale versions.
+오래된 asset은 여러 버전으로 남기지 말고 삭제하거나 교체합니다.
 
-After adding or replacing images, run:
+이미지를 추가하거나 교체한 뒤에는 다음 명령을 실행합니다.
 
 ```bash
 find docs/assets/demo -maxdepth 1 -type f -print
 du -h docs/assets/demo/*
 ```
 
-Document in the PR whether image or GIF assets were added.
+PR에는 image 또는 GIF asset 추가 여부를 적습니다.
 
-If image or GIF assets were added, document that redaction was manually checked.
+image 또는 GIF asset을 추가했다면 redaction을 사람이 직접 확인했다는 점을 적습니다.

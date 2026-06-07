@@ -157,15 +157,15 @@ GitHub Actions로 실제 브리핑을 운영하려면 필요한 secrets를 먼�
 
 처음에는 Discord 전송을 바로 켜기보다 dry-run artifacts와 validation reports를 확인하는 것을 권장합니다.
 
-## Usage and demo
+## 사용법과 데모
 
-Career Feed is operated through GitHub Actions, validation artifacts, and Discord Webhook delivery.
+Career Feed는 GitHub Actions 실행, validation artifacts 확인, Discord Webhook 전송으로 운영합니다.
 
-To see how to run it and what the output looks like, read the [Usage guide](docs/usage.md) and [Demo guide](docs/demo.md).
+실행 방법과 결과 형태를 빠르게 확인하려면 [사용 가이드](docs/usage.md)와 [데모 가이드](docs/demo.md)를 참고해 주세요.
 
-The demo intentionally uses redacted or mock data.
+데모는 redacted 또는 mock data를 사용합니다.
 
-Do not publish real webhook URLs, tokens, private Discord channel names, or personal identifiers in screenshots.
+실제 webhook URL, token, private Discord channel name, personal identifier를 screenshot에 포함하지 않습니다.
 
 ## Required secrets
 
@@ -231,7 +231,7 @@ README에서 링크하는 문서는 실제 저장소에 존재하는 문서만 �
 | [docs/ecosystem-importance.md](docs/ecosystem-importance.md) | 백엔드 생태계에서 Career Feed가 갖는 의미와 한계 |
 | [docs/oss-program-application.md](docs/oss-program-application.md) | Codex Open Source Support Program 신청용 답변 초안 |
 | [docs/usage.md](docs/usage.md) | GitHub Actions, dry-run, artifacts, Discord 전송 사용 가이드 |
-| [docs/demo.md](docs/demo.md) | redacted demo screenshot과 GIF 준비 가이드 |
+| [docs/demo.md](docs/demo.md) | redacted demo screenshot 준비와 노출 가이드 |
 | [docs/daily-backend-brief.md](docs/daily-backend-brief.md) | Daily Backend Brief 운영 방식 |
 | [docs/daily-news-ops.md](docs/daily-news-ops.md) | Korea Dev/AI News Daily 운영 방식 |
 | [docs/career-site-radar.md](docs/career-site-radar.md) | Backend Career Site Radar 운영 방식 |
