@@ -93,10 +93,11 @@ README_HEADINGS = [
 DOCS_INDEX_HEADINGS = [
     "# Documentation",
     "## Start here",
+    "## Getting started",
     "## Operations",
     "## Policies",
     "## Contributing",
-    "## Project",
+    "## Project / Release",
     "## Archive / Legacy",
     "## Repository level documents",
 ]

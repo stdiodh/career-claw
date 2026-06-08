@@ -6,6 +6,10 @@ Career Feed 문서는 사용자 목적별로 나뉩니다.
 
 ## Start here
 
+If you are new to Career Feed, start with the fork setup guide and then use the related getting-started docs as needed.
+
+## Getting started
+
 | Document | Purpose |
 | --- | --- |
 | [Fork Setup Guide](./getting-started/fork-setup.md) | fork 후 첫 dry-run과 Discord delivery 설정 |
@@ -52,7 +56,7 @@ Career Feed 문서는 사용자 목적별로 나뉩니다.
 | [Backend Career Question Guide](./contributing/backend-career-question-guide.md) | 백엔드 커리어 질문 작성 기준 |
 | [Review Policy](./contributing/review-policy.md) | maintainer review 기준 |
 
-## Project
+## Project / Release
 
 | Document | Purpose |
 | --- | --- |

@@ -357,7 +357,7 @@ Mark PS Solved is a manual operating path by design.
 
 ## Related documents
 
-- [README.md](../README.md)
+- [Documentation Index](../README.md)
 - [Runtime Configuration](runtime-configuration.md)
 - [Demo guide](../demo.md)
 - [Daily Backend Brief](../operations/daily-backend-brief.md)
