@@ -10,8 +10,8 @@ Use placeholders and redacted content only. Do not include real webhook URLs, pr
 
 | Example | File | Notes |
 | --- | --- | --- |
-| Daily Backend Brief | [examples/daily-backend-brief.example.md](examples/daily-backend-brief.example.md) | Shows the expected Markdown shape for a daily backend brief. |
-| Backend Career Site Radar | [examples/career-site-radar.example.md](examples/career-site-radar.example.md) | Shows weekly career site radar output shape. |
+| Daily Backend Brief | [examples/daily-backend-brief.example.md](../examples/daily-backend-brief.example.md) | Shows the expected Markdown shape for a daily backend brief. |
+| Backend Career Site Radar | [examples/career-site-radar.example.md](../examples/career-site-radar.example.md) | Shows weekly career site radar output shape. |
 
 ## What to check in samples
 
@@ -42,5 +42,5 @@ git diff --check
 
 - [Fork Setup Guide](fork-setup.md)
 - [Usage Guide](usage.md)
-- [Demo Guide](demo.md)
-- [Local Validation](local-validation.md)
+- [Demo Guide](../demo.md)
+- [Local Validation](../operations/local-validation.md)

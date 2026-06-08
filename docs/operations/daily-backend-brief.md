@@ -44,7 +44,7 @@ Daily Backend Brief는 아래 후보 JSON을 입력으로 사용합니다.
 - 고정 2주 커리큘럼이 아니라 KST 기준 후보와 공식 레퍼런스를 바탕으로 동적으로 생성합니다.
 - `data/spring-jvm-blog-topic-progress.json`으로 최근 7일 내 같은 track/title 반복을 피합니다.
 
-상세 기준은 [Spring/JVM 블로그 주제 정책](./daily-spring-jvm-blog-topic-policy.md)을 따릅니다.
+상세 기준은 [Spring/JVM 블로그 주제 정책](../policies/daily-spring-jvm-blog-topic-policy.md)을 따릅니다.
 
 ## 실무 충전 정책
 
@@ -55,7 +55,7 @@ Daily Backend Brief는 아래 후보 JSON을 입력으로 사용합니다.
 - CS Core topic은 `configs/backend-core-cs-curriculum.json`에서 KST 날짜 기반으로 선택합니다.
 - 백엔드 용어는 `configs/backend-terms-glossary.json`에서 KST 날짜 기반으로 선택합니다.
 
-상세 기준은 [Backend Growth Curriculum](./backend-growth-curriculum.md)을 따릅니다.
+상세 기준은 [Backend Growth Curriculum](../backend-growth-curriculum.md)을 따릅니다.
 
 ## OSS 후보 정책
 
@@ -70,7 +70,7 @@ Daily Backend Brief는 아래 후보 JSON을 입력으로 사용합니다.
 - 첫 30분 액션은 읽기, 재현, 문서 위치 확인, 로컬 빌드 확인처럼 PR 전 확인 행동으로 제한합니다.
 
 저장소 profile, scoring, diagnostics, safe candidate gate는 [OSS 후보 저장소
-정책](./oss-candidate-policy.md)을 따릅니다.
+정책](../policies/oss-candidate-policy.md)을 따릅니다.
 
 ## Validator 조건
 

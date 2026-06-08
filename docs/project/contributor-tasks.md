@@ -12,21 +12,21 @@ Do not start large workflow or policy changes without opening an issue first.
 
 Scope:
 
-- Clarify one confusing setup step in `docs/fork-setup.md`.
+- Clarify one confusing setup step in `docs/getting-started/fork-setup.md`.
 - Keep the fork to dry-run to artifact review to Discord delivery flow intact.
 - Do not change workflow logic.
 
 Verify:
 
 - README link still works.
-- `docs/fork-setup.md` remains readable.
+- `docs/getting-started/fork-setup.md` remains readable.
 - `git diff --check` passes.
 
 ### docs: clarify runtime variable examples
 
 Scope:
 
-- Improve one example in `docs/runtime-configuration.md`.
+- Improve one example in `docs/getting-started/runtime-configuration.md`.
 - Keep existing defaults unchanged.
 - Do not edit workflow YAML.
 
@@ -52,7 +52,7 @@ Verify:
 
 Scope:
 
-- Improve `docs/sample-output.md`.
+- Improve `docs/getting-started/sample-output.md`.
 - Use existing example files or placeholder links only.
 - Do not add real Discord screenshots or webhook URLs.
 
@@ -130,8 +130,8 @@ Verify:
 
 ## Before opening a PR
 
-- Read [CONTRIBUTING.md](../CONTRIBUTING.md).
-- Check [Fork Setup Guide](fork-setup.md) if the change affects user setup.
-- Check [OSS Candidate Policy](oss-candidate-policy.md) if the change affects OSS candidates.
+- Read [CONTRIBUTING.md](../../CONTRIBUTING.md).
+- Check [Fork Setup Guide](../getting-started/fork-setup.md) if the change affects user setup.
+- Check [OSS Candidate Policy](../policies/oss-candidate-policy.md) if the change affects OSS candidates.
 - Run the smallest relevant validation command.
 - Explain what changed and why in the pull request body.

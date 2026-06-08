@@ -1,6 +1,6 @@
 # Career Feed 운영 가이드
 
-레거시 파일 제거 기준은 [LEGACY.md](../LEGACY.md)를 따른다.
+레거시 파일 제거 기준은 [LEGACY.md](../../LEGACY.md)를 따른다.
 
 ## 운영 경로
 

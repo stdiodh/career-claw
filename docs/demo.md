@@ -278,9 +278,9 @@ PR merge 전에는 민감 정보가 없음을 사람이 직접 확인했다는 �
 ## 관련 문서
 
 - [README.md](../README.md)
-- [사용 가이드](usage.md)
-- [Daily Backend Brief 운영 문서](daily-backend-brief.md)
-- [Korea Dev/AI News Daily 운영 문서](daily-news-ops.md)
-- [Backend Career Site Radar 운영 문서](career-site-radar.md)
-- [로컬 검증 가이드](local-validation.md)
+- [사용 가이드](./getting-started/usage.md)
+- [Daily Backend Brief 운영 문서](./operations/daily-backend-brief.md)
+- [Korea Dev/AI News Daily 운영 문서](./operations/daily-news-ops.md)
+- [Backend Career Site Radar 운영 문서](./operations/career-site-radar.md)
+- [로컬 검증 가이드](./operations/local-validation.md)
 - [보안 정책](../SECURITY.md)

@@ -303,16 +303,17 @@ required_files=(
   "data/oss-progress.json"
   "data/ps-progress.json"
   "data/spring-jvm-blog-topic-progress.json"
-  "docs/contributor-tasks.md"
-  "docs/daily-growth-ops.md"
-  "docs/daily-spring-jvm-blog-topic-policy.md"
-  "docs/fork-setup.md"
-  "docs/oss-candidate-policy.md"
-  "docs/release-checklist.md"
+  "docs/README.md"
+  "docs/project/contributor-tasks.md"
+  "docs/operations/daily-growth-ops.md"
+  "docs/policies/daily-spring-jvm-blog-topic-policy.md"
+  "docs/getting-started/fork-setup.md"
+  "docs/policies/oss-candidate-policy.md"
+  "docs/project/release-checklist.md"
   "docs/release-notes/v0.1.0.md"
-  "docs/roadmap.md"
-  "docs/runtime-configuration.md"
-  "docs/sample-output.md"
+  "docs/project/roadmap.md"
+  "docs/getting-started/runtime-configuration.md"
+  "docs/getting-started/sample-output.md"
   ".github/pull_request_template.md"
   ".github/ISSUE_TEMPLATE/bug-report.yml"
   ".github/ISSUE_TEMPLATE/docs-improvement.yml"
@@ -555,12 +556,12 @@ grep -q 'def extract_github_issue_urls' scripts/validate-career-feed-brief.py
 grep -q 'OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES' scripts/validate-career-feed-brief.py
 grep -q 'OSS_FALLBACK_CONTAINS_ISSUE_URL' scripts/validate-career-feed-brief.py
 grep -q 'created_within_recent_window' scripts/validate-career-feed-brief.py
-grep -q 'CAREER_FEED_OSS_RECENT_DAYS' docs/oss-candidate-policy.md
-grep -q 'created_at' docs/oss-candidate-policy.md
-grep -q 'Fork Setup Guide' docs/fork-setup.md
-grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED=false' docs/fork-setup.md
-grep -q 'OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES' docs/fork-setup.md
-grep -q 'docs/fork-setup.md' README.md
+grep -q 'CAREER_FEED_OSS_RECENT_DAYS' docs/policies/oss-candidate-policy.md
+grep -q 'created_at' docs/policies/oss-candidate-policy.md
+grep -q 'Fork Setup Guide' docs/getting-started/fork-setup.md
+grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED=false' docs/getting-started/fork-setup.md
+grep -q 'OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES' docs/getting-started/fork-setup.md
+grep -q 'docs/getting-started/fork-setup.md' README.md
 python3 - <<'PY'
 import json
 from pathlib import Path

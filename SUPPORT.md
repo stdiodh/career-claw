@@ -18,9 +18,9 @@ Use the issue template that matches the request:
 
 ## Before opening an issue
 
-- Check [Fork Setup Guide](docs/fork-setup.md).
-- Check [Usage Guide](docs/usage.md).
-- Check [Runtime Configuration](docs/runtime-configuration.md).
+- Check [Fork Setup Guide](docs/getting-started/fork-setup.md).
+- Check [Usage Guide](docs/getting-started/usage.md).
+- Check [Runtime Configuration](docs/getting-started/runtime-configuration.md).
 - Check the workflow run logs.
 - Check the validation report artifact.
 - Confirm whether the run was `dry_run=true`.

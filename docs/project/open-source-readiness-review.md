@@ -30,7 +30,7 @@ Codex Open Source Support Program에 신청할 때는 “널리 쓰이는 핵심
 
 - README와 docs를 실제 줄바꿈이 있는 Markdown으로 유지합니다.
 - issue templates가 GitHub issue forms로 정상 동작하도록 YAML을 검증합니다.
-- `docs/ecosystem-importance.md`에 프로젝트의 의미와 한계를 정직하게 설명합니다.
+- `docs/project/ecosystem-importance.md`에 프로젝트의 의미와 한계를 정직하게 설명합니다.
 - `docs/oss-program-application.md`에 신청서 복사용 문구를 정리합니다.
 - sample briefings를 추가해 사용자가 결과물을 이해할 수 있게 합니다.
 - maintainer guide를 정리해 dry-run, validator, secret safety를 명확히 합니다.

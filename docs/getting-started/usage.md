@@ -333,7 +333,7 @@ Use the reported file path, section name, or validation error to fix the source,
 
 For OSS URL validation failures such as `OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES`,
 `OSS_ISSUE_URL_NOT_RECENT`, or `OSS_FALLBACK_CONTAINS_ISSUE_URL`, check
-[Fork Setup Guide](fork-setup.md) and [OSS Candidate Policy](oss-candidate-policy.md).
+[Fork Setup Guide](fork-setup.md) and [OSS Candidate Policy](../policies/oss-candidate-policy.md).
 
 If PS progress commit fails, check whether GitHub Actions has write permission, whether the branch is protected, and whether `data/ps-progress.json` actually changed.
 
@@ -359,10 +359,10 @@ Mark PS Solved is a manual operating path by design.
 
 - [README.md](../README.md)
 - [Runtime Configuration](runtime-configuration.md)
-- [Demo guide](demo.md)
-- [Daily Backend Brief](daily-backend-brief.md)
-- [Korea Dev/AI News Daily](daily-news-ops.md)
-- [Backend Career Site Radar](career-site-radar.md)
-- [Local validation guide](local-validation.md)
-- [Operations guide](operations.md)
-- [Security policy](../SECURITY.md)
+- [Demo guide](../demo.md)
+- [Daily Backend Brief](../operations/daily-backend-brief.md)
+- [Korea Dev/AI News Daily](../operations/daily-news-ops.md)
+- [Backend Career Site Radar](../operations/career-site-radar.md)
+- [Local validation guide](../operations/local-validation.md)
+- [Operations guide](../operations/operations.md)
+- [Security policy](../../SECURITY.md)

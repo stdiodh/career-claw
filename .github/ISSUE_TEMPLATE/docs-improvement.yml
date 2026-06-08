@@ -14,7 +14,7 @@ body:
     id: document
     attributes:
       label: 관련 문서
-      placeholder: 예) docs/fork-setup.md
+      placeholder: 예) docs/getting-started/fork-setup.md
     validations:
       required: true
   - type: dropdown

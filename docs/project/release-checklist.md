@@ -45,7 +45,7 @@ Not included in v0.1.0:
 
 v0.1.0 can be released when:
 
-- [ ] A fresh fork can follow `docs/fork-setup.md` to complete dry-run.
+- [ ] A fresh fork can follow `docs/getting-started/fork-setup.md` to complete dry-run.
 - [ ] Required Secrets and optional Variables are documented.
 - [ ] Discord delivery is disabled by default.
 - [ ] dry-run generates artifacts without sending Discord messages.
@@ -64,13 +64,13 @@ v0.1.0 can be released when:
 ### Documentation
 
 - [ ] README Quick Start works from a fresh fork.
-- [ ] `docs/fork-setup.md` is linked from README.
-- [ ] `docs/runtime-configuration.md` lists all supported Variables.
-- [ ] `docs/oss-candidate-policy.md` explains `created_at` recency.
+- [ ] `docs/getting-started/fork-setup.md` is linked from README.
+- [ ] `docs/getting-started/runtime-configuration.md` lists all supported Variables.
+- [ ] `docs/policies/oss-candidate-policy.md` explains `created_at` recency.
 - [ ] `docs/demo.md` does not link missing images.
-- [ ] `docs/sample-output.md` uses placeholder links only.
-- [ ] `docs/contributor-tasks.md` lists small contributor-friendly work.
-- [ ] `docs/roadmap.md` separates planned work from current behavior.
+- [ ] `docs/getting-started/sample-output.md` uses placeholder links only.
+- [ ] `docs/project/contributor-tasks.md` lists small contributor-friendly work.
+- [ ] `docs/project/roadmap.md` separates planned work from current behavior.
 - [ ] No fake metrics or fake adoption claims are present.
 
 ### Configuration
@@ -137,7 +137,7 @@ Do not treat a successful command as enough for release. Review the generated ar
 
 ## Release note draft
 
-Use [v0.1.0 Release Notes](release-notes/v0.1.0.md) as the GitHub Release body draft.
+Use [v0.1.0 Release Notes](../release-notes/v0.1.0.md) as the GitHub Release body draft.
 
 Before publishing, confirm that:
 

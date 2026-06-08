@@ -43,11 +43,11 @@
 | KEEP | `data/ps-progress.json` | 해당 없음 | PS progress | README, workflows, scripts | HIGH | `git checkout HEAD^ -- data/ps-progress.json` | workflow commit 대상 |
 | KEEP | `data/spring-jvm-blog-topic-progress.json` | 해당 없음 | Spring/JVM topic progress | README, workflow, scripts, validate.sh | HIGH | `git checkout HEAD^ -- data/spring-jvm-blog-topic-progress.json` | workflow commit 대상 |
 | KEEP | `docs/backend-growth-curriculum.md` | 해당 없음 | CS Core/용어 운영 문서 | 내용이 현행 Daily Backend 구조와 일치 | LOW | `git checkout HEAD^ -- docs/backend-growth-curriculum.md` | README 참조 보강 |
-| KEEP | `docs/daily-growth-ops.md` | 해당 없음 | Daily 운영 확인 문서 | README, docs/operations, validate.sh | LOW | `git checkout HEAD^ -- docs/daily-growth-ops.md` | 활성 운영 문서 |
-| KEEP | `docs/daily-spring-jvm-blog-topic-policy.md` | 해당 없음 | Spring/JVM 주제 정책 | validate.sh, 현행 Daily 정책 | LOW | `git checkout HEAD^ -- docs/daily-spring-jvm-blog-topic-policy.md` | README 참조 보강 |
+| KEEP | `docs/operations/daily-growth-ops.md` | 해당 없음 | Daily 운영 확인 문서 | README, docs/operations, validate.sh | LOW | `git checkout HEAD^ -- docs/operations/daily-growth-ops.md` | 활성 운영 문서 |
+| KEEP | `docs/policies/daily-spring-jvm-blog-topic-policy.md` | 해당 없음 | Spring/JVM 주제 정책 | validate.sh, 현행 Daily 정책 | LOW | `git checkout HEAD^ -- docs/policies/daily-spring-jvm-blog-topic-policy.md` | README 참조 보강 |
 | KEEP | `docs/legacy-inventory.md` | 해당 없음 | 레거시 분류 기록 | README 운영 정책 | LOW | `git checkout HEAD^ -- docs/legacy-inventory.md` | 이번 변경에서 추가 |
-| KEEP | `docs/operations.md` | 해당 없음 | 운영 가이드 | README 연계 문서 | LOW | `git checkout HEAD^ -- docs/operations.md` | 정책 링크 보강 |
-| KEEP | `docs/oss-candidate-policy.md` | 해당 없음 | OSS 후보 정책 | README, docs/operations, validate.sh | MEDIUM | `git checkout HEAD^ -- docs/oss-candidate-policy.md` | 활성 정책 문서 |
+| KEEP | `docs/operations/operations.md` | 해당 없음 | 운영 가이드 | README 연계 문서 | LOW | `git checkout HEAD^ -- docs/operations/operations.md` | 정책 링크 보강 |
+| KEEP | `docs/policies/oss-candidate-policy.md` | 해당 없음 | OSS 후보 정책 | README, docs/operations, validate.sh | MEDIUM | `git checkout HEAD^ -- docs/policies/oss-candidate-policy.md` | 활성 정책 문서 |
 | UNKNOWN | `infra/compose.yaml` | README 운영 경로 미기재 | 없음 | infra 내부 참조, AGENTS 수정 금지 | HIGH | `git checkout HEAD^ -- infra/compose.yaml` | 배포 영향 가능, 삭제 금지 |
 | UNKNOWN | `infra/nginx/README.md` | README 운영 경로 미기재 | 없음 | infra 문서 | HIGH | `git checkout HEAD^ -- infra/nginx/README.md` | 삭제 금지 |
 | UNKNOWN | `infra/nginx/claw.stdiodh.xyz.conf.example` | README 운영 경로 미기재 | 없음 | nginx example | HIGH | `git checkout HEAD^ -- infra/nginx/claw.stdiodh.xyz.conf.example` | 삭제 금지 |
@@ -99,7 +99,7 @@
 | KEEP | `tests/test_oss_reliability_gate.py` | 해당 없음 | OSS reliability gate tests | validate.sh/test command path | MEDIUM | `git checkout HEAD^ -- tests/test_oss_reliability_gate.py` | test 보호 |
 | KEEP | `tests/test_weekly_career_collector.py` | 해당 없음 | Weekly site radar tests | validate.sh/test command path | MEDIUM | `git checkout HEAD^ -- tests/test_weekly_career_collector.py` | test 보호 |
 | REMOVE | `configs/oss-repositories 2.json` | 추적되지 않은 예전 OSS config 사본, README/워크플로/스크립트 참조 없음 | `configs/oss-repositories.json` | `git grep`, `rg`, `git log --` 결과 없음 | LOW | git 추적 이력 없음. 필요 시 로컬 백업 또는 이전 작업물에서 복구 | already removed before this pass |
-| REMOVE | `docs/oss-candidate-policy 2.md` | 추적되지 않은 예전 OSS 정책 문서 사본, README/문서 참조 없음 | `docs/oss-candidate-policy.md` | `git grep`, `rg`, `git log --` 결과 없음 | LOW | git 추적 이력 없음. 필요 시 로컬 백업 또는 이전 작업물에서 복구 | already removed before this pass |
+| REMOVE | legacy copy named `oss-candidate-policy 2.md` | 추적되지 않은 예전 OSS 정책 문서 사본, README/문서 참조 없음 | `docs/policies/oss-candidate-policy.md` | `git grep`, `rg`, `git log --` 결과 없음 | LOW | git 추적 이력 없음. 필요 시 로컬 백업 또는 이전 작업물에서 복구 | already removed before this pass |
 
 ## Deferred
 

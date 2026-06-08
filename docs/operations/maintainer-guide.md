@@ -8,7 +8,7 @@
 
 ## Release checklist
 
-v0.1.0 공개 릴리스 전에는 [Release Checklist](release-checklist.md)를 따라 CHANGELOG, release note, docs link, secret safety,
+v0.1.0 공개 릴리스 전에는 [Release Checklist](../project/release-checklist.md)를 따라 CHANGELOG, release note, docs link, secret safety,
 validation artifact를 확인합니다.
 
 ## Validation-before-send checklist

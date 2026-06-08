@@ -37,7 +37,7 @@ Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리�
 
 제안은 작고 검토 가능할수록 반영하기 쉽습니다.
 
-처음 기여한다면 [Contributor Task Ideas](docs/contributor-tasks.md)에서 작은 작업 후보를 먼저 확인해 주세요.
+처음 기여한다면 [Contributor Task Ideas](docs/project/contributor-tasks.md)에서 작은 작업 후보를 먼저 확인해 주세요.
 
 ## What makes a good contribution
 
@@ -59,8 +59,8 @@ Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리�
 
 이슈를 열기 전에 README와 관련 문서를 먼저 확인해 주세요.
 
-fork 실행이나 설정에서 막혔다면 [Fork Setup Guide](docs/fork-setup.md)와
-[Runtime Configuration](docs/runtime-configuration.md)을 먼저 확인해 주세요.
+fork 실행이나 설정에서 막혔다면 [Fork Setup Guide](docs/getting-started/fork-setup.md)와
+[Runtime Configuration](docs/getting-started/runtime-configuration.md)을 먼저 확인해 주세요.
 
 demo나 screenshot 제안은 [Demo guide](docs/demo.md)의 redaction 기준을 따릅니다.
 
@@ -130,7 +130,7 @@ Daily Backend 후보 수집 dry-run은 다음 명령으로 확인할 수 있습�
 python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
 ```
 
-GitHub Actions 수동 실행과 artifact 확인 흐름은 [Usage Guide](docs/usage.md)를 참고해 주세요.
+GitHub Actions 수동 실행과 artifact 확인 흐름은 [Usage Guide](docs/getting-started/usage.md)를 참고해 주세요.
 
 ## Commit convention
 
@@ -268,7 +268,7 @@ issue URL을 제안한다면 기본적으로 최근 30일 이내 `created_at` is
 Career Feed는 OSS 후보를 추천할 수 있지만 외부 저장소에 자동 PR, 자동 comment, 자동 assign, 자동 label 변경을 하지 않습니다.
 
 자세한 기준은 [OSS candidate suggestion guide](docs/contributing/oss-candidate-guide.md)를 참고해 주세요.
-최종 추천 정책은 [OSS Candidate Policy](docs/oss-candidate-policy.md)를 따릅니다.
+최종 추천 정책은 [OSS Candidate Policy](docs/policies/oss-candidate-policy.md)를 따릅니다.
 
 ## Backend career question rules
 
@@ -357,8 +357,8 @@ Maintainer는 특정 회사나 서비스 홍보로 오해될 가능성이 있는
 ## Related documents
 
 - [Contribution guide index](docs/contributing/README.md)
-- [Contributor Task Ideas](docs/contributor-tasks.md)
-- [Roadmap](docs/roadmap.md)
+- [Contributor Task Ideas](docs/project/contributor-tasks.md)
+- [Roadmap](docs/project/roadmap.md)
 - [Good suggestion criteria](docs/contributing/good-suggestion-criteria.md)
 - [Source suggestion guide](docs/contributing/source-suggestion-guide.md)
 - [OSS candidate suggestion guide](docs/contributing/oss-candidate-guide.md)

@@ -5,7 +5,7 @@ artifact를 확인한 뒤 Discord 전송까지 켜는 첫 설정 절차입니다
 
 자세한 운영 정책은 [Usage Guide](usage.md), 실행 시간 설정은
 [Runtime Configuration](runtime-configuration.md), OSS 후보 기준은
-[OSS Candidate Policy](oss-candidate-policy.md)를 참고하세요.
+[OSS Candidate Policy](../policies/oss-candidate-policy.md)를 참고하세요.
 
 ## 대상
 
@@ -184,7 +184,7 @@ manual `workflow_dispatch` 실행은 runtime time window 때문에 막히지 않
 
 fallback은 실패가 아니라 안전한 동작입니다.
 
-자세한 기준은 [OSS Candidate Policy](oss-candidate-policy.md)를 참고하세요.
+자세한 기준은 [OSS Candidate Policy](../policies/oss-candidate-policy.md)를 참고하세요.
 
 ## Validation troubleshooting
 
@@ -293,7 +293,7 @@ dry-run에서는 Discord 메시지가 오지 않는 것이 정상입니다.
 
 - [Usage Guide](usage.md)
 - [Runtime Configuration](runtime-configuration.md)
-- [Daily Backend Brief](daily-backend-brief.md)
-- [OSS Candidate Policy](oss-candidate-policy.md)
-- [Demo Guide](demo.md)
-- [Local Validation](local-validation.md)
+- [Daily Backend Brief](../operations/daily-backend-brief.md)
+- [OSS Candidate Policy](../policies/oss-candidate-policy.md)
+- [Demo Guide](../demo.md)
+- [Local Validation](../operations/local-validation.md)
