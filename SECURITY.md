@@ -1,5 +1,11 @@
 # Security Policy
 
+## Supported versions
+
+`v0.1.x` is the initial open-source release line.
+
+Security guidance applies to the current default branch and the latest v0.1.x release while the project is in early public development.
+
 ## Supported scope
 
 Career Feed의 현재 운영 범위는 GitHub Actions, OpenAI API, Discord Webhook 기반 자동 브리핑 workflow입니다.
@@ -42,7 +48,9 @@ Secret은 GitHub Secrets 또는 로컬 환경변수로만 다룹니다.
 
 민감 정보가 노출되었거나 취약점을 발견했다면 공개 issue에 secret 값을 붙여 넣지 마세요.
 
-가능하면 maintainer에게 먼저 비공개로 제보해 주세요.
+GitHub private vulnerability reporting이 활성화되어 있다면 그 기능을 사용해 주세요.
+
+private reporting이 보이지 않으면 repository profile 또는 maintainer가 공개한 기존 연락 경로를 사용해 먼저 알려 주세요.
 
 제보에는 다음 정보를 포함하면 도움이 됩니다.
 
@@ -52,6 +60,34 @@ Secret은 GitHub Secrets 또는 로컬 환경변수로만 다룹니다.
 - secret 값 자체를 제외한 관련 정황
 
 노출된 credential은 즉시 폐기하고 새 값으로 교체해야 합니다.
+
+## Secret handling
+
+`.env` 파일에 실제 값을 넣어 commit하지 마세요.
+
+API key를 screenshot에 포함하지 마세요.
+
+Discord Webhook URL을 issue, PR, docs, log, release note에 붙여 넣지 마세요.
+
+민감값은 GitHub Actions Secrets에 넣습니다.
+
+GitHub Actions Variables는 timezone, target time, feature flag처럼 비민감 설정에만 사용합니다.
+
+## Discord webhook safety
+
+Discord Webhook URL은 secret입니다.
+
+노출되었다면 Discord에서 webhook을 폐기하고 새 URL을 발급하세요.
+
+첫 설정에서는 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`와 `dry_run=true`로 전송을 막고 artifact부터 확인하세요.
+
+## GitHub Actions logs
+
+raw secret 값을 출력하지 마세요.
+
+민감값은 GitHub Actions Secrets masking에 맡기고, 스크립트에서 직접 echo하지 않습니다.
+
+로그나 screenshot을 공유하기 전에 webhook URL, token, private repository URL, Discord channel detail이 없는지 확인하세요.
 
 ## Automation boundaries
 

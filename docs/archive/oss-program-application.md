@@ -1,5 +1,9 @@
 # Codex Open Source Support Program Application Notes
 
+> Archived document.
+> This page is kept for historical context and is not the source of truth for current setup or workflow behavior.
+> Start with [Documentation Index](../README.md) for current docs.
+
 ## Purpose of this document
 
 This document collects copy-ready notes for a Codex Open Source Support Program application.

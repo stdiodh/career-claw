@@ -1,6 +1,6 @@
 # Backend Career Site Radar
 
-Backend Career Site Radar는 자동 추천 피드가 아니라, 사용자가 필요할 때 수동 실행하는 커리어 사이트 확인용 브리핑입니다.
+Backend Career Site Radar는 자동 추천 피드가 아니라, 수동 또는 주간 schedule로 실행하는 커리어 사이트 확인용 브리핑입니다.
 
 ## 실행 구성
 
@@ -46,6 +46,11 @@ Backend Career Site Radar는 자동 추천 피드가 아니라, 사용자가 필
 2. `Run workflow`를 선택합니다.
 3. `send_to_discord`를 `true`로 둡니다.
 4. Discord에서 사이트와 검색 키워드를 확인합니다.
+
+주간 schedule 시간은 GitHub Actions Variable `CAREER_FEED_CAREER_WEEKLY_DAY`와
+`CAREER_FEED_CAREER_WEEKLY_TIME`으로 설정합니다.
+
+Discord 전송은 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`일 때만 시도합니다.
 
 ## 로컬 확인
 

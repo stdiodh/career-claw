@@ -26,6 +26,7 @@ workflow run의 artifact `career-feed-kr-tech-daily-<run_id>`를 내려받아 �
 - `reports/candidates/kr-oss-contribution-opportunities.json`
 - `reports/ops/backend-daily-run-summary.json`
 - `reports/ops/backend-daily-run-summary.md`
+- `reports/ops/backend-daily-validation-report.md`
 - `reports/briefs/kr-tech-daily.md`
 
 `backend-daily-run-summary.md`의 OSS 영역은 사람이 빠르게 보는 요약입니다.
@@ -38,6 +39,7 @@ workflow run의 artifact `career-feed-kr-tech-daily-<run_id>`를 내려받아 �
 
 Discord에 issue가 나오지 않는 날은 실패가 아닐 수 있습니다. `kr-oss-contribution-opportunities.json`의
 `items`가 비어 있으면 safe 후보가 없다는 뜻이고, 브리핑은 OSS 기여 준비 루틴으로 fallback해야 합니다.
+validation report는 fallback 섹션에 GitHub issue URL이 섞이지 않았는지도 확인합니다.
 
 확인 순서:
 

@@ -1,0 +1,51 @@
+name: 기능 제안
+description: fork 사용자나 maintainer에게 필요한 기능을 제안합니다.
+title: "[기능] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        기능 제안은 작은 사용자 문제부터 설명해 주세요.
+
+        외부 저장소 자동 댓글, 자동 PR, 자동 assign, 자동 label 변경은 현재 범위 밖입니다.
+  - type: textarea
+    id: problem
+    attributes:
+      label: 해결하려는 사용자 문제
+      description: 어떤 사용자가 어떤 상황에서 막히는지 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: current-workaround
+    attributes:
+      label: 현재 문서나 workflow로 해결 가능한가요?
+      description: 기존 docs, Variables, dry-run, artifact review로 해결하기 어려운 이유를 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 제안하는 변경
+      description: 원하는 기능을 가능한 한 작게 설명해 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: safety와 validation 영향
+      description: secret, Discord delivery, validator, 외부 GitHub 저장소에 미치는 영향을 적어 주세요.
+    validations:
+      required: false
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: 범위 확인
+      options:
+        - label: 이 제안은 fake metric이나 fake adoption을 추가하지 않습니다.
+          required: true
+        - label: 이 제안은 외부 GitHub 저장소를 자동 조작하지 않습니다.
+          required: true
+        - label: secret이나 webhook URL을 포함하지 않았습니다.
+          required: true

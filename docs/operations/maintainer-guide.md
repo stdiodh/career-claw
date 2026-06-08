@@ -6,6 +6,11 @@
 - 생성된 briefing artifact와 validation report를 확인합니다.
 - Discord 전송 전 delivery lock과 skip reason artifact를 확인합니다.
 
+## Release checklist
+
+v0.1.0 공개 릴리스 전에는 [Release Checklist](../project/release-checklist.md)를 따라 CHANGELOG, release note, docs link, secret safety,
+validation artifact를 확인합니다.
+
 ## Validation-before-send checklist
 
 - `python3 scripts/check-workflow-schedules.py`

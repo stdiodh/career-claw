@@ -16,7 +16,7 @@ Korea Dev/AI News Daily는 평일 오전에 한국 개발/AI 뉴스를 정리해
 | validator | `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-news-daily.md --type daily-news` |
 | report | `reports/briefs/kr-tech-news-daily.md` |
 | Discord secret | `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` |
-| delivery lock | `career-feed-news-sent-${KST_DATE}` |
+| delivery lock | `career-feed-news-sent-${LOCAL_DATE}` |
 
 ## 후보 파일
 
@@ -90,7 +90,9 @@ News Daily를 수동으로 다시 보낼 때는 먼저 검증 run과 전송 run�
 `dry_run=true`에서는 Discord 전송과 delivery lock 저장을 하지 않습니다. `force_send=true`는 오늘 delivery
 lock이 있어도 생성, 검증, 전송을 수행하며, 전송 성공 시 delivery lock을 저장합니다.
 
-schedule 실행은 09:05 KST 전송 대기 단계가 있지만, `workflow_dispatch` 수동 실행에서는 이 wait 단계를 실행하지 않습니다.
+schedule 실행은 runtime gate가 통과한 경우에만 생성과 전송 단계를 진행합니다.
+
+`workflow_dispatch` 수동 실행은 runtime 시간 window 때문에 막히지 않습니다.
 
 ## 로컬 확인
 

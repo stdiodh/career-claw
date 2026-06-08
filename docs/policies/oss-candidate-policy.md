@@ -95,6 +95,9 @@ profile query가 후보를 발견했는지 설명하는 근거입니다. `search
 `safe_to_recommend=true`가 되려면 모든 조건을 만족해야 합니다.
 
 - issue가 open 상태입니다.
+- issue가 현재 실행 시점 기준 최근 N일 이내에 생성되었습니다.
+- 기본 N은 30일이며 `CAREER_FEED_OSS_RECENT_DAYS`로 조정합니다.
+- freshness 기준은 GitHub API의 `created_at`입니다. `updated_at`은 참고 정보일 뿐 추천 가능 조건으로 쓰지 않습니다.
 - issue가 configured repository에 속합니다.
 - assignee가 없습니다.
 - linked PR 또는 linked branch가 없습니다.
@@ -106,6 +109,20 @@ profile query가 후보를 발견했는지 설명하는 근거입니다. `search
 - contribution type이 저장소별 `preferred_contribution_types`에 포함됩니다.
 - 저장소별 `avoid_labels`와 `avoid_title_keywords`에 걸리지 않습니다.
 - score가 65점 이상입니다.
+
+Recency는 score 가점이 아니라 hard gate입니다.
+
+`created_at < now - CAREER_FEED_OSS_RECENT_DAYS`인 issue는 open 상태이고 `updated_at`이 최근이어도 추천하지 않습니다.
+
+`created_at`이 없거나 파싱할 수 없는 issue도 추천하지 않습니다.
+
+시간 비교는 UTC 기준으로 수행합니다.
+
+`CAREER_FEED_OSS_RECENT_DAYS`가 비어 있으면 30을 사용합니다.
+
+숫자가 아니거나 0 이하이면 30을 사용하고 warning을 남깁니다.
+
+365를 초과하면 365로 clamp하고 warning을 남깁니다.
 
 ## Positive Signal
 
@@ -159,6 +176,29 @@ profile query가 후보를 발견했는지 설명하는 근거입니다. `search
 Markdown의 issue URL은 `kr-oss-contribution-opportunities.json`의 `safe_to_recommend=true`
 item URL만 사용할 수 있습니다. `excluded_candidates_preview`에 있는 URL이나 `safe_to_recommend=false`
 item URL은 추천 섹션에 넣으면 validator가 실패합니다.
+
+최종 Daily Brief validator는 생성된 Markdown의 OSS 섹션을 candidate artifact allowlist와 다시 대조합니다.
+
+- candidate artifact에 없는 GitHub issue URL은 LLM hallucination으로 보고 실패합니다.
+- `safe_to_recommend=false` 또는 `is_recent=false` issue URL은 실패합니다.
+- `safe_to_recommend=true`로 표시되어 있어도 validator가 `created_at`을 다시 계산해 최근 N일 window 밖이면 실패합니다.
+- freshness 기준은 `created_at`이며 `updated_at`은 통과 근거가 아닙니다.
+- validator 실패 시 workflow가 중단되어 Discord 전송은 실행되지 않습니다.
+
+후보 artifact에는 recency 진단을 남깁니다.
+
+- `oss_recent_days`
+- `recency_window_start`
+- `recency_window_end`
+- `stale_issue_filtered_count`
+- `missing_created_at_filtered_count`
+- `invalid_created_at_filtered_count`
+- `safe_candidate_count`
+
+오래된 issue는 diagnostic artifact의 `excluded_candidates_preview`에 제외 사유와 함께 남을 수 있습니다.
+
+하지만 Daily Brief 입력의 `items`와 `safe_oss_candidates`에는 `safe_to_recommend=true` 후보만 들어가며,
+stale issue URL을 추천 후보로 전달하지 않습니다.
 
 준비 루틴은 다음과 같은 30분 행동 중 하나여야 합니다.
 

@@ -79,6 +79,31 @@ caption이나 callout은 짧게 사용합니다.
 
 브라우저 주소창에 token, query parameter, private repository path, 계정별 URL이 보이면 캡처하지 않습니다.
 
+## Fork onboarding demo checklist
+
+fork 사용자가 첫 실행 흐름을 이해하도록 데모에는 dry-run 중심 장면을 우선 포함합니다.
+
+권장 capture 대상은 다음과 같습니다.
+
+- GitHub Actions manual dispatch 화면
+- `dry_run=true` 입력이 보이는 dry-run 실행 화면
+- successful dry-run summary
+- generated Markdown artifact
+- validation report artifact
+- OSS safe 후보가 없을 때 fallback routine이 나온 결과
+- `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`로 전송을 켠 뒤의 Discord delivery 결과
+
+아직 이미지 파일이 없다면 README에서 이미지 링크를 걸지 말고, 이 목록을 기준으로 asset을 준비합니다.
+
+권장 파일명은 다음과 같습니다.
+
+- `docs/assets/demo/actions-manual-dispatch.png`
+- `docs/assets/demo/actions-dry-run-success.png`
+- `docs/assets/demo/generated-brief-artifact.png`
+- `docs/assets/demo/validation-report-artifact.png`
+- `docs/assets/demo/oss-fallback-example.png`
+- `docs/assets/demo/discord-daily-brief.png`
+
 ## 스크린샷 체크리스트
 
 권장 screenshot 파일은 다음과 같습니다.
@@ -253,9 +278,9 @@ PR merge 전에는 민감 정보가 없음을 사람이 직접 확인했다는 �
 ## 관련 문서
 
 - [README.md](../README.md)
-- [사용 가이드](usage.md)
-- [Daily Backend Brief 운영 문서](daily-backend-brief.md)
-- [Korea Dev/AI News Daily 운영 문서](daily-news-ops.md)
-- [Backend Career Site Radar 운영 문서](career-site-radar.md)
-- [로컬 검증 가이드](local-validation.md)
+- [사용 가이드](./getting-started/usage.md)
+- [Daily Backend Brief 운영 문서](./operations/daily-backend-brief.md)
+- [Korea Dev/AI News Daily 운영 문서](./operations/daily-news-ops.md)
+- [Backend Career Site Radar 운영 문서](./operations/career-site-radar.md)
+- [로컬 검증 가이드](./operations/local-validation.md)
 - [보안 정책](../SECURITY.md)

@@ -11,6 +11,9 @@ body:
         Career Feed에 추가하면 좋을 정보 출처를 제안해 주세요.
 
         공개적으로 확인 가능한 출처를 우선합니다.
+
+        좋은 제안 기준:
+        https://github.com/stdiodh/career-feed/blob/main/docs/contributing/source-suggestion-guide.md
   - type: input
     id: source-url
     attributes:
@@ -33,10 +36,29 @@ body:
       description: 이 출처가 어떤 문제를 줄여 주는지 적어 주세요.
     validations:
       required: true
+  - type: dropdown
+    id: reliability
+    attributes:
+      label: 출처 성격
+      options:
+        - 공식 문서 또는 공식 채널
+        - 회사 기술 블로그
+        - 공개 커뮤니티 또는 뉴스레터
+        - 채용/인턴/대외활동 공고 사이트
+        - 기타
+    validations:
+      required: true
+  - type: input
+    id: update-cadence
+    attributes:
+      label: 업데이트 빈도
+      placeholder: 예) daily, weekly, irregular
+    validations:
+      required: false
   - type: textarea
     id: notes
     attributes:
       label: 주의할 점
-      description: 광고성 여부, 로그인 필요 여부, 업데이트 빈도, 중복 가능성 등을 적어 주세요.
+      description: paywall, 로그인 필요 여부, scraping 제한, 광고성 여부, 중복 가능성 등을 적어 주세요.
     validations:
       required: false

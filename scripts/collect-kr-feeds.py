@@ -28,6 +28,7 @@ KST = ZoneInfo("Asia/Seoul")
 NAVER_CLIENT_ID_ENV = "NAVER_CLIENT_ID"
 NAVER_CLIENT_SECRET_ENV = "NAVER_CLIENT_SECRET"
 GITHUB_TOKEN_ENV_NAMES = ("GITHUB_TOKEN", "GH_TOKEN")
+OSS_RECENT_DAYS_ENV = "CAREER_FEED_OSS_RECENT_DAYS"
 REQUEST_TIMEOUT_SECONDS = 20
 SUMMARY_LIMIT = 240
 OSS_SUMMARY_LIMIT = 300
@@ -37,6 +38,8 @@ WEEKLY_MAX_DETAIL_PAGES = 80
 DEFAULT_DISPLAY = 10
 MAX_DISPLAY = 20
 DEFAULT_MAX_CANDIDATES = 30
+DEFAULT_OSS_RECENT_DAYS = 30
+MAX_OSS_RECENT_DAYS = 365
 OSS_REPOSITORIES_CONFIG_PATH = Path("configs/oss-repositories.json")
 PS_CURRICULUM_PATH = Path("configs/programmers-ps-curriculum.json")
 PS_PROGRESS_PATH = Path("data/ps-progress.json")
@@ -527,6 +530,11 @@ OSS_PREFERRED_CONTRIBUTION_TYPES = {
 }
 OSS_SCORE_EXCLUDE_THRESHOLD = 65
 OSS_EXCLUDED_PREVIEW_LIMIT = 5
+OSS_RECENCY_EXCLUSION_REASONS = {
+    "created_at_older_than_recent_window",
+    "missing_created_at",
+    "invalid_created_at",
+}
 OSS_REPOSITORY_TIE_ORDER = {
     "spring-projects/spring-security": 0,
     "spring-projects/spring-restdocs": 1,
@@ -547,6 +555,9 @@ OSS_EXCLUSION_REASON_DETAILS = {
     "not_open": "Issue is not open.",
     "not_issue": "GitHub search returned a pull request item instead of an issue.",
     "missing_required_fields": "Issue payload did not include the required title, URL, or number.",
+    "created_at_older_than_recent_window": "Issue was created before the configured recent window.",
+    "missing_created_at": "Issue is missing a created_at timestamp.",
+    "invalid_created_at": "Issue created_at timestamp could not be parsed.",
 }
 SOURCE_ERRORS: list[dict[str, str]] = []
 WARNINGS: list[str] = []
@@ -920,6 +931,11 @@ class OssIssueCandidate:
     created_at: datetime | None
     updated_at: datetime | None
     last_activity_at: datetime | None
+    is_recent: bool
+    recency_reason: str
+    oss_recent_days: int
+    recency_window_start: datetime
+    recency_window_end: datetime
     summary: str
     contribution_type: str
     junior_fit_score: int
@@ -986,6 +1002,10 @@ def now_kst() -> datetime:
 
 def format_kst(value: datetime) -> str:
     return value.astimezone(KST).strftime("%Y-%m-%d %H:%M:%S KST")
+
+
+def format_utc(value: datetime) -> str:
+    return value.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def strip_html(value: str) -> str:
@@ -1061,6 +1081,63 @@ def parse_datetime(value: str) -> datetime | None:
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=timezone.utc)
     return parsed.astimezone(KST)
+
+
+def parse_github_datetime(value: str) -> datetime | None:
+    parsed = parse_datetime(value)
+    if parsed is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def parse_oss_recent_days(value: str | None = None, *, warn: bool = True) -> int:
+    raw = (value if value is not None else os.environ.get(OSS_RECENT_DAYS_ENV, "")).strip()
+    if not raw:
+        return DEFAULT_OSS_RECENT_DAYS
+    try:
+        parsed = int(raw)
+    except ValueError:
+        if warn:
+            record_warning(
+                f"{OSS_RECENT_DAYS_ENV} must be numeric; using {DEFAULT_OSS_RECENT_DAYS}."
+            )
+        return DEFAULT_OSS_RECENT_DAYS
+    if parsed <= 0:
+        if warn:
+            record_warning(
+                f"{OSS_RECENT_DAYS_ENV} must be at least 1; using {DEFAULT_OSS_RECENT_DAYS}."
+            )
+        return DEFAULT_OSS_RECENT_DAYS
+    if parsed > MAX_OSS_RECENT_DAYS:
+        if warn:
+            record_warning(
+                f"{OSS_RECENT_DAYS_ENV} is greater than {MAX_OSS_RECENT_DAYS}; "
+                f"clamping to {MAX_OSS_RECENT_DAYS}."
+            )
+        return MAX_OSS_RECENT_DAYS
+    return parsed
+
+
+def get_recency_window(now: datetime, recent_days: int) -> tuple[datetime, datetime]:
+    now_utc = now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    return now_utc - timedelta(days=recent_days), now_utc
+
+
+def is_recent_issue(
+    created_at: str,
+    now: datetime,
+    recent_days: int,
+) -> tuple[bool, str]:
+    raw_created_at = str(created_at or "").strip()
+    if not raw_created_at:
+        return False, "missing_created_at"
+    parsed = parse_github_datetime(raw_created_at)
+    if parsed is None:
+        return False, "invalid_created_at"
+    window_start, _window_end = get_recency_window(now, recent_days)
+    if parsed >= window_start:
+        return True, "created_within_recent_window"
+    return False, "created_at_older_than_recent_window"
 
 
 def normalize_url(url: str) -> str:
@@ -3967,6 +4044,9 @@ def stable_oss_exclusion_reason(reason: str) -> str:
         "linked-work-check-unknown": "linked_work_check_incomplete",
         "unsupported-contribution-type": "unsupported_contribution_type",
         "score-below-65": "low_score",
+        "created_at_older_than_recent_window": "created_at_older_than_recent_window",
+        "missing_created_at": "missing_created_at",
+        "invalid_created_at": "invalid_created_at",
     }
     normalized = reason.strip().replace("-", "_")
     return mapping.get(reason, mapping.get(normalized, normalized or "fetch_error"))
@@ -4006,18 +4086,26 @@ def record_excluded_oss_candidate(
         title = "Security-sensitive issue redacted"
         url = ""
         labels = []
-    OSS_EXCLUDED_CANDIDATE_PREVIEW.append(
-        {
-            "repository": repository,
-            "issue_number": issue_number,
-            "title": title,
-            "url": url,
-            "labels": labels,
-            "reason": stable_reason,
-            "reason_detail": reason_detail
-            or OSS_EXCLUSION_REASON_DETAILS.get(stable_reason, "Issue was excluded by the OSS safety gate."),
-        }
-    )
+    item = {
+        "repository": repository,
+        "issue_number": issue_number,
+        "number": issue_number,
+        "title": title,
+        "url": url,
+        "state": str(issue.get("state", "")).strip(),
+        "created_at": str(issue.get("created_at", "")).strip(),
+        "updated_at": str(issue.get("updated_at", "")).strip(),
+        "labels": labels,
+        "safe_to_recommend": False,
+        "excluded_reasons": [stable_reason],
+        "reason": stable_reason,
+        "reason_detail": reason_detail
+        or OSS_EXCLUSION_REASON_DETAILS.get(stable_reason, "Issue was excluded by the OSS safety gate."),
+    }
+    if stable_reason in OSS_RECENCY_EXCLUSION_REASONS:
+        item["is_recent"] = False
+        item["recency_reason"] = stable_reason
+    OSS_EXCLUDED_CANDIDATE_PREVIEW.append(item)
 
 
 def exclude_oss_issue(
@@ -5053,6 +5141,7 @@ def build_oss_issue_candidate(
     issue: dict[str, object],
     token: str | None,
     current_time: datetime,
+    recent_days: int | None = None,
     search_source: str = "",
 ) -> OssIssueCandidate | None:
     if "pull_request" in issue:
@@ -5116,8 +5205,14 @@ def build_oss_issue_candidate(
         comments_count = int(issue.get("comments", 0))
     except (TypeError, ValueError):
         comments_count = 0
-    created_at = parse_datetime(str(issue.get("created_at", "")))
+    recent_days = DEFAULT_OSS_RECENT_DAYS if recent_days is None else recent_days
+    created_at_raw = str(issue.get("created_at", "")).strip()
+    created_at = parse_datetime(created_at_raw)
     updated_at = parse_datetime(str(issue.get("updated_at", "")))
+    recency_window_start, recency_window_end = get_recency_window(current_time, recent_days)
+    is_recent, recency_reason = is_recent_issue(created_at_raw, current_time, recent_days)
+    if not is_recent:
+        return exclude_oss_issue(recency_reason, repository, issue)
     searchable = f"{repository} {title} {summary} {' '.join(labels)}"
     label_title_text = f"{' '.join(labels)} {title}"
     if not maintainer_qualified:
@@ -5191,6 +5286,7 @@ def build_oss_issue_candidate(
         and claim_comment_check == "checked"
         and not claim_author
         and contribution_type in repository_preferred_types
+        and is_recent
     )
     if contribution_type not in repository_preferred_types:
         return exclude_oss_issue("unsupported-contribution-type", repository, issue)
@@ -5260,6 +5356,7 @@ def build_oss_issue_candidate(
         "matches_preferred_type": contribution_type in repository_preferred_types,
         "has_no_avoid_label": not text_contains_any(" ".join(labels), repository_avoid_labels),
         "has_no_avoid_keyword": not text_contains_any(title, repository_avoid_title_keywords),
+        "created_within_recent_window": is_recent,
     }
     junior_fit_evidence = junior_fit_evidence_for_issue(
         repository_priority=repository_priority,
@@ -5313,6 +5410,11 @@ def build_oss_issue_candidate(
         created_at=created_at,
         updated_at=updated_at,
         last_activity_at=updated_at,
+        is_recent=is_recent,
+        recency_reason=recency_reason,
+        oss_recent_days=recent_days,
+        recency_window_start=recency_window_start,
+        recency_window_end=recency_window_end,
         summary=summary,
         contribution_type=contribution_type,
         junior_fit_score=junior_fit_score,
@@ -5419,6 +5521,7 @@ def collect_oss_issue_candidates(
     difficulty_model = oss_config.get("difficulty_model", {})
     if not isinstance(difficulty_model, dict):
         difficulty_model = {}
+    recent_days = parse_oss_recent_days()
     token = get_github_token()
     candidates: list[OssIssueCandidate] = []
 
@@ -5452,6 +5555,7 @@ def collect_oss_issue_candidates(
                 issue,
                 token,
                 current_time,
+                recent_days,
                 search_source,
             )
             if (
@@ -5881,6 +5985,11 @@ def serialize_oss_issue_candidate(candidate: OssIssueCandidate) -> dict[str, obj
         "last_activity_at": format_kst(candidate.last_activity_at)
         if candidate.last_activity_at
         else "",
+        "is_recent": candidate.is_recent,
+        "recency_reason": candidate.recency_reason,
+        "oss_recent_days": candidate.oss_recent_days,
+        "recency_window_start": format_utc(candidate.recency_window_start),
+        "recency_window_end": format_utc(candidate.recency_window_end),
         "summary": candidate.summary,
         "contribution_type": candidate.contribution_type,
         "junior_fit_score": candidate.junior_fit_score,
@@ -6423,19 +6532,48 @@ def write_category_output(
             for candidate in candidates
             if isinstance(candidate, OssIssueCandidate) and candidate.safe_to_recommend
         ]
+        oss_recent_days = (
+            candidates[0].oss_recent_days
+            if candidates and isinstance(candidates[0], OssIssueCandidate)
+            else parse_oss_recent_days(warn=False)
+        )
+        recency_window_start, recency_window_end = get_recency_window(
+            generated_at,
+            oss_recent_days,
+        )
+        gate_exclusion_counts = dict(sorted(OSS_GATE_EXCLUSION_COUNTS.items()))
+        stale_issue_filtered_count = int(
+            gate_exclusion_counts.get("created_at_older_than_recent_window", 0)
+        )
+        missing_created_at_filtered_count = int(gate_exclusion_counts.get("missing_created_at", 0))
+        invalid_created_at_filtered_count = int(gate_exclusion_counts.get("invalid_created_at", 0))
         source_error_type_counts = oss_source_error_type_counts()
         payload = {
             "schema_version": 3,
             "category": category_id,
             "generated_at": format_kst(generated_at),
+            "oss_recent_days": oss_recent_days,
+            "recency_window_start": format_utc(recency_window_start),
+            "recency_window_end": format_utc(recency_window_end),
+            "stale_issue_filtered_count": stale_issue_filtered_count,
+            "invalid_created_at_filtered_count": invalid_created_at_filtered_count,
+            "safe_candidate_count": len(items),
             **common_candidate_metadata(mode, generated_at, items),
             "verification_policy": (
                 "Items are safe_to_recommend=true issues collected from current GitHub issue state. "
                 "Maintainer authorship or beginner-friendly maintainer triage, assignee absence, "
                 "linked work absence, claim comment absence, preferred contribution type, and "
-                "score >= 65 must all be verified."
+                "score >= 65 must all be verified. Issue created_at must also be within "
+                f"the recent {oss_recent_days}-day window; updated_at is informational only."
             ),
             "diagnostics": {
+                "oss_recent_days": oss_recent_days,
+                "recency_window_start": format_utc(recency_window_start),
+                "recency_window_end": format_utc(recency_window_end),
+                "stale_issue_filtered_count": stale_issue_filtered_count,
+                "missing_created_at_filtered_count": missing_created_at_filtered_count,
+                "invalid_created_at_filtered_count": invalid_created_at_filtered_count,
+                "safe_candidate_count": len(items),
                 "repositories_checked": [
                     str(item.get("repository", ""))
                     for item in OSS_REPOSITORY_DIAGNOSTICS
@@ -6445,7 +6583,7 @@ def write_category_output(
                 "filtered_items_count": sum(OSS_GATE_EXCLUSION_COUNTS.values()),
                 "repository_count": len(OSS_REPOSITORY_DIAGNOSTICS),
                 "repositories": OSS_REPOSITORY_DIAGNOSTICS,
-                "gate_exclusion_counts": dict(sorted(OSS_GATE_EXCLUSION_COUNTS.items())),
+                "gate_exclusion_counts": gate_exclusion_counts,
                 "source_error_type_counts": source_error_type_counts,
                 "excluded_candidates_preview": OSS_EXCLUDED_CANDIDATE_PREVIEW[:OSS_EXCLUDED_PREVIEW_LIMIT],
                 "github_api_error_count": sum(source_error_type_counts.values()),
@@ -6457,6 +6595,7 @@ def write_category_output(
                 "fallback_when_empty": "oss-preparation-routine",
             },
             "items": items,
+            "safe_oss_candidates": items,
             "excluded": [],
         }
     else:

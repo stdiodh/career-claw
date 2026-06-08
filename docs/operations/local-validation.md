@@ -51,6 +51,10 @@ git diff --check
 
 Negative fixture는 `./scripts/validate.sh` 안에서 실패해야 하는 케이스로 확인합니다.
 
+Daily Backend의 OSS 섹션은 `tests/test_daily_oss_contract.py`에서 candidate artifact와 함께 검증합니다.
+이 테스트는 safe candidate URL 통과, stale issue URL 실패, artifact에 없는 hallucinated URL 실패,
+safe 후보 0개 fallback 통과, fallback에 issue URL이 섞인 경우 실패를 확인합니다.
+
 ## `validate.sh`가 확인하는 것
 
 `./scripts/validate.sh`는 아래 범위를 한 번에 검사합니다.

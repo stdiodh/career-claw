@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import re
 import subprocess
@@ -17,6 +18,17 @@ VALIDATOR = ROOT / "scripts" / "validate-career-feed-brief.py"
 SAFE_URL = "https://github.com/spring-projects/spring-boot/issues/12345"
 OTHER_URL = "https://github.com/spring-projects/spring-boot/issues/67890"
 EXCLUDED_URL = "https://github.com/spring-projects/spring-boot/issues/33333"
+STALE_URL = "https://github.com/spring-projects/spring-boot/issues/44444"
+
+
+def load_validator_module():
+    spec = importlib.util.spec_from_file_location("career_feed_validator", VALIDATOR)
+    if spec is None or spec.loader is None:
+        raise AssertionError("Could not load validator module")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module
 
 
 def replace_oss_section(content: str, section: str) -> str:
@@ -100,12 +112,34 @@ def oss_candidate_section_without_maintainer_text(url: str = SAFE_URL) -> str:
 - 링크: [Issue 보기]({url})"""
 
 
-def candidate_payload(url: str = SAFE_URL, *, safe: bool = True) -> dict[str, object]:
+def candidate_payload(
+    url: str = SAFE_URL,
+    *,
+    safe: bool = True,
+    created_at: str = "2026-05-15 09:00:00 KST",
+    updated_at: str = "2026-05-30 09:00:00 KST",
+    is_recent: bool = True,
+    recency_reason: str = "created_within_recent_window",
+    safety_recency: bool = True,
+) -> dict[str, object]:
     return {
         "schema_version": 3,
         "category": "kr-oss-contribution-opportunities",
+        "oss_recent_days": 30,
+        "recency_window_start": "2026-05-02T00:00:00Z",
+        "recency_window_end": "2026-06-01T00:00:00Z",
+        "stale_issue_filtered_count": 0,
+        "invalid_created_at_filtered_count": 0,
+        "safe_candidate_count": 1 if safe else 0,
         "candidate_count": 1 if safe else 0,
         "diagnostics": {
+            "oss_recent_days": 30,
+            "recency_window_start": "2026-05-02T00:00:00Z",
+            "recency_window_end": "2026-06-01T00:00:00Z",
+            "stale_issue_filtered_count": 0,
+            "missing_created_at_filtered_count": 0,
+            "invalid_created_at_filtered_count": 0,
+            "safe_candidate_count": 1 if safe else 0,
             "safe_items_count": 1 if safe else 0,
             "source_error_type_counts": {},
             "excluded_candidates_preview": [
@@ -134,9 +168,14 @@ def candidate_payload(url: str = SAFE_URL, *, safe: bool = True) -> dict[str, ob
                 "issue_number": 12345,
                 "labels": ["status: ideal-for-contribution"],
                 "author_association": "MEMBER",
-                "created_at": "2026-05-01 09:00:00 KST",
-                "updated_at": "2026-05-30 09:00:00 KST",
-                "last_activity_at": "2026-05-30 09:00:00 KST",
+                "created_at": created_at,
+                "updated_at": updated_at,
+                "last_activity_at": updated_at,
+                "is_recent": is_recent,
+                "recency_reason": recency_reason,
+                "oss_recent_days": 30,
+                "recency_window_start": "2026-05-02T00:00:00Z",
+                "recency_window_end": "2026-06-01T00:00:00Z",
                 "difficulty_band": "p5_like",
                 "contribution_type": "docs",
                 "score": 92,
@@ -158,6 +197,7 @@ def candidate_payload(url: str = SAFE_URL, *, safe: bool = True) -> dict[str, ob
                     "matches_preferred_type": True,
                     "has_no_avoid_label": True,
                     "has_no_avoid_keyword": True,
+                    "created_within_recent_window": safety_recency,
                 },
                 "junior_fit_evidence": ["preferred contribution type: docs"],
                 "maintainer_signal": "maintainer-authored",
@@ -170,6 +210,18 @@ def candidate_payload(url: str = SAFE_URL, *, safe: bool = True) -> dict[str, ob
         ]
         if safe
         else [],
+        "safe_oss_candidates": []
+        if not safe
+        else [
+            {
+                "title": "Improve getting started documentation",
+                "url": url,
+                "repository": "spring-projects/spring-boot",
+                "safe_to_recommend": True,
+                "is_recent": is_recent,
+                "recency_reason": recency_reason,
+            }
+        ],
     }
 
 
@@ -254,7 +306,7 @@ def test_empty_candidate_rejects_issue_url() -> None:
     markdown = replace_oss_section(base, oss_candidate_section())
     assert_fails(
         run_validator(markdown, candidate_payload(safe=False)),
-        "not safe_to_recommend=true",
+        "OSS_FALLBACK_CONTAINS_ISSUE_URL",
     )
 
 
@@ -263,7 +315,7 @@ def test_hallucinated_issue_url_is_rejected() -> None:
     markdown = replace_oss_section(base, oss_candidate_section(OTHER_URL))
     assert_fails(
         run_validator(markdown, candidate_payload()),
-        "not safe_to_recommend=true",
+        "OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES",
     )
 
 
@@ -272,7 +324,60 @@ def test_excluded_issue_url_is_rejected() -> None:
     markdown = replace_oss_section(base, oss_candidate_section(EXCLUDED_URL))
     assert_fails(
         run_validator(markdown, candidate_payload()),
-        "excluded or not safe_to_recommend=true",
+        "OSS_ISSUE_URL_NOT_SAFE_TO_RECOMMEND",
+    )
+
+
+def test_stale_2023_issue_url_is_rejected() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    markdown = replace_oss_section(base, oss_candidate_section(STALE_URL))
+    assert_fails(
+        run_validator(
+            markdown,
+            candidate_payload(
+                STALE_URL,
+                created_at="2023-04-10T00:00:00Z",
+                updated_at="2026-05-30T00:00:00Z",
+            ),
+        ),
+        "OSS_ISSUE_URL_NOT_RECENT",
+    )
+
+
+def test_candidate_created_31_days_ago_is_rejected() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    markdown = replace_oss_section(base, oss_candidate_section())
+    assert_fails(
+        run_validator(
+            markdown,
+            candidate_payload(created_at="2026-05-01T23:59:59Z"),
+        ),
+        "OSS_ISSUE_URL_NOT_RECENT",
+    )
+
+
+def test_candidate_invalid_created_at_is_rejected() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    markdown = replace_oss_section(base, oss_candidate_section())
+    assert_fails(
+        run_validator(markdown, candidate_payload(created_at="not-a-date")),
+        "OSS_ISSUE_URL_INVALID_CREATED_AT",
+    )
+
+
+def test_candidate_is_recent_false_is_rejected() -> None:
+    base = VALID_DAILY_FIXTURE.read_text(encoding="utf-8")
+    markdown = replace_oss_section(base, oss_candidate_section())
+    assert_fails(
+        run_validator(
+            markdown,
+            candidate_payload(
+                is_recent=False,
+                recency_reason="created_at_older_than_recent_window",
+                safety_recency=True,
+            ),
+        ),
+        "OSS_ISSUE_URL_NOT_RECENT",
     )
 
 
@@ -288,8 +393,24 @@ def test_fallback_routine_rejects_invented_issue_url() -> None:
     markdown = replace_oss_section(base, section)
     assert_fails(
         run_validator(markdown, candidate_payload(safe=False)),
-        "not safe_to_recommend=true",
+        "OSS_FALLBACK_CONTAINS_ISSUE_URL",
     )
+
+
+def test_github_issue_url_extraction_and_normalization() -> None:
+    validator = load_validator_module()
+    markdown = """
+- markdown: [Issue](https://github.com/Spring-Projects/Spring-Boot/issues/12345?utm=test#note)
+- plain: http://github.com/spring-projects/spring-boot/issues/12345
+- angle: <https://github.com/spring-projects/spring-boot/issues/12345/>
+"""
+    urls = validator.extract_github_issue_urls(markdown)
+    normalized = [validator.normalize_github_issue_url(url) for url in urls]
+    assert normalized == [
+        SAFE_URL,
+        SAFE_URL,
+        SAFE_URL,
+    ]
 
 
 def test_first_action_rejects_overscoped_pr_wording() -> None:
@@ -335,8 +456,13 @@ def main() -> int:
         test_empty_candidate_rejects_issue_url,
         test_hallucinated_issue_url_is_rejected,
         test_excluded_issue_url_is_rejected,
+        test_stale_2023_issue_url_is_rejected,
+        test_candidate_created_31_days_ago_is_rejected,
+        test_candidate_invalid_created_at_is_rejected,
+        test_candidate_is_recent_false_is_rejected,
         test_fallback_routine_passes_without_safe_candidate,
         test_fallback_routine_rejects_invented_issue_url,
+        test_github_issue_url_extraction_and_normalization,
         test_first_action_rejects_overscoped_pr_wording,
         test_safe_candidate_missing_score_is_rejected,
         test_safe_candidate_payload_missing_required_field_is_rejected,

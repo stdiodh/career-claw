@@ -134,10 +134,12 @@ Spring/JVM 학습 후보는 다음 주제군에서 고른다.
 
 - open issue여야 한다.
 - 고정 issue 번호를 추정해서 쓰지 않는다. 매 실행의 `kr-oss-contribution-opportunities.json`이 현재 GitHub issue 상태를 확인한 결과다.
-- 후보 JSON의 `items`에 들어 있고 `safe_to_recommend=true`여야 한다.
+- 후보 JSON의 `items` 또는 `safe_oss_candidates`에 들어 있고 `safe_to_recommend=true`여야 한다.
 - `링크`의 Issue URL은 반드시 해당 safe candidate의 `url` 값을 그대로 사용한다.
 - `왜 시도해볼 만한가`는 `junior_fit_evidence`, `repository_priority`, `repository_initial_fit_score`, `repository_junior_notes`, `repository_docs_or_test_hints`, `contribution_type`, `score_breakdown`, `search_source`를 근거로 쓴다.
 - `diagnostics.excluded_candidates_preview`에 있는 issue URL이나 `safe_to_recommend=false` item URL은 추천하지 않는다.
+- `created_at`이 `oss_recent_days` 기준 최근 window 안에 있어야 한다. 이 기준은 hard gate이며 `updated_at`이 최근이어도 `created_at`이 오래된 issue는 추천하지 않는다.
+- `is_recent=true`, `recency_reason=created_within_recent_window`, `safety_checks.created_within_recent_window=true`인 후보만 사용한다.
 - assignee가 없어야 한다.
 - linked PR/branch가 없어야 한다.
 - 댓글에서 누군가 작업 의사를 밝힌 흔적이 없어야 한다.
@@ -150,6 +152,7 @@ Spring/JVM 학습 후보는 다음 주제군에서 고른다.
 - 첫 댓글 초안은 영어로 짧게 쓰고, "I will take this issue"처럼 강하게 점유하지 않는다. 작은 docs/test/example 중심 확인 계획이 괜찮은지 묻는다.
 - 후보 JSON은 여러 safe candidate를 유지할 수 있지만 Daily Brief는 상세 후보 1개만 작성한다. 보조 후보는 출력하지 않는다.
 - OSS 섹션에는 추천한 상세 후보의 GitHub issue URL 1개만 포함한다.
+- 추천 문장에는 issue가 최근 N일 이내 생성되었다는 점을 간단히 언급하되, `updated_at`만 보고 최근 후보라고 쓰지 않는다.
 
 safe issue가 없으면 오늘은 후보가 없습니다로 끝내지 말고 아래 형식의 OSS 기여 준비 루틴을 출력한다. 이 준비 루틴은 특정 issue를 잡으라고 말하면 안 되며, 기여자로 성장하는 데 필요한 실전 행동이어야 한다.
 `kr-oss-contribution-opportunities.json`에 safe 후보가 없으면 추정으로 issue를 만들지 않고 GitHub issue URL도 출력하지 않는다.

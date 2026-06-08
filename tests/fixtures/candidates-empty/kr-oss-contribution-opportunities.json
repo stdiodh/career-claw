@@ -2,8 +2,21 @@
   "schema_version": 3,
   "category": "kr-oss-contribution-opportunities",
   "candidate_count": 0,
-  "verification_policy": "Items are safe_to_recommend=true issues collected from current GitHub issue state.",
+  "oss_recent_days": 30,
+  "recency_window_start": "2026-05-02T00:00:00Z",
+  "recency_window_end": "2026-06-01T00:00:00Z",
+  "stale_issue_filtered_count": 0,
+  "invalid_created_at_filtered_count": 0,
+  "safe_candidate_count": 0,
+  "verification_policy": "Items are safe_to_recommend=true issues collected from current GitHub issue state and recent created_at window.",
   "diagnostics": {
+    "oss_recent_days": 30,
+    "recency_window_start": "2026-05-02T00:00:00Z",
+    "recency_window_end": "2026-06-01T00:00:00Z",
+    "stale_issue_filtered_count": 0,
+    "missing_created_at_filtered_count": 0,
+    "invalid_created_at_filtered_count": 0,
+    "safe_candidate_count": 0,
     "repositories_checked": [],
     "safe_items_count": 0,
     "filtered_items_count": 0,
@@ -14,5 +27,6 @@
     "fallback_when_empty": "oss-preparation-routine"
   },
   "source_errors": [],
-  "items": []
+  "items": [],
+  "safe_oss_candidates": []
 }
