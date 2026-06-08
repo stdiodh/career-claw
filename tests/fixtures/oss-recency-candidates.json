@@ -1,0 +1,48 @@
+{
+  "now": "2026-06-01T00:00:00Z",
+  "recent_days": 30,
+  "cases": [
+    {
+      "name": "created_29_days_ago",
+      "created_at": "2026-05-03T00:00:00Z",
+      "updated_at": "2026-05-30T00:00:00Z",
+      "expected_is_recent": true,
+      "expected_reason": "created_within_recent_window"
+    },
+    {
+      "name": "created_exactly_30_days_ago",
+      "created_at": "2026-05-02T00:00:00Z",
+      "updated_at": "2026-05-30T00:00:00Z",
+      "expected_is_recent": true,
+      "expected_reason": "created_within_recent_window"
+    },
+    {
+      "name": "created_31_days_ago",
+      "created_at": "2026-05-01T00:00:00Z",
+      "updated_at": "2026-05-30T00:00:00Z",
+      "expected_is_recent": false,
+      "expected_reason": "created_at_older_than_recent_window"
+    },
+    {
+      "name": "old_2023_issue_recently_updated",
+      "created_at": "2023-04-10T00:00:00Z",
+      "updated_at": "2026-05-31T00:00:00Z",
+      "expected_is_recent": false,
+      "expected_reason": "created_at_older_than_recent_window"
+    },
+    {
+      "name": "missing_created_at",
+      "created_at": "",
+      "updated_at": "2026-05-31T00:00:00Z",
+      "expected_is_recent": false,
+      "expected_reason": "missing_created_at"
+    },
+    {
+      "name": "invalid_created_at",
+      "created_at": "not-a-date",
+      "updated_at": "2026-05-31T00:00:00Z",
+      "expected_is_recent": false,
+      "expected_reason": "invalid_created_at"
+    }
+  ]
+}

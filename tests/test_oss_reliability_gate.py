@@ -9,7 +9,7 @@ import json
 import sys
 import tempfile
 import urllib.error
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.message import Message
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "collect-kr-feeds.py"
+RECENCY_FIXTURE_PATH = ROOT / "tests" / "fixtures" / "oss-recency-candidates.json"
 KST = ZoneInfo("Asia/Seoul")
 
 
@@ -74,6 +75,7 @@ CURRENT_TIME = datetime(2026, 6, 1, 9, 0, tzinfo=KST)
 
 def reset_gate() -> None:
     collector.SOURCE_ERRORS.clear()
+    collector.WARNINGS.clear()
     collector.OSS_GATE_EXCLUSION_COUNTS.clear()
     collector.OSS_EXCLUDED_CANDIDATE_PREVIEW.clear()
     collector.fetch_github_issue_comments = (
@@ -103,14 +105,18 @@ def issue_payload(**overrides: object) -> dict[str, object]:
         "labels": [{"name": "status: ideal-for-contribution"}],
         "assignees": [],
         "comments": 0,
-        "created_at": "2026-05-01T00:00:00Z",
+        "created_at": "2026-05-15T00:00:00Z",
         "updated_at": "2026-05-30T00:00:00Z",
     }
     payload.update(overrides)
     return payload
 
 
-def build_candidate(issue: dict[str, object], oss_config: dict[str, object] | None = None):
+def build_candidate(
+    issue: dict[str, object],
+    oss_config: dict[str, object] | None = None,
+    recent_days: int = 30,
+):
     return collector.build_oss_issue_candidate(
         CATEGORY,
         DIFFICULTY_MODEL,
@@ -119,6 +125,7 @@ def build_candidate(issue: dict[str, object], oss_config: dict[str, object] | No
         issue,
         "token",
         CURRENT_TIME,
+        recent_days,
     )
 
 
@@ -197,6 +204,111 @@ def test_repository_profile_is_reflected_in_candidate_evidence() -> None:
     assert serialized["junior_fit_evidence"]
     assert serialized["repository_local_check_hints"] == ["./gradlew test"]
     assert serialized["repository_docs_or_test_hints"] == ["spring-boot docs"]
+    assert serialized["is_recent"] is True
+    assert serialized["recency_reason"] == "created_within_recent_window"
+    assert serialized["oss_recent_days"] == 30
+    assert serialized["safety_checks"]["created_within_recent_window"] is True
+
+
+def test_recent_days_defaults_to_30() -> None:
+    assert collector.parse_oss_recent_days("", warn=False) == 30
+
+
+def test_recent_days_accepts_custom_value() -> None:
+    assert collector.parse_oss_recent_days("14", warn=False) == 14
+
+
+def test_recent_days_invalid_value_uses_default_with_warning() -> None:
+    reset_gate()
+    assert collector.parse_oss_recent_days("abc") == 30
+    assert collector.WARNINGS
+
+
+def test_recent_days_over_max_is_clamped_with_warning() -> None:
+    reset_gate()
+    assert collector.parse_oss_recent_days("999") == 365
+    assert collector.WARNINGS
+
+
+def test_issue_created_29_days_ago_passes_recency() -> None:
+    created_at = (CURRENT_TIME.astimezone(collector.timezone.utc) - timedelta(days=29)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    is_recent, reason = collector.is_recent_issue(created_at, CURRENT_TIME, 30)
+    assert is_recent is True
+    assert reason == "created_within_recent_window"
+
+
+def test_issue_created_exactly_30_days_ago_passes_recency() -> None:
+    created_at = (CURRENT_TIME.astimezone(collector.timezone.utc) - timedelta(days=30)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    is_recent, reason = collector.is_recent_issue(created_at, CURRENT_TIME, 30)
+    assert is_recent is True
+    assert reason == "created_within_recent_window"
+
+
+def test_issue_created_31_days_ago_fails_recency() -> None:
+    created_at = (CURRENT_TIME.astimezone(collector.timezone.utc) - timedelta(days=31)).strftime(
+        "%Y-%m-%dT%H:%M:%SZ"
+    )
+    is_recent, reason = collector.is_recent_issue(created_at, CURRENT_TIME, 30)
+    assert is_recent is False
+    assert reason == "created_at_older_than_recent_window"
+
+
+def test_recency_fixture_cases_are_enforced() -> None:
+    fixture = json.loads(RECENCY_FIXTURE_PATH.read_text(encoding="utf-8"))
+    now = datetime.fromisoformat(str(fixture["now"]).replace("Z", "+00:00"))
+    recent_days = int(fixture["recent_days"])
+    for case in fixture["cases"]:
+        is_recent, reason = collector.is_recent_issue(
+            str(case.get("created_at", "")),
+            now,
+            recent_days,
+        )
+        assert is_recent is case["expected_is_recent"], case["name"]
+        assert reason == case["expected_reason"], case["name"]
+
+
+def test_old_issue_with_recent_updated_at_is_excluded() -> None:
+    reset_gate()
+    candidate = build_candidate(
+        issue_payload(
+            number=202304,
+            html_url="https://github.com/spring-projects/spring-boot/issues/202304",
+            created_at="2023-04-10T00:00:00Z",
+            updated_at="2026-05-31T00:00:00Z",
+        )
+    )
+    assert candidate is None
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("created_at_older_than_recent_window", 0) == 1
+    preview = collector.OSS_EXCLUDED_CANDIDATE_PREVIEW[0]
+    assert preview["recency_reason"] == "created_at_older_than_recent_window"
+    assert preview["safe_to_recommend"] is False
+
+
+def test_missing_created_at_is_excluded() -> None:
+    reset_gate()
+    payload = issue_payload()
+    payload.pop("created_at")
+    candidate = build_candidate(payload)
+    assert candidate is None
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("missing_created_at", 0) == 1
+
+
+def test_invalid_created_at_is_excluded() -> None:
+    reset_gate()
+    candidate = build_candidate(issue_payload(created_at="not-a-date"))
+    assert candidate is None
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("invalid_created_at", 0) == 1
+
+
+def test_custom_recent_days_changes_window() -> None:
+    reset_gate()
+    candidate = build_candidate(issue_payload(created_at="2026-05-15T00:00:00Z"), recent_days=14)
+    assert candidate is None
+    assert collector.OSS_GATE_EXCLUSION_COUNTS.get("created_at_older_than_recent_window", 0) == 1
 
 
 def test_repository_avoid_label_is_excluded() -> None:
@@ -407,6 +519,70 @@ def test_empty_oss_payload_keeps_diagnostics() -> None:
     assert diagnostics["source_error_type_counts"] == {}
     assert diagnostics["excluded_candidates_preview"] == []
     assert diagnostics["fallback_when_empty"] == "oss-preparation-routine"
+    assert diagnostics["oss_recent_days"] == 30
+    assert diagnostics["safe_candidate_count"] == 0
+
+
+def test_artifact_records_stale_filter_without_safe_input_leak() -> None:
+    reset_gate()
+    stale_url = "https://github.com/spring-projects/spring-boot/issues/202304"
+    stale = build_candidate(
+        issue_payload(
+            number=202304,
+            html_url=stale_url,
+            created_at="2023-04-10T00:00:00Z",
+            updated_at="2026-05-31T00:00:00Z",
+        )
+    )
+    safe = build_candidate(issue_payload(number=202606))
+    assert stale is None
+    assert safe is not None
+
+    with tempfile.TemporaryDirectory() as tmp:
+        output_dir = Path(tmp) / "candidates"
+        category = {"id": collector.OSS_CATEGORY_ID}
+        collector.write_category_output(output_dir, category, CURRENT_TIME, [safe], "daily-backend")
+        payload = json.loads((output_dir / f"{collector.OSS_CATEGORY_ID}.json").read_text(encoding="utf-8"))
+
+    diagnostics = payload["diagnostics"]
+    assert payload["oss_recent_days"] == 30
+    assert payload["stale_issue_filtered_count"] == 1
+    assert payload["safe_candidate_count"] == 1
+    assert diagnostics["stale_issue_filtered_count"] == 1
+    assert diagnostics["gate_exclusion_counts"]["created_at_older_than_recent_window"] == 1
+    assert payload["items"][0]["safe_to_recommend"] is True
+    assert payload["items"][0]["is_recent"] is True
+    assert stale_url not in json.dumps(payload["items"], ensure_ascii=False)
+    assert stale_url not in json.dumps(payload["safe_oss_candidates"], ensure_ascii=False)
+    assert diagnostics["excluded_candidates_preview"][0]["url"] == stale_url
+
+
+def test_fallback_payload_when_no_recent_safe_candidates() -> None:
+    reset_gate()
+    stale_url = "https://github.com/spring-projects/spring-boot/issues/202304"
+    stale = build_candidate(
+        issue_payload(
+            number=202304,
+            html_url=stale_url,
+            created_at="2023-04-10T00:00:00Z",
+            updated_at="2026-05-31T00:00:00Z",
+        )
+    )
+    assert stale is None
+
+    with tempfile.TemporaryDirectory() as tmp:
+        output_dir = Path(tmp) / "candidates"
+        category = {"id": collector.OSS_CATEGORY_ID}
+        collector.write_category_output(output_dir, category, CURRENT_TIME, [], "daily-backend")
+        payload = json.loads((output_dir / f"{collector.OSS_CATEGORY_ID}.json").read_text(encoding="utf-8"))
+
+    diagnostics = payload["diagnostics"]
+    assert payload["items"] == []
+    assert payload["safe_oss_candidates"] == []
+    assert payload["safe_candidate_count"] == 0
+    assert diagnostics["fallback_when_empty"] == "oss-preparation-routine"
+    assert diagnostics["stale_issue_filtered_count"] == 1
+    assert stale_url not in json.dumps(payload["safe_oss_candidates"], ensure_ascii=False)
 
 
 def main() -> int:
@@ -414,6 +590,18 @@ def main() -> int:
         test_safe_maintainer_authored_issue,
         test_safe_maintainer_triaged_issue,
         test_repository_profile_is_reflected_in_candidate_evidence,
+        test_recent_days_defaults_to_30,
+        test_recent_days_accepts_custom_value,
+        test_recent_days_invalid_value_uses_default_with_warning,
+        test_recent_days_over_max_is_clamped_with_warning,
+        test_issue_created_29_days_ago_passes_recency,
+        test_issue_created_exactly_30_days_ago_passes_recency,
+        test_issue_created_31_days_ago_fails_recency,
+        test_recency_fixture_cases_are_enforced,
+        test_old_issue_with_recent_updated_at_is_excluded,
+        test_missing_created_at_is_excluded,
+        test_invalid_created_at_is_excluded,
+        test_custom_recent_days_changes_window,
         test_repository_avoid_label_is_excluded,
         test_repository_avoid_title_keyword_is_excluded,
         test_repository_preferred_contribution_types_are_required,
@@ -429,6 +617,8 @@ def main() -> int:
         test_source_error_type_counts_are_stable,
         test_profile_search_queries_drive_collection,
         test_empty_oss_payload_keeps_diagnostics,
+        test_artifact_records_stale_filter_without_safe_input_leak,
+        test_fallback_payload_when_no_recent_safe_candidates,
     ]
     for test in tests:
         test()

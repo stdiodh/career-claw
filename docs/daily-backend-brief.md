@@ -12,7 +12,7 @@ Daily Backend Brief는 평일 오전에 백엔드 학습, PS 루틴, OSS 기여 
 | validator | `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech --candidates-dir reports/candidates` |
 | report | `reports/briefs/kr-tech-daily.md` |
 | Discord secret | `DISCORD_WEBHOOK_KR_TECH_DAILY` |
-| delivery lock | `career-feed-backend-sent-${KST_DATE}` |
+| delivery lock | `career-feed-backend-sent-${LOCAL_DATE}` |
 | 운영 요약 | `reports/ops/backend-daily-run-summary.json`, `reports/ops/backend-daily-run-summary.md` |
 
 ## 후보 파일
@@ -80,6 +80,12 @@ Daily Backend validator는 다음을 확인합니다.
 - 포털/언론 도메인을 Spring/JVM 학습과 실무 충전 레퍼런스로 쓰면 실패합니다.
 - Markdown의 OSS issue URL이 `kr-oss-contribution-opportunities.json`의
   `safe_to_recommend=true` 후보 URL과 다르면 실패합니다.
+- OSS issue URL은 candidate artifact allowlist에 있어야 하며, `is_recent=true`이고
+  `created_at`이 `CAREER_FEED_OSS_RECENT_DAYS` 기준 window 안에 있어야 합니다.
+- `updated_at`이 최근이어도 `created_at`이 오래된 issue URL은 실패합니다.
+- safe 후보가 0개인 날은 fallback 준비 루틴만 허용하며, OSS 섹션에 GitHub issue URL이 있으면 실패합니다.
 - PR 생성, 전체 구현, 전체 리팩터링처럼 첫 30분 액션 범위를 넘는 표현을 거부합니다.
+
+validator가 실패하면 workflow가 중단되므로 Discord 전송 step은 실행되지 않습니다.
 
 운영 artifact 해석은 [Daily Growth Ops](./daily-growth-ops.md)를 봅니다.

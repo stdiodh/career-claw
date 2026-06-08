@@ -141,11 +141,31 @@ Daily workflow는 기본적으로 예약 실행과 수동 실행을 모두 고�
 - News Daily는 기준을 만족하는 뉴스가 3개 미만이어도 sparse 또는 empty 정책에 맞으면 성공으로 처리할 수 있습니다.
 - 실패 알림 webhook은 선택 secret이며, 없다고 workflow가 실패해서는 안 됩니다.
 
-구체적인 실행 시간은 `.github/workflows/*.yml` 파일과 `scripts/check-workflow-schedules.py` 검증 결과를 기준으로 확인합니다.
+구체적인 실행 시간과 Discord 전송 여부는 GitHub Actions Variables로 조정합니다.
+
+GitHub Actions cron은 Variables를 직접 참조할 수 없으므로 workflow는 주기적으로 깨어나고 runtime gate가 실행 여부를 판단합니다.
+
+자세한 설정 방법은 [Runtime Configuration](docs/runtime-configuration.md)을 참고해 주세요.
 
 ## Quick Start
 
-로컬에서 저장소를 확인하려면 다음 순서로 시작합니다.
+fork해서 GitHub Actions와 Discord에서 운영하려면 다음 순서로 시작합니다.
+
+1. 이 repository를 fork합니다.
+2. GitHub Actions Secrets에 API key와 Discord webhook을 등록합니다.
+3. GitHub Actions Variables에 timezone, 실행 시간, OSS 후보 freshness, delivery flag를 등록합니다.
+4. `Daily Korea Tech Brief` workflow를 `dry_run=true`로 실행합니다.
+5. generated artifacts와 validation reports를 확인합니다.
+6. 결과가 맞으면 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`로 Discord 전송을 켭니다.
+
+전체 walkthrough는 [Fork Setup Guide](docs/fork-setup.md)를 따라가세요.
+
+Secrets와 Variables는 분리해서 설정합니다. Secret은 API key와 webhook URL에만 사용하고,
+실행 시간 같은 비민감 운영 설정은 Variables에 둡니다.
+
+처음 실행은 반드시 dry-run으로 시작하는 것을 권장합니다.
+
+로컬에서 저장소를 확인하려면 다음 명령을 실행합니다.
 
 ```bash
 git clone https://github.com/stdiodh/career-feed.git
@@ -153,15 +173,19 @@ cd career-feed
 ./scripts/validate.sh
 ```
 
-GitHub Actions로 실제 브리핑을 운영하려면 필요한 secrets를 먼저 등록합니다.
-
-처음에는 Discord 전송을 바로 켜기보다 dry-run artifacts와 validation reports를 확인하는 것을 권장합니다.
-
 ## 사용법과 데모
 
 Career Feed는 GitHub Actions 실행, validation artifacts 확인, Discord Webhook 전송으로 운영합니다.
 
 실행 방법과 결과 형태를 빠르게 확인하려면 [사용 가이드](docs/usage.md)와 [데모 가이드](docs/demo.md)를 참고해 주세요.
+
+처음 fork에서 실행한다면 [Fork Setup Guide](docs/fork-setup.md)를 먼저 보세요.
+
+fork에서 실행 시간과 Discord delivery flag를 설정하려면 [Runtime Configuration](docs/runtime-configuration.md)을 먼저 확인해 주세요.
+
+OSS 후보 freshness와 fallback 정책은 [OSS Candidate Policy](docs/oss-candidate-policy.md)를 따릅니다.
+
+Daily Backend Brief validator와 fallback 정책은 [Daily Backend Brief 운영 문서](docs/daily-backend-brief.md)를 참고해 주세요.
 
 데모는 redacted 또는 mock data를 사용합니다.
 
@@ -176,9 +200,9 @@ Career Feed는 GitHub Actions 실행, validation artifacts 확인, Discord Webho
 | Secret | Required | Purpose |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Yes | OpenAI API를 사용한 브리핑 초안 생성과 정보 정리 |
-| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Yes | Daily Backend Brief Discord 전송 |
-| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Yes | Korea Dev/AI News Daily Discord 전송 |
-| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Yes | Backend Career Site Radar Discord 전송 |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Discord 전송 시 Yes | Daily Backend Brief Discord 전송 |
+| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Discord 전송 시 Yes | Korea Dev/AI News Daily Discord 전송 |
+| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Discord 전송 시 Yes | Backend Career Site Radar Discord 전송 |
 | `NAVER_CLIENT_ID` | Optional | 한국 뉴스 후보 수집 또는 품질 개선에 사용하는 Naver API credential |
 | `NAVER_CLIENT_SECRET` | Optional | 한국 뉴스 후보 수집 또는 품질 개선에 사용하는 Naver API credential |
 | `DISCORD_WEBHOOK_CAREER_FEED_OPS` | Optional | workflow 실패 알림용 Discord Webhook |
@@ -186,6 +210,26 @@ Career Feed는 GitHub Actions 실행, validation artifacts 확인, Discord Webho
 `DISCORD_WEBHOOK_CAREER_FEED_OPS`는 선택 값입니다.
 
 이 값이 없을 때도 실패 알림 전송만 생략하고 workflow 자체가 실패하지 않아야 합니다.
+
+## Runtime variables
+
+다음 값은 GitHub Actions Variables로 관리합니다.
+
+실제 실행 시간과 Discord 전송 활성화 여부를 바꾸기 위해 workflow YAML을 직접 수정하지 않아도 됩니다.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `CAREER_FEED_TIMEZONE` | `Asia/Seoul` | runtime gate가 사용할 기준 시간대 |
+| `CAREER_FEED_BACKEND_DAILY_TIME` | `09:00` | Daily Backend Brief 실행 희망 시간 |
+| `CAREER_FEED_NEWS_DAILY_TIME` | `09:05` | Korea Dev/AI News Daily 실행 희망 시간 |
+| `CAREER_FEED_CAREER_WEEKLY_DAY` | `MON` | Backend Career Site Radar 실행 요일 |
+| `CAREER_FEED_CAREER_WEEKLY_TIME` | `09:00` | Backend Career Site Radar 실행 희망 시간 |
+| `CAREER_FEED_OSS_RECENT_DAYS` | `30` | OSS 후보 `created_at` 기준 freshness hard gate |
+| `CAREER_FEED_DISCORD_DELIVERY_ENABLED` | `false` | Discord Webhook 전송 활성화 여부 |
+
+`dry_run=true`이면 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`여도 Discord로 전송하지 않습니다.
+
+처음 설정할 때는 [Runtime Configuration](docs/runtime-configuration.md)의 순서를 따르는 것을 권장합니다.
 
 ## Local validation
 
@@ -230,8 +274,11 @@ README에서 링크하는 문서는 실제 저장소에 존재하는 문서만 �
 | --- | --- |
 | [docs/ecosystem-importance.md](docs/ecosystem-importance.md) | 백엔드 생태계에서 Career Feed가 갖는 의미와 한계 |
 | [docs/oss-program-application.md](docs/oss-program-application.md) | Codex Open Source Support Program 신청용 답변 초안 |
+| [docs/fork-setup.md](docs/fork-setup.md) | fork 후 Secrets, Variables, dry-run, artifact 확인, Discord 전송까지의 첫 설정 가이드 |
 | [docs/usage.md](docs/usage.md) | GitHub Actions, dry-run, artifacts, Discord 전송 사용 가이드 |
+| [docs/runtime-configuration.md](docs/runtime-configuration.md) | fork 사용자를 위한 Secrets/Variables와 runtime gate 설정 가이드 |
 | [docs/demo.md](docs/demo.md) | redacted demo screenshot 준비와 노출 가이드 |
+| [docs/sample-output.md](docs/sample-output.md) | sample brief와 example output 위치 |
 | [docs/assets/demo/README.md](docs/assets/demo/README.md) | demo screenshot/GIF asset의 추가, 교체, 삭제, redaction, 크기 확인 절차 |
 | [docs/daily-backend-brief.md](docs/daily-backend-brief.md) | Daily Backend Brief 운영 방식 |
 | [docs/daily-news-ops.md](docs/daily-news-ops.md) | Korea Dev/AI News Daily 운영 방식 |
@@ -240,7 +287,14 @@ README에서 링크하는 문서는 실제 저장소에 존재하는 문서만 �
 | [docs/local-validation.md](docs/local-validation.md) | 로컬 검증 명령과 확인 방법 |
 | [docs/oss-candidate-policy.md](docs/oss-candidate-policy.md) | OSS 후보 추천 정책 |
 | [docs/community-guide.md](docs/community-guide.md) | 스터디와 커뮤니티에서 재사용하는 방법 |
+| [docs/roadmap.md](docs/roadmap.md) | 현재 범위와 향후 개선 방향 |
+| [docs/release-checklist.md](docs/release-checklist.md) | maintainer용 v0.1.0 release checklist |
+| [docs/release-notes/v0.1.0.md](docs/release-notes/v0.1.0.md) | v0.1.0 GitHub Release note 초안 |
+| [CHANGELOG.md](CHANGELOG.md) | 릴리스 변경 이력 |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | 기여 방식과 PR/issue 작성 기준 |
+| [docs/contributor-tasks.md](docs/contributor-tasks.md) | 신규 기여자가 시작할 수 있는 작은 작업 후보 |
+| [SECURITY.md](SECURITY.md) | API key, webhook, token 취급과 보안 신고 기준 |
+| [SUPPORT.md](SUPPORT.md) | 질문, 버그 리포트, 지원 범위 안내 |
 | [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) | 커뮤니티 행동 기준 |
 | [docs/contributing/README.md](docs/contributing/README.md) | 기여 세부 문서 index |
 | [docs/contributing/good-suggestion-criteria.md](docs/contributing/good-suggestion-criteria.md) | 좋은 제안의 기준과 예시 |
@@ -353,6 +407,8 @@ Maintainer도 외부 저장소에 자동 댓글, 자동 PR, 자동 assign, 자�
 ## Roadmap
 
 현재 로드맵은 작은 개선을 꾸준히 쌓는 방향입니다.
+
+자세한 방향과 범위 밖 항목은 [docs/roadmap.md](docs/roadmap.md)를 참고해 주세요.
 
 - Daily Backend Brief 품질 검증 강화
 - Korea Dev/AI News Daily sparse/empty 정책 문서화 개선

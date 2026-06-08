@@ -1,0 +1,48 @@
+name: 문서 개선 제안
+description: fork setup, runtime config, validation, demo, contributor 문서 개선을 제안합니다.
+title: "[문서] "
+labels:
+  - docs
+body:
+  - type: markdown
+    attributes:
+      value: |
+        어떤 문서가 헷갈렸는지 알려 주세요.
+
+        secret, webhook URL, private Discord 정보, 개인 식별자는 포함하지 마세요.
+  - type: input
+    id: document
+    attributes:
+      label: 관련 문서
+      placeholder: 예) docs/fork-setup.md
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: 막힌 영역
+      options:
+        - fork setup
+        - runtime configuration
+        - dry-run and artifacts
+        - validation
+        - Discord delivery
+        - demo or sample output
+        - contributing
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: confusion
+    attributes:
+      label: 헷갈린 점
+      description: 어느 단계에서 어떤 설명이 부족했는지 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: 제안하는 개선
+      description: 어떤 문장, 표, 예시가 있으면 도움이 될지 적어 주세요.
+    validations:
+      required: false

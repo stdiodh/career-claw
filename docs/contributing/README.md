@@ -6,6 +6,8 @@
 
 루트의 [Contributing](../../CONTRIBUTING.md)을 먼저 읽고, 커뮤니티 기대 사항은 [Code of Conduct](../../CODE_OF_CONDUCT.md)를 확인해 주세요.
 
+작은 첫 작업을 찾고 있다면 [Contributor Task Ideas](../contributor-tasks.md)를 먼저 확인해 주세요.
+
 Career Feed는 백엔드 지망생과 주니어 개발자가 학습 주제, 커리어 정보, OSS 후보, 기술 뉴스, PS 루틴을 덜 막막하게 탐색하도록 돕는 초기 단계의 공개 OSS입니다.
 
 이 문서들은 기여를 막기 위한 규칙이 아니라, 좋은 제안을 더 빠르고 안전하게 검토하기 위한 기준입니다.
@@ -62,6 +64,7 @@ Maintainer는 제안을 프로젝트 범위, 안전성, 유지보수 가능성 �
 | Document | Purpose |
 | --- | --- |
 | [Contributing](../../CONTRIBUTING.md) | 루트 기여 안내 문서 |
+| [Contributor Task Ideas](../contributor-tasks.md) | 첫 기여자가 시작할 수 있는 작은 작업 후보 |
 | [Code of Conduct](../../CODE_OF_CONDUCT.md) | 커뮤니티 행동 기준 |
 | [Good suggestion criteria](good-suggestion-criteria.md) | 좋은 제안과 약한 제안의 기준 |
 | [Source suggestion guide](source-suggestion-guide.md) | 정보 출처 제안 기준 |

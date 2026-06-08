@@ -10,17 +10,28 @@ The usual operating loop is intentionally small.
 
 1. Fork or clone the repository.
 2. Register the required GitHub Secrets.
-3. Run local validation with `./scripts/validate.sh`.
-4. Open the GitHub Actions tab.
-5. Select the workflow you want to test.
-6. Run the workflow manually in dry-run or artifact-only mode.
-7. Review the Actions summary and uploaded artifacts.
-8. Enable Discord delivery only after the generated brief looks correct.
-9. Update Programmers PS progress with `Mark PS Solved` when needed.
+3. Register runtime GitHub Actions Variables.
+4. Run local validation with `./scripts/validate.sh`.
+5. Open the GitHub Actions tab.
+6. Select the workflow you want to test.
+7. Run the workflow manually in dry-run or artifact-only mode.
+8. Review the Actions summary and uploaded artifacts.
+9. Enable Discord delivery only after the generated brief looks correct.
+10. Update Programmers PS progress with `Mark PS Solved` when needed.
 
 The output is a Markdown briefing and, when delivery is enabled, a Discord message rendered from that briefing.
 
 `reports/` files are generated artifacts and are not normally committed.
+
+## First-time fork setup
+
+If this is your first time running Career Feed from a fork, start with
+[Fork Setup Guide](fork-setup.md).
+
+That guide walks through GitHub Secrets, GitHub Actions Variables, dry-run execution,
+artifact review, validation troubleshooting, and Discord delivery activation.
+
+Use this Usage Guide after the first setup when you want to understand routine operation.
 
 ## Who should use this
 
@@ -94,6 +105,33 @@ Never write real values in Markdown, commit messages, Actions logs, screenshots,
 
 If it is missing, failure notification should be skipped without making the whole workflow fail.
 
+## Runtime configuration
+
+Runtime settings are configured in `Settings > Secrets and variables > Actions > Variables`.
+
+Read [Runtime Configuration](runtime-configuration.md) before changing timezone, target time,
+weekday, OSS freshness, or Discord delivery flag.
+
+The most important Variables are listed below.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `CAREER_FEED_TIMEZONE` | `Asia/Seoul` | Timezone used by the runtime gate |
+| `CAREER_FEED_BACKEND_DAILY_TIME` | `09:00` | Daily Backend Brief target time |
+| `CAREER_FEED_NEWS_DAILY_TIME` | `09:05` | Korea Dev/AI News Daily target time |
+| `CAREER_FEED_CAREER_WEEKLY_DAY` | `MON` | Backend Career Site Radar target weekday |
+| `CAREER_FEED_CAREER_WEEKLY_TIME` | `09:00` | Backend Career Site Radar target time |
+| `CAREER_FEED_OSS_RECENT_DAYS` | `30` | OSS issue `created_at` freshness hard gate |
+| `CAREER_FEED_DISCORD_DELIVERY_ENABLED` | `false` | Global Discord delivery flag |
+
+GitHub Actions cron cannot read repository Variables directly.
+
+The workflows therefore wake up periodically and run `scripts/should-run-now.py` near the beginning of the job.
+
+If the configured local time does not match the current runtime window, the expensive generation and send steps are skipped successfully.
+
+Manual `workflow_dispatch` runs are not blocked by the runtime time window.
+
 ## Running local validation
 
 Run local validation before changing documentation, workflow policy, prompts, or scripts.
@@ -131,6 +169,8 @@ Confirm the branch, input values, and delivery options before starting the run.
 
 Daily workflows can run on schedule, but manual runs are safer for first verification because you can choose dry-run inputs and inspect artifacts immediately.
 
+Before a first dry-run, confirm that the runtime Variables are present or that the defaults in [Runtime Configuration](runtime-configuration.md) are acceptable.
+
 The active operating workflows are listed below.
 
 | Operating path | GitHub Actions workflow | Main output |
@@ -147,6 +187,8 @@ Start with dry-run or artifact-only mode so you can inspect the generated conten
 For Daily Backend Brief, run `Daily Korea Tech Brief` with `dry_run=true` and `force_send=false`.
 
 Check the generated brief, candidate JSON files, validation report, and run summary.
+In the validation report, confirm that OSS issue URLs in the Markdown came from
+`kr-oss-contribution-opportunities.json` safe candidates and that fallback days do not include GitHub issue URLs.
 
 Discord delivery and delivery lock creation should not happen in this mode.
 
@@ -190,6 +232,8 @@ Fix the underlying issue or rerun after the source data is acceptable.
 
 After a dry-run looks correct, run the workflow with Discord delivery enabled.
 
+Set `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true` before expecting any workflow to send to Discord.
+
 For Daily Backend Brief and Korea Dev/AI News Daily, set `dry_run=false`.
 
 Use `force_send=true` only when you intentionally want to send despite an existing delivery lock.
@@ -199,6 +243,8 @@ For normal manual delivery after a reviewed dry-run, `force_send=true` is often 
 For repeated same-day checks, keep `force_send=false` so the delivery lock can prevent duplicate delivery.
 
 For Backend Career Site Radar, set `send_to_discord=true`.
+
+Delivery is blocked in this priority order: `dry_run=true`, manual delivery option set to false, `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`, then missing webhook secret.
 
 The Discord message should look like a briefing, not a chat bot conversation.
 
@@ -271,9 +317,9 @@ Register the secret in GitHub Actions settings and rerun the workflow.
 
 If a Discord message does not arrive, confirm that the workflow was not run in dry-run or artifact-only mode.
 
-Then check the webhook secret name, delivery lock status, and send step outcome.
+Then check `CAREER_FEED_DISCORD_DELIVERY_ENABLED`, the webhook secret name, delivery lock status, and send step outcome.
 
-If only a dry-run artifact exists and nothing was delivered, that is expected for `dry_run=true` or `send_to_discord=false`.
+If only a dry-run artifact exists and nothing was delivered, that is expected for `dry_run=true`, `send_to_discord=false`, or `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`.
 
 Review the artifact, then run again with delivery enabled when the content is acceptable.
 
@@ -285,11 +331,17 @@ If a validation report fails, do not force delivery.
 
 Use the reported file path, section name, or validation error to fix the source, prompt, fixture, or generated content.
 
+For OSS URL validation failures such as `OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES`,
+`OSS_ISSUE_URL_NOT_RECENT`, or `OSS_FALLBACK_CONTAINS_ISSUE_URL`, check
+[Fork Setup Guide](fork-setup.md) and [OSS Candidate Policy](oss-candidate-policy.md).
+
 If PS progress commit fails, check whether GitHub Actions has write permission, whether the branch is protected, and whether `data/ps-progress.json` actually changed.
 
 If a workflow only runs manually and not on schedule, confirm that the workflow has a schedule, is enabled on the default branch, and has not been disabled by repository inactivity.
 
-Backend Career Site Radar and Mark PS Solved are manual operating paths by design.
+Backend Career Site Radar can run manually or through its weekly runtime gate.
+
+Mark PS Solved is a manual operating path by design.
 
 ## Safety checklist
 
@@ -306,6 +358,7 @@ Backend Career Site Radar and Mark PS Solved are manual operating paths by desig
 ## Related documents
 
 - [README.md](../README.md)
+- [Runtime Configuration](runtime-configuration.md)
 - [Demo guide](demo.md)
 - [Daily Backend Brief](daily-backend-brief.md)
 - [Korea Dev/AI News Daily](daily-news-ops.md)

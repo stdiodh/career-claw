@@ -1,6 +1,8 @@
 name: Backend Career Site Radar
 
 on:
+  schedule:
+    - cron: "5,35 * * * *"
   workflow_dispatch:
     inputs:
       send_to_discord:
@@ -28,31 +30,96 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.x"
+      - name: Check runtime schedule
+        id: runtime_gate
+        shell: bash
+        env:
+          CAREER_FEED_TIMEZONE: ${{ vars.CAREER_FEED_TIMEZONE }}
+          CAREER_FEED_BACKEND_DAILY_TIME: ${{ vars.CAREER_FEED_BACKEND_DAILY_TIME }}
+          CAREER_FEED_NEWS_DAILY_TIME: ${{ vars.CAREER_FEED_NEWS_DAILY_TIME }}
+          CAREER_FEED_CAREER_WEEKLY_DAY: ${{ vars.CAREER_FEED_CAREER_WEEKLY_DAY }}
+          CAREER_FEED_CAREER_WEEKLY_TIME: ${{ vars.CAREER_FEED_CAREER_WEEKLY_TIME }}
+          CAREER_FEED_OSS_RECENT_DAYS: ${{ vars.CAREER_FEED_OSS_RECENT_DAYS }}
+          CAREER_FEED_DISCORD_DELIVERY_ENABLED: ${{ vars.CAREER_FEED_DISCORD_DELIVERY_ENABLED }}
+        run: |
+          set -euo pipefail
+          python3 scripts/should-run-now.py --workflow career_weekly
 
       - name: Prepare report directories
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p reports/candidates reports/briefs
+          mkdir -p reports/candidates reports/briefs reports/ops
+
+      - name: Decide delivery action
+        id: delivery
+        shell: bash
+        env:
+          RUNTIME_SHOULD_RUN: ${{ steps.runtime_gate.outputs.should_run }}
+          RUNTIME_REASON: ${{ steps.runtime_gate.outputs.reason }}
+          DISCORD_DELIVERY_ENABLED: ${{ steps.runtime_gate.outputs.discord_delivery_enabled }}
+          INPUT_SEND_TO_DISCORD: ${{ github.event_name == 'workflow_dispatch' && inputs.send_to_discord || 'true' }}
+        run: |
+          set -euo pipefail
+
+          runtime_should_run="${RUNTIME_SHOULD_RUN:-false}"
+          runtime_reason="${RUNTIME_REASON:-not_scheduled}"
+          discord_delivery_enabled="${DISCORD_DELIVERY_ENABLED:-false}"
+          input_send_to_discord="${INPUT_SEND_TO_DISCORD:-true}"
+          should_generate="true"
+          should_send="true"
+          skip_reason=""
+
+          if [ "${runtime_should_run}" != "true" ]; then
+            should_generate="false"
+            should_send="false"
+            skip_reason="runtime_gate:${runtime_reason}"
+          elif [ "${input_send_to_discord}" != "true" ]; then
+            should_send="false"
+            skip_reason="manual_delivery_disabled"
+          elif [ "${discord_delivery_enabled}" != "true" ]; then
+            should_send="false"
+            skip_reason="discord_delivery_disabled"
+          fi
+
+          echo "should_generate=${should_generate}" >> "${GITHUB_OUTPUT}"
+          echo "should_send=${should_send}" >> "${GITHUB_OUTPUT}"
+          echo "skip_reason=${skip_reason}" >> "${GITHUB_OUTPUT}"
+
+          if [ "${should_send}" != "true" ]; then
+            {
+              echo "# Backend Career Site Radar Discord send skipped"
+              echo
+              echo "- reason: ${skip_reason}"
+              echo "- runtime_should_run: ${runtime_should_run}"
+              echo "- runtime_reason: ${runtime_reason}"
+              echo "- discord_delivery_enabled: ${discord_delivery_enabled}"
+              echo "- send_to_discord: ${input_send_to_discord}"
+            } > reports/ops/backend-career-weekly-discord-skip.md
+          fi
+
+      - name: Set up Python
+        if: steps.delivery.outputs.should_generate == 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
 
       - name: Render backend career site radar
+        if: steps.delivery.outputs.should_generate == 'true'
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/render-weekly-career-site-radar.py
 
       - name: Validate backend career site radar
+        if: steps.delivery.outputs.should_generate == 'true'
         shell: bash
         run: |
           set -euo pipefail
           python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career
 
       - name: Send backend career site radar to Discord
-        if: ${{ inputs.send_to_discord == 'true' }}
+        if: steps.delivery.outputs.should_send == 'true'
         shell: bash
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
@@ -72,4 +139,5 @@ jobs:
           path: |
             reports/candidates/weekly-career-site-radar.json
             reports/briefs/kr-backend-career-weekly.md
+            reports/ops/backend-career-weekly-discord-skip.md
           if-no-files-found: warn

@@ -2,10 +2,7 @@ name: Daily Korea Tech Brief
 
 on:
   schedule:
-    - cron: "5 8 * * 1-5"
-      timezone: "Asia/Seoul"
-    - cron: "25 9 * * 1-5"
-      timezone: "Asia/Seoul"
+    - cron: "5,35 * * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -39,6 +36,21 @@ jobs:
         with:
           persist-credentials: true
 
+      - name: Check runtime schedule
+        id: runtime_gate
+        shell: bash
+        env:
+          CAREER_FEED_TIMEZONE: ${{ vars.CAREER_FEED_TIMEZONE }}
+          CAREER_FEED_BACKEND_DAILY_TIME: ${{ vars.CAREER_FEED_BACKEND_DAILY_TIME }}
+          CAREER_FEED_NEWS_DAILY_TIME: ${{ vars.CAREER_FEED_NEWS_DAILY_TIME }}
+          CAREER_FEED_CAREER_WEEKLY_DAY: ${{ vars.CAREER_FEED_CAREER_WEEKLY_DAY }}
+          CAREER_FEED_CAREER_WEEKLY_TIME: ${{ vars.CAREER_FEED_CAREER_WEEKLY_TIME }}
+          CAREER_FEED_OSS_RECENT_DAYS: ${{ vars.CAREER_FEED_OSS_RECENT_DAYS }}
+          CAREER_FEED_DISCORD_DELIVERY_ENABLED: ${{ vars.CAREER_FEED_DISCORD_DELIVERY_ENABLED }}
+        run: |
+          set -euo pipefail
+          python3 scripts/should-run-now.py --workflow backend_daily
+
       - name: Prepare report directories
         shell: bash
         run: |
@@ -47,27 +59,36 @@ jobs:
 
       - name: Set run context
         id: context
+        if: steps.runtime_gate.outputs.should_run == 'true'
         shell: bash
         env:
           INPUT_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
           INPUT_FORCE_SEND: ${{ github.event_name == 'workflow_dispatch' && inputs.force_send || false }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_SCHEDULE: ${{ github.event.schedule }}
+          RUNTIME_TIMEZONE: ${{ steps.runtime_gate.outputs.timezone }}
+          RUNTIME_LOCAL_NOW: ${{ steps.runtime_gate.outputs.local_now }}
+          RUNTIME_LOCAL_DATE: ${{ steps.runtime_gate.outputs.local_date }}
         run: |
           set -euo pipefail
 
           kst_now="$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')"
           kst_date="$(TZ=Asia/Seoul date '+%Y-%m-%d')"
-          delivery_lock_key="career-feed-backend-sent-${kst_date}"
-          lock_marker="reports/ops/delivery-locks/backend-sent-${kst_date}.lock"
+          delivery_lock_key="career-feed-backend-sent-${RUNTIME_LOCAL_DATE}"
+          lock_marker="reports/ops/delivery-locks/backend-sent-${RUNTIME_LOCAL_DATE}.lock"
 
           echo "event_name=${EVENT_NAME}"
           echo "event_schedule=${EVENT_SCHEDULE:-}"
+          echo "runtime_timezone=${RUNTIME_TIMEZONE}"
+          echo "runtime_local_now=${RUNTIME_LOCAL_NOW}"
           echo "kst_now=${kst_now}"
           echo "dry_run=${INPUT_DRY_RUN}"
           echo "force_send=${INPUT_FORCE_SEND}"
 
           {
+            echo "runtime_timezone=${RUNTIME_TIMEZONE}"
+            echo "runtime_local_now=${RUNTIME_LOCAL_NOW}"
+            echo "runtime_local_date=${RUNTIME_LOCAL_DATE}"
             echo "kst_now=${kst_now}"
             echo "kst_date=${kst_date}"
             echo "dry_run=${INPUT_DRY_RUN}"
@@ -78,6 +99,7 @@ jobs:
 
       - name: Restore Backend Daily delivery lock
         id: delivery-lock
+        if: steps.runtime_gate.outputs.should_run == 'true'
         uses: actions/cache/restore@v5
         with:
           path: ${{ steps.context.outputs.lock_marker }}
@@ -87,20 +109,36 @@ jobs:
         id: delivery
         shell: bash
         env:
+          RUNTIME_SHOULD_RUN: ${{ steps.runtime_gate.outputs.should_run }}
+          RUNTIME_REASON: ${{ steps.runtime_gate.outputs.reason }}
+          DISCORD_DELIVERY_ENABLED: ${{ steps.runtime_gate.outputs.discord_delivery_enabled }}
           DRY_RUN: ${{ steps.context.outputs.dry_run }}
           FORCE_SEND: ${{ steps.context.outputs.force_send }}
           LOCK_HIT: ${{ steps.delivery-lock.outputs.cache-hit == 'true' }}
         run: |
           set -euo pipefail
 
+          runtime_should_run="${RUNTIME_SHOULD_RUN:-false}"
+          runtime_reason="${RUNTIME_REASON:-not_scheduled}"
+          dry_run="${DRY_RUN:-false}"
+          force_send="${FORCE_SEND:-false}"
+          lock_hit="${LOCK_HIT:-false}"
+          discord_delivery_enabled="${DISCORD_DELIVERY_ENABLED:-false}"
           should_generate="true"
           should_send="true"
           skip_reason=""
 
-          if [ "${DRY_RUN}" = "true" ]; then
+          if [ "${runtime_should_run}" != "true" ]; then
+            should_generate="false"
+            should_send="false"
+            skip_reason="runtime_gate:${runtime_reason}"
+          elif [ "${dry_run}" = "true" ]; then
             should_send="false"
             skip_reason="dry_run"
-          elif [ "${LOCK_HIT}" = "true" ] && [ "${FORCE_SEND}" != "true" ]; then
+          elif [ "${discord_delivery_enabled}" != "true" ]; then
+            should_send="false"
+            skip_reason="discord_delivery_disabled"
+          elif [ "${lock_hit}" = "true" ] && [ "${force_send}" != "true" ]; then
             should_generate="false"
             should_send="false"
             skip_reason="delivery_lock_hit"
@@ -115,9 +153,12 @@ jobs:
               echo "# Backend Daily Discord send skipped"
               echo
               echo "- reason: ${skip_reason}"
-              echo "- delivery_lock_hit: ${LOCK_HIT}"
-              echo "- force_send: ${FORCE_SEND}"
-              echo "- dry_run: ${DRY_RUN}"
+              echo "- runtime_should_run: ${runtime_should_run}"
+              echo "- runtime_reason: ${runtime_reason}"
+              echo "- discord_delivery_enabled: ${discord_delivery_enabled}"
+              echo "- delivery_lock_hit: ${lock_hit}"
+              echo "- force_send: ${force_send}"
+              echo "- dry_run: ${dry_run}"
             } > reports/ops/backend-daily-discord-skip.md
           fi
 
@@ -156,6 +197,7 @@ jobs:
         shell: bash
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          CAREER_FEED_OSS_RECENT_DAYS: ${{ vars.CAREER_FEED_OSS_RECENT_DAYS }}
         run: |
           set -euo pipefail
           python3 scripts/collect-kr-feeds.py --mode daily-backend
@@ -287,23 +329,26 @@ jobs:
           rm -f "${validation_log}"
           exit "${exit_code}"
 
-      - name: Wait until 09:00 KST before Discord send
+      - name: Wait until configured Backend Daily send time
         id: wait-before-send
         if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'
         shell: bash
+        env:
+          RUNTIME_TIMEZONE: ${{ steps.runtime_gate.outputs.timezone }}
+          RUNTIME_LOCAL_DATE: ${{ steps.runtime_gate.outputs.local_date }}
+          TARGET_TIME: ${{ steps.runtime_gate.outputs.target_time }}
         run: |
           set -euo pipefail
 
-          now_epoch="$(TZ=Asia/Seoul date +%s)"
-          today_kst="$(TZ=Asia/Seoul date '+%Y-%m-%d')"
-          target_epoch="$(TZ=Asia/Seoul date -d "${today_kst} 09:00:00" +%s)"
+          now_epoch="$(TZ="${RUNTIME_TIMEZONE}" date +%s)"
+          target_epoch="$(TZ="${RUNTIME_TIMEZONE}" date -d "${RUNTIME_LOCAL_DATE} ${TARGET_TIME}:00" +%s)"
 
           if [ "${now_epoch}" -lt "${target_epoch}" ]; then
             wait_seconds=$((target_epoch - now_epoch))
-            echo "Waiting ${wait_seconds}s until 09:00 KST before Discord send."
+            echo "Waiting ${wait_seconds}s until ${TARGET_TIME} ${RUNTIME_TIMEZONE} before Discord send."
             sleep "${wait_seconds}"
           else
-            echo "Already past 09:00 KST. Sending immediately."
+            echo "Already past ${TARGET_TIME} ${RUNTIME_TIMEZONE}. Sending immediately."
           fi
 
       - name: Send Korea tech daily brief to Discord
@@ -321,9 +366,12 @@ jobs:
         id: create-lock
         if: steps.send-discord.outcome == 'success' && steps.context.outputs.dry_run != 'true'
         shell: bash
+        env:
+          RUNTIME_TIMEZONE: ${{ steps.runtime_gate.outputs.timezone }}
         run: |
           set -euo pipefail
-          printf 'sent_at_kst=%s\nrun_id=%s\n' \
+          printf 'sent_at_local=%s\nsent_at_kst=%s\nrun_id=%s\n' \
+            "$(TZ="${RUNTIME_TIMEZONE}" date '+%Y-%m-%d %H:%M:%S %Z')" \
             "$(TZ=Asia/Seoul date '+%Y-%m-%d %H:%M:%S %Z')" \
             "${GITHUB_RUN_ID}" > "${{ steps.context.outputs.lock_marker }}"
 

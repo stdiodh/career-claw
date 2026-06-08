@@ -13,14 +13,23 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 LINE_COUNT_MINIMUMS = {
+    "CHANGELOG.md": 40,
     "README.md": 100,
     "docs/ecosystem-importance.md": 50,
     "docs/oss-program-application.md": 60,
+    "docs/fork-setup.md": 120,
     "docs/usage.md": 80,
+    "docs/runtime-configuration.md": 120,
     "docs/demo.md": 80,
     "docs/assets/demo/README.md": 40,
+    "docs/sample-output.md": 30,
+    "docs/release-checklist.md": 100,
+    "docs/release-notes/v0.1.0.md": 40,
+    "docs/roadmap.md": 40,
+    "docs/contributor-tasks.md": 80,
     "CONTRIBUTING.md": 80,
     "CODE_OF_CONDUCT.md": 60,
+    "SUPPORT.md": 40,
     "docs/contributing/README.md": 40,
     "docs/contributing/good-suggestion-criteria.md": 70,
     "docs/contributing/source-suggestion-guide.md": 70,
@@ -34,14 +43,23 @@ LINE_COUNT_MINIMUMS = {
 }
 
 MARKDOWN_FILES = [
+    "CHANGELOG.md",
     "README.md",
     "docs/ecosystem-importance.md",
     "docs/oss-program-application.md",
+    "docs/fork-setup.md",
     "docs/usage.md",
+    "docs/runtime-configuration.md",
     "docs/demo.md",
     "docs/assets/demo/README.md",
+    "docs/sample-output.md",
+    "docs/release-checklist.md",
+    "docs/release-notes/v0.1.0.md",
+    "docs/roadmap.md",
+    "docs/contributor-tasks.md",
     "CONTRIBUTING.md",
     "CODE_OF_CONDUCT.md",
+    "SUPPORT.md",
     "docs/contributing/README.md",
     "docs/contributing/good-suggestion-criteria.md",
     "docs/contributing/source-suggestion-guide.md",
@@ -64,6 +82,7 @@ README_HEADINGS = [
     "## Schedule / trigger policy",
     "## Quick Start",
     "## Required secrets",
+    "## Runtime variables",
     "## Local validation",
     "## Directory structure",
     "## Documentation",
@@ -106,6 +125,33 @@ APPLICATION_HEADINGS = [
     "## Final checklist before submission",
 ]
 
+CHANGELOG_HEADINGS = [
+    "# Changelog",
+    "## [Unreleased]",
+    "## [0.1.0] - TBD",
+]
+
+FORK_SETUP_HEADINGS = [
+    "# Fork Setup Guide",
+    "## 대상",
+    "## 준비물",
+    "## 전체 설정 흐름",
+    "## Step 1. Fork repository",
+    "## Step 2. Enable GitHub Actions",
+    "## Step 3. Add GitHub Actions Secrets",
+    "## Step 4. Add GitHub Actions Variables",
+    "## Step 5. Run workflow with dry-run",
+    "## Step 6. Review generated artifacts",
+    "## Step 7. Enable Discord delivery",
+    "## Step 8. Understand scheduling",
+    "## OSS candidate policy",
+    "## Validation troubleshooting",
+    "## Troubleshooting",
+    "## First run checklist",
+    "## Before opening an issue",
+    "## Related documents",
+]
+
 USAGE_HEADINGS = [
     "# Usage Guide",
     "## Overview",
@@ -113,6 +159,7 @@ USAGE_HEADINGS = [
     "## Before you start",
     "## Repository setup",
     "## Required GitHub secrets",
+    "## Runtime configuration",
     "## Running local validation",
     "## Running a workflow manually",
     "## Recommended first run: dry-run",
@@ -124,6 +171,25 @@ USAGE_HEADINGS = [
     "## Troubleshooting",
     "## Safety checklist",
     "## Related documents",
+]
+
+RUNTIME_CONFIGURATION_HEADINGS = [
+    "# Runtime Configuration",
+    "## 요약",
+    "## Secrets와 Variables",
+    "## 필수 Secrets",
+    "## 지원 Variables",
+    "## 시간 형식",
+    "## Timezone 예시",
+    "## 요일 형식",
+    "## Runtime Gate 방식",
+    "## GitHub Actions Output",
+    "## Discord 전송 우선순위",
+    "## Dry-run 관계",
+    "## 10분 설정 절차",
+    "## 로컬 확인",
+    "## 자주 발생하는 설정 실수",
+    "## 이번 Phase 한계",
 ]
 
 DEMO_HEADINGS = [
@@ -160,6 +226,51 @@ DEMO_ASSETS_HEADINGS = [
     "## 삭제 절차",
 ]
 
+SAMPLE_OUTPUT_HEADINGS = [
+    "# Sample Output",
+    "## Available examples",
+    "## What to check in samples",
+    "## Adding a new sample",
+    "## Related documents",
+]
+
+RELEASE_CHECKLIST_HEADINGS = [
+    "# Release Checklist",
+    "## v0.1.0 release goal",
+    "## v0.1.0 scope",
+    "## v0.1.0 acceptance criteria",
+    "## Pre-release checks",
+    "## Verification commands",
+    "## Release note draft",
+]
+
+RELEASE_NOTES_V010_HEADINGS = [
+    "# v0.1.0 Release Notes",
+    "## Summary",
+    "## Highlights",
+    "## Safety",
+    "## Setup",
+    "## Known limitations",
+    "## Maintainer notes",
+]
+
+ROADMAP_HEADINGS = [
+    "# Roadmap",
+    "## v0.1.x",
+    "## v0.2.x",
+    "## Later",
+    "## Out of scope",
+    "## How to suggest roadmap changes",
+]
+
+CONTRIBUTOR_TASKS_HEADINGS = [
+    "# Contributor Task Ideas",
+    "## Good first issues",
+    "## Help wanted",
+    "## Not accepted contributions",
+    "## Before opening a PR",
+]
+
 CODE_OF_CONDUCT_HEADINGS = [
     "# Code of Conduct",
     "## Our standard",
@@ -184,6 +295,15 @@ CONTRIBUTING_INDEX_HEADINGS = [
     "## Regional and language expansion",
     "## Maintainer review",
     "## Related documents",
+]
+
+SUPPORT_HEADINGS = [
+    "# Support",
+    "## Where to ask",
+    "## Before opening an issue",
+    "## Do not include secrets",
+    "## What support can cover",
+    "## What support cannot guarantee",
 ]
 
 GOOD_SUGGESTION_HEADINGS = [
@@ -248,9 +368,19 @@ REVIEW_POLICY_HEADINGS = [
 ]
 
 REQUIRED_README_LINKS = [
+    "CHANGELOG.md",
+    "docs/fork-setup.md",
     "docs/usage.md",
+    "docs/runtime-configuration.md",
     "docs/demo.md",
+    "docs/sample-output.md",
+    "docs/roadmap.md",
+    "docs/release-checklist.md",
+    "docs/release-notes/v0.1.0.md",
     "CONTRIBUTING.md",
+    "docs/contributor-tasks.md",
+    "SECURITY.md",
+    "SUPPORT.md",
     "CODE_OF_CONDUCT.md",
     "docs/contributing/README.md",
     "docs/contributing/good-suggestion-criteria.md",
@@ -262,7 +392,10 @@ REQUIRED_README_LINKS = [
 
 ISSUE_TEMPLATE_FILES = [
     ".github/ISSUE_TEMPLATE/backend-career-question.yml",
+    ".github/ISSUE_TEMPLATE/bug-report.yml",
     ".github/ISSUE_TEMPLATE/config.yml",
+    ".github/ISSUE_TEMPLATE/docs-improvement.yml",
+    ".github/ISSUE_TEMPLATE/feature-request.yml",
     ".github/ISSUE_TEMPLATE/oss-candidate-suggestion.yml",
     ".github/ISSUE_TEMPLATE/source-suggestion.yml",
 ]
@@ -349,7 +482,11 @@ def check_compressed_markdown(path: str) -> None:
             fail(f"{path}:{number} appears to contain multiple headings on one line.")
         if re.search(r"\|\s+\|", line):
             fail(f"{path}:{number} appears to contain multiple Markdown table rows on one line.")
-        if re.search(r"\s-\s+\S", line) and not line.lstrip().startswith("-"):
+        if (
+            re.search(r"\s-\s+\S", line)
+            and not line.lstrip().startswith("-")
+            and not line.lstrip().startswith("#")
+        ):
             fail(f"{path}:{number} appears to contain a list item glued to prior text.")
 
 
@@ -414,13 +551,22 @@ def main() -> int:
     all_targets = docs + ISSUE_TEMPLATE_FILES
 
     check_line_counts()
+    check_required_headings("CHANGELOG.md", CHANGELOG_HEADINGS)
     check_required_headings("README.md", README_HEADINGS)
     check_required_headings("docs/ecosystem-importance.md", ECOSYSTEM_HEADINGS)
     check_required_headings("docs/oss-program-application.md", APPLICATION_HEADINGS)
+    check_required_headings("docs/fork-setup.md", FORK_SETUP_HEADINGS)
     check_required_headings("docs/usage.md", USAGE_HEADINGS)
+    check_required_headings("docs/runtime-configuration.md", RUNTIME_CONFIGURATION_HEADINGS)
     check_required_headings("docs/demo.md", DEMO_HEADINGS)
     check_required_headings("docs/assets/demo/README.md", DEMO_ASSETS_HEADINGS)
+    check_required_headings("docs/sample-output.md", SAMPLE_OUTPUT_HEADINGS)
+    check_required_headings("docs/release-checklist.md", RELEASE_CHECKLIST_HEADINGS)
+    check_required_headings("docs/release-notes/v0.1.0.md", RELEASE_NOTES_V010_HEADINGS)
+    check_required_headings("docs/roadmap.md", ROADMAP_HEADINGS)
+    check_required_headings("docs/contributor-tasks.md", CONTRIBUTOR_TASKS_HEADINGS)
     check_required_headings("CODE_OF_CONDUCT.md", CODE_OF_CONDUCT_HEADINGS)
+    check_required_headings("SUPPORT.md", SUPPORT_HEADINGS)
     check_required_headings("docs/contributing/README.md", CONTRIBUTING_INDEX_HEADINGS)
     check_required_headings("docs/contributing/good-suggestion-criteria.md", GOOD_SUGGESTION_HEADINGS)
     check_required_headings("docs/contributing/source-suggestion-guide.md", SOURCE_SUGGESTION_HEADINGS)

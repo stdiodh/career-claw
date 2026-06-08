@@ -37,6 +37,8 @@ Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리�
 
 제안은 작고 검토 가능할수록 반영하기 쉽습니다.
 
+처음 기여한다면 [Contributor Task Ideas](docs/contributor-tasks.md)에서 작은 작업 후보를 먼저 확인해 주세요.
+
 ## What makes a good contribution
 
 좋은 기여는 무엇을 바꾸려는지 분명합니다.
@@ -56,6 +58,11 @@ Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리�
 ## Before opening an issue
 
 이슈를 열기 전에 README와 관련 문서를 먼저 확인해 주세요.
+
+fork 실행이나 설정에서 막혔다면 [Fork Setup Guide](docs/fork-setup.md)와
+[Runtime Configuration](docs/runtime-configuration.md)을 먼저 확인해 주세요.
+
+demo나 screenshot 제안은 [Demo guide](docs/demo.md)의 redaction 기준을 따릅니다.
 
 이미 같은 제안이 있는지 기존 issue와 PR도 가볍게 확인해 주세요.
 
@@ -86,6 +93,8 @@ Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리�
 
 문서 수정 PR은 어떤 문서를 왜 바꾸는지 설명해 주세요.
 
+가능하면 문서 변경, workflow 변경, validator 변경은 서로 다른 PR로 분리해 주세요.
+
 큰 기능, 새 지역, 새 workflow, 자동화 정책 변경은 PR 전에 issue로 먼저 논의해 주세요.
 
 불필요한 리팩터링, 대규모 포맷 변경, 관련 없는 파일 변경은 피해주세요.
@@ -94,7 +103,34 @@ Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리�
 
 코드나 script를 변경했다면 가능한 범위에서 관련 검증 명령을 함께 적어 주세요.
 
+generated brief, validator, Discord delivery 정책을 바꾸는 경우 dry-run artifact 또는 validation report를 확인해 주세요.
+
 이번 프로젝트의 기본 방향과 맞지 않는 PR은 수정 요청을 받거나 닫힐 수 있습니다.
+
+## Development setup
+
+저장소를 로컬에서 확인하려면 다음 명령으로 시작합니다.
+
+```bash
+git clone https://github.com/stdiodh/career-feed.git
+cd career-feed
+./scripts/validate.sh
+```
+
+문서만 수정했다면 다음 명령도 함께 확인해 주세요.
+
+```bash
+python3 scripts/check-doc-format.py
+git diff --check
+```
+
+Daily Backend 후보 수집 dry-run은 다음 명령으로 확인할 수 있습니다.
+
+```bash
+python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
+```
+
+GitHub Actions 수동 실행과 artifact 확인 흐름은 [Usage Guide](docs/usage.md)를 참고해 주세요.
 
 ## Commit convention
 
@@ -166,6 +202,10 @@ git diff --check
 
 검증을 실행하지 못했다면 이유를 명확히 적어 주세요.
 
+pytest가 로컬 환경에 설치되어 있지 않을 수 있습니다.
+
+그 경우 저장소의 직접 실행 테스트와 `./scripts/validate.sh` 결과를 우선 적고, pytest 미실행 이유를 PR에 남겨 주세요.
+
 ## File management
 
 `reports/` 아래 생성 산출물은 기본적으로 커밋하지 않습니다.
@@ -222,9 +262,13 @@ OSS 후보를 제안할 때는 repository URL, 관련 issue URL, beginner-friend
 
 `good first issue`, `help wanted`, 작은 문서 수정, 작은 테스트 개선 같은 signal은 검토에 도움이 됩니다.
 
+issue URL을 제안한다면 기본적으로 최근 30일 이내 `created_at` issue인지 확인해 주세요.
+`updated_at`만 최근인 오래된 issue는 추천 후보에서 제외될 수 있습니다.
+
 Career Feed는 OSS 후보를 추천할 수 있지만 외부 저장소에 자동 PR, 자동 comment, 자동 assign, 자동 label 변경을 하지 않습니다.
 
 자세한 기준은 [OSS candidate suggestion guide](docs/contributing/oss-candidate-guide.md)를 참고해 주세요.
+최종 추천 정책은 [OSS Candidate Policy](docs/oss-candidate-policy.md)를 따릅니다.
 
 ## Backend career question rules
 
@@ -313,6 +357,8 @@ Maintainer는 특정 회사나 서비스 홍보로 오해될 가능성이 있는
 ## Related documents
 
 - [Contribution guide index](docs/contributing/README.md)
+- [Contributor Task Ideas](docs/contributor-tasks.md)
+- [Roadmap](docs/roadmap.md)
 - [Good suggestion criteria](docs/contributing/good-suggestion-criteria.md)
 - [Source suggestion guide](docs/contributing/source-suggestion-guide.md)
 - [OSS candidate suggestion guide](docs/contributing/oss-candidate-guide.md)

@@ -6,18 +6,23 @@ from __future__ import annotations
 import argparse
 import difflib
 import json
+import os
 import re
 import sys
 import urllib.parse
 from collections import Counter
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
 DEFAULT_REPORT = "reports/briefs/kr-tech-daily.md"
 MAX_WARNING_CHARS = 6500
 OSS_CANDIDATE_FILENAME = "kr-oss-contribution-opportunities.json"
+OSS_RECENT_DAYS_ENV = "CAREER_FEED_OSS_RECENT_DAYS"
+DEFAULT_OSS_RECENT_DAYS = 30
+MAX_OSS_RECENT_DAYS = 365
+KST = timezone(timedelta(hours=9))
 
 
 def joined(*parts: str) -> str:
@@ -598,6 +603,8 @@ OSS_REQUIRED_SAFE_FIELDS = [
     "created_at",
     "updated_at",
     "last_activity_at",
+    "is_recent",
+    "recency_reason",
     "contribution_type",
     "difficulty_band",
     "score",
@@ -629,6 +636,7 @@ OSS_SAFETY_CHECK_FIELDS = [
     "matches_preferred_type",
     "has_no_avoid_label",
     "has_no_avoid_keyword",
+    "created_within_recent_window",
 ]
 DAILY_OSS_STATUS_REQUIRED_GROUPS = {
     "assignee absence": [
@@ -737,7 +745,9 @@ LINK_RE = re.compile(r"https?://[^\s)>\\\]]+")
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]+\]\(https?://[^)]+\)")
 SITE_LINK_RE = re.compile(r"\[사이트 보기\]\((https?://[^)]+)\)")
 GITHUB_ISSUE_URL_RE = re.compile(
-    r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/issues/\d+"
+    r"https?://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/issues/\d+/?"
+    r"(?:[?#][^\s)>\\\]]*)?",
+    re.IGNORECASE,
 )
 SECTION_HEADING_RE = re.compile(r"^##\s+(.+?)\s*$", re.MULTILINE)
 ITEM_HEADING_RE = re.compile(r"^###\s+(.+?)\s*$", re.MULTILINE)
@@ -922,20 +932,100 @@ def require_markdown_link_in_text(text: str, context: str) -> None:
 def read_oss_candidate_payload(candidates_dir: Path) -> dict[str, object]:
     path = candidates_dir / OSS_CANDIDATE_FILENAME
     if not path.exists():
-        fail(f"Daily tech validation requires OSS candidate JSON: {path}")
+        fail(f"OSS_CANDIDATE_ARTIFACT_MISSING: Daily tech validation requires OSS candidate JSON: {path}")
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        fail(f"OSS candidate JSON is invalid: {path} ({exc})")
+        fail(f"OSS_CANDIDATE_ARTIFACT_INVALID: OSS candidate JSON is invalid: {path} ({exc})")
     if not isinstance(payload, dict):
-        fail(f"OSS candidate JSON must be an object: {path}")
+        fail(f"OSS_CANDIDATE_ARTIFACT_INVALID: OSS candidate JSON must be an object: {path}")
     return payload
 
 
-def safe_oss_candidates_by_url(payload: dict[str, object]) -> dict[str, dict[str, object]]:
-    raw_items = payload.get("items", [])
-    if not isinstance(raw_items, list):
-        fail("OSS candidate JSON items must be a list.")
+def parse_oss_candidate_datetime(value: object) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    if text.endswith(" KST"):
+        raw = text[:-4].strip()
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+            try:
+                return datetime.strptime(raw, fmt).replace(tzinfo=KST).astimezone(timezone.utc)
+            except ValueError:
+                continue
+        return None
+    raw = text[:-1] + "+00:00" if text.endswith("Z") else text
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def parse_oss_recent_days_value(value: object, source: str) -> int:
+    raw = str(value or "").strip()
+    if not raw:
+        return DEFAULT_OSS_RECENT_DAYS
+    try:
+        parsed = int(raw)
+    except ValueError:
+        warn(f"{source} must be numeric; using {DEFAULT_OSS_RECENT_DAYS}.")
+        return DEFAULT_OSS_RECENT_DAYS
+    if parsed <= 0:
+        warn(f"{source} must be at least 1; using {DEFAULT_OSS_RECENT_DAYS}.")
+        return DEFAULT_OSS_RECENT_DAYS
+    if parsed > MAX_OSS_RECENT_DAYS:
+        warn(f"{source} is greater than {MAX_OSS_RECENT_DAYS}; clamping to {MAX_OSS_RECENT_DAYS}.")
+        return MAX_OSS_RECENT_DAYS
+    return parsed
+
+
+def resolve_oss_recent_days(payload: dict[str, object]) -> int:
+    if "oss_recent_days" in payload:
+        return parse_oss_recent_days_value(payload.get("oss_recent_days"), "oss_recent_days")
+    diagnostics = payload.get("diagnostics", {})
+    if isinstance(diagnostics, dict) and "oss_recent_days" in diagnostics:
+        return parse_oss_recent_days_value(diagnostics.get("oss_recent_days"), "diagnostics.oss_recent_days")
+    return parse_oss_recent_days_value(os.environ.get(OSS_RECENT_DAYS_ENV, ""), OSS_RECENT_DAYS_ENV)
+
+
+def resolve_oss_validation_now(
+    payload: dict[str, object],
+    now: datetime | None = None,
+) -> datetime:
+    if now is not None:
+        return now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    for source in (payload.get("recency_window_end"),):
+        parsed = parse_oss_candidate_datetime(source)
+        if parsed is not None:
+            return parsed
+    diagnostics = payload.get("diagnostics", {})
+    if isinstance(diagnostics, dict):
+        parsed = parse_oss_candidate_datetime(diagnostics.get("recency_window_end"))
+        if parsed is not None:
+            return parsed
+    return datetime.now(timezone.utc)
+
+
+def oss_recency_window_start(now: datetime, recent_days: int) -> datetime:
+    now_utc = now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
+    return now_utc - timedelta(days=recent_days)
+
+
+def safe_oss_candidates_by_url(
+    payload: dict[str, object],
+    *,
+    now: datetime | None = None,
+    recent_days: int | None = None,
+) -> dict[str, dict[str, object]]:
+    if "items" not in payload or not isinstance(payload.get("items"), list):
+        fail("OSS_CANDIDATE_ARTIFACT_INVALID: OSS candidate JSON items must be a list.")
+    raw_items = payload["items"]
+    resolved_recent_days = recent_days if recent_days is not None else resolve_oss_recent_days(payload)
+    resolved_now = resolve_oss_validation_now(payload, now)
+    window_start = oss_recency_window_start(resolved_now, resolved_recent_days)
 
     candidates: dict[str, dict[str, object]] = {}
     for raw_item in raw_items:
@@ -951,42 +1041,81 @@ def safe_oss_candidates_by_url(payload: dict[str, object]) -> dict[str, dict[str
             or (isinstance(raw_item.get(field), str) and not str(raw_item.get(field)).strip())
         ]
         if missing_fields:
-            fail(f"safe_to_recommend OSS candidate is missing field(s): {', '.join(missing_fields)}")
+            fail(
+                "OSS_CANDIDATE_ARTIFACT_INVALID: "
+                f"safe_to_recommend OSS candidate is missing field(s): {', '.join(missing_fields)}"
+            )
         if str(raw_item.get("exclusion_reason") or raw_item.get("exclude_reason") or "").strip():
-            fail("safe_to_recommend OSS candidate must not include an exclusion reason.")
+            fail("OSS_ISSUE_URL_NOT_SAFE_TO_RECOMMEND: safe_to_recommend OSS candidate must not include an exclusion reason.")
         url = str(raw_item.get("url") or raw_item.get("source_url") or "").strip()
         if not GITHUB_ISSUE_URL_RE.fullmatch(url):
-            fail("safe_to_recommend OSS candidate must include a GitHub issue URL.")
+            fail("OSS_CANDIDATE_ARTIFACT_INVALID: safe_to_recommend OSS candidate must include a GitHub issue URL.")
         if "score_breakdown" not in raw_item or not isinstance(raw_item["score_breakdown"], dict):
-            fail("safe_to_recommend OSS candidate must include score_breakdown.")
+            fail("OSS_CANDIDATE_ARTIFACT_INVALID: safe_to_recommend OSS candidate must include score_breakdown.")
         missing_score_fields = [
             field for field in OSS_SCORE_BREAKDOWN_FIELDS if field not in raw_item["score_breakdown"]
         ]
         if missing_score_fields:
-            fail(f"safe_to_recommend OSS candidate score_breakdown is missing field(s): {', '.join(missing_score_fields)}")
+            fail(
+                "OSS_CANDIDATE_ARTIFACT_INVALID: "
+                f"safe_to_recommend OSS candidate score_breakdown is missing field(s): {', '.join(missing_score_fields)}"
+            )
         if "safety_checks" not in raw_item or not isinstance(raw_item["safety_checks"], dict):
-            fail("safe_to_recommend OSS candidate must include safety_checks.")
+            fail("OSS_CANDIDATE_ARTIFACT_INVALID: safe_to_recommend OSS candidate must include safety_checks.")
         missing_safety_fields = [
             field for field in OSS_SAFETY_CHECK_FIELDS if field not in raw_item["safety_checks"]
         ]
         if missing_safety_fields:
-            fail(f"safe_to_recommend OSS candidate safety_checks is missing field(s): {', '.join(missing_safety_fields)}")
+            fail(
+                "OSS_CANDIDATE_ARTIFACT_INVALID: "
+                f"safe_to_recommend OSS candidate safety_checks is missing field(s): {', '.join(missing_safety_fields)}"
+            )
         failed_safety_fields = [
             field for field in OSS_SAFETY_CHECK_FIELDS if raw_item["safety_checks"].get(field) is not True
         ]
+        if "created_within_recent_window" in failed_safety_fields:
+            issue_url = normalize_github_issue_url(url)
+            fail(f"OSS_ISSUE_URL_NOT_RECENT: safe candidate failed created_at recency safety check: {issue_url}")
         if failed_safety_fields:
-            fail(f"safe_to_recommend OSS candidate has failed safety check(s): {', '.join(failed_safety_fields)}")
-        candidates[normalize_github_issue_url(url)] = raw_item
+            fail(
+                "OSS_ISSUE_URL_NOT_SAFE_TO_RECOMMEND: "
+                f"safe_to_recommend OSS candidate has failed safety check(s): {', '.join(failed_safety_fields)}"
+            )
+        issue_url = normalize_github_issue_url(url)
+        if raw_item.get("is_recent") is not True:
+            fail(f"OSS_ISSUE_URL_NOT_RECENT: safe candidate is_recent is not true: {issue_url}")
+        if str(raw_item.get("recency_reason", "")).strip() != "created_within_recent_window":
+            fail(f"OSS_ISSUE_URL_NOT_RECENT: safe candidate recency_reason is not created_within_recent_window: {issue_url}")
+        created_at = parse_oss_candidate_datetime(raw_item.get("created_at"))
+        if created_at is None:
+            fail(
+                "OSS_ISSUE_URL_INVALID_CREATED_AT: "
+                f"safe candidate has invalid created_at: {issue_url} created_at={raw_item.get('created_at')!r}"
+            )
+        if created_at < window_start:
+            fail(
+                "OSS_ISSUE_URL_NOT_RECENT: Generated brief contains a stale GitHub issue URL candidate: "
+                f"{issue_url} created_at={raw_item.get('created_at')} recent_days={resolved_recent_days} "
+                f"window_start={window_start.strftime('%Y-%m-%dT%H:%M:%SZ')}"
+            )
+        candidates[issue_url] = raw_item
     diagnostics = payload.get("diagnostics", {})
     if diagnostics and not isinstance(diagnostics, dict):
-        fail("OSS candidate JSON diagnostics must be an object.")
+        fail("OSS_CANDIDATE_ARTIFACT_INVALID: OSS candidate JSON diagnostics must be an object.")
     if isinstance(diagnostics, dict) and "safe_items_count" in diagnostics:
         try:
             expected_safe_count = int(diagnostics.get("safe_items_count", 0))
         except (TypeError, ValueError):
-            fail("OSS candidate JSON diagnostics.safe_items_count must be numeric.")
+            fail("OSS_CANDIDATE_ARTIFACT_INVALID: OSS candidate JSON diagnostics.safe_items_count must be numeric.")
         if expected_safe_count != len(candidates):
-            fail("OSS candidate JSON safe_items_count does not match safe items.")
+            fail("OSS_CANDIDATE_ARTIFACT_INVALID: OSS candidate JSON safe_items_count does not match safe items.")
+    if "safe_candidate_count" in payload:
+        try:
+            expected_safe_candidate_count = int(payload.get("safe_candidate_count", 0))
+        except (TypeError, ValueError):
+            fail("OSS_CANDIDATE_ARTIFACT_INVALID: OSS candidate JSON safe_candidate_count must be numeric.")
+        if expected_safe_candidate_count != len(candidates):
+            fail("OSS_CANDIDATE_ARTIFACT_INVALID: OSS candidate JSON safe_candidate_count does not match safe items.")
     return candidates
 
 
@@ -1077,13 +1206,25 @@ def markdown_link_urls(text: str) -> list[str]:
     return re.findall(r"\[[^\]]+\]\((https?://[^)]+)\)", text)
 
 
-def github_issue_urls(text: str) -> list[str]:
+def extract_github_issue_urls(text: str) -> list[str]:
     return GITHUB_ISSUE_URL_RE.findall(text)
+
+
+def github_issue_urls(text: str) -> list[str]:
+    return extract_github_issue_urls(text)
 
 
 def normalize_github_issue_url(url: str) -> str:
     parsed = urllib.parse.urlsplit(url.strip().rstrip("/"))
-    return f"https://{parsed.netloc.lower()}{parsed.path.rstrip('/')}"
+    path_match = re.fullmatch(
+        r"/([^/]+)/([^/]+)/issues/(\d+)/?",
+        parsed.path,
+        flags=re.IGNORECASE,
+    )
+    if path_match:
+        owner, repo, number = path_match.groups()
+        return f"https://github.com/{owner.lower()}/{repo.lower()}/issues/{number}"
+    return f"https://{parsed.netloc.lower()}{parsed.path.rstrip('/').lower()}"
 
 
 def normalize_validation_url(url: str) -> str:
@@ -1437,7 +1578,7 @@ def validate_daily_ps_section(sections: list[Section]) -> None:
 def validate_daily_oss_section(sections: list[Section], candidates_dir: Path) -> None:
     section = find_section(sections, "오픈소스 기여 후보")
     if section is None:
-        fail("Daily tech brief must include 오픈소스 기여 후보 section.")
+        fail("OSS_SECTION_MISSING: Daily tech brief must include 오픈소스 기여 후보 section.")
     oss_payload = read_oss_candidate_payload(candidates_dir)
     safe_candidates = safe_oss_candidates_by_url(oss_payload)
     unsafe_issue_urls = unsafe_oss_issue_urls(oss_payload)
@@ -1458,15 +1599,12 @@ def validate_daily_oss_section(sections: list[Section], candidates_dir: Path) ->
     has_issue_link = bool(issue_urls)
     if len(issue_urls) > 3:
         fail("OSS section must include at most three GitHub issue URLs.")
-    for issue_url in issue_urls:
-        if issue_url in unsafe_issue_urls:
-            fail(f"OSS section links to issue URL that is excluded or not safe_to_recommend=true: {issue_url}")
-        if issue_url not in safe_candidates:
-            fail(f"OSS section links to issue URL that is not safe_to_recommend=true: {issue_url}")
+    if not safe_candidates:
+        validate_oss_fallback(section, has_issue_link)
+        return
     if has_issue_link and DAILY_OSS_EMPTY_STATE in section.body:
         fail("OSS section must not mix an issue URL with the empty-state prep routine.")
-    if not safe_candidates and has_issue_link:
-        fail("OSS candidate JSON has no safe candidate, but Markdown includes an issue URL.")
+    validate_oss_issue_urls(issue_urls, safe_candidates, unsafe_issue_urls)
     if safe_candidates and not has_issue_link:
         fail("OSS candidate JSON has safe candidate(s), but Markdown does not include an issue URL.")
     if DAILY_OSS_EMPTY_STATE not in section.body and not has_issue_link:
@@ -1526,6 +1664,50 @@ def validate_daily_oss_section(sections: list[Section], candidates_dir: Path) ->
         fail("OSS 첫 30분 액션 must stay before PR creation or broad implementation.")
     validate_item_markdown_link(item)
     validate_oss_candidate_alignment(item, candidate, issue_url)
+
+
+def validate_oss_issue_urls(
+    issue_urls: list[str],
+    safe_candidates: dict[str, dict[str, object]],
+    unsafe_issue_urls: set[str],
+) -> None:
+    for issue_url in issue_urls:
+        if issue_url in unsafe_issue_urls:
+            fail(
+                "OSS_ISSUE_URL_NOT_SAFE_TO_RECOMMEND: "
+                "Generated brief contains an excluded or unsafe GitHub issue URL: "
+                f"{issue_url}"
+            )
+        if issue_url not in safe_candidates:
+            fail(
+                "OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES: "
+                "Generated brief contains a GitHub issue URL that is not present in safe candidates: "
+                f"{issue_url}"
+            )
+
+
+def validate_oss_fallback(section: Section, has_issue_link: bool) -> None:
+    if has_issue_link:
+        fail(
+            "OSS_FALLBACK_CONTAINS_ISSUE_URL: "
+            "No safe OSS candidates were available, but the generated fallback section contains GitHub issue URLs."
+        )
+    if DAILY_OSS_EMPTY_STATE not in section.body:
+        fail(
+            "OSS_FALLBACK_MISSING: "
+            "No safe OSS candidates were available, but the OSS section does not include the required fallback routine."
+        )
+    items = extract_items(section)
+    if len(items) > 1:
+        fail("OSS section must include at most one candidate.")
+    if not items:
+        return
+    item = items[0]
+    if item.title != "오늘의 OSS 기여 준비 루틴":
+        fail("OSS_FALLBACK_MISSING: OSS prep routine must use the required heading.")
+    missing = missing_bullet_fields(item.body, DAILY_OSS_PREP_FIELDS)
+    if missing:
+        fail(f"OSS_FALLBACK_MISSING: OSS prep routine is missing field(s): {', '.join(missing)}")
 
 
 def validate_oss_candidate_alignment(
