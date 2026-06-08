@@ -1,6 +1,6 @@
 # Daily Backend Brief Example
 
-이 문서는 Career Feed가 생성할 수 있는 브리핑 형태를 설명하기 위한 예시입니다.
+Career Feed가 생성할 수 있는 브리핑 형태를 설명하기 위한 예시입니다.
 
 ## 오늘의 백엔드 학습 주제
 

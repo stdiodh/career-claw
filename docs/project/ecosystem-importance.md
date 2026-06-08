@@ -25,17 +25,17 @@ This creates repeated friction.
 - It is hard to separate useful backend career signals from general tech noise.
 - It is hard for study maintainers to produce consistent daily or weekly prompts.
 
-Career Feed tries to reduce this friction with small, repeatable, reviewable automation.
+Small, repeatable, reviewable automation helps reduce this friction.
 
 ## Position in the backend ecosystem
 
-Career Feed does not sit in the critical path of production applications.
+It does not sit in the critical path of production applications.
 
 Applications do not import it as a library.
 
 Services do not deploy it as infrastructure.
 
-Instead, Career Feed sits near the onboarding layer of the backend ecosystem.
+Instead, it sits near the onboarding layer of the backend ecosystem.
 
 It organizes learning topics, career signals, OSS candidates, and practical backend knowledge into briefs that humans can review and reuse.
 
@@ -51,7 +51,7 @@ If junior developers cannot find approachable OSS candidates, they are less like
 
 If study groups cannot maintain consistent prompts, learning communities become harder to sustain.
 
-Career Feed matters because it helps reduce these small but persistent barriers.
+This matters because it helps reduce these small but persistent barriers.
 
 The importance is not measured by how many applications depend on this repository.
 
@@ -59,7 +59,7 @@ The importance is whether people entering the backend ecosystem can build more c
 
 ## Who benefits
 
-Career Feed is intended to help the following groups.
+It is intended to help the following groups.
 
 - Backend learners preparing with Java, Spring Boot, JVM, Kotlin, databases, and cloud topics
 - Junior backend developers who want a practical study routine
@@ -74,7 +74,7 @@ It provides a structured starting point.
 
 ## What Career Feed does not claim
 
-Career Feed does not claim to be a widely adopted backend library.
+It does not claim to be a widely adopted backend library.
 
 It does not claim large user numbers, large organization usage, high download counts, or broad production adoption.
 
@@ -86,11 +86,11 @@ It does not claim that OpenAI API output is correct without review.
 
 It does not claim to perform OSS contribution on behalf of users.
 
-Career Feed does not create automatic comments, automatic pull requests, automatic assigns, or automatic label changes in external repositories.
+It does not create automatic comments, automatic pull requests, automatic assigns, or automatic label changes in external repositories.
 
 ## Honest limitations
 
-Career Feed is early-stage.
+The project is early-stage.
 
 Usage metrics are intentionally not exaggerated.
 
@@ -130,7 +130,7 @@ They are not used to assign issues or change labels in external repositories.
 
 ## Safety and maintainer review
 
-Career Feed keeps automation boundaries narrow.
+Automation boundaries stay narrow.
 
 GitHub Actions generate and validate briefs.
 
@@ -142,9 +142,9 @@ Maintainer review is required for policy changes, new sources, and changes that 
 
 External repository respect is a core policy.
 
-Career Feed may recommend that a human look at an OSS repository or issue.
+It may recommend that a human look at an OSS repository or issue.
 
-Career Feed does not automatically comment, create PRs, assign issues, or change labels in that repository.
+It does not automatically comment, create PRs, assign issues, or change labels in that repository.
 
 ## Suggested wording for applications
 

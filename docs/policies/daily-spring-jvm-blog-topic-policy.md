@@ -1,7 +1,6 @@
 # Daily Spring/JVM Blog Topic Policy
 
-이 문서는 Daily Backend Brief의 1번 `오늘의 Spring Boot/JVM 학습` 섹션을 하루 1개 기술 블로그 주제로 운영하기 위한
-기준입니다.
+Daily Backend Brief의 1번 `오늘의 Spring Boot/JVM 학습` 섹션을 하루 1개 기술 블로그 주제로 운영하기 위한 기준입니다.
 
 ## 목적
 

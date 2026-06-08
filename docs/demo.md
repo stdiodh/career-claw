@@ -2,19 +2,19 @@
 
 ## 목적
 
-이 문서는 Career Feed를 실행하면 무엇이 만들어지고 어떤 화면으로 확인할 수 있는지 보여주기 위한 데모 가이드입니다.
+Career Feed를 실행하면 무엇이 만들어지고 어떤 화면으로 확인할 수 있는지 보여주는 데모 가이드입니다.
 
 데모의 목적은 새 사용자가 GitHub Actions 실행, validation artifact 확인, 생성된 Markdown briefing, Discord Webhook 전송 결과를 빠르게 이해하도록 돕는 것입니다.
 
-이 문서는 실제 운영 secret이나 private Discord 정보를 공개하지 않는 것을 전제로 합니다.
+실제 운영 secret이나 private Discord 정보를 공개하지 않는 것을 전제로 합니다.
 
 데모는 제품 홍보 화면이 아니라 운영 흐름을 설명하는 문서입니다.
 
-Career Feed가 웹 대시보드, Discord Gateway Bot, Slash Command, 채용 매칭 서비스처럼 보이지 않게 유지합니다.
+웹 대시보드, Discord Gateway Bot, Slash Command, 채용 매칭 서비스처럼 보이지 않게 유지합니다.
 
 ## 데모 범위
 
-Career Feed는 브라우저에서 사용하는 웹 앱이 아닙니다.
+브라우저에서 사용하는 웹 앱이 아닙니다.
 
 따라서 데모의 중심은 GitHub Actions 화면, Actions summary, validation report, generated artifact, Discord output입니다.
 

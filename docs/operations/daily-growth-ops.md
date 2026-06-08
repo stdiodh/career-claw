@@ -1,8 +1,8 @@
 # Daily Growth Ops
 
 Daily Backend Brief는 Discord 전송 결과만 보는 흐름이 아니라, artifact에 남는 후보 JSON과 운영 요약으로 학습 진행과 OSS
-후보 생성 상태를 확인하는 흐름입니다. 이 문서는 서버, DB, 웹 대시보드, Discord Bot 없이 GitHub Actions artifact와 정적
-파일만으로 확인하는 방법을 정리합니다.
+후보 생성 상태를 확인하는 흐름입니다. 서버, DB, 웹 대시보드, Discord Bot 없이 GitHub Actions artifact와 정적 파일만으로
+확인하는 방법을 정리합니다.
 
 ## dry_run으로 후보 확인
 

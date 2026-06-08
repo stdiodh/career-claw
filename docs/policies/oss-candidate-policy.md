@@ -4,8 +4,8 @@ Daily Backend Brief의 OSS 후보는 `configs/oss-repositories.json`에 등록�
 framework 저장소만 대상으로 합니다. 목표는 고정 issue 번호를 추천하는 것이 아니라, 매 실행마다 현재 GitHub issue 상태를 확인해
 안전한 첫 기여 후보 1개 또는 OSS 기여 준비 루틴을 제공하는 것입니다.
 
-GitHub issue에는 댓글, assign, label 변경 같은 mutation을 하지 않습니다. 이 프로젝트는 issue 추천과 로컬 progress
-기록만 수행합니다.
+GitHub issue에는 댓글, assign, label 변경 같은 mutation을 하지 않습니다. 범위는 issue 추천과 로컬 progress 기록으로
+제한합니다.
 
 ## 저장소 우선순위
 

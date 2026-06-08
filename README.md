@@ -12,7 +12,7 @@ Career Feed는 Java/Kotlin 백엔드 학습자와 주니어 개발자가 오늘 
 
 문제는 자료가 흩어져 있고, 매일 무엇을 우선순위에 둘지 판단하기 어렵다는 점입니다.
 
-Career Feed는 다음 질문을 반복해서 마주하는 사람을 위해 만들어졌습니다.
+다음 질문을 반복해서 마주하는 사람을 위해 만들어졌습니다.
 
 - Java, Spring Boot, JVM, Kotlin 학습 다음 단계를 고르기 어렵습니다.
 - Programmers 문제 풀이 루틴을 꾸준히 관리하기 어렵습니다.
@@ -21,7 +21,7 @@ Career Feed는 다음 질문을 반복해서 마주하는 사람을 위해 만�
 - 채용, 인턴, 대외활동, 해커톤 정보를 매주 직접 확인하기 어렵습니다.
 - Discord 스터디나 멘토링 그룹에 꾸준히 공유할 브리핑을 만들 시간이 부족합니다.
 
-이 프로젝트는 커리어 판단을 자동화하지 않습니다.
+커리어 판단을 자동화하지 않습니다.
 
 대신 검토 가능한 공개 출처와 안전한 기본값을 바탕으로, 매일 확인할 수 있는 작은 성장 피드를 만드는 것을 목표로 합니다.
 
@@ -37,7 +37,7 @@ Career Feed는 다음 질문을 반복해서 마주하는 사람을 위해 만�
 
 ## How it works
 
-Career Feed는 정적 설정, GitHub Actions, OpenAI API, validator, Discord Webhook을 조합합니다.
+정적 설정, GitHub Actions, OpenAI API, validator, Discord Webhook을 조합합니다.
 
 ```text
 Static config and progress data
@@ -85,7 +85,7 @@ fork해서 GitHub Actions와 Discord에서 운영하려면 다음 순서로 시�
 
 ## Configuration
 
-Career Feed는 민감한 값과 실행 설정값을 분리합니다.
+민감한 값과 실행 설정값을 분리합니다.
 
 - API key와 Discord webhook URL은 GitHub Actions Secrets에 둡니다.
 - timezone, 목표 실행 시간, OSS 후보 freshness, Discord delivery flag는 GitHub Actions Variables에 둡니다.
@@ -96,7 +96,7 @@ Career Feed는 민감한 값과 실행 설정값을 분리합니다.
 
 ## Safety / Limitations
 
-Career Feed는 안전한 기본 동작을 우선합니다.
+안전한 기본 동작을 우선합니다.
 
 - Discord delivery는 기본적으로 꺼져 있습니다.
 - `dry_run=true`이면 Discord로 전송하지 않습니다.
@@ -105,7 +105,7 @@ Career Feed는 안전한 기본 동작을 우선합니다.
 - safe 후보가 없으면 오래된 issue를 억지로 추천하지 않고 fallback routine을 출력합니다.
 - 외부 GitHub 저장소에 자동 댓글, PR, assign, label 변경을 하지 않습니다.
 
-이 프로젝트는 상시 실행 서버, 데이터베이스, 웹 대시보드, Discord Gateway Bot, Slash Command, 채용 매칭 서비스가 아닙니다.
+상시 실행 서버, 데이터베이스, 웹 대시보드, Discord Gateway Bot, Slash Command, 채용 매칭 서비스가 아닙니다.
 
 브리핑은 학습과 탐색의 시작점이며, 사용자가 최종 확인해야 합니다.
 
@@ -155,6 +155,6 @@ Read [CONTRIBUTING.md](./CONTRIBUTING.md) and the [Contribution Guide Index](./d
 
 ## License
 
-Career Feed는 MIT License로 배포됩니다.
+MIT License로 배포됩니다.
 
 자세한 내용은 [LICENSE](./LICENSE)를 확인해 주세요.

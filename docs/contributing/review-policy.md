@@ -6,7 +6,7 @@ Career Feed maintainer review는 제안자를 평가하기 위한 절차가 아�
 
 Review는 프로젝트 범위, 학습자에게 주는 가치, 안전성, 유지보수 가능성을 확인하기 위한 절차입니다.
 
-Career Feed는 초기 단계의 공개 OSS입니다.
+초기 단계의 공개 OSS입니다.
 
 따라서 작고 검토 가능한 제안을 우선합니다.
 
@@ -14,7 +14,7 @@ Career Feed는 초기 단계의 공개 OSS입니다.
 
 ## What maintainers look for
 
-Maintainer는 다음을 확인합니다.
+다음 기준을 확인합니다.
 
 - project scope와 맞는가
 - 백엔드 학습자에게 도움이 되는가
@@ -50,19 +50,13 @@ Maintainer는 다음을 확인합니다.
 
 ## Automation review boundaries
 
-Career Feed는 maintainer-reviewed automation을 사용합니다.
+Maintainer-reviewed automation을 사용합니다.
 
 자동화는 브리핑 초안, 검증 리포트, 학습 주제 우선순위화, OSS 후보 정리에 사용할 수 있습니다.
 
 자동화가 외부 저장소에 직접 행동하는 것은 허용하지 않습니다.
 
-Career Feed는 외부 저장소에 자동 댓글을 작성하지 않습니다.
-
-Career Feed는 외부 저장소에 자동 PR을 만들지 않습니다.
-
-Career Feed는 외부 저장소 issue를 자동 assign하지 않습니다.
-
-Career Feed는 외부 저장소 label을 자동 변경하지 않습니다.
+외부 저장소에 자동 댓글을 작성하거나, 자동 PR을 만들거나, issue를 자동 assign하거나, label을 자동 변경하지 않습니다.
 
 자동화 정책 변경은 PR 전에 issue로 논의해야 합니다.
 
@@ -100,7 +94,7 @@ heading 앞뒤에는 빈 줄을 둡니다.
 
 ## Security review
 
-Maintainer는 공개 issue, PR, 문서에 민감 정보가 포함되었는지 확인합니다.
+공개 issue, PR, 문서에 민감 정보가 포함되었는지 확인합니다.
 
 OpenAI API key, Discord Webhook URL, GitHub token, Naver API credentials, 개인 정보는 공개하면 안 됩니다.
 
@@ -135,7 +129,7 @@ declined for maintenance burden은 현재 단계에서 유지하기 어렵다는
 
 ## Maintainer communication
 
-Maintainer는 가능하면 어떤 기준 때문에 수정이나 거절이 필요한지 설명합니다.
+가능하면 어떤 기준 때문에 수정이나 거절이 필요한지 설명합니다.
 
 Contributor는 요청받은 맥락을 보완하거나 더 작은 제안으로 나눌 수 있습니다.
 

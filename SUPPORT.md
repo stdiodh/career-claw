@@ -58,4 +58,4 @@ If a secret was exposed, rotate it immediately and follow [Security Policy](SECU
 - real-time GitHub Actions scheduling
 - automatic claiming or modification of external GitHub issues
 
-Users should review generated source links, candidate artifacts, and Discord output before acting on a brief.
+Review generated source links, candidate artifacts, and Discord output before acting on a brief.

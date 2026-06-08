@@ -1,6 +1,6 @@
 # Backend Career Site Radar Example
 
-이 문서는 Career Feed가 생성할 수 있는 커리어 사이트 레이더 형태를 설명하기 위한 예시입니다.
+Career Feed가 생성할 수 있는 커리어 사이트 레이더 형태를 설명하기 위한 예시입니다.
 
 ## 확인할 정보
 

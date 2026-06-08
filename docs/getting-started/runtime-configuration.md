@@ -10,7 +10,7 @@ Career Feed fork는 workflow YAML을 직접 수정하지 않고도 실행 시간
 
 ## 요약
 
-처음 fork한 사용자는 다음 순서로 설정합니다.
+처음 fork했다면 다음 순서로 설정합니다.
 
 1. GitHub Actions를 fork에서 활성화합니다.
 2. 필요한 Secrets를 등록합니다.
@@ -30,7 +30,7 @@ Secrets는 외부에 노출되면 안 되는 값입니다.
 
 Variables는 노출되어도 보안 사고가 되지 않는 실행 설정값입니다.
 
-Career Feed는 이 둘을 분리합니다.
+두 값을 분리합니다.
 
 | 구분 | 저장할 값 | 예시 |
 | --- | --- | --- |
@@ -155,7 +155,7 @@ runtime gate는 `invalid_config` skip reason을 남깁니다.
 
 GitHub Actions의 `on.schedule` cron은 repository Variables를 직접 참조할 수 없습니다.
 
-그래서 Career Feed는 workflow YAML의 cron을 사용자별 시간으로 바꾸지 않습니다.
+그래서 workflow YAML의 cron을 사용자별 시간으로 바꾸지 않습니다.
 
 대신 workflow가 `5,35 * * * *` cron으로 주기적으로 깨어나고, 초반에 `scripts/should-run-now.py`를 실행합니다.
 
@@ -219,7 +219,7 @@ Discord 전송과 delivery lock 저장은 하지 않습니다.
 
 ## 10분 설정 절차
 
-처음 fork한 사용자는 아래 값만 먼저 설정해도 됩니다.
+처음 fork했다면 아래 값만 먼저 설정해도 됩니다.
 
 1. Secret `OPENAI_API_KEY`를 등록합니다.
 2. Discord 전송을 테스트할 channel의 Webhook URL을 필요한 Secret에 등록합니다.

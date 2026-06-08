@@ -1,8 +1,8 @@
 # Documentation
 
-Career Feed 문서는 사용자 목적별로 나뉩니다.
+문서는 사용자 목적별로 나뉩니다.
 
-처음 온 사용자는 getting started 문서부터 읽고, 운영 정책이나 기여 기준은 필요한 시점에 따라가면 됩니다.
+처음 방문했다면 getting started 문서부터 읽고, 운영 정책이나 기여 기준은 필요한 시점에 따라가면 됩니다.
 
 ## Start here
 

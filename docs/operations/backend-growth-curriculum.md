@@ -1,6 +1,6 @@
 # Backend Growth Curriculum
 
-이 문서는 Daily Backend Brief에 추가된 CS Core와 백엔드 용어 슬롯의 운영 기준을 정리합니다.
+Daily Backend Brief에 추가된 CS Core와 백엔드 용어 슬롯의 운영 기준을 정리합니다.
 
 ## 목적
 

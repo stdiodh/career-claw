@@ -1,6 +1,6 @@
 # Fork Setup Guide
 
-이 문서는 Career Feed를 fork한 사용자가 GitHub Actions에서 dry-run을 실행하고,
+Career Feed를 fork한 사용자가 GitHub Actions에서 dry-run을 실행하고,
 artifact를 확인한 뒤 Discord 전송까지 켜는 첫 설정 절차입니다.
 
 자세한 운영 정책은 [Usage Guide](usage.md), 실행 시간 설정은
@@ -9,7 +9,7 @@ artifact를 확인한 뒤 Discord 전송까지 켜는 첫 설정 절차입니다
 
 ## 대상
 
-이 문서는 다음 사용자에게 맞춰져 있습니다.
+다음 사용자에게 맞춰져 있습니다.
 
 - Career Feed를 fork해서 자기 Discord에 브리핑을 받고 싶은 사용자
 - Java/Kotlin 백엔드 학습자
@@ -159,7 +159,7 @@ GitHub Actions의 `on.schedule` cron은 repository Variables를 직접 읽어 �
 
 Career Feed workflow는 주기적으로 깨어나고, 초반에 runtime gate script가 Variables를 읽어 실행 여부를 판단합니다.
 
-즉, fork 사용자는 workflow YAML을 수정하지 않고 아래 Variables로 목표 시간을 설정합니다.
+즉, workflow YAML을 수정하지 않고 아래 Variables로 목표 시간을 설정합니다.
 
 - `CAREER_FEED_TIMEZONE`
 - `CAREER_FEED_BACKEND_DAILY_TIME`
@@ -171,7 +171,7 @@ manual `workflow_dispatch` 실행은 runtime time window 때문에 막히지 않
 
 ## OSS candidate policy
 
-기본적으로 Career Feed는 현재 실행 시점 기준 최근 30일 이내에 생성된 GitHub issue만 OSS 기여 후보로 추천합니다.
+기본적으로 현재 실행 시점 기준 최근 30일 이내에 생성된 GitHub issue만 OSS 기여 후보로 추천합니다.
 
 기준은 `created_at`입니다.
 

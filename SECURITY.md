@@ -26,7 +26,7 @@ Daily Backend Brief, Korea Dev/AI News Daily, Backend Career Site Radar, Mark PS
 - 사용자 계정 시스템
 - 채용 매칭 서비스
 
-이 범위 밖 시스템에 대한 취약점 보고는 Career Feed 저장소의 현재 보안 범위에 해당하지 않을 수 있습니다.
+이 범위 밖 시스템에 대한 취약점 보고는 현재 보안 범위에 해당하지 않을 수 있습니다.
 
 ## Sensitive information
 
@@ -91,23 +91,17 @@ raw secret 값을 출력하지 마세요.
 
 ## Automation boundaries
 
-Career Feed는 자동화 범위를 좁게 유지합니다.
+자동화 범위는 좁게 유지합니다.
 
 OpenAI API는 maintainer가 검토 가능한 브리핑 초안, 검증 리포트, 학습 주제 우선순위화, OSS 후보 정리에 사용합니다.
 
-Career Feed는 외부 저장소에 자동 댓글을 작성하지 않습니다.
+외부 저장소에 자동 댓글을 작성하거나, 자동 PR을 만들거나, issue를 자동 assign하거나, label을 자동 변경하지 않습니다.
 
-Career Feed는 외부 저장소에 자동 PR을 만들지 않습니다.
-
-Career Feed는 외부 저장소 issue를 자동 assign하지 않습니다.
-
-Career Feed는 외부 저장소 label을 자동 변경하지 않습니다.
-
-Career Feed는 무검토 배포를 목표로 하지 않습니다.
+무검토 배포를 목표로 하지 않습니다.
 
 ## Maintainer response
 
-Maintainer는 보고된 문제를 확인하고 영향 범위를 판단합니다.
+보고된 문제는 영향 범위를 확인한 뒤 대응합니다.
 
 Secret 노출이 의심되면 우선 credential 폐기와 교체를 진행합니다.
 

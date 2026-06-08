@@ -39,7 +39,7 @@ Career Feed는 백엔드 지망생과 주니어 개발자가 막막함을 안전
 
 ## Project-specific expectations
 
-Career Feed는 학습과 커리어 탐색의 출발점을 제공하는 프로젝트입니다.
+학습과 커리어 탐색의 출발점을 제공하는 프로젝트입니다.
 
 제안은 채용 가능성이나 개인 역량에 대한 단정적 판단으로 사용되어서는 안 됩니다.
 
@@ -53,7 +53,7 @@ OSS 후보 제안은 외부 저장소에 행동을 강제하기 위한 것이 �
 
 ## Respect for beginners
 
-Career Feed는 초보자 질문을 비난하지 않는 문화를 중요하게 봅니다.
+초보자 질문을 비난하지 않는 문화를 중요하게 봅니다.
 
 백엔드 지망생, 주니어 개발자, 비전공자, 경력 전환자, 지역과 언어가 다른 contributor를 존중합니다.
 
@@ -67,7 +67,7 @@ Career Feed는 초보자 질문을 비난하지 않는 문화를 중요하게 �
 
 ## Respect for maintainers
 
-Maintainer는 모든 제안을 즉시 반영할 의무가 없습니다.
+모든 제안을 즉시 반영할 의무는 없습니다.
 
 제안은 프로젝트 범위, 안전성, 유지보수 가능성, source quality 기준에 따라 검토됩니다.
 
@@ -93,19 +93,13 @@ Maintainer는 모든 제안을 즉시 반영할 의무가 없습니다.
 
 ## Automation safety
 
-Career Feed는 maintainer-reviewed automation을 지향합니다.
+Maintainer-reviewed automation을 지향합니다.
 
 OpenAI API와 workflow는 브리핑 초안, 검증 리포트, 학습 주제 우선순위화, OSS 후보 정리에 사용할 수 있습니다.
 
 자동화 결과는 검토 가능한 자료로 다룹니다.
 
-Career Feed는 외부 저장소에 자동 댓글을 작성하지 않습니다.
-
-Career Feed는 외부 저장소에 자동 PR을 만들지 않습니다.
-
-Career Feed는 외부 저장소 issue를 자동 assign하지 않습니다.
-
-Career Feed는 외부 저장소 label을 자동 변경하지 않습니다.
+외부 저장소에 자동 댓글을 작성하거나, 자동 PR을 만들거나, issue를 자동 assign하거나, label을 자동 변경하지 않습니다.
 
 외부 maintainer의 저장소 정책을 우회하거나 압박하는 자동화는 허용하지 않습니다.
 
@@ -141,12 +135,12 @@ Maintainer는 상황에 따라 댓글 수정 요청, 이슈 정리 요청, PR �
 
 ## Maintainer notes
 
-Maintainer는 이 프로젝트를 초기 단계의 공개 OSS로 정직하게 설명합니다.
+초기 단계의 공개 OSS라는 점을 정직하게 설명합니다.
 
-Maintainer는 fake metrics, 과장된 adoption, 검증되지 않은 영향력 주장을 문서에 넣지 않습니다.
+fake metrics, 과장된 adoption, 검증되지 않은 영향력 주장을 문서에 넣지 않습니다.
 
-Maintainer는 beginner와 junior developer가 안전하게 질문할 수 있는 분위기를 유지합니다.
+beginner와 junior developer가 안전하게 질문할 수 있는 분위기를 유지합니다.
 
-Maintainer는 제안 거절을 개인 평가가 아니라 프로젝트 범위와 품질 기준의 문제로 설명합니다.
+제안 거절은 개인 평가가 아니라 프로젝트 범위와 품질 기준의 문제로 설명합니다.
 
-Maintainer는 secret, credential, 비공개 연락처가 공개 문서에 들어가지 않도록 주의합니다.
+secret, credential, 비공개 연락처가 공개 문서에 들어가지 않도록 주의합니다.

@@ -128,7 +128,7 @@ source reliability와 maintainer review 가능성을 먼저 확인합니다.
 
 ## Privacy and scraping boundaries
 
-Career Feed는 출처를 자동으로 무제한 수집하지 않습니다.
+출처를 자동으로 무제한 수집하지 않습니다.
 
 개인정보를 요구하는 출처는 신중하게 다룹니다.
 
@@ -142,7 +142,7 @@ robots, terms, rate limit, public access 조건을 존중해야 합니다.
 
 ## Maintainer review flow
 
-Maintainer는 source suggestion을 다음 순서로 봅니다.
+Source suggestion은 다음 순서로 검토합니다.
 
 - 출처 URL이 공개적으로 접근 가능한지 확인합니다.
 - source type과 region metadata가 충분한지 확인합니다.

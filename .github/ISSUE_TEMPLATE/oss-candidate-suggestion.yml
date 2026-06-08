@@ -10,7 +10,7 @@ body:
       value: |
         백엔드 지망생이나 주니어 개발자가 살펴볼 만한 OSS 저장소 또는 이슈를 제안해 주세요.
 
-        Career Feed는 외부 저장소에 자동 댓글, PR, assign, label 변경을 하지 않고 후보 추천만 합니다.
+        외부 저장소에 자동 댓글, PR, assign, label 변경을 하지 않고 후보 추천만 합니다.
 
         추천 기준은 OSS Candidate Policy를 따릅니다:
         https://github.com/stdiodh/career-feed/blob/main/docs/policies/oss-candidate-policy.md

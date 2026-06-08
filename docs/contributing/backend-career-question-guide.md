@@ -2,9 +2,9 @@
 
 ## Purpose
 
-이 문서는 백엔드 커리어 질문을 더 잘 작성하는 방법을 안내합니다.
+백엔드 커리어 질문을 더 잘 작성하는 방법을 안내합니다.
 
-Career Feed는 질문자를 평가하기 위한 프로젝트가 아닙니다.
+질문자를 평가하기 위한 프로젝트가 아닙니다.
 
 질문은 더 나은 학습 주제, 커리어 브리핑, 실무 지식 카드, 출처 검토 기준을 만들기 위한 자료입니다.
 
@@ -95,13 +95,12 @@ Career Feed는 질문자를 평가하기 위한 프로젝트가 아닙니다.
 
 ## How questions improve Career Feed
 
-좋은 질문은 Daily Backend Brief의 학습 주제 후보가 될 수 있습니다.
+좋은 질문은 다음 개선으로 이어질 수 있습니다.
 
-좋은 질문은 Backend Career Site Radar의 해석 기준을 개선할 수 있습니다.
-
-좋은 질문은 OSS 후보 설명에서 beginner가 어려워하는 지점을 보완하는 데 도움이 됩니다.
-
-좋은 질문은 문서와 issue template을 더 명확하게 만드는 데 도움이 됩니다.
+- Daily Backend Brief의 학습 주제 후보
+- Backend Career Site Radar의 해석 기준
+- OSS 후보 설명에서 beginner가 어려워하는 지점
+- 문서와 issue template의 명확성
 
 질문은 개인의 합격 가능성을 판단하기 위한 자료가 아닙니다.
 
@@ -109,7 +108,7 @@ Career Feed는 질문자를 평가하기 위한 프로젝트가 아닙니다.
 
 ## Maintainer review
 
-Maintainer는 질문이 프로젝트 범위와 맞는지 확인합니다.
+질문이 프로젝트 범위와 맞는지 확인합니다.
 
 질문이 너무 개인 평가 중심이면 범위를 좁혀 달라고 요청할 수 있습니다.
 

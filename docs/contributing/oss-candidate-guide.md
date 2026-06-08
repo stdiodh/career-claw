@@ -2,29 +2,25 @@
 
 ## Purpose
 
-이 문서는 Career Feed에 OSS 기여 후보를 제안할 때의 기준을 설명합니다.
+Career Feed에 OSS 기여 후보를 제안할 때의 기준입니다.
 
-Career Feed는 백엔드 지망생과 주니어 개발자가 살펴볼 만한 repository나 issue를 정리할 수 있습니다.
+백엔드 지망생과 주니어 개발자가 살펴볼 만한 repository나 issue를 정리할 수 있습니다.
 
-하지만 Career Feed가 외부 저장소에서 직접 기여 행동을 수행하지는 않습니다.
+하지만 외부 저장소에서 직접 기여 행동을 수행하지는 않습니다.
 
 OSS 후보 제안은 maintainer와 학습자가 검토할 수 있는 자료입니다.
 
 ## What makes an OSS candidate useful
 
-좋은 OSS 후보는 공개 repository입니다.
+좋은 OSS 후보는 다음 특징을 갖습니다.
 
-좋은 OSS 후보는 license가 명확합니다.
-
-좋은 OSS 후보는 README 또는 CONTRIBUTING 문서가 있습니다.
-
-좋은 OSS 후보는 build 또는 test 방법이 어느 정도 설명되어 있습니다.
-
-좋은 OSS 후보는 작은 문서 수정, 테스트 개선, 버그 재현, 예제 보완 같은 입문 가능한 기회가 있습니다.
-
-좋은 OSS 후보는 백엔드 학습과의 관련성이 있습니다.
-
-좋은 OSS 후보는 외부 maintainer에게 부담을 주지 않는 방식으로 제안됩니다.
+- 공개 repository입니다.
+- license가 명확합니다.
+- README 또는 CONTRIBUTING 문서가 있습니다.
+- build 또는 test 방법이 어느 정도 설명되어 있습니다.
+- 작은 문서 수정, 테스트 개선, 버그 재현, 예제 보완 같은 입문 가능한 기회가 있습니다.
+- 백엔드 학습과의 관련성이 있습니다.
+- 외부 maintainer에게 부담을 주지 않는 방식으로 제안됩니다.
 
 ## Beginner-friendly signals
 
@@ -60,17 +56,11 @@ issue 내용, 최근 활동, contribution guide, build/test 난이도를 함께 
 
 ## Safety boundaries
 
-Career Feed는 OSS 후보를 추천할 수 있습니다.
+OSS 후보를 추천할 수 있습니다.
 
-Career Feed는 외부 저장소에 자동 댓글을 작성하지 않습니다.
+외부 저장소에 자동 댓글을 작성하거나, 자동 PR을 만들거나, issue를 자동 assign하거나, label을 자동 변경하지 않습니다.
 
-Career Feed는 외부 저장소에 자동 PR을 만들지 않습니다.
-
-Career Feed는 외부 저장소 issue를 자동 assign하지 않습니다.
-
-Career Feed는 외부 저장소 label을 자동 변경하지 않습니다.
-
-Career Feed는 외부 maintainer의 정책을 우회하지 않습니다.
+외부 maintainer의 정책을 우회하지 않습니다.
 
 외부 저장소에 참여할 때는 해당 repository의 contribution guide와 maintainer 요청을 우선합니다.
 
@@ -118,23 +108,16 @@ Career Feed는 외부 maintainer의 정책을 우회하지 않습니다.
 
 ## What Career Feed will not do
 
-Career Feed는 외부 저장소에 자동 PR을 만들지 않습니다.
+다음은 하지 않습니다.
 
-Career Feed는 외부 저장소에 자동 comment를 남기지 않습니다.
-
-Career Feed는 외부 저장소 issue를 자동 assign하지 않습니다.
-
-Career Feed는 외부 저장소 label을 자동 변경하지 않습니다.
-
-Career Feed는 외부 maintainer에게 특정 issue를 beginner-friendly로 바꾸라고 요구하지 않습니다.
-
-Career Feed는 license가 불명확하거나 악용 위험이 큰 후보를 추천하지 않습니다.
-
-Career Feed는 보안 취약점 exploit 중심 이슈를 입문 후보로 추천하지 않습니다.
+- 외부 저장소 자동 PR, comment, assign, label 변경
+- 외부 maintainer에게 특정 issue를 beginner-friendly로 바꾸라고 요구
+- license가 불명확하거나 악용 위험이 큰 후보 추천
+- 보안 취약점 exploit 중심 이슈를 입문 후보로 추천
 
 ## Maintainer checklist
 
-Maintainer는 OSS 후보를 볼 때 다음을 확인합니다.
+OSS 후보는 다음 기준으로 확인합니다.
 
 - repository가 공개되어 있는가
 - license가 명확한가

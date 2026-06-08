@@ -2,17 +2,17 @@
 
 ## Welcome
 
-Career Feed에 기여해 주셔서 감사합니다.
+기여해 주셔서 감사합니다.
 
 Career Feed는 백엔드 지망생과 주니어 개발자가 학습 주제, 커리어 정보, OSS 후보, 기술 뉴스, PS 루틴을 덜 막막하게 탐색하도록 돕는 공개 workflow입니다.
 
-이 프로젝트는 초기 단계의 공개 OSS입니다.
+초기 단계의 공개 OSS입니다.
 
 큰 사용 지표나 과장된 adoption을 주장하지 않고, maintainer가 검토할 수 있는 작은 자동화와 문서 개선을 꾸준히 쌓는 것을 우선합니다.
 
 ## Project purpose
 
-Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리핑 초안과 검증 가능한 자료를 만듭니다.
+GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리핑 초안과 검증 가능한 자료를 만듭니다.
 
 주요 목적은 학습자에게 확정적인 정답을 주는 것이 아니라, 오늘 살펴볼 수 있는 학습·커리어 탐색의 시작점을 제공하는 것입니다.
 
@@ -41,17 +41,14 @@ Career Feed는 GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리�
 
 ## What makes a good contribution
 
-좋은 기여는 무엇을 바꾸려는지 분명합니다.
+좋은 기여는 다음 특징을 갖습니다.
 
-좋은 기여는 왜 백엔드 학습자나 주니어 개발자에게 도움이 되는지 설명합니다.
-
-좋은 기여는 공개적으로 확인 가능한 URL, 근거, 예시를 포함합니다.
-
-좋은 기여는 자동화를 바로 실행하라는 명령이 아니라, maintainer가 검토할 수 있는 자료를 제공합니다.
-
-좋은 기여는 secret, credential, private link, 개인 정보를 포함하지 않습니다.
-
-좋은 기여는 한 PR에 하나의 주제만 담습니다.
+- 무엇을 바꾸려는지 분명합니다.
+- 왜 백엔드 학습자나 주니어 개발자에게 도움이 되는지 설명합니다.
+- 공개적으로 확인 가능한 URL, 근거, 예시를 포함합니다.
+- 자동화를 바로 실행하라는 명령이 아니라, maintainer가 검토할 수 있는 자료를 제공합니다.
+- secret, credential, private link, 개인 정보를 포함하지 않습니다.
+- 한 PR에 하나의 주제만 담습니다.
 
 상세 기준은 [Good suggestion criteria](docs/contributing/good-suggestion-criteria.md)를 참고해 주세요.
 
@@ -134,7 +131,7 @@ GitHub Actions 수동 실행과 artifact 확인 흐름은 [Usage Guide](docs/get
 
 ## Commit convention
 
-이 프로젝트는 Angular 스타일의 커밋 메시지를 권장합니다.
+커밋 메시지는 Angular 스타일을 권장합니다.
 
 기본 형식은 scope가 필요할 때 `type(scope): subject`를 사용합니다.
 
@@ -265,7 +262,7 @@ OSS 후보를 제안할 때는 repository URL, 관련 issue URL, beginner-friend
 issue URL을 제안한다면 기본적으로 최근 30일 이내 `created_at` issue인지 확인해 주세요.
 `updated_at`만 최근인 오래된 issue는 추천 후보에서 제외될 수 있습니다.
 
-Career Feed는 OSS 후보를 추천할 수 있지만 외부 저장소에 자동 PR, 자동 comment, 자동 assign, 자동 label 변경을 하지 않습니다.
+OSS 후보를 추천할 수 있지만 외부 저장소에 자동 PR, 자동 comment, 자동 assign, 자동 label 변경을 하지 않습니다.
 
 자세한 기준은 [OSS candidate suggestion guide](docs/contributing/oss-candidate-guide.md)를 참고해 주세요.
 최종 추천 정책은 [OSS Candidate Policy](docs/policies/oss-candidate-policy.md)를 따릅니다.
@@ -314,31 +311,23 @@ Career Feed는 OSS 후보를 추천할 수 있지만 외부 저장소에 자동 
 
 ## Automation boundaries
 
-Career Feed는 maintainer-reviewed automation입니다.
+Maintainer-reviewed automation입니다.
 
 OpenAI API는 브리핑 초안, 검증 리포트, 학습 주제 우선순위화, OSS 후보 정리에 사용할 수 있습니다.
 
-Career Feed는 외부 저장소에 자동 댓글을 작성하지 않습니다.
-
-Career Feed는 외부 저장소에 자동 PR을 만들지 않습니다.
-
-Career Feed는 외부 저장소 issue를 자동 assign하지 않습니다.
-
-Career Feed는 외부 저장소 label을 자동 변경하지 않습니다.
+외부 저장소에 자동 댓글을 작성하거나, 자동 PR을 만들거나, issue를 자동 assign하거나, label을 자동 변경하지 않습니다.
 
 무검토 배포나 외부 maintainer에게 부담을 주는 자동화는 프로젝트 범위 밖입니다.
 
 ## Maintainer review policy
 
-Maintainer는 제안이 프로젝트 범위와 맞는지 확인합니다.
+Maintainer는 제안을 다음 기준으로 검토합니다.
 
-Maintainer는 백엔드 학습자에게 실제로 도움이 되는지 확인합니다.
-
-Maintainer는 출처가 공개적이고 검증 가능한지 확인합니다.
-
-Maintainer는 개인정보, secret, credential 위험이 없는지 확인합니다.
-
-Maintainer는 특정 회사나 서비스 홍보로 오해될 가능성이 있는지 확인합니다.
+- 프로젝트 범위와 맞는가
+- 백엔드 학습자에게 실제로 도움이 되는가
+- 출처가 공개적이고 검증 가능한가
+- 개인정보, secret, credential 위험이 없는가
+- 특정 회사나 서비스 홍보로 오해될 가능성이 있는가
 
 거절은 contributor 개인에 대한 평가가 아니라 프로젝트 범위, 안전성, 유지보수 가능성 기준에 따른 판단입니다.
 
