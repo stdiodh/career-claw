@@ -55,7 +55,7 @@ Daily Backend Brief는 아래 후보 JSON을 입력으로 사용합니다.
 - CS Core topic은 `configs/backend-core-cs-curriculum.json`에서 KST 날짜 기반으로 선택합니다.
 - 백엔드 용어는 `configs/backend-terms-glossary.json`에서 KST 날짜 기반으로 선택합니다.
 
-상세 기준은 [Backend Growth Curriculum](../backend-growth-curriculum.md)을 따릅니다.
+상세 기준은 [Backend Growth Curriculum](./backend-growth-curriculum.md)을 따릅니다.
 
 ## OSS 후보 정책
 

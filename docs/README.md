@@ -23,6 +23,7 @@ Career Feed 문서는 사용자 목적별로 나뉩니다.
 | [Korea Dev/AI News Daily](./operations/daily-news-ops.md) | 뉴스 브리프 운영 |
 | [Backend Career Site Radar](./operations/career-site-radar.md) | 커리어 레이더 운영 |
 | [Daily Growth Ops](./operations/daily-growth-ops.md) | Daily growth section 운영 확인 |
+| [Backend Growth Curriculum](./operations/backend-growth-curriculum.md) | Daily Backend Brief 실무 충전 정책 |
 | [Operations Guide](./operations/operations.md) | 운영 흐름과 체크포인트 |
 | [Local Validation](./operations/local-validation.md) | 로컬 검증 명령 |
 | [Maintainer Guide](./operations/maintainer-guide.md) | maintainer 운영 체크리스트 |
@@ -60,20 +61,14 @@ Career Feed 문서는 사용자 목적별로 나뉩니다.
 | [Release Checklist](./project/release-checklist.md) | maintainer용 릴리스 전 점검 |
 | [v0.1.0 Release Notes](./release-notes/v0.1.0.md) | release note 초안 |
 | [Ecosystem Importance](./project/ecosystem-importance.md) | 백엔드 생태계에서의 의미와 한계 |
-| [Open Source Readiness Review](./project/open-source-readiness-review.md) | 공개 준비 상태 검토 |
 
 ## Archive / Legacy
 
-레거시 문서는 다음 단계에서 별도로 정리합니다.
+Historical documentation is kept under [Archive](./archive/README.md).
 
-이번 단계에서는 삭제하지 않습니다.
+Archived documents are not the source of truth for current setup or workflow behavior.
 
-| Document | Purpose |
-| --- | --- |
-| [Legacy Inventory](./legacy-inventory.md) | 레거시 문서와 제거 후보 기록 |
-| [OSS Program Application Notes](./oss-program-application.md) | 지원 프로그램 신청용 참고 문서 |
-| [Community Guide](./community-guide.md) | 스터디와 커뮤니티 재사용 참고 |
-| [Backend Growth Curriculum](./backend-growth-curriculum.md) | 백엔드 성장 커리큘럼 참고 |
+Use the active documentation sections above for current instructions.
 
 ## Repository level documents
 

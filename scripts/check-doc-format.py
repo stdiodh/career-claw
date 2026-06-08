@@ -16,8 +16,10 @@ LINE_COUNT_MINIMUMS = {
     "CHANGELOG.md": 40,
     "README.md": 100,
     "docs/README.md": 60,
+    "docs/archive/README.md": 20,
+    "docs/archive/legacy-inventory.md": 60,
     "docs/project/ecosystem-importance.md": 50,
-    "docs/oss-program-application.md": 60,
+    "docs/archive/oss-program-application.md": 60,
     "docs/getting-started/fork-setup.md": 120,
     "docs/getting-started/usage.md": 80,
     "docs/getting-started/runtime-configuration.md": 120,
@@ -47,8 +49,10 @@ MARKDOWN_FILES = [
     "CHANGELOG.md",
     "README.md",
     "docs/README.md",
+    "docs/archive/README.md",
+    "docs/archive/legacy-inventory.md",
     "docs/project/ecosystem-importance.md",
-    "docs/oss-program-application.md",
+    "docs/archive/oss-program-application.md",
     "docs/getting-started/fork-setup.md",
     "docs/getting-started/usage.md",
     "docs/getting-started/runtime-configuration.md",
@@ -95,6 +99,21 @@ DOCS_INDEX_HEADINGS = [
     "## Project",
     "## Archive / Legacy",
     "## Repository level documents",
+]
+
+ARCHIVE_INDEX_HEADINGS = [
+    "# Archive",
+    "## Rules",
+    "## Inventory",
+]
+
+LEGACY_INVENTORY_HEADINGS = [
+    "# Legacy Document Inventory",
+    "## Classification",
+    "## Reviewed documents",
+    "## Merged",
+    "## Removed",
+    "## Follow-up candidates",
 ]
 
 ECOSYSTEM_HEADINGS = [
@@ -390,11 +409,13 @@ REQUIRED_DOCS_INDEX_LINKS = [
     "./operations/daily-backend-brief.md",
     "./operations/daily-news-ops.md",
     "./operations/career-site-radar.md",
+    "./operations/backend-growth-curriculum.md",
     "./operations/local-validation.md",
     "./policies/github-labels.md",
     "./project/contributor-tasks.md",
     "./project/release-checklist.md",
     "./release-notes/v0.1.0.md",
+    "./archive/README.md",
     "SECURITY.md",
     "SUPPORT.md",
 ]
@@ -570,8 +591,10 @@ def main() -> int:
     check_required_headings("CHANGELOG.md", CHANGELOG_HEADINGS)
     check_required_headings("README.md", README_HEADINGS)
     check_required_headings("docs/README.md", DOCS_INDEX_HEADINGS)
+    check_required_headings("docs/archive/README.md", ARCHIVE_INDEX_HEADINGS)
+    check_required_headings("docs/archive/legacy-inventory.md", LEGACY_INVENTORY_HEADINGS)
     check_required_headings("docs/project/ecosystem-importance.md", ECOSYSTEM_HEADINGS)
-    check_required_headings("docs/oss-program-application.md", APPLICATION_HEADINGS)
+    check_required_headings("docs/archive/oss-program-application.md", APPLICATION_HEADINGS)
     check_required_headings("docs/getting-started/fork-setup.md", FORK_SETUP_HEADINGS)
     check_required_headings("docs/getting-started/usage.md", USAGE_HEADINGS)
     check_required_headings("docs/getting-started/runtime-configuration.md", RUNTIME_CONFIGURATION_HEADINGS)
