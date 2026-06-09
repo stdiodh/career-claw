@@ -121,15 +121,20 @@ REQUIRED_SNIPPETS = {
 
 ISSUE_TEMPLATE_FILES = [
     ".github/ISSUE_TEMPLATE/backend-career-question.yml",
+    ".github/ISSUE_TEMPLATE/broken-link-outdated-source.yml",
     ".github/ISSUE_TEMPLATE/bug-report.yml",
     ".github/ISSUE_TEMPLATE/config.yml",
     ".github/ISSUE_TEMPLATE/docs-improvement.yml",
     ".github/ISSUE_TEMPLATE/feature-request.yml",
+    ".github/ISSUE_TEMPLATE/maintainer-question.yml",
     ".github/ISSUE_TEMPLATE/oss-candidate-suggestion.yml",
+    ".github/ISSUE_TEMPLATE/regional-language-expansion.yml",
+    ".github/ISSUE_TEMPLATE/release-readiness.yml",
     ".github/ISSUE_TEMPLATE/source-suggestion.yml",
+    ".github/ISSUE_TEMPLATE/validation-fixture.yml",
 ]
 
-EXPECTED_CONFIG_YML = """blank_issues_enabled: true
+EXPECTED_CONFIG_YML = """blank_issues_enabled: false
 contact_links:
   - name: Career Feed README
     url: https://github.com/stdiodh/career-feed#readme

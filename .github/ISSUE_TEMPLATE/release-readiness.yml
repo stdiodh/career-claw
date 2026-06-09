@@ -1,0 +1,49 @@
+name: 릴리스 준비 점검
+description: v0.1.x 릴리스 준비, 체크리스트, 문서 상태를 점검합니다.
+title: "[릴리스 준비] "
+labels:
+  - release readiness
+body:
+  - type: markdown
+    attributes:
+      value: |
+        다음 공개 릴리스 전에 확인해야 할 작은 작업을 제안해 주세요.
+
+        이미 발행된 릴리스를 다시 발행하자는 요청이 아니라, 향후 v0.1.x 준비 작업을 위한 이슈입니다.
+  - type: dropdown
+    id: area
+    attributes:
+      label: 릴리스 준비 영역
+      options:
+        - release notes
+        - changelog
+        - README or docs
+        - demo evidence
+        - validation or CI
+        - issue or contributor onboarding
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: task
+    attributes:
+      label: 필요한 작업
+      description: 릴리스 전에 무엇을 확인하거나 정리해야 하는지 적어 주세요.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 완료 기준
+      description: 어떤 상태가 되면 이 이슈를 닫을 수 있는지 적어 주세요.
+    validations:
+      required: true
+  - type: checkboxes
+    id: claims
+    attributes:
+      label: 공개 문구 확인
+      options:
+        - label: fake metric이나 확인되지 않은 adoption claim을 추가하지 않습니다.
+          required: true
+        - label: secret, webhook URL, private identifier를 포함하지 않았습니다.
+          required: true
