@@ -6,10 +6,12 @@ Career Feed operations are intentionally limited to four GitHub Actions paths.
 
 ## Operating paths
 
-- Daily Backend Brief.
-- Dev News Daily.
-- Backend Career Site Radar.
-- PS progress marker workflow.
+| Operating path | Scope | Main output |
+| --- | --- | --- |
+| Daily Backend Brief | Locale-aware | `reports/briefs/{locale}/backend-daily.md` |
+| Dev News Daily | Locale-aware foundation | `reports/briefs/{locale}/news-daily.md` |
+| Backend Career Site Radar | `ko-KR` centered in this phase | `reports/briefs/ko-KR/backend-career-weekly.md` |
+| PS progress marker workflow | Locale-independent | `data/ps-progress.json` |
 
 ## Actions checklist
 

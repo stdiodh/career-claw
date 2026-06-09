@@ -120,7 +120,15 @@ Daily workflows write canonical artifacts under locale-specific directories.
 | Daily Backend Brief | `reports/briefs/{locale}/backend-daily.md` |
 | Dev News Daily | `reports/briefs/{locale}/news-daily.md` |
 
-During the v0.2 compatibility window, `ko-KR` also writes legacy mirror files such as `reports/briefs/{locale}/backend-daily.md`.
+Daily workflows also write candidate and ops artifacts under `reports/candidates/{locale}/` and `reports/ops/{locale}/`.
+
+During the v0.2 compatibility window, affected `ko-KR` workflows also write legacy mirror files:
+
+- `reports/briefs/kr-tech-daily.md`
+- `reports/briefs/kr-tech-news-daily.md`
+- `reports/briefs/kr-backend-career-weekly.md`
+
+New forks should use canonical paths and locale-specific Secret names.
 
 ## Provider Fallback
 

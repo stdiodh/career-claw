@@ -6,7 +6,11 @@ This project is still an early open-source automation tool. Release notes descri
 
 ## [Unreleased]
 
-No unreleased changes.
+### Changed
+
+- Documented the v0.2 locale-aware foundation for `ko-KR` and `en-US`.
+- Clarified canonical locale artifact paths and `ko-KR` legacy mirror paths.
+- Clarified that `en-US` is an experimental preset, not a fully global service.
 
 ## [0.1.0] - 2026-06-09
 

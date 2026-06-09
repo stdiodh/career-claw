@@ -2,7 +2,7 @@
 
 > Language: [한국어](../../kr/operations/daily-backend-brief.md) | [English](./daily-backend-brief.md)
 
-Daily Backend Brief is the main daily study workflow for Java/Kotlin backend learners.
+Daily Backend Brief is the main locale-aware daily study workflow for Java/Kotlin backend learners.
 
 ## Purpose
 
@@ -11,6 +11,7 @@ The brief combines Spring Boot/JVM study, Programmers PS practice, OSS contribut
 ## Workflow
 
 The workflow file is `.github/workflows/backend-daily.yml`. It supports schedule and manual dispatch with dry-run and force-send controls.
+It uses `CAREER_FEED_ENABLED_LOCALES` to write separate canonical artifacts for each enabled locale.
 
 ## Inputs
 

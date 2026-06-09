@@ -3,6 +3,7 @@
 > Language: [한국어](./daily-backend-brief.md) | [English](../../en/operations/daily-backend-brief.md)
 
 Daily Backend Brief는 평일 오전에 백엔드 학습, PS 루틴, OSS 기여 후보, 실무 충전 내용을 생성해 Discord로 전송합니다.
+이번 phase에서는 locale-aware daily workflow이며, 이 문서는 `ko-KR` 기본 preset 기준 예시를 사용합니다.
 
 ## 실행 구성
 

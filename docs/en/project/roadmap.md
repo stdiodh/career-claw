@@ -13,7 +13,7 @@ The roadmap keeps future ideas visible without expanding the current operating s
 
 ## v0.2.x
 
-- Establish the locale-aware engine foundation for `ko-KR` and `en-US`.
+- Establish the locale-aware engine foundation for `ko-KR` and the experimental `en-US` preset.
 - Support `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US` without workflow YAML edits.
 - Keep locale-specific config under `configs/locales/{locale}/`.
 - Write daily artifacts under `reports/briefs/{locale}/` and `reports/candidates/{locale}/`.

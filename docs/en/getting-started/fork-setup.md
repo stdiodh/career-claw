@@ -112,6 +112,9 @@ Keep `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false` before the first dry-run.
 
 Use `HH:MM` for time, `MON` through `SUN` for weekdays, and IANA timezone names such as `Asia/Seoul`.
 
+The first fork setup should keep `CAREER_FEED_ENABLED_LOCALES=ko-KR`.
+To test the `en-US` v0.2 foundation later, change it to `ko-KR,en-US` and add the matching `en-US` Discord webhook Secrets before enabling delivery.
+
 ## Step 5. Run Workflow with Dry Run
 
 Open `Actions` and choose `Backend Daily Brief`.

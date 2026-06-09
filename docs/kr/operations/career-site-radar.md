@@ -3,6 +3,7 @@
 > Language: [한국어](./career-site-radar.md) | [English](../../en/operations/career-site-radar.md)
 
 Backend Career Site Radar는 자동 추천 피드가 아니라, 수동 또는 주간 schedule로 실행하는 커리어 사이트 확인용 브리핑입니다.
+이번 phase에서는 workflow 파일명과 canonical output path만 global-friendly이며, source preset은 `ko-KR` 중심으로 유지합니다.
 
 ## 실행 구성
 

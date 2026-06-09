@@ -37,6 +37,8 @@ GitHub Actions, OpenAI API, Discord Webhook 기반으로 브리핑 초안과 검
 - 검증 스크립트 개선
 - 지역 또는 언어 확장 아이디어 제안
 
+locale 또는 source 확장 제안에는 locale, region, language, 공개 URL, validation 영향 범위를 함께 적어 주세요.
+
 제안은 작고 검토 가능할수록 반영하기 쉽습니다.
 
 처음 기여한다면 [Contributor Task Ideas](project/contributor-tasks.md)에서 작은 작업 후보를 먼저 확인해 주세요.

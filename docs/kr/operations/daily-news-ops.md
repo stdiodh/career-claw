@@ -3,6 +3,7 @@
 > Language: [한국어](./daily-news-ops.md) | [English](../../en/operations/daily-news-ops.md)
 
 Dev News Daily는 평일 오전에 한국 개발/AI 뉴스를 정리해 별도 Discord Webhook으로 전송합니다.
+이번 phase에서는 locale-aware foundation을 갖고 있으며, 이 문서는 `ko-KR` 기본 preset 기준 예시를 사용합니다.
 
 ## 실행 구성
 

@@ -11,7 +11,7 @@ A source can be an official documentation page, RSS feed, public repository, car
 ## Recommended source types
 
 - Official Spring, JVM, Kotlin, and backend documentation.
-- Public Korean developer and AI news sources.
+- Public locale-specific developer and AI news sources.
 - Public career, internship, event, hackathon, and contest pages.
 - Public GitHub repositories and issue trackers.
 
@@ -25,6 +25,7 @@ A source can be an official documentation page, RSS feed, public repository, car
 
 ## Region-specific source suggestions
 
+For locale or source expansion, include locale, region, language, public URL, update cadence, caveats, and validation impact.
 For Korean sources, explain why the source matters to Korean backend learners. For English sources, link it only from the English tree unless it is shared configuration.
 
 ## Examples of strong source suggestions
