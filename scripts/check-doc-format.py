@@ -16,15 +16,11 @@ LINE_COUNT_MINIMUMS = {
     "CHANGELOG.md": 40,
     "README.md": 100,
     "docs/README.md": 60,
-    "docs/archive/README.md": 20,
-    "docs/archive/legacy-inventory.md": 60,
     "docs/project/ecosystem-importance.md": 50,
-    "docs/archive/oss-program-application.md": 60,
     "docs/getting-started/fork-setup.md": 120,
     "docs/getting-started/usage.md": 80,
     "docs/getting-started/runtime-configuration.md": 120,
     "docs/demo.md": 80,
-    "docs/assets/demo/README.md": 40,
     "docs/getting-started/sample-output.md": 30,
     "docs/project/release-checklist.md": 100,
     "docs/release-notes/v0.1.0.md": 40,
@@ -49,15 +45,11 @@ MARKDOWN_FILES = [
     "CHANGELOG.md",
     "README.md",
     "docs/README.md",
-    "docs/archive/README.md",
-    "docs/archive/legacy-inventory.md",
     "docs/project/ecosystem-importance.md",
-    "docs/archive/oss-program-application.md",
     "docs/getting-started/fork-setup.md",
     "docs/getting-started/usage.md",
     "docs/getting-started/runtime-configuration.md",
     "docs/demo.md",
-    "docs/assets/demo/README.md",
     "docs/getting-started/sample-output.md",
     "docs/project/release-checklist.md",
     "docs/release-notes/v0.1.0.md",
@@ -76,15 +68,14 @@ MARKDOWN_FILES = [
 ]
 
 README_HEADINGS = [
-    "# career-feed",
-    "## 한 줄 소개",
-    "## 프로젝트가 해결하려는 문제",
-    "## What it generates",
-    "## How it works",
-    "## Quick Start",
-    "## Configuration",
+    "# Career Feed",
+    "## 30-Second Overview",
+    "## What You Get",
+    "## Quick Start Path",
+    "## Project Status",
+    "## How It Works",
     "## Safety / Limitations",
-    "## Repository structure",
+    "## Repository Structure",
     "## Documentation",
     "## Contributing",
     "## License",
@@ -92,29 +83,15 @@ README_HEADINGS = [
 
 DOCS_INDEX_HEADINGS = [
     "# Documentation",
-    "## Start here",
-    "## Getting started",
-    "## Operations",
-    "## Policies",
-    "## Contributing",
-    "## Project / Release",
-    "## Archive / Legacy",
-    "## Repository level documents",
-]
-
-ARCHIVE_INDEX_HEADINGS = [
-    "# Archive",
-    "## Rules",
-    "## Inventory",
-]
-
-LEGACY_INVENTORY_HEADINGS = [
-    "# Legacy Document Inventory",
-    "## Classification",
-    "## Reviewed documents",
-    "## Merged",
-    "## Removed",
-    "## Follow-up candidates",
+    "## New Here?",
+    "## Documentation Map",
+    "### Getting Started",
+    "### Usage / Operations",
+    "### Examples / Demo",
+    "### Contributing",
+    "### Security / Maintainer",
+    "### Release",
+    "## Repository Level Documents",
 ]
 
 ECOSYSTEM_HEADINGS = [
@@ -131,22 +108,6 @@ ECOSYSTEM_HEADINGS = [
     "## Suggested wording for applications",
 ]
 
-APPLICATION_HEADINGS = [
-    "# Codex Open Source Support Program Application Notes",
-    "## Purpose of this document",
-    "## Project summary",
-    "## Maintainer role",
-    "## Why this repository is a fit",
-    "## Backend ecosystem importance",
-    "## API credits usage plan",
-    "## Safety boundaries",
-    "## What not to claim",
-    "## Copy-ready short answer",
-    "## Copy-ready longer answer",
-    "## Additional note",
-    "## Final checklist before submission",
-]
-
 CHANGELOG_HEADINGS = [
     "# Changelog",
     "## [Unreleased]",
@@ -155,33 +116,27 @@ CHANGELOG_HEADINGS = [
 
 FORK_SETUP_HEADINGS = [
     "# Fork Setup Guide",
-    "## 대상",
-    "## 준비물",
-    "## 전체 설정 흐름",
-    "## Step 1. Fork repository",
+    "## Before You Start",
+    "## Step 1. Fork Repository",
     "## Step 2. Enable GitHub Actions",
     "## Step 3. Add GitHub Actions Secrets",
     "## Step 4. Add GitHub Actions Variables",
-    "## Step 5. Run workflow with dry-run",
-    "## Step 6. Review generated artifacts",
-    "## Step 7. Enable Discord delivery",
-    "## Step 8. Understand scheduling",
-    "## OSS candidate policy",
-    "## Validation troubleshooting",
+    "## Step 5. Run Workflow with Dry Run",
+    "## Step 6. Review Generated Artifacts",
+    "## Step 7. Enable Discord Delivery",
+    "## Success Checklist",
     "## Troubleshooting",
-    "## First run checklist",
-    "## Before opening an issue",
-    "## Related documents",
+    "## Related Documents",
 ]
 
 USAGE_HEADINGS = [
     "# Usage Guide",
     "## Overview",
+    "## First-time fork setup",
     "## Who should use this",
     "## Before you start",
     "## Repository setup",
-    "## Required GitHub secrets",
-    "## Runtime configuration",
+    "## Configuration references",
     "## Running local validation",
     "## Running a workflow manually",
     "## Recommended first run: dry-run",
@@ -197,7 +152,6 @@ USAGE_HEADINGS = [
 
 RUNTIME_CONFIGURATION_HEADINGS = [
     "# Runtime Configuration",
-    "## 요약",
     "## Secrets와 Variables",
     "## 필수 Secrets",
     "## 지원 Variables",
@@ -208,7 +162,6 @@ RUNTIME_CONFIGURATION_HEADINGS = [
     "## GitHub Actions Output",
     "## Discord 전송 우선순위",
     "## Dry-run 관계",
-    "## 10분 설정 절차",
     "## 로컬 확인",
     "## 자주 발생하는 설정 실수",
     "## 이번 Phase 한계",
@@ -216,44 +169,20 @@ RUNTIME_CONFIGURATION_HEADINGS = [
 
 DEMO_HEADINGS = [
     "# 데모 가이드",
-    "## 목적",
-    "## 데모 범위",
-    "## 데모에서 보여줄 것",
-    "## 권장 데모 흐름",
-    "## 스크린샷 체크리스트",
-    "## GIF 체크리스트",
-    "## 영상 녹화 가이드",
-    "## Redaction 규칙",
-    "## 예시 데모 스토리보드",
-    "## 예시 캡션",
-    "## 보여주면 안 되는 것",
-    "## 에셋 이름 규칙",
-    "## 데모 에셋 최신화",
-    "## 관련 문서",
-]
-
-DEMO_ASSETS_HEADINGS = [
-    "# 데모 에셋",
-    "## 목적",
-    "## 현재 에셋 목록",
-    "## 허용 에셋",
-    "## 권장 형식",
-    "## 크기 기준",
-    "## Redaction 요구사항",
-    "## 파일 이름",
-    "## 리뷰 체크리스트",
-    "## 에셋 업데이트",
-    "## 추가 절차",
-    "## 교체 절차",
-    "## 삭제 절차",
+    "## Demo Flow",
+    "## What to Show",
+    "## What Not to Show",
+    "## Screenshot Rules",
+    "## Optional GIF",
+    "## Related Documents",
 ]
 
 SAMPLE_OUTPUT_HEADINGS = [
     "# Sample Output",
-    "## Available examples",
-    "## What to check in samples",
-    "## Adding a new sample",
-    "## Related documents",
+    "## Available Examples",
+    "## What to Check",
+    "## Adding a Sample",
+    "## Related Documents",
 ]
 
 RELEASE_CHECKLIST_HEADINGS = [
@@ -392,10 +321,10 @@ REVIEW_POLICY_HEADINGS = [
 REQUIRED_README_LINKS = [
     "docs/README.md",
     "docs/getting-started/fork-setup.md",
+    "docs/getting-started/sample-output.md",
     "docs/getting-started/usage.md",
     "docs/getting-started/runtime-configuration.md",
-    "docs/policies/oss-candidate-policy.md",
-    "docs/project/roadmap.md",
+    "docs/demo.md",
     "CONTRIBUTING.md",
     "CODE_OF_CONDUCT.md",
     "docs/contributing/README.md",
@@ -406,7 +335,6 @@ REQUIRED_DOCS_INDEX_LINKS = [
     "CHANGELOG.md",
     "./getting-started/sample-output.md",
     "./demo.md",
-    "./assets/demo/README.md",
     "./operations/daily-backend-brief.md",
     "./operations/daily-news-ops.md",
     "./operations/career-site-radar.md",
@@ -416,7 +344,6 @@ REQUIRED_DOCS_INDEX_LINKS = [
     "./project/contributor-tasks.md",
     "./project/release-checklist.md",
     "./release-notes/v0.1.0.md",
-    "./archive/README.md",
     "SECURITY.md",
     "SUPPORT.md",
 ]
@@ -592,15 +519,11 @@ def main() -> int:
     check_required_headings("CHANGELOG.md", CHANGELOG_HEADINGS)
     check_required_headings("README.md", README_HEADINGS)
     check_required_headings("docs/README.md", DOCS_INDEX_HEADINGS)
-    check_required_headings("docs/archive/README.md", ARCHIVE_INDEX_HEADINGS)
-    check_required_headings("docs/archive/legacy-inventory.md", LEGACY_INVENTORY_HEADINGS)
     check_required_headings("docs/project/ecosystem-importance.md", ECOSYSTEM_HEADINGS)
-    check_required_headings("docs/archive/oss-program-application.md", APPLICATION_HEADINGS)
     check_required_headings("docs/getting-started/fork-setup.md", FORK_SETUP_HEADINGS)
     check_required_headings("docs/getting-started/usage.md", USAGE_HEADINGS)
     check_required_headings("docs/getting-started/runtime-configuration.md", RUNTIME_CONFIGURATION_HEADINGS)
     check_required_headings("docs/demo.md", DEMO_HEADINGS)
-    check_required_headings("docs/assets/demo/README.md", DEMO_ASSETS_HEADINGS)
     check_required_headings("docs/getting-started/sample-output.md", SAMPLE_OUTPUT_HEADINGS)
     check_required_headings("docs/project/release-checklist.md", RELEASE_CHECKLIST_HEADINGS)
     check_required_headings("docs/release-notes/v0.1.0.md", RELEASE_NOTES_V010_HEADINGS)

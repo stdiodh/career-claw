@@ -9,15 +9,13 @@ It is operated through GitHub Actions workflows that generate reviewable Markdow
 The usual operating loop is intentionally small.
 
 1. Fork or clone the repository.
-2. Register the required GitHub Secrets.
-3. Register runtime GitHub Actions Variables.
-4. Run local validation with `./scripts/validate.sh`.
-5. Open the GitHub Actions tab.
-6. Select the workflow you want to test.
-7. Run the workflow manually in dry-run or artifact-only mode.
-8. Review the Actions summary and uploaded artifacts.
-9. Enable Discord delivery only after the generated brief looks correct.
-10. Update Programmers PS progress with `Mark PS Solved` when needed.
+2. Run local validation with `./scripts/validate.sh`.
+3. Open the GitHub Actions tab.
+4. Select the workflow you want to test.
+5. Run the workflow manually in dry-run or artifact-only mode.
+6. Review the Actions summary and uploaded artifacts.
+7. Enable Discord delivery only after the generated brief looks correct.
+8. Update Programmers PS progress with `Mark PS Solved` when needed.
 
 The output is a Markdown briefing and, when delivery is enabled, a Discord message rendered from that briefing.
 
@@ -29,7 +27,7 @@ If this is your first time running Career Feed from a fork, start with
 [Fork Setup Guide](fork-setup.md).
 
 That guide walks through GitHub Secrets, GitHub Actions Variables, dry-run execution,
-artifact review, validation troubleshooting, and Discord delivery activation.
+artifact review, validation troubleshooting, and Discord delivery activation with GitHub UI screenshots where available.
 
 Use this Usage Guide after the first setup when you want to understand routine operation.
 
@@ -81,48 +79,10 @@ If you are testing workflow changes in a pull request branch, prefer manual `wor
 
 Keep `reports/` out of commits unless a specific fixture or example file is intentionally added through a review.
 
-## Required GitHub secrets
+## Configuration references
 
-Register secrets in `Settings > Secrets and variables > Actions`.
-
-Only secret names are documented here.
-
-Never write real values in Markdown, commit messages, Actions logs, screenshots, issues, or PR comments.
-
-| Secret | Required | Used by |
-| --- | --- | --- |
-| `OPENAI_API_KEY` | Yes | AI-assisted brief generation and summarization |
-| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Yes for Daily Backend Discord delivery | Daily Backend Brief |
-| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Yes for News Daily Discord delivery | Korea Dev/AI News Daily |
-| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Yes for Site Radar Discord delivery | Backend Career Site Radar |
-| `NAVER_CLIENT_ID` | Optional | Korean news candidate collection or quality improvement |
-| `NAVER_CLIENT_SECRET` | Optional | Korean news candidate collection or quality improvement |
-| `DISCORD_WEBHOOK_CAREER_FEED_OPS` | Optional | Failure notification to an ops webhook |
-
-`NAVER_CLIENT_ID` and `NAVER_CLIENT_SECRET` are optional because the news workflow can still rely on configured feeds and fallback sources.
-
-`DISCORD_WEBHOOK_CAREER_FEED_OPS` is optional.
-
-If it is missing, failure notification should be skipped without making the whole workflow fail.
-
-## Runtime configuration
-
-Runtime settings are configured in `Settings > Secrets and variables > Actions > Variables`.
-
-Read [Runtime Configuration](runtime-configuration.md) before changing timezone, target time,
-weekday, OSS freshness, or Discord delivery flag.
-
-The most important Variables are listed below.
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `CAREER_FEED_TIMEZONE` | `Asia/Seoul` | Timezone used by the runtime gate |
-| `CAREER_FEED_BACKEND_DAILY_TIME` | `09:00` | Daily Backend Brief target time |
-| `CAREER_FEED_NEWS_DAILY_TIME` | `09:05` | Korea Dev/AI News Daily target time |
-| `CAREER_FEED_CAREER_WEEKLY_DAY` | `MON` | Backend Career Site Radar target weekday |
-| `CAREER_FEED_CAREER_WEEKLY_TIME` | `09:00` | Backend Career Site Radar target time |
-| `CAREER_FEED_OSS_RECENT_DAYS` | `30` | OSS issue `created_at` freshness hard gate |
-| `CAREER_FEED_DISCORD_DELIVERY_ENABLED` | `false` | Global Discord delivery flag |
+First-time setup steps live in [Fork Setup Guide](fork-setup.md).
+Supported Secrets and Variables live in [Runtime Configuration](runtime-configuration.md).
 
 GitHub Actions cron cannot read repository Variables directly.
 

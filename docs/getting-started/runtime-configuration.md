@@ -7,18 +7,10 @@ Career Feed fork는 workflow YAML을 직접 수정하지 않고도 실행 시간
 민감한 값은 Secrets에 넣고, 시간대나 실행 시간 같은 운영 설정은 Variables에 넣습니다.
 
 처음 fork에서 실행한다면 이 문서보다 [Fork Setup Guide](fork-setup.md)를 먼저 따라가세요.
+GitHub UI에서 어디를 눌러야 하는지 확인하려면 이미지가 포함된 [Fork Setup Guide](fork-setup.md)를 사용하세요.
 
-## 요약
-
-처음 fork했다면 다음 순서로 설정합니다.
-
-1. GitHub Actions를 fork에서 활성화합니다.
-2. 필요한 Secrets를 등록합니다.
-3. 필요한 Variables를 등록합니다.
-4. Daily workflow를 `dry_run=true`로 수동 실행합니다.
-5. artifact와 validation report를 확인합니다.
-6. Discord 전송을 원할 때만 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`로 바꿉니다.
-7. 다시 수동 실행하거나 다음 scheduled run을 기다립니다.
+이 문서는 설정값 reference입니다.
+GitHub UI에서 값을 등록하는 절차는 [Fork Setup Guide](fork-setup.md)를 source of truth로 둡니다.
 
 Discord Webhook URL, API key, client secret은 Variables에 넣지 않습니다.
 
@@ -216,23 +208,6 @@ Daily Backend Brief와 Korea Dev/AI News Daily는 `dry_run=true`로 수동 실�
 Discord 전송과 delivery lock 저장은 하지 않습니다.
 
 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`로 설정되어 있어도 `dry_run=true`가 우선합니다.
-
-## 10분 설정 절차
-
-처음 fork했다면 아래 값만 먼저 설정해도 됩니다.
-
-1. Secret `OPENAI_API_KEY`를 등록합니다.
-2. Discord 전송을 테스트할 channel의 Webhook URL을 필요한 Secret에 등록합니다.
-3. Variable `CAREER_FEED_TIMEZONE`을 원하는 timezone으로 설정합니다.
-4. Variable `CAREER_FEED_BACKEND_DAILY_TIME` 또는 `CAREER_FEED_NEWS_DAILY_TIME`을 원하는 시간으로 설정합니다.
-5. Variable `CAREER_FEED_DISCORD_DELIVERY_ENABLED`는 처음에는 `false`로 둡니다.
-6. GitHub Actions에서 Daily workflow를 `dry_run=true`로 실행합니다.
-7. artifact와 validation report를 확인합니다.
-8. 실제 전송을 원할 때 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`로 바꿉니다.
-
-Webhook URL placeholder를 문서나 commit에 적지 않습니다.
-
-GitHub Secrets 화면에만 실제 값을 입력합니다.
 
 ## 로컬 확인
 

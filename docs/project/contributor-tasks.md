@@ -61,11 +61,11 @@ Verify:
 - No real webhook or secret appears.
 - Relative links resolve.
 
-### docs: improve demo asset README
+### docs: improve demo guide screenshots
 
 Scope:
 
-- Clarify screenshot redaction rules.
+- Improve `docs/demo.md` screenshot redaction rules.
 - Keep demo assets limited to GitHub Actions, validation artifacts, generated briefs, and Discord output.
 - Do not add placeholder image files.
 
