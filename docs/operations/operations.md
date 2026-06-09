@@ -33,6 +33,8 @@
 
 ## Actions 체크리스트
 
+fork를 처음 설정하는 사용자는 이미지가 포함된 [Fork Setup Guide](../getting-started/fork-setup.md)를 먼저 따라갑니다.
+
 1. `Settings > Secrets and variables > Actions`에 필요한 secrets를 등록합니다.
 2. `Settings > Actions > General`에서 Actions 실행이 허용되어 있는지 확인합니다.
 3. Actions 탭에서 4개 운영 경로가 enabled 상태인지 확인합니다.
