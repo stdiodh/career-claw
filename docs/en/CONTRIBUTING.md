@@ -43,7 +43,9 @@ Use the closest issue template. Source suggestions, OSS candidates, docs improve
 
 ## Development setup
 
-Run `./scripts/validate.sh` before opening or updating a pull request when possible. For small docs-only edits, also run `python3 scripts/check-doc-format.py`.
+Pull Request Checks run automatically when a PR is opened or updated.
+
+Before opening a PR, run `python3 scripts/check-doc-format.py`, `git diff --check`, and `./scripts/validate.sh` locally when possible.
 
 ## Commit convention
 

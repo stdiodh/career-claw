@@ -33,6 +33,7 @@ test -f .github/workflows/kr-tech-daily.yml
 test -f .github/workflows/kr-tech-news-daily.yml
 test -f .github/workflows/kr-backend-career-weekly.yml
 test -f .github/workflows/mark-ps-solved.yml
+test -f .github/workflows/pr-checks.yml
 
 echo "==> Checking document formatting"
 python3 scripts/check-doc-format.py
@@ -49,12 +50,25 @@ for file in "${removed_workflows[@]}"; do
 done
 
 workflow_count="$(find .github/workflows -maxdepth 1 -type f | wc -l | tr -d ' ')"
-if [ "${workflow_count}" != "4" ]; then
-  echo "Expected exactly 4 workflow files, found ${workflow_count}." >&2
+if [ "${workflow_count}" != "5" ]; then
+  echo "Expected exactly 5 workflow files, found ${workflow_count}." >&2
   exit 1
 fi
 
 echo "==> Checking workflow versions and schedules"
+grep -q 'pull_request:' .github/workflows/pr-checks.yml
+grep -q 'workflow_dispatch:' .github/workflows/pr-checks.yml
+grep -q 'contents: read' .github/workflows/pr-checks.yml
+grep -q 'uses: actions/checkout@v5' .github/workflows/pr-checks.yml
+grep -q 'uses: actions/setup-python@v6' .github/workflows/pr-checks.yml
+grep -q 'uses: actions/upload-artifact@v6' .github/workflows/pr-checks.yml
+grep -q './scripts/validate.sh' .github/workflows/pr-checks.yml
+grep -q 'fast-file-checks:' .github/workflows/pr-checks.yml
+grep -q 'full-validation:' .github/workflows/pr-checks.yml
+if grep -q 'DISCORD_WEBHOOK\|contents: write\|git push' .github/workflows/pr-checks.yml; then
+  echo "PR checks workflow must not use Discord webhook secrets, contents: write, or git push." >&2
+  exit 1
+fi
 grep -q 'uses: actions/checkout@v5' .github/workflows/kr-tech-daily.yml
 grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-tech-daily.yml
 grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-tech-daily.yml
@@ -387,6 +401,7 @@ required_files=(
   "docs/en/release-notes/v0.1.0.md"
   ".github/releases/v0.1.0.md"
   ".github/pull_request_template.md"
+  ".github/workflows/pr-checks.yml"
   ".github/ISSUE_TEMPLATE/bug-report.yml"
   ".github/ISSUE_TEMPLATE/docs-improvement.yml"
   ".github/ISSUE_TEMPLATE/feature-request.yml"
