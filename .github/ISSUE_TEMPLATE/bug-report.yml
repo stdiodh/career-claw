@@ -15,8 +15,8 @@ body:
     attributes:
       label: 관련 workflow
       options:
-        - Daily Korea Tech Brief
-        - Daily Korea Dev AI News
+        - Backend Daily Brief
+        - Dev News Daily
         - Backend Career Site Radar
         - Mark PS Solved
         - Local validation

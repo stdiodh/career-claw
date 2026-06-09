@@ -1,4 +1,4 @@
-# Korea Dev/AI News Daily Example
+# Dev News Daily Example
 
 > Language: [한국어](./korea-dev-ai-news-daily.example.md) | [English](../../en/examples/korea-dev-ai-news-daily.example.md)
 

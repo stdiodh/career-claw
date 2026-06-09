@@ -977,6 +977,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--config", default="configs/kr-sources.json")
     parser.add_argument("--output-dir", default="reports/candidates")
+    parser.add_argument("--locale", default="ko-KR")
     parser.add_argument(
         "--category",
         default="all",
@@ -994,6 +995,87 @@ def parse_args() -> argparse.Namespace:
         help="Validate config and write empty schema files without network/API calls.",
     )
     return parser.parse_args()
+
+
+def locale_env_name(locale: str) -> str:
+    return re.sub(r"[^A-Za-z0-9]+", "_", locale).upper()
+
+
+def configured_search_providers(locale: str, config: dict[str, object]) -> list[str]:
+    env_name = f"CAREER_FEED_SEARCH_PROVIDERS_{locale_env_name(locale)}"
+    raw = os.environ.get(env_name, "").strip()
+    if not raw:
+        providers = config.get("providers", [])
+        if isinstance(providers, list):
+            return [
+                str(provider).strip()
+                for provider in providers
+                if str(provider).strip()
+            ]
+        raw = "naver,rss,github" if locale == "ko-KR" else "brave,rss,github"
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+def record_provider_configuration(locale: str, config: dict[str, object]) -> None:
+    providers = configured_search_providers(locale, config)
+    if not providers:
+        return
+    if "brave" in providers and not os.environ.get("BRAVE_SEARCH_API_KEY", "").strip():
+        record_warning(
+            "BRAVE_SEARCH_API_KEY not configured; Brave Search provider skipped. "
+            "RSS/reference/GitHub providers may still produce candidates."
+        )
+    if "naver" in providers and locale != "ko-KR":
+        record_warning(
+            f"Naver provider is configured for {locale}; it is skipped unless "
+            "NAVER_CLIENT_ID/NAVER_CLIENT_SECRET are available."
+        )
+
+
+def configure_locale_output_paths(output_dir: Path, locale: str) -> None:
+    global PS_ROUTINE_OUTPUT_PATH
+    global WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH
+    global WEEKLY_CAREER_BRIEF_OUTPUT_PATH
+    global BACKEND_PRACTICAL_OUTPUT_PATH
+    global BACKEND_CORE_CS_OUTPUT_PATH
+    global BACKEND_TERM_OUTPUT_PATH
+
+    default_output_dir = Path("reports/candidates")
+    if output_dir == default_output_dir and locale == "ko-KR":
+        return
+
+    PS_ROUTINE_OUTPUT_PATH = output_dir / "ps-weekly-routine.json"
+    WEEKLY_CAREER_SITE_RADAR_OUTPUT_PATH = output_dir / "weekly-career-site-radar.json"
+    BACKEND_PRACTICAL_OUTPUT_PATH = output_dir / "backend-practical-knowledge.json"
+    BACKEND_CORE_CS_OUTPUT_PATH = output_dir / "cs-core-daily-topic.json"
+    BACKEND_TERM_OUTPUT_PATH = output_dir / "backend-term-daily.json"
+    WEEKLY_CAREER_BRIEF_OUTPUT_PATH = (
+        Path("reports/briefs") / locale / "backend-career-weekly.md"
+    )
+
+
+def write_locale_candidate_aliases(output_dir: Path) -> None:
+    alias_pairs = [
+        ("kr-ai-tech-news.json", "dev-ai-news.json"),
+        ("kr-dev-ai-news.json", "backend-tech-news.json"),
+        (
+            "kr-oss-contribution-opportunities.json",
+            "oss-contribution-opportunities.json",
+        ),
+    ]
+    for legacy_name, canonical_name in alias_pairs:
+        legacy_path = output_dir / legacy_name
+        canonical_path = output_dir / canonical_name
+        if legacy_path.exists() and not canonical_path.exists():
+            canonical_path.write_text(
+                legacy_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+        elif canonical_path.exists() and not legacy_path.exists():
+            legacy_path.write_text(
+                canonical_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
 
 
 def now_kst() -> datetime:
@@ -6498,6 +6580,9 @@ def output_path_for_category(
 ) -> Path:
     configured = str(category.get("output_file", "")).strip()
     if configured:
+        configured_path = Path(configured)
+        if output_dir != Path("reports/candidates"):
+            return output_dir / configured_path.name
         return Path(configured)
     category_id = str(category.get("id", "")).strip()
     return output_dir / f"{category_id}.json"
@@ -7057,6 +7142,8 @@ def main() -> int:
     args = parse_args()
     config_path = Path(args.config)
     output_dir = Path(args.output_dir)
+    locale = str(args.locale or "ko-KR").strip() or "ko-KR"
+    configure_locale_output_paths(output_dir, locale)
     current_time = now_kst()
 
     try:
@@ -7076,9 +7163,11 @@ def main() -> int:
             write_backend_term_candidate(current_time)
 
         config = load_config(config_path, args.category, args.mode)
+        record_provider_configuration(locale, config)
+        providers = configured_search_providers(locale, config)
         credentials = (
             get_naver_credentials(args.dry_run)
-            if args.mode in {"daily-tech", "daily-news"}
+            if args.mode in {"daily-tech", "daily-news"} and "naver" in providers
             else None
         )
         penalty_keywords = [
@@ -7088,7 +7177,7 @@ def main() -> int:
         ]
         categories = config.get("categories", [])
         if not isinstance(categories, list):
-            raise RuntimeError("configs/kr-sources.json must contain a categories array.")
+            raise RuntimeError(f"{config_path} must contain a categories array.")
 
         candidates_by_category: dict[str, list[Candidate] | list[OssIssueCandidate]] = {}
         selected_categories: list[dict[str, object]] = []
@@ -7126,15 +7215,16 @@ def main() -> int:
             write_ps_routine_output(
                 current_time,
                 dry_run=args.dry_run,
-                record_assignment=True,
+                record_assignment=(locale == "ko-KR"),
             )
         if args.mode == "weekly-career":
             write_weekly_career_split_outputs(
                 current_time,
                 candidates_by_category.get(WEEKLY_CAREER_CATEGORY_ID, []),
             )
+        write_locale_candidate_aliases(output_dir)
     except (OSError, ValueError, json.JSONDecodeError, RuntimeError) as exc:
-        print(f"Failed to collect KR candidates: {exc}", file=sys.stderr)
+        print(f"Failed to collect Career Feed candidates: {exc}", file=sys.stderr)
         return 1
 
     return 0

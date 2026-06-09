@@ -21,7 +21,7 @@ Daily Backend Brief의 1번 `오늘의 Spring Boot/JVM 학습` 섹션을 하루 
 
 ## 후보 JSON 구조
 
-`reports/candidates/spring-study-topic.json`은 `today` 객체에 다음 필드를 포함합니다.
+`reports/candidates/ko-KR/spring-study-topic.json`은 `today` 객체에 다음 필드를 포함합니다.
 
 - `track`
 - `level`

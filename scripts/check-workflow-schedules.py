@@ -8,15 +8,18 @@ import sys
 from pathlib import Path
 
 
-DAILY_WORKFLOW = Path(".github/workflows/kr-tech-daily.yml")
-NEWS_DAILY_WORKFLOW = Path(".github/workflows/kr-tech-news-daily.yml")
-WEEKLY_WORKFLOW = Path(".github/workflows/kr-backend-career-weekly.yml")
+DAILY_WORKFLOW = Path(".github/workflows/backend-daily.yml")
+NEWS_DAILY_WORKFLOW = Path(".github/workflows/dev-news-daily.yml")
+WEEKLY_WORKFLOW = Path(".github/workflows/backend-career-weekly.yml")
 MARK_PS_WORKFLOW = Path(".github/workflows/mark-ps-solved.yml")
 
 REMOVED_WORKFLOWS = [
     Path(".github/workflows/ai-brief-" "manual.yml"),
     Path(".github/workflows/daily-" "feed.yml"),
     Path(".github/workflows/daily-" "news.yml"),
+    Path(".github/workflows/kr-backend-career-weekly.yml"),
+    Path(".github/workflows/kr-tech-daily.yml"),
+    Path(".github/workflows/kr-tech-news-daily.yml"),
     Path(".github/workflows/kr-" "premium-brief.yml"),
 ]
 
@@ -67,6 +70,9 @@ def check_scheduled_workflow(
         fail(f"{path}: missing schedule cron: {cron}")
     require_absent(text, 'timezone: "Asia/Seoul"', path)
     require_contains(text, "workflow_dispatch:", path)
+    require_contains(text, "CAREER_FEED_ENABLED_LOCALES", path)
+    require_contains(text, "Resolve locale runtime paths", path)
+    require_contains(text, "--locale", path)
     require_contains(text, "dry_run:", path)
     require_contains(text, "force_send:", path)
     require_contains(text, "Check runtime schedule", path)
@@ -90,7 +96,8 @@ def check_scheduled_workflow(
     require_absent(text, forbidden_secret, path)
     require_contains(text, "validate-career-feed-brief.py", path)
     require_contains(text, f"--type {validator_type}", path)
-    require_contains(text, f"collect-kr-feeds.py --mode {collector_mode}", path)
+    require_contains(text, "collect-kr-feeds.py", path)
+    require_contains(text, f"--mode {collector_mode}", path)
     require_contains(text, "EVENT_NAME: ${{ github.event_name }}", path)
     require_contains(text, "EVENT_SCHEDULE: ${{ github.event.schedule }}", path)
     require_contains(text, "delivery_lock_key=", path)
@@ -199,10 +206,10 @@ def main() -> int:
             label="Daily Backend Brief",
             cron="5,35 * * * *",
             workflow_type="backend_daily",
-            secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
+            secret="DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY",
             forbidden_secret="DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY",
             concurrency_group="career-feed-backend-daily-${{ github.ref }}",
-            lock_key_prefix="career-feed-backend-sent-",
+            lock_key_prefix='career-feed-${LOCALE}-backend-daily-sent-',
             content_permission="write",
             wait_step_name="Wait until configured Backend Daily send time",
             collector_mode="daily-backend",
@@ -211,13 +218,13 @@ def main() -> int:
         )
         check_scheduled_workflow(
             NEWS_DAILY_WORKFLOW,
-            label="Daily Korea Dev AI News",
+            label="Dev News Daily",
             cron="5,35 * * * *",
             workflow_type="news_daily",
-            secret="DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY",
+            secret="DISCORD_WEBHOOK_KO_KR_NEWS_DAILY",
             forbidden_secret="DISCORD_WEBHOOK_KR_TECH_DAILY",
             concurrency_group="career-feed-news-daily-${{ github.ref }}",
-            lock_key_prefix="career-feed-news-sent-",
+            lock_key_prefix='career-feed-${LOCALE}-news-daily-sent-',
             content_permission="read",
             wait_step_name="Wait until configured News Daily send time",
             collector_mode="daily-news",

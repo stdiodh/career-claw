@@ -1,8 +1,8 @@
-# Korea Dev/AI News Daily
+# Dev News Daily
 
 > Language: [한국어](../../kr/operations/daily-news-ops.md) | [English](./daily-news-ops.md)
 
-Korea Dev/AI News Daily reviews Korean developer and AI news candidates, then renders a validated Markdown brief.
+Dev News Daily reviews Korean developer and AI news candidates, then renders a validated Markdown brief.
 
 ## Purpose
 
@@ -10,7 +10,7 @@ The workflow helps readers identify developer-relevant news without turning the 
 
 ## Workflow
 
-The workflow file is `.github/workflows/kr-tech-news-daily.yml`. It collects candidates, builds a shortlist, estimates prompt budget, evaluates quality, writes a run summary, and optionally sends to Discord.
+The workflow file is `.github/workflows/dev-news-daily.yml`. It collects candidates, builds a shortlist, estimates prompt budget, evaluates quality, writes a run summary, and optionally sends to Discord.
 
 ## Candidate policy
 
@@ -22,7 +22,7 @@ A sparse or empty day can be valid when too few sources meet quality criteria. T
 
 ## Artifacts
 
-Review `reports/candidates/kr-tech-news-shortlist.json`, `reports/ops/news-daily-quality-report.json`, `reports/ops/news-daily-token-budget.json`, and `reports/briefs/kr-tech-news-daily.md`.
+Review `reports/candidates/{locale}/news-shortlist.json`, `reports/ops/{locale}/news-daily-quality-report.json`, `reports/ops/{locale}/news-daily-token-budget.json`, and `reports/briefs/{locale}/news-daily.md`.
 
 ## Manual run
 

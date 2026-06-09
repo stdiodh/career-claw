@@ -18,18 +18,18 @@ Items below are planned or being explored. They should not be described as curre
 
 ## v0.2.x
 
-- Explore richer source selection customization.
-- Improve Discord formatting while keeping webhook delivery simple.
-- Add per-workflow configuration examples.
-- Explore optional GitHub issue source presets.
-- Improve workflow observability and run summaries.
-- Improve duplicate delivery diagnostics.
+- `ko-KR`와 `en-US`를 대상으로 locale-aware engine foundation을 만든다.
+- workflow YAML 수정 없이 `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US`로 locale별 dry-run artifact를 생성한다.
+- locale별 config를 `configs/locales/{locale}/` 아래에 둔다.
+- daily artifact를 `reports/briefs/{locale}/`, `reports/candidates/{locale}/` 아래에 쓴다.
+- v0.2 compatibility 기간에는 `ko-KR` legacy artifact mirror를 유지한다.
+- `naver,rss,github`, `brave,rss,github` 같은 provider preset을 도입한다.
+- fork 커뮤니티용 예시와 contributor onboarding을 보강한다.
 
 ## Later
 
 - Explore optional dashboard summary for local artifacts.
-- Support more community-maintained source lists.
-- Improve localization support when source policy is ready.
+- Support more community-maintained source lists and locales.
 - Improve duplicate delivery protection beyond the initial lock model.
 - Explore additional sample briefs for study groups and mentoring contexts.
 

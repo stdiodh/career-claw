@@ -137,16 +137,16 @@ The active operating workflows are listed below.
 
 | Operating path | GitHub Actions workflow | Main output |
 | --- | --- | --- |
-| Daily Backend Brief | Daily Korea Tech Brief | `reports/briefs/kr-tech-daily.md` |
-| Korea Dev/AI News Daily | Daily Korea Dev AI News | `reports/briefs/kr-tech-news-daily.md` |
-| Backend Career Site Radar | Backend Career Site Radar | `reports/briefs/kr-backend-career-weekly.md` |
+| Daily Backend Brief | Backend Daily Brief | `reports/briefs/ko-KR/backend-daily.md` |
+| Dev News Daily | Dev News Daily | `reports/briefs/ko-KR/news-daily.md` |
+| Backend Career Site Radar | Backend Career Site Radar | `reports/briefs/ko-KR/backend-career-weekly.md` |
 | Mark PS Solved | Mark PS Solved | `data/ps-progress.json` |
 
 ## Recommended first run: dry-run
 
 Start with dry-run or artifact-only mode so you can inspect the generated content before Discord delivery.
 
-For Daily Backend Brief, run `Daily Korea Tech Brief` with `dry_run=true` and `force_send=false`.
+For Daily Backend Brief, run `Backend Daily Brief` with `dry_run=true` and `force_send=false`.
 
 Check the generated brief, candidate JSON files, validation report, and run summary.
 In the validation report, confirm that OSS issue URLs in the Markdown came from
@@ -154,7 +154,7 @@ In the validation report, confirm that OSS issue URLs in the Markdown came from
 
 Discord delivery and delivery lock creation should not happen in this mode.
 
-For Korea Dev/AI News Daily, run `Daily Korea Dev AI News` with `dry_run=true` and `force_send=false`.
+For Dev News Daily, run `Dev News Daily` with `dry_run=true` and `force_send=false`.
 
 Check the shortlist, token budget, quality report, validation report, generated brief, and run summary.
 
@@ -180,9 +180,9 @@ Then download or open the uploaded artifact for the run.
 
 For Daily Backend Brief, the most important files are the generated brief, candidate JSON files, `backend-daily-validation-report.md`, and `backend-daily-run-summary.md`.
 
-For Korea Dev/AI News Daily, check `kr-tech-news-daily.md`, `kr-tech-news-shortlist.json`, `news-daily-token-budget.json`, `news-daily-quality-report.json`, `news-daily-validation-report.md`, and `news-daily-run-summary.md`.
+For Dev News Daily, check `reports/briefs/ko-KR/news-daily.md`, `reports/candidates/ko-KR/news-shortlist.json`, `reports/ops/ko-KR/news-daily-token-budget.json`, `reports/ops/ko-KR/news-daily-quality-report.json`, `reports/ops/ko-KR/news-daily-validation-report.md`, and `reports/ops/ko-KR/news-daily-run-summary.md`.
 
-For Backend Career Site Radar, check `weekly-career-site-radar.json` and `kr-backend-career-weekly.md`.
+For Backend Career Site Radar, check `reports/candidates/ko-KR/weekly-career-site-radar.json` and `reports/briefs/ko-KR/backend-career-weekly.md`.
 
 Artifacts should show what was generated, what was skipped, whether Discord delivery was attempted, and whether validation passed.
 
@@ -196,7 +196,7 @@ After a dry-run looks correct, run the workflow with Discord delivery enabled.
 
 Set `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true` before expecting any workflow to send to Discord.
 
-For Daily Backend Brief and Korea Dev/AI News Daily, set `dry_run=false`.
+For Daily Backend Brief and Dev News Daily, set `dry_run=false`.
 
 Use `force_send=true` only when you intentionally want to send despite an existing delivery lock.
 
@@ -323,7 +323,7 @@ Mark PS Solved is a manual operating path by design.
 - [Runtime Configuration](runtime-configuration.md)
 - [Demo guide](../demo.md)
 - [Daily Backend Brief](../operations/daily-backend-brief.md)
-- [Korea Dev/AI News Daily](../operations/daily-news-ops.md)
+- [Dev News Daily](../operations/daily-news-ops.md)
 - [Backend Career Site Radar](../operations/career-site-radar.md)
 - [Local validation guide](../operations/local-validation.md)
 - [Operations guide](../operations/operations.md)

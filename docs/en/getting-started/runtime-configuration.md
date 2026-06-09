@@ -14,8 +14,8 @@ Secrets are sensitive values. Variables are non-sensitive runtime settings.
 
 | Type | Store | Examples |
 | --- | --- | --- |
-| Secrets | API keys, webhook URLs, client secrets | `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_DAILY` |
-| Variables | Timezone, target time, weekday, delivery flag | `CAREER_FEED_TIMEZONE`, `CAREER_FEED_BACKEND_DAILY_TIME` |
+| Secrets | API keys, webhook URLs, client secrets | `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` |
+| Variables | Locale list, provider names, timezone, target time, delivery flag | `CAREER_FEED_ENABLED_LOCALES`, `CAREER_FEED_TIMEZONE` |
 
 Do not put Discord Webhook URLs, API keys, or client secrets in Variables.
 
@@ -24,11 +24,16 @@ Do not put Discord Webhook URLs, API keys, or client secrets in Variables.
 | Secret | Required | Used by |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Yes | Daily Backend Brief and News Daily generation |
-| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Yes for delivery | Daily Backend Brief |
-| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Yes for delivery | Korea Dev/AI News Daily |
+| `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | Yes for `ko-KR` delivery | Daily Backend Brief |
+| `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | Yes for `en-US` delivery | Daily Backend Brief |
+| `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | Yes for `ko-KR` delivery | Dev News Daily |
+| `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | Yes for `en-US` delivery | Dev News Daily |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Compatibility fallback | `ko-KR` Daily Backend Brief |
+| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Compatibility fallback | `ko-KR` Dev News Daily |
 | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Yes for delivery | Backend Career Site Radar |
 | `NAVER_CLIENT_ID` | Optional | Korean news source enrichment |
 | `NAVER_CLIENT_SECRET` | Optional | Korean news source enrichment |
+| `BRAVE_SEARCH_API_KEY` | Optional | English search provider enrichment |
 | `DISCORD_WEBHOOK_CAREER_FEED_OPS` | Optional | Workflow failure alert |
 
 Missing `DISCORD_WEBHOOK_CAREER_FEED_OPS` must only skip the optional alert.
@@ -37,6 +42,10 @@ Missing `DISCORD_WEBHOOK_CAREER_FEED_OPS` must only skip the optional alert.
 
 | Name | Required | Default | Example | Description |
 | --- | --- | --- | --- | --- |
+| `CAREER_FEED_ENABLED_LOCALES` | Optional | `ko-KR` | `ko-KR,en-US` | Comma-separated locale list |
+| `CAREER_FEED_DEFAULT_LOCALE` | Optional | `ko-KR` | `ko-KR` | Default locale for compatibility |
+| `CAREER_FEED_SEARCH_PROVIDERS_KO_KR` | Optional | `naver,rss,github` | `naver,rss,github` | `ko-KR` provider order |
+| `CAREER_FEED_SEARCH_PROVIDERS_EN_US` | Optional | `brave,rss,github` | `brave,rss,github` | `en-US` provider order |
 | `CAREER_FEED_TIMEZONE` | Optional | `Asia/Seoul` | `Asia/Seoul` | Timezone for runtime gate |
 | `CAREER_FEED_BACKEND_DAILY_TIME` | Optional | `09:00` | `09:00` | Daily Backend target time |
 | `CAREER_FEED_NEWS_DAILY_TIME` | Optional | `09:05` | `09:05` | News Daily target time |
@@ -102,9 +111,26 @@ The workflows write to `$GITHUB_OUTPUT`, not deprecated `::set-output`.
 
 The default delivery flag is `false` to prevent accidental fork sends.
 
+## Locale Artifacts
+
+Daily workflows write canonical artifacts under locale-specific directories.
+
+| Workflow | Canonical output |
+| --- | --- |
+| Daily Backend Brief | `reports/briefs/{locale}/backend-daily.md` |
+| Dev News Daily | `reports/briefs/{locale}/news-daily.md` |
+
+During the v0.2 compatibility window, `ko-KR` also writes legacy mirror files such as `reports/briefs/{locale}/backend-daily.md`.
+
+## Provider Fallback
+
+Provider names are non-sensitive Variables. Provider credentials are Secrets.
+
+If one configured provider is unavailable, Career Feed records a warning and continues with the remaining providers. `en-US` does not require Naver secrets, and `ko-KR` does not require Brave Search.
+
 ## Dry-run Relationship
 
-Daily Backend Brief and Korea Dev/AI News Daily support `dry_run=true`.
+Daily Backend Brief and Dev News Daily support `dry_run=true`.
 
 Dry-run still collects candidates, generates drafts, validates output, and uploads artifacts.
 

@@ -13,13 +13,17 @@ The roadmap keeps future ideas visible without expanding the current operating s
 
 ## v0.2.x
 
-- Consider additional source categories only after validation is stable.
-- Improve examples and contributor onboarding.
-- Expand language support only with a separate tree and link policy.
+- Establish the locale-aware engine foundation for `ko-KR` and `en-US`.
+- Support `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US` without workflow YAML edits.
+- Keep locale-specific config under `configs/locales/{locale}/`.
+- Write daily artifacts under `reports/briefs/{locale}/` and `reports/candidates/{locale}/`.
+- Keep `ko-KR` legacy artifact mirrors during the v0.2 compatibility window.
+- Introduce provider presets such as `naver,rss,github` and `brave,rss,github`.
+- Improve examples and contributor onboarding for forked communities.
 
 ## Later
 
-Possible later work includes richer reporting artifacts, more validation fixtures, and safer source review tooling.
+Possible later work includes additional community-maintained locales, richer reporting artifacts, more validation fixtures, and safer source review tooling.
 
 ## Out of scope
 

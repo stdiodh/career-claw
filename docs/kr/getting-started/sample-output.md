@@ -11,7 +11,7 @@ Career Feed가 어떤 결과물을 만드는지 빠르게 확인하는 예시 �
 | Output | File | Notes |
 | --- | --- | --- |
 | Daily Backend Brief | [daily-backend-brief.example.md](../examples/daily-backend-brief.example.md) | 일일 백엔드 학습, PS 루틴, OSS 준비, 실무 지식 예시 |
-| Korea Dev/AI News Daily | [korea-dev-ai-news-daily.example.md](../examples/korea-dev-ai-news-daily.example.md) | 한국 개발/AI 뉴스 후보와 읽을거리 정리 예시 |
+| Dev News Daily | [korea-dev-ai-news-daily.example.md](../examples/korea-dev-ai-news-daily.example.md) | 한국 개발/AI 뉴스 후보와 읽을거리 정리 예시 |
 | Backend Career Site Radar | [career-site-radar.example.md](../examples/career-site-radar.example.md) | 주간 커리어 사이트 확인 루틴 예시 |
 
 ## What to Check

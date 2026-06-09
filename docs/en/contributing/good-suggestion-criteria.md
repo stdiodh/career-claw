@@ -6,7 +6,7 @@ A good suggestion is easy to verify, useful for the current Career Feed scope, a
 
 ## Summary
 
-Suggestions should improve one of the active paths: Daily Backend Brief, Korea Dev/AI News Daily, Backend Career Site Radar, or PS progress marking.
+Suggestions should improve one of the active paths: Daily Backend Brief, Dev News Daily, Backend Career Site Radar, or PS progress marking.
 
 ## What a good suggestion includes
 

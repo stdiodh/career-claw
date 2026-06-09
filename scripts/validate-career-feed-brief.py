@@ -786,6 +786,12 @@ def parse_args() -> argparse.Namespace:
         default="reports/candidates",
         help="Directory containing candidate JSON files for cross-checks.",
     )
+    parser.add_argument(
+        "--locale",
+        default="ko-KR",
+        choices=["ko-KR", "en-US"],
+        help="Locale of the generated brief.",
+    )
     return parser.parse_args()
 
 
@@ -909,6 +915,66 @@ def validate_missing_source_link_phrases(content: str) -> None:
 def validate_no_tables(content: str) -> None:
     if any(line.strip().startswith("|") for line in content.splitlines()):
         fail("Markdown tables are not allowed in Career Feed briefs.")
+
+
+def validate_english_timestamp(content: str) -> None:
+    match = re.search(r"Generated at:\s*(.+)", content)
+    if not match:
+        fail("Missing Generated at field.")
+    timestamp = match.group(1).strip()
+    if "{{" in timestamp or "Runtime Context" in timestamp:
+        fail("Generated at must use the resolved runtime timestamp.")
+
+
+def validate_english_language_signal(content: str) -> None:
+    korean_chars = len(re.findall(r"[가-힣]", content))
+    latin_words = len(re.findall(r"\b[A-Za-z][A-Za-z0-9+-]*\b", content))
+    if korean_chars > 20 and korean_chars > latin_words:
+        fail("en-US brief appears to contain too much Korean text.")
+
+
+def validate_en_us_common(content: str, min_links: int = 2) -> None:
+    validate_english_timestamp(content)
+    validate_secret_leaks(content)
+    validate_links(content, min_links, allow_duplicate_links=True)
+    validate_no_tables(content)
+    validate_english_language_signal(content)
+
+
+def validate_en_us_backend(content: str) -> None:
+    validate_en_us_common(content)
+    sections = extract_sections(content)
+    require_sections(
+        sections,
+        [
+            "Spring Boot/JVM Study",
+            "Weekly PS Growth Routine",
+            "Open Source Candidate",
+            "Backend Practice Recharge",
+        ],
+    )
+
+
+def validate_en_us_news(content: str) -> None:
+    validate_en_us_common(content)
+    sections = extract_sections(content)
+    require_sections(
+        sections,
+        [
+            "Technology News",
+            "Market and Infrastructure Signals",
+            "Growth Check",
+        ],
+    )
+    advice_patterns = [
+        r"\bbuy\b",
+        r"\bsell\b",
+        r"stock\s+pick",
+        r"guaranteed\s+return",
+        r"price\s+target",
+    ]
+    if any(re.search(pattern, content, flags=re.IGNORECASE) for pattern in advice_patterns):
+        fail("en-US news brief contains investment advice wording.")
 
 
 def validate_item_markdown_link(item: Item) -> None:
@@ -2285,7 +2351,19 @@ def validate_weekly_tracking_section(sections: list[Section]) -> None:
         validate_weekly_item_links(line, "다음 주에도 추적할 후보")
 
 
-def validate(content: str, report_type: str, candidates_dir: Path) -> None:
+def validate(content: str, report_type: str, candidates_dir: Path, locale: str) -> None:
+    if locale == "en-US":
+        if report_type == "daily-tech":
+            validate_en_us_backend(content)
+            return
+        if report_type == "daily-news":
+            validate_en_us_news(content)
+            return
+        if report_type == "weekly-career":
+            validate_weekly_career(content)
+            return
+        fail(f"Unsupported report type: {report_type}")
+
     if report_type == "daily-tech":
         validate_daily_tech(content, candidates_dir)
     elif report_type == "daily-news":
@@ -2300,12 +2378,12 @@ def main() -> int:
     args = parse_args()
     try:
         content = read_report(Path(args.path))
-        validate(content, args.type, Path(args.candidates_dir))
+        validate(content, args.type, Path(args.candidates_dir), args.locale)
     except (OSError, UnicodeDecodeError, RuntimeError) as exc:
         print(f"Career Feed brief validation failed: {exc}", file=sys.stderr)
         return 1
 
-    print(f"Career Feed brief validation passed: {args.path} ({args.type})")
+    print(f"Career Feed brief validation passed: {args.path} ({args.type}, {args.locale})")
     return 0
 
 

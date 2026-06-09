@@ -11,7 +11,7 @@ The samples are documentation examples. They are not live usage or adoption clai
 | Output | File | Notes |
 | --- | --- | --- |
 | Daily Backend Brief | [daily-backend-brief.example.md](../examples/daily-backend-brief.example.md) | Daily backend learning, PS routine, OSS preparation, and practical knowledge example |
-| Korea Dev/AI News Daily | [korea-dev-ai-news-daily.example.md](../examples/korea-dev-ai-news-daily.example.md) | Korean development and AI news review example |
+| Dev News Daily | [korea-dev-ai-news-daily.example.md](../examples/korea-dev-ai-news-daily.example.md) | Korean development and AI news review example |
 | Backend Career Site Radar | [career-site-radar.example.md](../examples/career-site-radar.example.md) | Weekly career site radar example |
 
 ## What to Check

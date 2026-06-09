@@ -10,7 +10,7 @@ The radar helps learners review public backend-related opportunities without bui
 
 ## Workflow
 
-The workflow file is `.github/workflows/kr-backend-career-weekly.yml`. It renders weekly radar artifacts and can optionally send to Discord when configured.
+The workflow file is `.github/workflows/backend-career-weekly.yml`. It renders weekly radar artifacts and can optionally send to Discord when configured.
 
 ## Sources
 
@@ -26,4 +26,4 @@ Discord delivery should summarize public links and review notes, not private app
 
 ## Artifacts
 
-Review `reports/candidates/weekly-career-site-radar.json` and `reports/briefs/kr-backend-career-weekly.md`.
+Review `reports/candidates/ko-KR/weekly-career-site-radar.json` and `reports/briefs/ko-KR/backend-career-weekly.md`.

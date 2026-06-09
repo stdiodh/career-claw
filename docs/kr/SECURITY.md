@@ -14,7 +14,7 @@ Career Feed의 현재 운영 범위는 GitHub Actions, OpenAI API, Discord Webho
 
 보안 정책은 이 범위 안의 문서, workflow 설정, script, secret 사용 방식, Discord 전송 정책을 중심으로 다룹니다.
 
-Daily Backend Brief, Korea Dev/AI News Daily, Backend Career Site Radar, PS 진행 표시 workflow가 주요 대상입니다.
+Daily Backend Brief, Dev News Daily, Backend Career Site Radar, PS 진행 표시 workflow가 주요 대상입니다.
 
 ## Not in scope
 

@@ -17,7 +17,7 @@ body:
       label: 관련 검증 영역
       options:
         - Daily Backend Brief
-        - Korea Dev/AI News Daily
+        - Dev News Daily
         - Backend Career Site Radar
         - OSS candidate reliability
         - documentation or link validation

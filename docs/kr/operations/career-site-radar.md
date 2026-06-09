@@ -8,18 +8,18 @@ Backend Career Site Radar는 자동 추천 피드가 아니라, 수동 또는 �
 
 | 항목 | 값 |
 | --- | --- |
-| workflow | `.github/workflows/kr-backend-career-weekly.yml` |
+| workflow | `.github/workflows/backend-career-weekly.yml` |
 | config | `configs/weekly-career-site-radar.json` |
 | collector | `python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run` |
 | renderer | `python3 scripts/render-weekly-career-site-radar.py` |
-| validator | `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career` |
-| report | `reports/briefs/kr-backend-career-weekly.md` |
+| validator | `python3 scripts/validate-career-feed-brief.py reports/briefs/ko-KR/backend-career-weekly.md --type weekly-career --locale ko-KR` |
+| report | `reports/briefs/ko-KR/backend-career-weekly.md` |
 | Discord secret | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` |
 
 ## 출력 파일
 
-- `reports/candidates/weekly-career-site-radar.json`
-- `reports/briefs/kr-backend-career-weekly.md`
+- `reports/candidates/ko-KR/weekly-career-site-radar.json`
+- `reports/briefs/ko-KR/backend-career-weekly.md`
 
 호환용 JSON 파일:
 
@@ -59,5 +59,5 @@ Discord 전송은 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`일 때만 시도�
 ```bash
 python3 scripts/collect-kr-feeds.py --mode weekly-career --dry-run
 python3 scripts/render-weekly-career-site-radar.py
-python3 scripts/validate-career-feed-brief.py reports/briefs/kr-backend-career-weekly.md --type weekly-career
+python3 scripts/validate-career-feed-brief.py reports/briefs/ko-KR/backend-career-weekly.md --type weekly-career --locale ko-KR
 ```

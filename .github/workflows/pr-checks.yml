@@ -43,7 +43,13 @@ jobs:
             scripts/collect-kr-feeds.py \
             scripts/evaluate-news-daily-quality.py \
             scripts/estimate-prompt-budget.py \
+            scripts/locale_config.py \
             scripts/render-weekly-career-site-radar.py \
+            scripts/search_providers/base.py \
+            scripts/search_providers/brave.py \
+            scripts/search_providers/github.py \
+            scripts/search_providers/naver.py \
+            scripts/search_providers/rss.py \
             scripts/select-ps-problem.py \
             scripts/send-discord.py \
             scripts/should-run-now.py \

@@ -8,13 +8,23 @@
 
 ## 30-Second Overview
 
-Career Feed is an open workflow project for Java/Kotlin backend learners and junior developers.
+Career Feed is a configurable locale-aware briefing automation workflow for backend learners and developer communities.
 
-It uses GitHub Actions to generate daily or weekly Markdown briefs for backend study, Korean dev/AI news, OSS contribution preparation, and career site checks.
+It uses GitHub Actions to generate daily or weekly Markdown briefs for backend study, locale-specific dev/AI news, OSS contribution preparation, and career site checks.
 
 Generated output is reviewed through artifacts and validation reports first, and only sent to Discord Webhook delivery when the user enables delivery.
 
 It is fork-based automation without a persistent server, database, hosted dashboard, Discord Gateway Bot, or Slash Command service.
+
+## Supported Locales
+
+| Locale | Status | Audience | Search provider preset |
+| --- | --- | --- | --- |
+| `ko-KR` | Default | Korean Java/Kotlin backend learners | `naver,rss,github` |
+| `en-US` | v0.2 foundation | English-speaking backend learners and junior developers | `brave,rss,github` |
+
+Set `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US` to generate separate dry-run artifacts for both locales.
+Webhook URLs remain GitHub Secrets, while enabled locales and provider names are GitHub Variables.
 
 ## OSS Readiness / Impact
 
@@ -39,7 +49,7 @@ It is fork-based automation without a persistent server, database, hosted dashbo
 | Output | What it includes | Korean example | English example |
 | --- | --- | --- | --- |
 | Daily Backend Brief | Spring Boot/JVM study, Programmers PS routine, OSS preparation, practical backend knowledge | [sample](./docs/kr/examples/daily-backend-brief.example.md) | [sample](./docs/en/examples/daily-backend-brief.example.md) |
-| Korea Dev/AI News Daily | Korean development and AI news review with quality checks | [sample](./docs/kr/examples/korea-dev-ai-news-daily.example.md) | [sample](./docs/en/examples/korea-dev-ai-news-daily.example.md) |
+| Dev News Daily | Korean development and AI news review with quality checks | [sample](./docs/kr/examples/korea-dev-ai-news-daily.example.md) | [sample](./docs/en/examples/korea-dev-ai-news-daily.example.md) |
 | Backend Career Site Radar | Public career, internship, activity, hackathon, and contest source checks | [sample](./docs/kr/examples/career-site-radar.example.md) | [sample](./docs/en/examples/career-site-radar.example.md) |
 
 ## Project Status
@@ -82,10 +92,12 @@ sequenceDiagram
 
 | Workflow | File | Main output |
 | --- | --- | --- |
-| Daily Backend Brief | `.github/workflows/kr-tech-daily.yml` | `reports/briefs/kr-tech-daily.md` |
-| Korea Dev/AI News Daily | `.github/workflows/kr-tech-news-daily.yml` | `reports/briefs/kr-tech-news-daily.md` |
-| Backend Career Site Radar | `.github/workflows/kr-backend-career-weekly.yml` | `reports/briefs/kr-backend-career-weekly.md` |
+| Daily Backend Brief | `.github/workflows/backend-daily.yml` | `reports/briefs/{locale}/backend-daily.md` |
+| Dev News Daily | `.github/workflows/dev-news-daily.yml` | `reports/briefs/{locale}/news-daily.md` |
+| Backend Career Site Radar | `.github/workflows/backend-career-weekly.yml` | `reports/briefs/ko-KR/backend-career-weekly.md` |
 | Mark PS Solved | `.github/workflows/mark-ps-solved.yml` | `data/ps-progress.json` update |
+
+For `ko-KR`, v0.2.x also writes legacy mirror files such as `reports/briefs/kr-tech-daily.md` for compatibility.
 
 ## Safety / Limitations
 
