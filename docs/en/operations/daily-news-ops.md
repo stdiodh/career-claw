@@ -2,15 +2,19 @@
 
 > Language: [한국어](../../kr/operations/daily-news-ops.md) | [English](./daily-news-ops.md)
 
-Dev News Daily reviews Korean developer and AI news candidates, then renders a validated Markdown brief.
+Dev News Daily reviews locale-specific developer and AI news candidates, then renders a validated Markdown brief.
 
 ## Purpose
 
 The workflow helps readers identify developer-relevant news without turning the brief into investment advice or generic market commentary.
 
+For `ko-KR`, it focuses on Korean developer and AI news sources.
+For `en-US`, it uses the English preset foundation and configured provider list.
+
 ## Workflow
 
 The workflow file is `.github/workflows/dev-news-daily.yml`. It collects candidates, builds a shortlist, estimates prompt budget, evaluates quality, writes a run summary, and optionally sends to Discord.
+It uses the locale-aware foundation to write canonical artifacts under `reports/briefs/{locale}/`, `reports/candidates/{locale}/`, and `reports/ops/{locale}/`.
 
 ## Candidate policy
 

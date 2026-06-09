@@ -219,7 +219,15 @@ Daily workflow는 locale별 canonical path에 산출물을 씁니다.
 | Daily Backend Brief | `reports/briefs/{locale}/backend-daily.md` |
 | Dev News Daily | `reports/briefs/{locale}/news-daily.md` |
 
-v0.2 compatibility 기간에는 `ko-KR`에 대해 `reports/briefs/ko-KR/backend-daily.md` 같은 legacy mirror도 함께 만듭니다.
+Daily workflow는 후보와 운영 artifact도 `reports/candidates/{locale}/`, `reports/ops/{locale}/` 아래에 씁니다.
+
+v0.2 compatibility 기간에는 해당 `ko-KR` workflow가 아래 legacy mirror도 함께 만듭니다.
+
+- `reports/briefs/kr-tech-daily.md`
+- `reports/briefs/kr-tech-news-daily.md`
+- `reports/briefs/kr-backend-career-weekly.md`
+
+새 fork는 canonical path와 locale별 Secret 이름을 사용해야 합니다.
 
 ## Provider fallback
 

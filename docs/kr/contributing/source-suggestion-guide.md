@@ -60,6 +60,7 @@ source type을 명확히 적으면 검토가 빨라집니다.
 - public availability
 - update frequency
 - caveats
+- validation impact
 
 예를 들어 한국 채용 출처는 `region=kr`, `locale=ko-KR`, `timezone=Asia/Seoul`처럼 적을 수 있습니다.
 

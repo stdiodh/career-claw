@@ -21,6 +21,7 @@ Career Feed generates scheduled Markdown briefs through GitHub Actions, then rev
 - Improve examples and validation fixtures.
 - Propose Java/Kotlin backend learning topics.
 - Suggest safe OSS contribution candidates.
+- Propose locale or source expansion with locale, region, language, public URL, and validation impact.
 
 ## What makes a good contribution
 

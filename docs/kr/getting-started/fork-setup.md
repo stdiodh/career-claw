@@ -118,6 +118,9 @@ GitHub repository에서 `Settings > Secrets and variables > Actions > Variables`
 
 시간은 `HH:MM`, 요일은 `MON`부터 `SUN`, timezone은 `Asia/Seoul` 같은 IANA timezone 이름을 사용합니다.
 
+첫 fork 설정은 `CAREER_FEED_ENABLED_LOCALES=ko-KR` 기준으로 시작합니다.
+나중에 `en-US` v0.2 foundation을 테스트하려면 `ko-KR,en-US`로 바꾸고, 전송을 켜기 전에 `en-US`용 Discord webhook Secret을 함께 등록합니다.
+
 ## Step 5. Run Workflow with Dry Run
 
 GitHub `Actions` 탭에서 `Backend Daily Brief` workflow를 선택합니다.

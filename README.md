@@ -20,18 +20,19 @@ It is fork-based automation without a persistent server, database, hosted dashbo
 
 | Locale | Status | Audience | Search provider preset |
 | --- | --- | --- | --- |
-| `ko-KR` | Default | Korean Java/Kotlin backend learners | `naver,rss,github` |
-| `en-US` | v0.2 foundation | English-speaking backend learners and junior developers | `brave,rss,github` |
+| `ko-KR` | Default supported locale | Korean Java/Kotlin backend learners | `naver,rss,github` |
+| `en-US` | v0.2 foundation / experimental preset | English-speaking backend learners and junior developers | `brave,rss,github` |
 
 Set `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US` to generate separate dry-run artifacts for both locales.
 Webhook URLs remain GitHub Secrets, while enabled locales and provider names are GitHub Variables.
+Additional locales are later community-maintained work.
 
 ## OSS Readiness / Impact
 
 | Signal | Current evidence |
 | --- | --- |
 | Who uses this | Early project for fork-based use by Java/Kotlin backend learners, Discord study groups, and mentoring groups that want reviewable daily briefs. |
-| Why this matters | It turns scattered backend learning, Korean dev/AI news, OSS contribution prep, and career source checks into repeatable GitHub Actions artifacts. |
+| Why this matters | It turns scattered backend learning, locale-specific dev/AI news, OSS contribution prep, and career source checks into repeatable GitHub Actions artifacts. |
 | Maintainer workload | Contributor entry points are intentionally small: documentation fixes, source suggestions, validation fixtures, and OSS candidate review. |
 | Codex/API usage | OpenAI-assisted output is constrained to reviewable Markdown drafts, validation summaries, topic prioritization, and OSS candidate notes. |
 | Usage signal | No adoption metric is claimed yet; the repository is presented as fork-ready, not as a project with existing stars, downloads, or active-user numbers. |
@@ -49,14 +50,14 @@ Webhook URLs remain GitHub Secrets, while enabled locales and provider names are
 | Output | What it includes | Korean example | English example |
 | --- | --- | --- | --- |
 | Daily Backend Brief | Spring Boot/JVM study, Programmers PS routine, OSS preparation, practical backend knowledge | [sample](./docs/kr/examples/daily-backend-brief.example.md) | [sample](./docs/en/examples/daily-backend-brief.example.md) |
-| Dev News Daily | Korean development and AI news review with quality checks | [sample](./docs/kr/examples/korea-dev-ai-news-daily.example.md) | [sample](./docs/en/examples/korea-dev-ai-news-daily.example.md) |
+| Dev News Daily | Locale-specific developer and AI news review with quality checks | [sample](./docs/kr/examples/korea-dev-ai-news-daily.example.md) | [sample](./docs/en/examples/korea-dev-ai-news-daily.example.md) |
 | Backend Career Site Radar | Public career, internship, activity, hackathon, and contest source checks | [sample](./docs/kr/examples/career-site-radar.example.md) | [sample](./docs/en/examples/career-site-radar.example.md) |
 
 ## Project Status
 
 - Status: Early Public OSS
-- Latest release: [`v0.1.0`](https://github.com/stdiodh/career-feed/releases/tag/v0.1.0)
-- Release date: 2026-06-09
+- Latest release: [`v0.2.0`](https://github.com/stdiodh/career-feed/releases/tag/v0.2.0)
+- Release date: 2026-06-10
 - Release baseline: fork-based GitHub Actions workflows with dry-run artifact review and optional Discord Webhook delivery.
 
 Workflow files are the source of truth for actual cron, inputs, and dispatch behavior.
@@ -98,6 +99,7 @@ sequenceDiagram
 | Mark PS Solved | `.github/workflows/mark-ps-solved.yml` | `data/ps-progress.json` update |
 
 For `ko-KR`, v0.2.x also writes legacy mirror files such as `reports/briefs/kr-tech-daily.md` for compatibility.
+New forks should use the canonical workflow names, locale-specific artifact paths, and locale-specific Discord webhook Secret names.
 
 ## Safety / Limitations
 
