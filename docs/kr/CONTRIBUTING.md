@@ -123,6 +123,10 @@ python3 scripts/check-doc-format.py
 git diff --check
 ```
 
+PR을 열면 Pull Request Checks workflow가 자동으로 빠른 파일 검사와 전체 `./scripts/validate.sh` 검사를 실행합니다.
+
+CI 실패를 줄이려면 PR을 열기 전에 로컬에서 위 문서 검사와 `./scripts/validate.sh`를 먼저 실행해 주세요.
+
 Daily Backend 후보 수집 dry-run은 다음 명령으로 확인할 수 있습니다.
 
 ```bash

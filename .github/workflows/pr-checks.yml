@@ -1,0 +1,249 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: career-feed-pr-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-file-checks:
+    name: Fast file checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Check Python syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile \
+            scripts/build-daily-news-shortlist.py \
+            scripts/check-doc-format.py \
+            scripts/check-workflow-schedules.py \
+            scripts/collect-kr-feeds.py \
+            scripts/evaluate-news-daily-quality.py \
+            scripts/estimate-prompt-budget.py \
+            scripts/render-weekly-career-site-radar.py \
+            scripts/select-ps-problem.py \
+            scripts/send-discord.py \
+            scripts/should-run-now.py \
+            scripts/update-oss-progress.py \
+            scripts/update-ps-progress.py \
+            scripts/validate-career-feed-brief.py \
+            scripts/write-news-daily-run-summary.py
+
+      - name: Check document format
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check-doc-format.py
+
+      - name: Check removed documentation paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          blocked_terms=(
+            "docs/getting-""started"
+            "docs/""operations"
+            "docs/""policies"
+            "docs/""project"
+            "docs/""contributing"
+          )
+          blocked_pattern=""
+          for term in "${blocked_terms[@]}"; do
+            if [ -z "${blocked_pattern}" ]; then
+              blocked_pattern="${term}"
+            else
+              blocked_pattern="${blocked_pattern}|${term}"
+            fi
+          done
+          if rg -n "${blocked_pattern}" README.md docs .github scripts; then
+            echo "Old direct docs paths remain. Use docs/kr/** or docs/en/** paths." >&2
+            exit 1
+          fi
+
+      - name: Check local Markdown links
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          roots = [
+              Path("README.md"),
+              Path("CONTRIBUTING.md"),
+              Path("SECURITY.md"),
+              Path("SUPPORT.md"),
+              Path("CODE_OF_CONDUCT.md"),
+              Path("CHANGELOG.md"),
+          ]
+          files = (
+              roots
+              + list(Path("docs").rglob("*.md"))
+              + list(Path(".github").rglob("*.md"))
+              + list(Path(".github").rglob("*.yml"))
+          )
+          link_re = re.compile(r"(?<!!)(?:\[[^\]]+\]\(([^)]+)\)|<((?:\.\.?/|docs/|\.github/)[^>]+)>)")
+          skip = {"URL", "url", "example.com", "TODO"}
+          missing = []
+          checked = 0
+          for path in files:
+              text = path.read_text(encoding="utf-8")
+              for match in link_re.finditer(text):
+                  target = (match.group(1) or match.group(2) or "").strip()
+                  if target in skip:
+                      continue
+                  if not target or re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", target) or target.startswith("#"):
+                      continue
+                  target = target.split("#", 1)[0]
+                  if not target or target.startswith("mailto:") or target.startswith("/"):
+                      continue
+                  check = (path.parent / target).resolve() if not target.startswith(("docs/", ".github/")) else Path(target).resolve()
+                  checked += 1
+                  if not check.exists():
+                      missing.append((str(path), target))
+          print(f"checked {checked} local links")
+          if missing:
+              for path, target in missing:
+                  print(f"{path}: missing {target}")
+              raise SystemExit(1)
+          PY
+
+      - name: Check language tree link policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          link_re = re.compile(r"(?<!!)(?:\[[^\]]+\]\(([^)]+)\)|<((?:\.\.?/|docs/|\.github/)[^>]+)>)")
+          violations = []
+          for base, other in [(Path("docs/kr"), "docs/en"), (Path("docs/en"), "docs/kr")]:
+              for path in base.rglob("*.md"):
+                  for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+                      if line.startswith("> Language:"):
+                          continue
+                      for match in link_re.finditer(line):
+                          target = (match.group(1) or match.group(2) or "").strip().split("#", 1)[0]
+                          if not target or re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", target) or target.startswith("#"):
+                              continue
+                          resolved = (path.parent / target).resolve() if not target.startswith(("docs/", ".github/")) else Path(target).resolve()
+                          try:
+                              rel = resolved.relative_to(Path.cwd())
+                          except ValueError:
+                              continue
+                          if str(rel).startswith(other + "/"):
+                              violations.append((str(path), lineno, target))
+          if violations:
+              for path, lineno, target in violations:
+                  print(f"{path}:{lineno}: {target}")
+              raise SystemExit(1)
+          print("language tree link policy ok")
+          PY
+
+      - name: Check secret and webhook patterns
+        shell: bash
+        run: |
+          set -euo pipefail
+          secret_terms=(
+            "sk""-"
+            "ghp""_"
+            "github_pat""_"
+            "discord.com/api/""webhooks"
+            "hooks.slack"".com"
+            "Bearer"" "
+            "client_""secret"
+            "OPENAI_API_KEY"".*"
+            "NAVER_CLIENT_SECRET"".*"
+          )
+          secret_pattern=""
+          for term in "${secret_terms[@]}"; do
+            if [ -z "${secret_pattern}" ]; then
+              secret_pattern="${term}"
+            else
+              secret_pattern="${secret_pattern}|${term}"
+            fi
+          done
+          if rg -n "${secret_pattern}" README.md docs .github; then
+            echo "Secret-like value found in public files." >&2
+            exit 1
+          fi
+
+      - name: Check unverified usage metrics
+        shell: bash
+        run: |
+          set -euo pipefail
+          metric_terms=(
+            "([1-9][0-9]*\\s+(st""ars|down""loads|active us""ers|active-us""er|us""ers|for""ks))"
+            "used by\\s+""[1-9][0-9]*"
+            "pilot ""usage"
+          )
+          metric_pattern=""
+          for term in "${metric_terms[@]}"; do
+            if [ -z "${metric_pattern}" ]; then
+              metric_pattern="${term}"
+            else
+              metric_pattern="${metric_pattern}|${term}"
+            fi
+          done
+          if rg -ni "${metric_pattern}" README.md docs .github; then
+            echo "Unverified usage or adoption metric wording found." >&2
+            exit 1
+          fi
+
+      - name: Check diff whitespace
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+
+  full-validation:
+    name: Full repository validation
+    runs-on: ubuntu-latest
+    needs: fast-file-checks
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Run repository validation
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/validate.sh
+
+      - name: Upload reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: pr-check-reports
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 7
