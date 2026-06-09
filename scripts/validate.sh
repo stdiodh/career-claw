@@ -291,6 +291,8 @@ required_files=(
   "CONTRIBUTING.md"
   "SECURITY.md"
   "SUPPORT.md"
+  "CODE_OF_CONDUCT.md"
+  "README.md"
   "configs/audience-profile.json"
   "configs/kr-sources.json"
   "configs/backend-practical-knowledge-curriculum.json"
@@ -304,12 +306,6 @@ required_files=(
   "data/ps-progress.json"
   "data/spring-jvm-blog-topic-progress.json"
   "docs/README.md"
-  "docs/demo.md"
-  "docs/operations/backend-growth-curriculum.md"
-  "docs/project/contributor-tasks.md"
-  "docs/operations/daily-growth-ops.md"
-  "docs/policies/daily-spring-jvm-blog-topic-policy.md"
-  "docs/getting-started/fork-setup.md"
   "docs/assets/getting-started/00-repository-fork-button.png"
   "docs/assets/getting-started/01-actions-tab-workflow-list.png"
   "docs/assets/getting-started/02-secrets-new-repository-secret.png"
@@ -319,15 +315,76 @@ required_files=(
   "docs/assets/getting-started/06-actions-run-workflow-inputs.png"
   "docs/assets/getting-started/07-actions-artifacts-summary.png"
   "docs/assets/getting-started/08-enable-discord-delivery-variable.png"
-  "docs/policies/oss-candidate-policy.md"
-  "docs/project/release-checklist.md"
-  "docs/release-notes/v0.1.0.md"
-  "docs/project/roadmap.md"
-  "docs/getting-started/runtime-configuration.md"
-  "docs/getting-started/sample-output.md"
-  "docs/examples/daily-backend-brief.example.md"
-  "docs/examples/korea-dev-ai-news-daily.example.md"
-  "docs/examples/career-site-radar.example.md"
+  "docs/kr/CODE_OF_CONDUCT.md"
+  "docs/kr/CONTRIBUTING.md"
+  "docs/kr/README.md"
+  "docs/kr/SECURITY.md"
+  "docs/kr/SUPPORT.md"
+  "docs/kr/contributing/README.md"
+  "docs/kr/contributing/backend-career-question-guide.md"
+  "docs/kr/contributing/good-suggestion-criteria.md"
+  "docs/kr/contributing/oss-candidate-guide.md"
+  "docs/kr/contributing/review-policy.md"
+  "docs/kr/contributing/source-suggestion-guide.md"
+  "docs/kr/demo.md"
+  "docs/kr/examples/career-site-radar.example.md"
+  "docs/kr/examples/daily-backend-brief.example.md"
+  "docs/kr/examples/korea-dev-ai-news-daily.example.md"
+  "docs/kr/getting-started/fork-setup.md"
+  "docs/kr/getting-started/runtime-configuration.md"
+  "docs/kr/getting-started/sample-output.md"
+  "docs/kr/getting-started/usage.md"
+  "docs/kr/operations/backend-growth-curriculum.md"
+  "docs/kr/operations/career-site-radar.md"
+  "docs/kr/operations/daily-backend-brief.md"
+  "docs/kr/operations/daily-growth-ops.md"
+  "docs/kr/operations/daily-news-ops.md"
+  "docs/kr/operations/local-validation.md"
+  "docs/kr/operations/maintainer-guide.md"
+  "docs/kr/operations/operations.md"
+  "docs/kr/policies/daily-spring-jvm-blog-topic-policy.md"
+  "docs/kr/policies/github-labels.md"
+  "docs/kr/policies/oss-candidate-policy.md"
+  "docs/kr/project/contributor-tasks.md"
+  "docs/kr/project/ecosystem-importance.md"
+  "docs/kr/project/release-checklist.md"
+  "docs/kr/project/roadmap.md"
+  "docs/kr/release-notes/v0.1.0.md"
+  "docs/en/CODE_OF_CONDUCT.md"
+  "docs/en/CONTRIBUTING.md"
+  "docs/en/README.md"
+  "docs/en/SECURITY.md"
+  "docs/en/SUPPORT.md"
+  "docs/en/contributing/README.md"
+  "docs/en/contributing/backend-career-question-guide.md"
+  "docs/en/contributing/good-suggestion-criteria.md"
+  "docs/en/contributing/oss-candidate-guide.md"
+  "docs/en/contributing/review-policy.md"
+  "docs/en/contributing/source-suggestion-guide.md"
+  "docs/en/demo.md"
+  "docs/en/examples/career-site-radar.example.md"
+  "docs/en/examples/daily-backend-brief.example.md"
+  "docs/en/examples/korea-dev-ai-news-daily.example.md"
+  "docs/en/getting-started/fork-setup.md"
+  "docs/en/getting-started/runtime-configuration.md"
+  "docs/en/getting-started/sample-output.md"
+  "docs/en/getting-started/usage.md"
+  "docs/en/operations/backend-growth-curriculum.md"
+  "docs/en/operations/career-site-radar.md"
+  "docs/en/operations/daily-backend-brief.md"
+  "docs/en/operations/daily-growth-ops.md"
+  "docs/en/operations/daily-news-ops.md"
+  "docs/en/operations/local-validation.md"
+  "docs/en/operations/maintainer-guide.md"
+  "docs/en/operations/operations.md"
+  "docs/en/policies/daily-spring-jvm-blog-topic-policy.md"
+  "docs/en/policies/github-labels.md"
+  "docs/en/policies/oss-candidate-policy.md"
+  "docs/en/project/contributor-tasks.md"
+  "docs/en/project/ecosystem-importance.md"
+  "docs/en/project/release-checklist.md"
+  "docs/en/project/roadmap.md"
+  "docs/en/release-notes/v0.1.0.md"
   ".github/pull_request_template.md"
   ".github/ISSUE_TEMPLATE/bug-report.yml"
   ".github/ISSUE_TEMPLATE/docs-improvement.yml"
@@ -377,7 +434,6 @@ required_files=(
   "tests/test_oss_reliability_gate.py"
   "tests/test_should_run_now.py"
 )
-
 for file in "${required_files[@]}"; do
   test -f "${file}"
 done
@@ -570,12 +626,13 @@ grep -q 'def extract_github_issue_urls' scripts/validate-career-feed-brief.py
 grep -q 'OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES' scripts/validate-career-feed-brief.py
 grep -q 'OSS_FALLBACK_CONTAINS_ISSUE_URL' scripts/validate-career-feed-brief.py
 grep -q 'created_within_recent_window' scripts/validate-career-feed-brief.py
-grep -q 'CAREER_FEED_OSS_RECENT_DAYS' docs/policies/oss-candidate-policy.md
-grep -q 'created_at' docs/policies/oss-candidate-policy.md
-grep -q 'Fork Setup Guide' docs/getting-started/fork-setup.md
-grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED=false' docs/getting-started/fork-setup.md
-grep -q 'OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES' docs/getting-started/fork-setup.md
-grep -q 'docs/getting-started/fork-setup.md' README.md
+grep -q 'CAREER_FEED_OSS_RECENT_DAYS' docs/kr/policies/oss-candidate-policy.md
+grep -q 'created_at' docs/kr/policies/oss-candidate-policy.md
+grep -q 'Fork Setup Guide' docs/kr/getting-started/fork-setup.md
+grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED=false' docs/kr/getting-started/fork-setup.md
+grep -q 'OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES' docs/kr/getting-started/fork-setup.md
+grep -q 'docs/kr/getting-started/fork-setup.md' README.md
+grep -q 'docs/en/getting-started/fork-setup.md' README.md
 python3 - <<'PY'
 import json
 from pathlib import Path

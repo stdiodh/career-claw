@@ -1,0 +1,86 @@
+# Documentation
+
+> Language: [한국어](../kr/README.md) | [English](./README.md)
+
+Career Feed documentation is split by language.
+
+## New Here?
+
+| Goal | Read |
+| --- | --- |
+| See outputs first | [Sample Output](./getting-started/sample-output.md) |
+| Set up your fork | [Fork Setup Guide](./getting-started/fork-setup.md) |
+| Change runtime settings | [Runtime Configuration](./getting-started/runtime-configuration.md) |
+| Operate workflows | [Usage Guide](./getting-started/usage.md) |
+| Contribute | [Contributing](./CONTRIBUTING.md) |
+
+## Documentation Map
+
+### Getting Started
+
+| Document | Purpose |
+| --- | --- |
+| [Fork Setup Guide](./getting-started/fork-setup.md) | First dry-run and Discord delivery setup from a fork |
+| [Runtime Configuration](./getting-started/runtime-configuration.md) | Secrets, Variables, and runtime gate reference |
+| [Usage Guide](./getting-started/usage.md) | Routine workflow runs, artifact review, and delivery operations |
+
+### Usage / Operations
+
+| Document | Purpose |
+| --- | --- |
+| [Daily Backend Brief](./operations/daily-backend-brief.md) | Daily backend study brief operation |
+| [Korea Dev/AI News Daily](./operations/daily-news-ops.md) | Korea development and AI news operation |
+| [Backend Career Site Radar](./operations/career-site-radar.md) | Weekly career site radar operation |
+| [Daily Growth Ops](./operations/daily-growth-ops.md) | Growth artifact interpretation |
+| [Backend Growth Curriculum](./operations/backend-growth-curriculum.md) | Practical backend knowledge curriculum |
+| [Operations Guide](./operations/operations.md) | Operating checkpoints |
+| [Local Validation](./operations/local-validation.md) | Local validation commands |
+
+### Examples / Demo
+
+| Document | Purpose |
+| --- | --- |
+| [Sample Output](./getting-started/sample-output.md) | Representative output examples |
+| [Demo Guide](./demo.md) | GitHub Actions, artifact, Markdown, and Discord demo flow |
+
+### Contributing
+
+| Document | Purpose |
+| --- | --- |
+| [Contributing](./CONTRIBUTING.md) | Contribution rules and PR expectations |
+| [Contribution Guide Index](./contributing/README.md) | Contributor document index |
+| [Contributor Task Ideas](./project/contributor-tasks.md) | Small starter tasks |
+| [Good Suggestion Criteria](./contributing/good-suggestion-criteria.md) | Criteria for useful suggestions |
+| [Source Suggestion Guide](./contributing/source-suggestion-guide.md) | Source suggestion rules |
+| [OSS Candidate Guide](./contributing/oss-candidate-guide.md) | OSS candidate suggestion rules |
+| [Backend Career Question Guide](./contributing/backend-career-question-guide.md) | Backend career question guide |
+| [Review Policy](./contributing/review-policy.md) | Maintainer review policy |
+
+### Security / Maintainer
+
+| Document | Purpose |
+| --- | --- |
+| [Security Policy](./SECURITY.md) | Secret, webhook, and API key handling |
+| [Support](./SUPPORT.md) | Support scope and issue guidance |
+| [Maintainer Guide](./operations/maintainer-guide.md) | Maintainer checklist |
+| [OSS Candidate Policy](./policies/oss-candidate-policy.md) | Safe OSS candidate policy |
+| [Spring/JVM Blog Topic Policy](./policies/daily-spring-jvm-blog-topic-policy.md) | Daily Spring/JVM topic policy |
+| [GitHub Labels](./policies/github-labels.md) | Label management |
+
+### Release
+
+| Document | Purpose |
+| --- | --- |
+| [Roadmap](./project/roadmap.md) | Current and future scope |
+| [Changelog](../../CHANGELOG.md) | Change history |
+| [Release Checklist](./project/release-checklist.md) | Maintainer release checklist |
+| [v0.1.0 Release Notes](./release-notes/v0.1.0.md) | Release note draft |
+| [Ecosystem Importance](./project/ecosystem-importance.md) | Ecosystem value and limits |
+
+## Repository Level Documents
+
+| Document | Purpose |
+| --- | --- |
+| [Root README](../../README.md) | Language gateway and project overview |
+| [Code of Conduct](./CODE_OF_CONDUCT.md) | Community behavior rules |
+| [License](../../LICENSE) | License |

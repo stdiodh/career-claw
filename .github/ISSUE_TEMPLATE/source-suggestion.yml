@@ -13,7 +13,7 @@ body:
         공개적으로 확인 가능한 출처를 우선합니다.
 
         좋은 제안 기준:
-        https://github.com/stdiodh/career-feed/blob/main/docs/contributing/source-suggestion-guide.md
+        https://github.com/stdiodh/career-feed/blob/main/docs/kr/contributing/source-suggestion-guide.md
   - type: input
     id: source-url
     attributes:
