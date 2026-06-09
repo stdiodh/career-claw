@@ -4,7 +4,7 @@
 
 This guide gets a forked Career Feed repository to the first successful dry-run, artifact review, and optional Discord delivery.
 
-For setting details, see [Runtime Configuration](runtime-configuration.md). For routine operation, see [Usage Guide](usage.md). For OSS rules, see [OSS Candidate Policy](../policies/oss-candidate-policy.md).
+For setting details, see [Runtime Configuration](runtime-configuration.md). For webhook naming, see [Webhook Setup](webhook-setup.md). For routine operation, see [Usage Guide](usage.md). For OSS rules, see [OSS Candidate Policy](../policies/oss-candidate-policy.md).
 
 ## Before You Start
 

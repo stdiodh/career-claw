@@ -6,7 +6,7 @@ Career Feed를 fork한 뒤 GitHub Actions에서 첫 dry-run을 실행하고, gen
 
 이 문서 하나만 따라 하면 첫 dry-run 성공까지 도달하는 것을 목표로 합니다.
 
-상세 설정값은 [Runtime Configuration](runtime-configuration.md), 반복 운영 방법은 [Usage Guide](usage.md),
+상세 설정값은 [Runtime Configuration](runtime-configuration.md), webhook 이름은 [Webhook Setup](webhook-setup.md), 반복 운영 방법은 [Usage Guide](usage.md),
 OSS 후보 정책은 [OSS Candidate Policy](../policies/oss-candidate-policy.md)를 참고하세요.
 
 ## Before You Start

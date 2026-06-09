@@ -8,6 +8,8 @@ The GitHub UI location is `Settings > Secrets and variables > Actions`.
 
 First-time users should follow [Fork Setup Guide](fork-setup.md). This page is the reference for supported settings.
 
+For Discord webhook Secret naming, see [Webhook Setup](webhook-setup.md).
+
 ## Secrets and Variables
 
 Secrets are sensitive values. Variables are non-sensitive runtime settings.

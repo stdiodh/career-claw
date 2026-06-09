@@ -14,6 +14,8 @@ GitHub UI에서 어디를 눌러야 하는지 확인하려면 이미지가 포�
 이 문서는 설정값 reference입니다.
 GitHub UI에서 값을 등록하는 절차는 [Fork Setup Guide](fork-setup.md)를 source of truth로 둡니다.
 
+Discord webhook Secret 이름은 [Webhook Setup](webhook-setup.md)을 함께 확인해 주세요.
+
 Discord Webhook URL, API key, client secret은 Variables에 넣지 않습니다.
 
 실제 secret 값은 README, docs, issue, PR, commit message, Actions log, screenshot에 쓰지 않습니다.
