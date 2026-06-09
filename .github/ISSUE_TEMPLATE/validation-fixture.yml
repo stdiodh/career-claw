@@ -12,6 +12,18 @@ body:
 
         실제 secret, webhook URL, private Discord 정보, 개인 식별자는 포함하지 마세요.
   - type: dropdown
+    id: locale
+    attributes:
+      label: 관련 locale
+      options:
+        - ko-KR
+        - en-US
+        - both
+        - locale-independent
+        - unknown
+    validations:
+      required: true
+  - type: dropdown
     id: validator-area
     attributes:
       label: 관련 검증 영역
@@ -20,6 +32,9 @@ body:
         - Dev News Daily
         - Backend Career Site Radar
         - OSS candidate reliability
+        - Locale config
+        - Webhook config
+        - Provider/source policy
         - documentation or link validation
         - other
     validations:
@@ -45,6 +60,13 @@ body:
       description: 통과해야 하는지, 실패해야 하는지, 어떤 메시지가 도움이 되는지 적어 주세요.
     validations:
       required: true
+  - type: input
+    id: artifact-path
+    attributes:
+      label: 관련 artifact 또는 fixture path
+      placeholder: 예) tests/fixtures/en-us-news-daily-valid.md
+    validations:
+      required: false
   - type: checkboxes
     id: boundaries
     attributes:
@@ -52,5 +74,5 @@ body:
       options:
         - label: 이 제안은 하나의 검증 규칙에 집중합니다.
           required: true
-        - label: secret이나 private identifier를 포함하지 않았습니다.
+        - label: secret, webhook URL, token, private identifier를 포함하지 않았습니다.
           required: true

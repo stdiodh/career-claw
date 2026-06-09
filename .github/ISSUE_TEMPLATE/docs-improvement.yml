@@ -10,11 +10,24 @@ body:
         어떤 문서가 헷갈렸는지 알려 주세요.
 
         secret, webhook URL, private Discord 정보, 개인 식별자는 포함하지 마세요.
+        v0.2.0 현재 동작과 다른 설명을 발견했다면 관련 workflow나 artifact path도 함께 적어 주세요.
   - type: input
     id: document
     attributes:
       label: 관련 문서
       placeholder: 예) docs/kr/getting-started/fork-setup.md
+    validations:
+      required: true
+  - type: dropdown
+    id: locale
+    attributes:
+      label: 관련 locale 또는 문서 언어
+      options:
+        - ko-KR
+        - en-US
+        - both
+        - language-independent
+        - unknown
     validations:
       required: true
   - type: dropdown
@@ -27,6 +40,8 @@ body:
         - dry-run and artifacts
         - validation
         - Discord delivery
+        - locale or webhook naming
+        - provider or source policy
         - demo or sample output
         - contributing
         - other
@@ -46,3 +61,10 @@ body:
       description: 어떤 문장, 표, 예시가 있으면 도움이 될지 적어 주세요.
     validations:
       required: false
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 안전 확인
+      options:
+        - label: secret, webhook URL, token, private identifier를 포함하지 않았습니다.
+          required: true

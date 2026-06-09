@@ -13,6 +13,17 @@ body:
 
         추천 기준은 OSS Candidate Policy를 따릅니다:
         https://github.com/stdiodh/career-feed/blob/main/docs/kr/policies/oss-candidate-policy.md
+  - type: dropdown
+    id: locale
+    attributes:
+      label: 관련 locale
+      options:
+        - ko-KR
+        - en-US
+        - both
+        - unknown
+    validations:
+      required: true
   - type: input
     id: repository-url
     attributes:
@@ -74,3 +85,12 @@ body:
       description: 난이도, 빌드 환경, 언어, 응답 속도, 기여 가이드 유무 등을 적어 주세요.
     validations:
       required: false
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 안전 확인
+      options:
+        - label: 외부 저장소에 자동 댓글, 자동 PR, 자동 assign, 자동 label 변경을 요구하지 않습니다.
+          required: true
+        - label: secret, webhook URL, token, private identifier를 포함하지 않았습니다.
+          required: true

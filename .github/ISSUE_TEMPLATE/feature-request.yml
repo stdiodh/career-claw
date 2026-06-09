@@ -10,6 +10,35 @@ body:
         기능 제안은 작은 사용자 문제부터 설명해 주세요.
 
         외부 저장소 자동 댓글, 자동 PR, 자동 assign, 자동 label 변경은 현재 범위 밖입니다.
+        v0.2.x에서는 ko-KR compatibility와 en-US foundation 상태를 보존해야 합니다.
+  - type: dropdown
+    id: locale
+    attributes:
+      label: 관련 locale
+      options:
+        - ko-KR
+        - en-US
+        - both
+        - locale-independent
+        - new locale
+        - unknown
+    validations:
+      required: true
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: 관련 workflow 또는 영역
+      options:
+        - Backend Daily Brief
+        - Dev News Daily
+        - Backend Career Site Radar
+        - Mark PS Solved
+        - Provider or source policy
+        - Documentation
+        - Validation
+        - Other
+    validations:
+      required: true
   - type: textarea
     id: problem
     attributes:
@@ -49,3 +78,5 @@ body:
           required: true
         - label: secret이나 webhook URL을 포함하지 않았습니다.
           required: true
+        - label: ko-KR legacy fallback 제거가 필요하다면 breaking change로 별도 논의하겠습니다.
+          required: false

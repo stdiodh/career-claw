@@ -8,13 +8,33 @@ Labels help contributors and maintainers triage issues without adding process ov
 
 Use labels to clarify contribution type, review state, source category, and maintainer priority.
 
-## Core labels
+## Suggested labels
 
-Recommended core labels include documentation, bug, enhancement, source, oss-candidate, validation fixture, release readiness, and question.
+Labels are created manually by maintainers in GitHub. This repository documents suggested labels, but a docs-only PR does not create labels automatically.
+
+Recommended labels include:
+
+- `bug`
+- `docs`
+- `documentation`
+- `locale`
+- `provider`
+- `workflow`
+- `validation`
+- `validation fixture`
+- `source`
+- `source-policy`
+- `release`
+- `release readiness`
+- `good first issue`
+- `help wanted`
+- `oss-candidate`
+- `question`
+- `enhancement`
 
 ## Contributor labels
 
-Contributor-facing labels should identify good first issue, help wanted, source, oss-candidate, validation fixture, question, and documentation.
+Contributor-facing labels should identify `good first issue`, `help wanted`, `source`, `provider`, `locale`, `oss-candidate`, `validation fixture`, `question`, and `documentation`.
 
 ## Maintainer labels
 
