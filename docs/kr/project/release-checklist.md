@@ -2,38 +2,42 @@
 
 > Language: [한국어](./release-checklist.md) | [English](../../en/project/release-checklist.md)
 
-This checklist is for maintainers preparing a public Career Feed release.
+This checklist is for maintainers preparing v0.2.x patch releases and later public Career Feed releases.
 
-## v0.1.0 release goal
+현재 baseline은 `v0.2.0`입니다.
 
-v0.1.0 is the first open-source release intended for fork-based usage.
+`v0.1.0`은 과거 첫 fork 기반 릴리스로 유지하고, 새 릴리스 준비 문서는 v0.2.0 이후를 기준으로 작성합니다.
 
-It is not a stable commercial product release.
+## v0.2.x release goal
 
-The goal is that a Java/Kotlin backend developer can fork the repository, run a dry-run, inspect artifacts, and then explicitly enable Discord delivery.
+v0.2.x의 목표는 locale-aware foundation을 작고 안전하게 유지하면서 `ko-KR` 기존 사용 흐름을 깨지 않는 것입니다.
 
-Users remain responsible for reviewing generated source links, OSS candidates, and Discord output before acting on the brief.
+`en-US`는 foundation/experimental preset으로 다루며, provider와 source maturity가 충분히 검증되기 전까지 완성된 global support로 설명하지 않습니다.
 
-## v0.1.0 scope
+## Current v0.2.0 scope
 
-Included in v0.1.0:
+Included in v0.2.0:
 
 - Daily Backend Brief workflow
-- Korea Dev/AI News Daily workflow
+- Dev News Daily workflow
 - Backend Career Site Radar workflow
-- GitHub Actions based execution
+- PS progress marker workflow
+- `ko-KR` default supported locale
+- `en-US` foundation / experimental preset
 - GitHub Actions Secrets and Variables based setup
-- dry-run first operating flow
-- Discord webhook delivery
-- runtime gate for configurable schedule targets
-- recent OSS candidate filtering based on issue `created_at`
+- locale-specific daily Discord webhook Secret names
+- `ko-KR` legacy webhook fallback names
+- locale-specific daily artifact paths
+- `ko-KR` legacy mirror artifact paths
+- provider preset foundation for Naver, RSS, GitHub, and Brave Search
 - generated brief validation before Discord delivery
-- artifact review flow
-- fork setup guide
-- demo and sample output documentation
+- dry-run first artifact review flow
 
-Not included in v0.1.0:
+Not included in v0.2.0:
 
+- mature global provider coverage
+- fully mature `en-US` source quality
+- locale expansion beyond `ko-KR` and `en-US`
 - automatic job applications
 - automatic external GitHub issue claiming
 - automatic comments on external repositories
@@ -43,21 +47,22 @@ Not included in v0.1.0:
 - guaranteed news, hiring, or OSS candidate accuracy
 - replacing human review of source links or career decisions
 
-## v0.1.0 acceptance criteria
+## v0.2.x acceptance criteria
 
-v0.1.0 can be released when:
+Before a v0.2.x patch release:
 
-- [ ] A fresh fork can follow `docs/kr/getting-started/fork-setup.md` to complete dry-run.
+- [ ] A fresh fork can follow `docs/kr/getting-started/fork-setup.md` to complete a `ko-KR` dry-run.
+- [ ] `en-US` is documented as foundation/experimental unless implementation evidence changes.
 - [ ] Required Secrets and optional Variables are documented.
 - [ ] Discord delivery is disabled by default.
 - [ ] dry-run generates artifacts without sending Discord messages.
 - [ ] Generated brief validation runs before Discord delivery.
 - [ ] Stale OSS issue fixtures fail validation.
 - [ ] Safe candidate fallback works when no recent candidates exist.
-- [ ] README links to all major docs.
-- [ ] `CHANGELOG.md` includes v0.1.0 summary.
-- [ ] `SECURITY.md` or equivalent guidance exists.
-- [ ] `CONTRIBUTING.md` explains how to make a small PR.
+- [ ] README links to current v0.2 docs.
+- [ ] `CHANGELOG.md` includes the target release summary.
+- [ ] `SECURITY.md` reflects the current release line.
+- [ ] `CONTRIBUTING.md` explains small PR expectations.
 - [ ] No fake metrics or unverified adoption claims exist.
 - [ ] No real secrets appear in docs, samples, screenshots, or fixtures.
 
@@ -73,6 +78,8 @@ v0.1.0 can be released when:
 - [ ] `docs/kr/getting-started/sample-output.md` uses placeholder links only.
 - [ ] `docs/kr/project/contributor-tasks.md` lists small contributor-friendly work.
 - [ ] `docs/kr/project/roadmap.md` separates planned work from current behavior.
+- [ ] `docs/project/release-v0.2.0.md` matches the actual baseline.
+- [ ] `docs/project/v0.2-compatibility.md` describes fallback behavior accurately.
 - [ ] No fake metrics or fake adoption claims are present.
 
 ### Configuration
@@ -115,7 +122,7 @@ v0.1.0 can be released when:
 - [ ] Tests pass.
 - [ ] Docs validation passes.
 - [ ] Release notes drafted.
-- [ ] Tag name decided: `v0.1.0`.
+- [ ] Target tag name decided.
 - [ ] GitHub Release is created manually by the maintainer.
 
 ## Verification commands
@@ -129,8 +136,8 @@ Run the repository validation command:
 For documentation-only changes, run:
 
 ```bash
-python3 scripts/check-doc-format.py
 git diff --check
+python3 scripts/check-doc-format.py
 ```
 
 If `pytest` is configured in the local environment, targeted tests can also be run with repository-specific test paths.
@@ -139,7 +146,7 @@ Do not treat a successful command as enough for release. Review the generated ar
 
 ## Release note draft
 
-Use [v0.1.0 Release Notes](../release-notes/v0.1.0.md) as the GitHub Release body draft.
+Use [v0.2.0 Release Notes](../release-notes/v0.2.0.md) and [shared v0.2 baseline](../../project/release-v0.2.0.md) as the current baseline reference.
 
 Before publishing, confirm that:
 
@@ -148,3 +155,4 @@ Before publishing, confirm that:
 - no secret or webhook URL appears in the body
 - limitations remain visible
 - the tag is created manually by the maintainer
+- published release history is not rewritten
