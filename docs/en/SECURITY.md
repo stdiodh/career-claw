@@ -6,7 +6,7 @@ This security policy covers the GitHub Actions, OpenAI API, Discord Webhook, doc
 
 ## Supported versions
 
-Security guidance applies to the current default branch and the latest v0.1.x release line while the project is in early public development.
+Security guidance applies to the current default branch and the latest v0.2.x release line while the project is in early public development.
 
 ## Supported scope
 
@@ -18,7 +18,7 @@ Persistent servers, databases, hosted dashboards, Discord Gateway Bots, Slash Co
 
 ## Sensitive information
 
-Do not place OpenAI API keys, Discord Webhook URLs, GitHub tokens, Naver API credentials, personal email addresses, or other credentials in issues, pull requests, commits, logs, or examples.
+Do not place OpenAI API keys, Discord Webhook URLs, GitHub tokens, Naver API credentials, Brave Search API keys, personal email addresses, or other credentials in issues, pull requests, commits, logs, or examples.
 
 ## Reporting a vulnerability or secret exposure
 
@@ -31,6 +31,8 @@ Secrets belong in GitHub Actions Secrets or local environment variables. Documen
 ## Discord webhook safety
 
 Discord delivery is disabled by default. Use `dry_run=true` to review artifacts, then enable delivery only after validation output looks correct.
+
+For v0.2.x, `ko-KR` daily workflows support legacy webhook fallback names. Keep those values in GitHub Secrets and do not remove fallback behavior without a documented breaking-release plan.
 
 ## GitHub Actions logs
 
@@ -50,3 +52,4 @@ Maintainers should acknowledge credible reports, remove exposed secrets from act
 - Remove the secret from repository content and logs when possible.
 - Verify workflows still use GitHub Secrets or environment variables.
 - Re-run relevant validation after the fix.
+- Replace exposed Discord webhooks in Discord before re-enabling delivery.

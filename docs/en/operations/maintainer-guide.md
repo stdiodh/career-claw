@@ -12,7 +12,7 @@ This guide lists recurring maintainer checks for the current Career Feed scope.
 
 ## Release checks
 
-Use [Release Checklist](../project/release-checklist.md). Verify docs, validation, issue templates, and README status before tagging.
+Use [Release Checklist](../project/release-checklist.md) and the shared [v0.2 release checklist](../../project/release-checklist.md). Verify docs, validation, issue templates, compatibility notes, and README status before tagging.
 
 ## Secrets safety checklist
 
@@ -23,6 +23,8 @@ Use [Release Checklist](../project/release-checklist.md). Verify docs, validatio
 ## Review boundaries
 
 Keep reviews focused on active workflows and current release scope. Move large future ideas to roadmap discussion.
+
+For v0.2.x, preserve `ko-KR` fallback behavior and describe `en-US` as foundation/experimental unless implementation evidence changes.
 
 ## OSS candidate review
 

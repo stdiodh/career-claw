@@ -14,6 +14,7 @@ Choose a documentation language.
 | [v0.2 Compatibility Notes](./project/v0.2-compatibility.md) | Compatibility window for locale paths, secrets, and artifacts |
 | [Provider Expansion](./project/provider-expansion.md) | Provider maturity, expansion rules, and validation expectations |
 | [Source Policy](./project/source-policy.md) | Source quality, reliability, and spam-avoidance policy |
+| [Validation](./project/validation.md) | Current v0.2 validation commands and artifact expectations |
 | [Release Checklist](./project/release-checklist.md) | Maintainer release checklist for v0.2.x and later |
 
 ## Notes
