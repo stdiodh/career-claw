@@ -4,30 +4,42 @@
 
 The roadmap keeps future ideas visible without expanding the current operating scope prematurely.
 
-## v0.1.x
+## Current Baseline
 
-- Stabilize current workflows.
-- Keep Korean and English documentation paths separated.
-- Improve validation and troubleshooting.
-- Refine source quality and OSS candidate policy.
+Current baseline: `v0.2.0`.
 
-## v0.2.x
+Career Feed currently provides fork-based GitHub Actions workflows, dry-run artifacts, validation, optional Discord Webhook delivery, `ko-KR` default support, and an `en-US` foundation / experimental preset.
 
-- Establish the locale-aware engine foundation for `ko-KR` and the experimental `en-US` preset.
-- Support `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US` without workflow YAML edits.
-- Keep locale-specific config under `configs/locales/{locale}/`.
-- Write daily artifacts under `reports/briefs/{locale}/` and `reports/candidates/{locale}/`.
-- Keep `ko-KR` legacy artifact mirrors during the v0.2 compatibility window.
-- Introduce provider presets such as `naver,rss,github` and `brave,rss,github`.
-- Improve examples and contributor onboarding for forked communities.
+## v0.2.1 Patch Candidates
 
-## Later
+- Documentation corrections around v0.2 behavior.
+- Validation hardening for locale config and fixtures.
+- Minor fixture fixes.
+- Issue template cleanup.
+- Release note corrections.
+- Compatibility clarifications for webhook fallback and artifact mirrors.
+- Safe bug fixes that preserve `ko-KR` behavior.
 
-Possible later work includes additional community-maintained locales, richer reporting artifacts, more validation fixtures, and safer source review tooling.
+## v0.3.0 Feature Candidates
+
+- Deeper `en-US` provider maturity.
+- Additional provider implementation after source policy review.
+- Richer provider output validation.
+- Improved source quality scoring.
+- Better OSS candidate filtering.
+- Locale expansion beyond `ko-KR` and `en-US` only when review capacity exists.
+- Optional workflow improvements.
+- Better artifact summaries.
 
 ## Out of scope
 
 Persistent services, databases, dashboards, Discord Gateway Bots, Slash Commands, account systems, and recruiting-matching services remain outside the initial roadmap.
+
+## Shared Planning Docs
+
+- [Shared Roadmap](../../project/roadmap.md)
+- [v0.2.1 Plan](../../project/v0.2.1-plan.md)
+- [v0.3.0 Roadmap](../../project/v0.3.0-roadmap.md)
 
 ## How to suggest roadmap changes
 
