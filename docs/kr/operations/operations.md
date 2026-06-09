@@ -8,9 +8,9 @@
 
 | 경로 | 실행 | 산출물 |
 | --- | --- | --- |
-| Daily Backend Brief | `CAREER_FEED_BACKEND_DAILY_TIME` 기준 평일 runtime gate 실행 | `reports/briefs/ko-KR/backend-daily.md` |
-| Dev News Daily | `CAREER_FEED_NEWS_DAILY_TIME` 기준 평일 runtime gate 실행 | `reports/briefs/ko-KR/news-daily.md` |
-| Backend Career Site Radar | `CAREER_FEED_CAREER_WEEKLY_DAY`, `CAREER_FEED_CAREER_WEEKLY_TIME` 기준 주간 runtime gate 실행 또는 수동 실행 | `reports/briefs/ko-KR/backend-career-weekly.md` |
+| Daily Backend Brief | locale-aware daily workflow, `CAREER_FEED_BACKEND_DAILY_TIME` 기준 평일 runtime gate 실행 | `reports/briefs/{locale}/backend-daily.md` |
+| Dev News Daily | locale-aware foundation, `CAREER_FEED_NEWS_DAILY_TIME` 기준 평일 runtime gate 실행 | `reports/briefs/{locale}/news-daily.md` |
+| Backend Career Site Radar | 이번 phase에서는 `ko-KR` 중심, 주간 runtime gate 실행 또는 수동 실행 | `reports/briefs/ko-KR/backend-career-weekly.md` |
 | Mark PS Solved | 수동 실행 | `data/ps-progress.json` |
 
 ## 상세 운영 문서

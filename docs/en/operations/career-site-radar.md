@@ -3,6 +3,7 @@
 > Language: [한국어](../../kr/operations/career-site-radar.md) | [English](./career-site-radar.md)
 
 Backend Career Site Radar checks configured public career and activity sources on a weekly workflow path.
+In this phase, it remains `ko-KR` centered even though the workflow filename and canonical output path are global-friendly.
 
 ## Purpose
 

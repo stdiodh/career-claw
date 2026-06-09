@@ -18,7 +18,7 @@ Items below are planned or being explored. They should not be described as curre
 
 ## v0.2.x
 
-- `ko-KR`와 `en-US`를 대상으로 locale-aware engine foundation을 만든다.
+- `ko-KR`와 experimental `en-US` preset을 대상으로 locale-aware engine foundation을 만든다.
 - workflow YAML 수정 없이 `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US`로 locale별 dry-run artifact를 생성한다.
 - locale별 config를 `configs/locales/{locale}/` 아래에 둔다.
 - daily artifact를 `reports/briefs/{locale}/`, `reports/candidates/{locale}/` 아래에 쓴다.

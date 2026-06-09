@@ -29,7 +29,7 @@ Career Feed documentation is split by language.
 | Document | Purpose |
 | --- | --- |
 | [Daily Backend Brief](./operations/daily-backend-brief.md) | Daily backend study brief operation |
-| [Dev News Daily](./operations/daily-news-ops.md) | Korea development and AI news operation |
+| [Dev News Daily](./operations/daily-news-ops.md) | Locale-specific developer and AI news operation |
 | [Backend Career Site Radar](./operations/career-site-radar.md) | Weekly career site radar operation |
 | [Daily Growth Ops](./operations/daily-growth-ops.md) | Growth artifact interpretation |
 | [Backend Growth Curriculum](./operations/backend-growth-curriculum.md) | Practical backend knowledge curriculum |
