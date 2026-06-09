@@ -6,29 +6,18 @@ This project is still an early open-source automation tool. Release notes descri
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.1.0] - 2026-06-09
+
 ### Added
 
 - OSS readiness and impact evidence in the README.
 - Redacted demo evidence links for dry-run dispatch, artifact summary, validation report, and Discord output.
-- Release preparation wording for `v0.1.0` before the GitHub Release is created.
-- v0.1.0 release checklist and release note draft.
+- v0.1.0 release checklist and GitHub Release body.
 - Contributor task ideas for small documentation, fixture, and validation improvements.
 - Roadmap for near-term and later project directions.
 - Support guidance for issues, questions, and secret-safe reporting.
-
-### Changed
-
-- Issue template labels now match actual GitHub label names.
-- Contributor and pull request guidance now points to fork setup, runtime configuration, OSS policy, and release readiness docs.
-
-### Security
-
-- Security guidance now clarifies initial v0.1.x support scope and secret reporting expectations.
-
-## [0.1.0] - TBD
-
-### Added
-
 - Daily Backend Brief workflow for Java/Kotlin backend learning, PS routine, OSS candidate, and practical backend knowledge briefs.
 - Korea Dev/AI News Daily workflow for Korean development and AI news briefing.
 - Backend Career Site Radar workflow for weekly public source checks.
@@ -45,6 +34,8 @@ This project is still an early open-source automation tool. Release notes descri
 
 ### Changed
 
+- Issue template labels now match actual GitHub label names.
+- Contributor and pull request guidance now points to fork setup, runtime configuration, OSS policy, and release readiness docs.
 - README Quick Start points fork users to dry-run, artifact review, and explicit Discord delivery activation.
 - Usage docs recommend dry-run before Discord delivery.
 - Runtime configuration docs document supported Variables, defaults, and invalid examples.
@@ -52,6 +43,7 @@ This project is still an early open-source automation tool. Release notes descri
 
 ### Security
 
+- Security guidance now clarifies initial v0.1.x support scope and secret reporting expectations.
 - Secrets and Variables are documented separately.
 - Discord delivery is disabled by default for fork users.
 - Generated briefs are validated before delivery.

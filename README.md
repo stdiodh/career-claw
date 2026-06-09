@@ -45,10 +45,9 @@ It is fork-based automation without a persistent server, database, hosted dashbo
 ## Project Status
 
 - Status: Early Public OSS
-- Stable release: No stable release yet
-- GitHub Releases: none published as of the 2026-06-09 documentation audit
-- Release tags: none found in local or `origin` tag list during the same audit
-- `v0.1.0` documents are release preparation drafts until a GitHub Release is created from `main`.
+- Latest release: [`v0.1.0`](https://github.com/stdiodh/career-feed/releases/tag/v0.1.0)
+- Release date: 2026-06-09
+- Release baseline: fork-based GitHub Actions workflows with dry-run artifact review and optional Discord Webhook delivery.
 
 Workflow files are the source of truth for actual cron, inputs, and dispatch behavior.
 
