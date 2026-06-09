@@ -3,7 +3,6 @@ description: 백엔드 지망생이 살펴볼 만한 오픈소스 저장소나 �
 title: "[OSS 후보] "
 labels:
   - oss-candidate
-  - good first issue
 body:
   - type: markdown
     attributes:

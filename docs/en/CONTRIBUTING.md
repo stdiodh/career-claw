@@ -32,7 +32,9 @@ Search existing issues and documents first. If you are reporting a behavior prob
 
 ## Issue types
 
-Use the closest issue template. Source suggestions, OSS candidates, docs improvements, bugs, and backend career questions each need different evidence.
+Use the closest issue template. Career Feed accepts backend career questions, bug reports, docs improvements, source suggestions, broken or outdated source reports, OSS candidate suggestions, validation fixture ideas, release readiness tasks, regional or language expansion ideas, and maintainer questions.
+
+Blank issues are disabled, so choose the closest structured template.
 
 ## Pull request guidelines
 
