@@ -320,6 +320,7 @@ required_files=(
   "data/ps-progress.json"
   "data/spring-jvm-blog-topic-progress.json"
   "docs/README.md"
+  "docs/assets/career-feed-social-preview.png"
   "docs/assets/getting-started/00-repository-fork-button.png"
   "docs/assets/getting-started/01-actions-tab-workflow-list.png"
   "docs/assets/getting-started/02-secrets-new-repository-secret.png"
@@ -453,6 +454,24 @@ required_files=(
 for file in "${required_files[@]}"; do
   test -f "${file}"
 done
+
+echo "==> Checking root media assets"
+legacy_social_preview="github-""social-preview.png"
+test ! -f "${legacy_social_preview}"
+root_media_files="$(
+  find . -maxdepth 1 -type f \( \
+    -iname '*.png' -o \
+    -iname '*.jpg' -o \
+    -iname '*.jpeg' -o \
+    -iname '*.gif' -o \
+    -iname '*.webp' \
+  \) -print
+)"
+if [ -n "${root_media_files}" ]; then
+  echo "Root media files must live under docs/assets/**:" >&2
+  printf '%s\n' "${root_media_files}" >&2
+  exit 1
+fi
 
 echo "==> Checking daily source split"
 python3 - <<'PY'
