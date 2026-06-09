@@ -12,341 +12,112 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+ROOT_MARKDOWN_FILES = [
+    "README.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
+    "SECURITY.md",
+    "SUPPORT.md",
+    "CHANGELOG.md",
+]
+
 LINE_COUNT_MINIMUMS = {
-    "CHANGELOG.md": 40,
-    "README.md": 100,
-    "docs/README.md": 60,
-    "docs/project/ecosystem-importance.md": 50,
-    "docs/getting-started/fork-setup.md": 120,
-    "docs/getting-started/usage.md": 80,
-    "docs/getting-started/runtime-configuration.md": 120,
-    "docs/demo.md": 80,
-    "docs/getting-started/sample-output.md": 30,
-    "docs/project/release-checklist.md": 100,
-    "docs/release-notes/v0.1.0.md": 40,
-    "docs/project/roadmap.md": 40,
-    "docs/project/contributor-tasks.md": 80,
-    "CONTRIBUTING.md": 80,
-    "CODE_OF_CONDUCT.md": 60,
-    "SUPPORT.md": 40,
-    "docs/contributing/README.md": 40,
-    "docs/contributing/good-suggestion-criteria.md": 70,
-    "docs/contributing/source-suggestion-guide.md": 70,
-    "docs/contributing/oss-candidate-guide.md": 70,
-    "docs/contributing/backend-career-question-guide.md": 50,
-    "docs/contributing/review-policy.md": 60,
-    "SECURITY.md": 30,
-    "LICENSE": 20,
+    "README.md": 80,
+    "docs/README.md": 8,
+    "docs/kr/README.md": 60,
+    "docs/en/README.md": 60,
+    "docs/kr/getting-started/fork-setup.md": 120,
+    "docs/en/getting-started/fork-setup.md": 120,
     "scripts/check-doc-format.py": 100,
     "scripts/validate.sh": 300,
 }
 
-MARKDOWN_FILES = [
-    "CHANGELOG.md",
-    "README.md",
-    "docs/README.md",
-    "docs/project/ecosystem-importance.md",
-    "docs/getting-started/fork-setup.md",
-    "docs/getting-started/usage.md",
-    "docs/getting-started/runtime-configuration.md",
-    "docs/demo.md",
-    "docs/getting-started/sample-output.md",
-    "docs/project/release-checklist.md",
-    "docs/release-notes/v0.1.0.md",
-    "docs/project/roadmap.md",
-    "docs/project/contributor-tasks.md",
-    "CONTRIBUTING.md",
-    "CODE_OF_CONDUCT.md",
-    "SUPPORT.md",
-    "docs/contributing/README.md",
-    "docs/contributing/good-suggestion-criteria.md",
-    "docs/contributing/source-suggestion-guide.md",
-    "docs/contributing/oss-candidate-guide.md",
-    "docs/contributing/backend-career-question-guide.md",
-    "docs/contributing/review-policy.md",
-    "SECURITY.md",
-]
+EXPECTED_HEADINGS = {
+    "README.md": [
+        "# Career Feed",
+        "## 30-Second Overview",
+        "## What You Get",
+        "## Project Status",
+        "## How It Works",
+        "## Documentation",
+    ],
+    "docs/README.md": ["# Documentation", "## Notes"],
+    "CONTRIBUTING.md": ["# Contributing"],
+    "CODE_OF_CONDUCT.md": ["# Code of Conduct"],
+    "SECURITY.md": ["# Security Policy"],
+    "SUPPORT.md": ["# Support"],
+    "docs/kr/README.md": [
+        "# Documentation",
+        "## New Here?",
+        "## Documentation Map",
+        "### Getting Started",
+        "### Usage / Operations",
+        "### Examples / Demo",
+        "### Contributing",
+        "### Security / Maintainer",
+        "### Release",
+    ],
+    "docs/en/README.md": [
+        "# Documentation",
+        "## New Here?",
+        "## Documentation Map",
+        "### Getting Started",
+        "### Usage / Operations",
+        "### Examples / Demo",
+        "### Contributing",
+        "### Security / Maintainer",
+        "### Release",
+    ],
+    "docs/kr/getting-started/fork-setup.md": [
+        "# Fork Setup Guide",
+        "## Before You Start",
+        "## Step 1. Fork Repository",
+        "## Step 5. Run Workflow with Dry Run",
+        "## Step 6. Review Generated Artifacts",
+        "## Step 7. Enable Discord Delivery",
+        "## Success Checklist",
+        "## Troubleshooting",
+    ],
+    "docs/en/getting-started/fork-setup.md": [
+        "# Fork Setup Guide",
+        "## Before You Start",
+        "## Step 1. Fork Repository",
+        "## Step 5. Run Workflow with Dry Run",
+        "## Step 6. Review Generated Artifacts",
+        "## Step 7. Enable Discord Delivery",
+        "## Success Checklist",
+        "## Troubleshooting",
+    ],
+}
 
-README_HEADINGS = [
-    "# Career Feed",
-    "## 30-Second Overview",
-    "## What You Get",
-    "## Quick Start Path",
-    "## Project Status",
-    "## How It Works",
-    "## Safety / Limitations",
-    "## Repository Structure",
-    "## Documentation",
-    "## Contributing",
-    "## License",
-]
-
-DOCS_INDEX_HEADINGS = [
-    "# Documentation",
-    "## New Here?",
-    "## Documentation Map",
-    "### Getting Started",
-    "### Usage / Operations",
-    "### Examples / Demo",
-    "### Contributing",
-    "### Security / Maintainer",
-    "### Release",
-    "## Repository Level Documents",
-]
-
-ECOSYSTEM_HEADINGS = [
-    "# Ecosystem Importance",
-    "## Summary",
-    "## Problem",
-    "## Position in the backend ecosystem",
-    "## Why this matters",
-    "## Who benefits",
-    "## What Career Feed does not claim",
-    "## Honest limitations",
-    "## How API credits help",
-    "## Safety and maintainer review",
-    "## Suggested wording for applications",
-]
-
-CHANGELOG_HEADINGS = [
-    "# Changelog",
-    "## [Unreleased]",
-    "## [0.1.0] - TBD",
-]
-
-FORK_SETUP_HEADINGS = [
-    "# Fork Setup Guide",
-    "## Before You Start",
-    "## Step 1. Fork Repository",
-    "## Step 2. Enable GitHub Actions",
-    "## Step 3. Add GitHub Actions Secrets",
-    "## Step 4. Add GitHub Actions Variables",
-    "## Step 5. Run Workflow with Dry Run",
-    "## Step 6. Review Generated Artifacts",
-    "## Step 7. Enable Discord Delivery",
-    "## Success Checklist",
-    "## Troubleshooting",
-    "## Related Documents",
-]
-
-USAGE_HEADINGS = [
-    "# Usage Guide",
-    "## Overview",
-    "## First-time fork setup",
-    "## Who should use this",
-    "## Before you start",
-    "## Repository setup",
-    "## Configuration references",
-    "## Running local validation",
-    "## Running a workflow manually",
-    "## Recommended first run: dry-run",
-    "## Reading validation artifacts",
-    "## Sending to Discord",
-    "## Marking PS progress",
-    "## Common operating modes",
-    "## What to check after a run",
-    "## Troubleshooting",
-    "## Safety checklist",
-    "## Related documents",
-]
-
-RUNTIME_CONFIGURATION_HEADINGS = [
-    "# Runtime Configuration",
-    "## Secrets와 Variables",
-    "## 필수 Secrets",
-    "## 지원 Variables",
-    "## 시간 형식",
-    "## Timezone 예시",
-    "## 요일 형식",
-    "## Runtime Gate 방식",
-    "## GitHub Actions Output",
-    "## Discord 전송 우선순위",
-    "## Dry-run 관계",
-    "## 로컬 확인",
-    "## 자주 발생하는 설정 실수",
-    "## 이번 Phase 한계",
-]
-
-DEMO_HEADINGS = [
-    "# 데모 가이드",
-    "## Demo Flow",
-    "## What to Show",
-    "## What Not to Show",
-    "## Screenshot Rules",
-    "## Optional GIF",
-    "## Related Documents",
-]
-
-SAMPLE_OUTPUT_HEADINGS = [
-    "# Sample Output",
-    "## Available Examples",
-    "## What to Check",
-    "## Adding a Sample",
-    "## Related Documents",
-]
-
-RELEASE_CHECKLIST_HEADINGS = [
-    "# Release Checklist",
-    "## v0.1.0 release goal",
-    "## v0.1.0 scope",
-    "## v0.1.0 acceptance criteria",
-    "## Pre-release checks",
-    "## Verification commands",
-    "## Release note draft",
-]
-
-RELEASE_NOTES_V010_HEADINGS = [
-    "# v0.1.0 Release Notes",
-    "## Summary",
-    "## Highlights",
-    "## Safety",
-    "## Setup",
-    "## Known limitations",
-    "## Maintainer notes",
-]
-
-ROADMAP_HEADINGS = [
-    "# Roadmap",
-    "## v0.1.x",
-    "## v0.2.x",
-    "## Later",
-    "## Out of scope",
-    "## How to suggest roadmap changes",
-]
-
-CONTRIBUTOR_TASKS_HEADINGS = [
-    "# Contributor Task Ideas",
-    "## Good first issues",
-    "## Help wanted",
-    "## Not accepted contributions",
-    "## Before opening a PR",
-]
-
-CODE_OF_CONDUCT_HEADINGS = [
-    "# Code of Conduct",
-    "## Our standard",
-    "## Expected behavior",
-    "## Unacceptable behavior",
-    "## Project-specific expectations",
-    "## Respect for beginners",
-    "## Respect for maintainers",
-    "## Source and suggestion etiquette",
-    "## Automation safety",
-    "## Reporting concerns",
-    "## Enforcement approach",
-    "## Scope",
-    "## Maintainer notes",
-]
-
-CONTRIBUTING_INDEX_HEADINGS = [
-    "# Contribution Guide Index",
-    "## Start here",
-    "## Contribution paths",
-    "## Suggestion quality",
-    "## Regional and language expansion",
-    "## Maintainer review",
-    "## Related documents",
-]
-
-SUPPORT_HEADINGS = [
-    "# Support",
-    "## Where to ask",
-    "## Before opening an issue",
-    "## Do not include secrets",
-    "## What support can cover",
-    "## What support cannot guarantee",
-]
-
-GOOD_SUGGESTION_HEADINGS = [
-    "# Good Suggestion Criteria",
-    "## Summary",
-    "## What a good suggestion includes",
-    "## What makes a suggestion hard to review",
-    "## Good examples",
-    "## Weak examples",
-    "## Region and language metadata",
-    "## Evidence and source quality",
-    "## Maintainer checklist",
-]
-
-SOURCE_SUGGESTION_HEADINGS = [
-    "# Source Suggestion Guide",
-    "## What counts as a source",
-    "## Recommended source types",
-    "## Source quality checklist",
-    "## Region-specific source suggestions",
-    "## Examples of strong source suggestions",
-    "## Examples of weak source suggestions",
-    "## Sources that may be rejected",
-    "## Privacy and scraping boundaries",
-    "## Maintainer review flow",
-]
-
-OSS_CANDIDATE_HEADINGS = [
-    "# OSS Candidate Suggestion Guide",
-    "## Purpose",
-    "## What makes an OSS candidate useful",
-    "## Beginner-friendly signals",
-    "## Backend relevance",
-    "## Safety boundaries",
-    "## Good examples",
-    "## Weak examples",
-    "## What Career Feed will not do",
-    "## Maintainer checklist",
-]
-
-BACKEND_CAREER_QUESTION_HEADINGS = [
-    "# Backend Career Question Guide",
-    "## Purpose",
-    "## What to include",
-    "## Good question examples",
-    "## Weak question examples",
-    "## Personal information safety",
-    "## How questions improve Career Feed",
-    "## Maintainer review",
-]
-
-REVIEW_POLICY_HEADINGS = [
-    "# Maintainer Review Policy",
-    "## Review principles",
-    "## What maintainers look for",
-    "## Why suggestions may be declined",
-    "## Automation review boundaries",
-    "## Regional expansion review",
-    "## Documentation review",
-    "## Security review",
-    "## Decision outcomes",
-]
-
-REQUIRED_README_LINKS = [
-    "docs/README.md",
-    "docs/getting-started/fork-setup.md",
-    "docs/getting-started/sample-output.md",
-    "docs/getting-started/usage.md",
-    "docs/getting-started/runtime-configuration.md",
-    "docs/demo.md",
-    "CONTRIBUTING.md",
-    "CODE_OF_CONDUCT.md",
-    "docs/contributing/README.md",
-    "LICENSE",
-]
-
-REQUIRED_DOCS_INDEX_LINKS = [
-    "CHANGELOG.md",
-    "./getting-started/sample-output.md",
-    "./demo.md",
-    "./operations/daily-backend-brief.md",
-    "./operations/daily-news-ops.md",
-    "./operations/career-site-radar.md",
-    "./operations/backend-growth-curriculum.md",
-    "./operations/local-validation.md",
-    "./policies/github-labels.md",
-    "./project/contributor-tasks.md",
-    "./project/release-checklist.md",
-    "./release-notes/v0.1.0.md",
-    "SECURITY.md",
-    "SUPPORT.md",
-]
+REQUIRED_SNIPPETS = {
+    "README.md": [
+        "docs/kr/README.md",
+        "docs/en/README.md",
+        "sequenceDiagram",
+        "alt dry_run=true or delivery disabled",
+    ],
+    "docs/README.md": [
+        "./kr/README.md",
+        "./en/README.md",
+    ],
+    "CONTRIBUTING.md": [
+        "./docs/kr/CONTRIBUTING.md",
+        "./docs/en/CONTRIBUTING.md",
+    ],
+    "CODE_OF_CONDUCT.md": [
+        "./docs/kr/CODE_OF_CONDUCT.md",
+        "./docs/en/CODE_OF_CONDUCT.md",
+    ],
+    "SECURITY.md": [
+        "./docs/kr/SECURITY.md",
+        "./docs/en/SECURITY.md",
+    ],
+    "SUPPORT.md": [
+        "./docs/kr/SUPPORT.md",
+        "./docs/en/SUPPORT.md",
+    ],
+}
 
 ISSUE_TEMPLATE_FILES = [
     ".github/ISSUE_TEMPLATE/backend-career-question.yml",
@@ -384,8 +155,14 @@ def fail(message: str) -> None:
     raise SystemExit(message)
 
 
-def read_text(path: str) -> str:
+def read_text(path: str | Path) -> str:
     return (ROOT / path).read_text(encoding="utf-8")
+
+
+def markdown_files() -> list[str]:
+    files = [str(path.relative_to(ROOT)) for path in (ROOT / "docs").rglob("*.md")]
+    files.extend(ROOT_MARKDOWN_FILES)
+    return sorted(set(files))
 
 
 def line_count(text: str) -> int:
@@ -394,37 +171,56 @@ def line_count(text: str) -> int:
 
 def check_line_counts() -> None:
     for path, minimum in LINE_COUNT_MINIMUMS.items():
-        text = read_text(path)
-        count = line_count(text)
+        count = line_count(read_text(path))
         if count < minimum:
             fail(f"{path} must have at least {minimum} physical lines, found {count}.")
 
 
-def check_required_headings(path: str, headings: list[str]) -> None:
-    text = read_text(path)
-    missing = [heading for heading in headings if heading not in text.splitlines()]
-    if missing:
-        fail(f"{path} misses required heading(s): {', '.join(missing)}")
+def check_required_headings() -> None:
+    for path, headings in EXPECTED_HEADINGS.items():
+        lines = read_text(path).splitlines()
+        missing = [heading for heading in headings if heading not in lines]
+        if missing:
+            fail(f"{path} misses required heading(s): {', '.join(missing)}")
 
 
-def check_readme_links() -> None:
-    text = read_text("README.md")
-    missing = [link for link in REQUIRED_README_LINKS if link not in text]
-    if missing:
-        fail(f"README.md misses required contribution link(s): {', '.join(missing)}")
+def check_required_snippets() -> None:
+    for path, snippets in REQUIRED_SNIPPETS.items():
+        text = read_text(path)
+        missing = [snippet for snippet in snippets if snippet not in text]
+        if missing:
+            fail(f"{path} misses required snippet(s): {', '.join(missing)}")
 
 
-def check_docs_index_links() -> None:
-    text = read_text("docs/README.md")
-    missing = [link for link in REQUIRED_DOCS_INDEX_LINKS if link not in text]
-    if missing:
-        fail(f"docs/README.md misses required documentation link(s): {', '.join(missing)}")
+def check_language_tree_pairs() -> None:
+    kr = {
+        path.relative_to(ROOT / "docs/kr")
+        for path in (ROOT / "docs/kr").rglob("*.md")
+    }
+    en = {
+        path.relative_to(ROOT / "docs/en")
+        for path in (ROOT / "docs/en").rglob("*.md")
+    }
+    if kr != en:
+        missing_en = sorted(str(path) for path in kr - en)
+        missing_kr = sorted(str(path) for path in en - kr)
+        fail(
+            "docs/kr and docs/en must contain the same Markdown files. "
+            f"missing en={missing_en}; missing kr={missing_kr}"
+        )
+
+
+def check_language_switches() -> None:
+    for base in ("docs/kr", "docs/en"):
+        for path in (ROOT / base).rglob("*.md"):
+            first_lines = path.read_text(encoding="utf-8").splitlines()[:6]
+            if not any(line.startswith("> Language:") for line in first_lines):
+                fail(f"{path.relative_to(ROOT)} is missing a language switch near the top.")
 
 
 def check_literal_newline_strings(paths: list[str]) -> None:
     for path in paths:
-        text = read_text(path)
-        if "\\n" in text:
+        if "\\n" in read_text(path):
             fail(f'{path} contains literal "\\n" text; use physical line breaks.')
 
 
@@ -448,9 +244,10 @@ def check_compressed_markdown(path: str) -> None:
         if re.search(r"\|\s+\|", line):
             fail(f"{path}:{number} appears to contain multiple Markdown table rows on one line.")
         if (
-            re.search(r"\s-\s+\S", line)
+            re.search(r"[.!?。！？]\s+-\s+\S", line)
             and not line.lstrip().startswith("-")
             and not line.lstrip().startswith("#")
+            and not re.match(r"\s*(?:\d+[.)]|[-*+])\s+", line)
         ):
             fail(f"{path}:{number} appears to contain a list item glued to prior text.")
 
@@ -512,38 +309,16 @@ def check_issue_template_yaml() -> None:
 
 
 def main() -> int:
-    docs = list(LINE_COUNT_MINIMUMS)
+    docs = markdown_files()
     all_targets = docs + ISSUE_TEMPLATE_FILES
 
     check_line_counts()
-    check_required_headings("CHANGELOG.md", CHANGELOG_HEADINGS)
-    check_required_headings("README.md", README_HEADINGS)
-    check_required_headings("docs/README.md", DOCS_INDEX_HEADINGS)
-    check_required_headings("docs/project/ecosystem-importance.md", ECOSYSTEM_HEADINGS)
-    check_required_headings("docs/getting-started/fork-setup.md", FORK_SETUP_HEADINGS)
-    check_required_headings("docs/getting-started/usage.md", USAGE_HEADINGS)
-    check_required_headings("docs/getting-started/runtime-configuration.md", RUNTIME_CONFIGURATION_HEADINGS)
-    check_required_headings("docs/demo.md", DEMO_HEADINGS)
-    check_required_headings("docs/getting-started/sample-output.md", SAMPLE_OUTPUT_HEADINGS)
-    check_required_headings("docs/project/release-checklist.md", RELEASE_CHECKLIST_HEADINGS)
-    check_required_headings("docs/release-notes/v0.1.0.md", RELEASE_NOTES_V010_HEADINGS)
-    check_required_headings("docs/project/roadmap.md", ROADMAP_HEADINGS)
-    check_required_headings("docs/project/contributor-tasks.md", CONTRIBUTOR_TASKS_HEADINGS)
-    check_required_headings("CODE_OF_CONDUCT.md", CODE_OF_CONDUCT_HEADINGS)
-    check_required_headings("SUPPORT.md", SUPPORT_HEADINGS)
-    check_required_headings("docs/contributing/README.md", CONTRIBUTING_INDEX_HEADINGS)
-    check_required_headings("docs/contributing/good-suggestion-criteria.md", GOOD_SUGGESTION_HEADINGS)
-    check_required_headings("docs/contributing/source-suggestion-guide.md", SOURCE_SUGGESTION_HEADINGS)
-    check_required_headings("docs/contributing/oss-candidate-guide.md", OSS_CANDIDATE_HEADINGS)
-    check_required_headings(
-        "docs/contributing/backend-career-question-guide.md",
-        BACKEND_CAREER_QUESTION_HEADINGS,
-    )
-    check_required_headings("docs/contributing/review-policy.md", REVIEW_POLICY_HEADINGS)
-    check_readme_links()
-    check_docs_index_links()
-    check_literal_newline_strings(MARKDOWN_FILES)
-    for path in MARKDOWN_FILES:
+    check_required_headings()
+    check_required_snippets()
+    check_language_tree_pairs()
+    check_language_switches()
+    check_literal_newline_strings(docs)
+    for path in docs:
         check_compressed_markdown(path)
     check_mit_license()
     check_hidden_unicode(all_targets)
