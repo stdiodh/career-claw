@@ -56,8 +56,8 @@ Additional locales are later community-maintained work.
 ## Project Status
 
 - Status: Early Public OSS
-- Latest release: [`v0.1.0`](https://github.com/stdiodh/career-feed/releases/tag/v0.1.0)
-- Release date: 2026-06-09
+- Latest release: [`v0.2.0`](https://github.com/stdiodh/career-feed/releases/tag/v0.2.0)
+- Release date: 2026-06-10
 - Release baseline: fork-based GitHub Actions workflows with dry-run artifact review and optional Discord Webhook delivery.
 
 Workflow files are the source of truth for actual cron, inputs, and dispatch behavior.

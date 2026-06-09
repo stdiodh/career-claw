@@ -6,6 +6,10 @@ This project is still an early open-source automation tool. Release notes descri
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.2.0] - 2026-06-10
+
 ### Changed
 
 - Documented the v0.2 locale-aware foundation for `ko-KR` and `en-US`.
