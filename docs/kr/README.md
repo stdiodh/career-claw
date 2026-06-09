@@ -53,6 +53,8 @@ Career Feed 문서는 처음 실행하는 사용자, 반복 운영자, 기여자
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | 전체 기여 방식과 PR 기준 |
 | [Contribution Guide Index](./contributing/README.md) | 기여 세부 문서 index |
 | [Contributor Task Ideas](./project/contributor-tasks.md) | 작은 기여 후보 |
+| [Provider Expansion](./project/provider-expansion.md) | provider 상태와 기여 기준 |
+| [Source Policy](./project/source-policy.md) | 출처 품질과 reliability 기준 |
 | [Good Suggestion Criteria](./contributing/good-suggestion-criteria.md) | 좋은 제안의 기준 |
 | [Source Suggestion Guide](./contributing/source-suggestion-guide.md) | 출처 제안 기준 |
 | [OSS Candidate Guide](./contributing/oss-candidate-guide.md) | OSS 후보 제안 기준 |

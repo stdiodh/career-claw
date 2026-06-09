@@ -51,6 +51,8 @@ Career Feed documentation is split by language.
 | [Contributing](./CONTRIBUTING.md) | Contribution rules and PR expectations |
 | [Contribution Guide Index](./contributing/README.md) | Contributor document index |
 | [Contributor Task Ideas](./project/contributor-tasks.md) | Small starter tasks |
+| [Provider Expansion](./project/provider-expansion.md) | Provider status and contribution rules |
+| [Source Policy](./project/source-policy.md) | Source quality and reliability rules |
 | [Good Suggestion Criteria](./contributing/good-suggestion-criteria.md) | Criteria for useful suggestions |
 | [Source Suggestion Guide](./contributing/source-suggestion-guide.md) | Source suggestion rules |
 | [OSS Candidate Guide](./contributing/oss-candidate-guide.md) | OSS candidate suggestion rules |
