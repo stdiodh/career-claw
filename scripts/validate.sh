@@ -385,6 +385,7 @@ required_files=(
   "docs/en/project/release-checklist.md"
   "docs/en/project/roadmap.md"
   "docs/en/release-notes/v0.1.0.md"
+  ".github/releases/v0.1.0.md"
   ".github/pull_request_template.md"
   ".github/ISSUE_TEMPLATE/bug-report.yml"
   ".github/ISSUE_TEMPLATE/docs-improvement.yml"

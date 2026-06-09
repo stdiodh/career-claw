@@ -16,6 +16,24 @@ Generated output is reviewed through artifacts and validation reports first, and
 
 It is fork-based automation without a persistent server, database, hosted dashboard, Discord Gateway Bot, or Slash Command service.
 
+## OSS Readiness / Impact
+
+| Signal | Current evidence |
+| --- | --- |
+| Who uses this | Early project for fork-based use by Java/Kotlin backend learners, Discord study groups, and mentoring groups that want reviewable daily briefs. |
+| Why this matters | It turns scattered backend learning, Korean dev/AI news, OSS contribution prep, and career source checks into repeatable GitHub Actions artifacts. |
+| Maintainer workload | Contributor entry points are intentionally small: documentation fixes, source suggestions, validation fixtures, and OSS candidate review. |
+| Codex/API usage | OpenAI-assisted output is constrained to reviewable Markdown drafts, validation summaries, topic prioritization, and OSS candidate notes. |
+| Usage signal | No adoption metric is claimed yet; the repository is presented as fork-ready, not as a project with existing stars, downloads, or active-user numbers. |
+
+| Demo evidence | What it shows |
+| --- | --- |
+| [Dry-run dispatch](./docs/assets/demo/github-actions-dispatch-redacted.png) | Manual GitHub Actions run with safe inputs. |
+| [Artifact summary](./docs/assets/demo/actions-summary-redacted.png) | Generated artifacts and workflow summary. |
+| [Validation report](./docs/assets/demo/validation-report-redacted.png) | Reviewable validation output before Discord delivery. |
+| [Discord redacted output](./docs/assets/demo/discord-brief-redacted.png) | Example Discord briefing with private details removed. |
+| [Demo guide](./docs/kr/demo.md) / [Demo guide EN](./docs/en/demo.md) | Redaction rules and demo boundaries. |
+
 ## What You Get
 
 | Output | What it includes | Korean example | English example |
@@ -30,7 +48,7 @@ It is fork-based automation without a persistent server, database, hosted dashbo
 - Stable release: No stable release yet
 - GitHub Releases: none published as of the 2026-06-09 documentation audit
 - Release tags: none found in local or `origin` tag list during the same audit
-- `v0.1.0` documents are release drafts and do not override actual GitHub release state.
+- `v0.1.0` documents are release preparation drafts until a GitHub Release is created from `main`.
 
 Workflow files are the source of truth for actual cron, inputs, and dispatch behavior.
 
