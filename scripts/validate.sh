@@ -499,6 +499,7 @@ required_files=(
   "tests/fixtures/oss-recency-candidates.json"
   "tests/fixtures/candidates-empty/kr-oss-contribution-opportunities.json"
   "tests/test_daily_oss_contract.py"
+  "tests/test_locale_config.py"
   "tests/test_oss_reliability_gate.py"
   "tests/test_should_run_now.py"
 )
@@ -1300,6 +1301,7 @@ python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-w
 python3 scripts/validate-career-feed-brief.py tests/fixtures/en-us-backend-daily-valid.md --type daily-tech --locale en-US
 python3 scripts/validate-career-feed-brief.py tests/fixtures/en-us-news-daily-valid.md --type daily-news --locale en-US
 python3 tests/test_daily_oss_contract.py
+python3 tests/test_locale_config.py
 python3 tests/test_oss_reliability_gate.py
 python3 tests/test_should_run_now.py
 python3 tests/test_weekly_career_collector.py
