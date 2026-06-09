@@ -19,8 +19,8 @@ Daily Backend Brief는 기존 Spring Boot/JVM 학습, Programmers PS, OSS 기여
 
 수집 결과는 아래 후보 파일로 생성됩니다.
 
-- `reports/candidates/cs-core-daily-topic.json`
-- `reports/candidates/backend-term-daily.json`
+- `reports/candidates/ko-KR/cs-core-daily-topic.json`
+- `reports/candidates/ko-KR/backend-term-daily.json`
 
 두 config 모두 수동 관리하는 정적 JSON입니다. 외부 사이트 크롤링, 제출 결과 수집, 데이터베이스 저장은 사용하지 않습니다.
 

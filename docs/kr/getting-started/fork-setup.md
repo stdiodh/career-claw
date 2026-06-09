@@ -17,7 +17,7 @@ OSS 후보 정책은 [OSS Candidate Policy](../policies/oss-candidate-policy.md)
 - fork한 Career Feed repository
 - OpenAI API key
 - Discord Webhook URL
-- 선택 사항: Naver API credential
+- 선택 사항: Naver 또는 Brave Search API credential
 
 보안 기준:
 
@@ -50,7 +50,7 @@ fork repository의 `Actions` 탭을 엽니다.
 
 1. repository 상단의 `Actions` 탭을 누릅니다.
 2. GitHub가 fork workflow 실행을 막고 있다면 `I understand my workflows, go ahead and enable them` 또는 동등한 활성화 버튼을 누릅니다.
-3. 왼쪽 workflow 목록에 `Daily Korea Tech Brief`, `Daily Korea Dev AI News`, `Backend Career Site Radar`, `Mark PS Solved`가 보이는지 확인합니다.
+3. 왼쪽 workflow 목록에 `Backend Daily Brief`, `Dev News Daily`, `Backend Career Site Radar`, `Mark PS Solved`가 보이는지 확인합니다.
 
 scheduled run은 default branch에서만 안정적으로 동작합니다.
 
@@ -71,11 +71,16 @@ GitHub repository에서 `Settings > Secrets and variables > Actions > Secrets`�
 | Name | Required | Used by |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Required | Brief generation |
-| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Required for Daily Backend delivery | Daily Backend Brief |
-| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Required for News Daily delivery | Korea Dev/AI News Daily |
+| `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | `ko-KR` Daily Backend delivery 시 Required | Daily Backend Brief |
+| `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | `en-US` Daily Backend delivery 시 Required | Daily Backend Brief |
+| `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | `ko-KR` News Daily delivery 시 Required | Dev News Daily |
+| `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | `en-US` News Daily delivery 시 Required | Dev News Daily |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Compatibility fallback | `ko-KR` Daily Backend Brief |
+| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Compatibility fallback | `ko-KR` Dev News Daily |
 | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Required for Career Radar delivery | Backend Career Site Radar |
-| `NAVER_CLIENT_ID` | Optional | News source integration |
-| `NAVER_CLIENT_SECRET` | Optional | News source integration |
+| `NAVER_CLIENT_ID` | Optional | `ko-KR` source integration |
+| `NAVER_CLIENT_SECRET` | Optional | `ko-KR` source integration |
+| `BRAVE_SEARCH_API_KEY` | Optional | `en-US` source integration |
 | `DISCORD_WEBHOOK_CAREER_FEED_OPS` | Optional | Ops/debug alerts |
 
 placeholder가 필요하면 `your-openai-api-key`, `your-discord-webhook-url`, `your-naver-client-id`처럼 명확히 가짜 값만 사용합니다.
@@ -96,6 +101,10 @@ GitHub repository에서 `Settings > Secrets and variables > Actions > Variables`
 
 | Name | Required | Default | First value |
 | --- | --- | --- | --- |
+| `CAREER_FEED_ENABLED_LOCALES` | Optional | `ko-KR` | `ko-KR` |
+| `CAREER_FEED_DEFAULT_LOCALE` | Optional | `ko-KR` | `ko-KR` |
+| `CAREER_FEED_SEARCH_PROVIDERS_KO_KR` | Optional | `naver,rss,github` | `naver,rss,github` |
+| `CAREER_FEED_SEARCH_PROVIDERS_EN_US` | Optional | `brave,rss,github` | `brave,rss,github` |
 | `CAREER_FEED_TIMEZONE` | Optional | `Asia/Seoul` | `Asia/Seoul` |
 | `CAREER_FEED_BACKEND_DAILY_TIME` | Optional | `09:00` | `09:00` |
 | `CAREER_FEED_NEWS_DAILY_TIME` | Optional | `09:05` | `09:05` |
@@ -111,7 +120,7 @@ GitHub repository에서 `Settings > Secrets and variables > Actions > Variables`
 
 ## Step 5. Run Workflow with Dry Run
 
-GitHub `Actions` 탭에서 `Daily Korea Tech Brief` workflow를 선택합니다.
+GitHub `Actions` 탭에서 `Backend Daily Brief` workflow를 선택합니다.
 
 1. `Run workflow` 버튼을 누릅니다.
 2. branch가 default branch인지 확인합니다.
@@ -139,10 +148,10 @@ workflow run이 끝나면 Actions summary와 uploaded artifact를 확인합니�
 
 Daily Backend Brief에서 먼저 볼 파일:
 
-- `reports/briefs/kr-tech-daily.md`
-- `reports/ops/backend-daily-validation-report.md`
-- `reports/ops/backend-daily-run-summary.md`
-- `reports/candidates/kr-oss-contribution-opportunities.json`
+- `reports/briefs/ko-KR/backend-daily.md`
+- `reports/ops/ko-KR/backend-daily-validation-report.md`
+- `reports/ops/ko-KR/backend-daily-run-summary.md`
+- `reports/candidates/ko-KR/oss-contribution-opportunities.json`
 
 확인할 내용:
 
@@ -187,7 +196,7 @@ dry-run에서는 Discord 메시지가 오지 않는 것이 정상입니다.
 - [ ] 필요한 Discord webhook Secret을 Secrets에 등록했습니다.
 - [ ] runtime Variables를 확인했습니다.
 - [ ] 첫 dry-run 전 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`를 유지했습니다.
-- [ ] `Daily Korea Tech Brief`를 `dry_run=true`, `force_send=false`로 실행했습니다.
+- [ ] `Backend Daily Brief`를 `dry_run=true`, `force_send=false`로 실행했습니다.
 - [ ] generated brief artifact를 확인했습니다.
 - [ ] validation report가 통과했습니다.
 - [ ] Discord delivery를 켜기 전에 artifact 내용을 검토했습니다.

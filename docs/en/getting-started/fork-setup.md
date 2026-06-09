@@ -14,7 +14,7 @@ Prepare these items:
 - Forked Career Feed repository
 - OpenAI API key
 - Discord Webhook URL
-- Optional Naver API credentials
+- Optional Naver or Brave Search API credentials
 
 Security rules:
 
@@ -45,7 +45,7 @@ Open the `Actions` tab in the fork.
 
 1. Click the repository `Actions` tab.
 2. If GitHub blocks fork workflow execution, click `I understand my workflows, go ahead and enable them` or the equivalent enable button.
-3. Confirm that `Daily Korea Tech Brief`, `Daily Korea Dev AI News`, `Backend Career Site Radar`, and `Mark PS Solved` appear in the workflow list.
+3. Confirm that `Backend Daily Brief`, `Dev News Daily`, `Backend Career Site Radar`, and `Mark PS Solved` appear in the workflow list.
 
 Scheduled runs work reliably from the default branch.
 
@@ -66,11 +66,16 @@ Go to `Settings > Secrets and variables > Actions > Secrets`.
 | Name | Required | Used by |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Required | Brief generation |
-| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Required for Daily Backend delivery | Daily Backend Brief |
-| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Required for News Daily delivery | Korea Dev/AI News Daily |
+| `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | Required for `ko-KR` Daily Backend delivery | Daily Backend Brief |
+| `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | Required for `en-US` Daily Backend delivery | Daily Backend Brief |
+| `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | Required for `ko-KR` News Daily delivery | Dev News Daily |
+| `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | Required for `en-US` News Daily delivery | Dev News Daily |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Compatibility fallback | `ko-KR` Daily Backend Brief |
+| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Compatibility fallback | `ko-KR` Dev News Daily |
 | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Required for Career Radar delivery | Backend Career Site Radar |
-| `NAVER_CLIENT_ID` | Optional | News source integration |
-| `NAVER_CLIENT_SECRET` | Optional | News source integration |
+| `NAVER_CLIENT_ID` | Optional | `ko-KR` source integration |
+| `NAVER_CLIENT_SECRET` | Optional | `ko-KR` source integration |
+| `BRAVE_SEARCH_API_KEY` | Optional | `en-US` source integration |
 | `DISCORD_WEBHOOK_CAREER_FEED_OPS` | Optional | Ops/debug alerts |
 
 Use obvious placeholders such as `your-openai-api-key` only in docs or examples.
@@ -91,6 +96,10 @@ Go to `Settings > Secrets and variables > Actions > Variables`.
 
 | Name | Required | Default | First value |
 | --- | --- | --- | --- |
+| `CAREER_FEED_ENABLED_LOCALES` | Optional | `ko-KR` | `ko-KR` |
+| `CAREER_FEED_DEFAULT_LOCALE` | Optional | `ko-KR` | `ko-KR` |
+| `CAREER_FEED_SEARCH_PROVIDERS_KO_KR` | Optional | `naver,rss,github` | `naver,rss,github` |
+| `CAREER_FEED_SEARCH_PROVIDERS_EN_US` | Optional | `brave,rss,github` | `brave,rss,github` |
 | `CAREER_FEED_TIMEZONE` | Optional | `Asia/Seoul` | `Asia/Seoul` |
 | `CAREER_FEED_BACKEND_DAILY_TIME` | Optional | `09:00` | `09:00` |
 | `CAREER_FEED_NEWS_DAILY_TIME` | Optional | `09:05` | `09:05` |
@@ -105,7 +114,7 @@ Use `HH:MM` for time, `MON` through `SUN` for weekdays, and IANA timezone names 
 
 ## Step 5. Run Workflow with Dry Run
 
-Open `Actions` and choose `Daily Korea Tech Brief`.
+Open `Actions` and choose `Backend Daily Brief`.
 
 1. Click `Run workflow`.
 2. Confirm the branch is the default branch.
@@ -127,10 +136,10 @@ When the run finishes, open the Actions summary and uploaded artifacts.
 
 Review these Daily Backend files first:
 
-- `reports/briefs/kr-tech-daily.md`
-- `reports/ops/backend-daily-validation-report.md`
-- `reports/ops/backend-daily-run-summary.md`
-- `reports/candidates/kr-oss-contribution-opportunities.json`
+- `reports/briefs/{locale}/backend-daily.md`
+- `reports/ops/{locale}/backend-daily-validation-report.md`
+- `reports/ops/{locale}/backend-daily-run-summary.md`
+- `reports/candidates/{locale}/oss-contribution-opportunities.json`
 
 Check that the validation report is `passed`, generated sections look correct, OSS candidate counts are reasonable, and fallback output appears when no safe candidate exists.
 
@@ -160,7 +169,7 @@ Discord delivery requires `dry_run=false`, delivery enabled, the required webhoo
 - [ ] Required Discord webhook Secret added
 - [ ] Runtime Variables reviewed
 - [ ] `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false` kept for first dry-run
-- [ ] `Daily Korea Tech Brief` run with `dry_run=true` and `force_send=false`
+- [ ] `Backend Daily Brief` run with `dry_run=true` and `force_send=false`
 - [ ] Generated brief artifact reviewed
 - [ ] Validation report passed
 - [ ] Discord delivery enabled only after artifact review

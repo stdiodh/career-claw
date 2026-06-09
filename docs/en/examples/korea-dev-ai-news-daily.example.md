@@ -1,8 +1,8 @@
-# Korea Dev/AI News Daily Example
+# Dev News Daily Example
 
 > Language: [한국어](../../kr/examples/korea-dev-ai-news-daily.example.md) | [English](./korea-dev-ai-news-daily.example.md)
 
-This example shows the expected structure for Korea Dev/AI News Daily. Sparse or empty days can still be valid when policy allows them.
+This example shows the expected structure for Dev News Daily. Sparse or empty days can still be valid when policy allows them.
 
 ## News to Review
 

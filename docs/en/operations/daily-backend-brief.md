@@ -10,7 +10,7 @@ The brief combines Spring Boot/JVM study, Programmers PS practice, OSS contribut
 
 ## Workflow
 
-The workflow file is `.github/workflows/kr-tech-daily.yml`. It supports schedule and manual dispatch with dry-run and force-send controls.
+The workflow file is `.github/workflows/backend-daily.yml`. It supports schedule and manual dispatch with dry-run and force-send controls.
 
 ## Inputs
 
@@ -18,7 +18,7 @@ Important inputs and variables include `dry_run`, `force_send`, `CAREER_FEED_TIM
 
 ## Artifacts
 
-Review candidate JSON files, `reports/briefs/kr-tech-daily.md`, validation reports, and backend daily run summaries.
+Review candidate JSON files, `reports/briefs/{locale}/backend-daily.md`, validation reports, and backend daily run summaries.
 
 ## Validation
 

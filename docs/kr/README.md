@@ -31,7 +31,7 @@ Career Feed 문서는 처음 실행하는 사용자, 반복 운영자, 기여자
 | Document | Purpose |
 | --- | --- |
 | [Daily Backend Brief](./operations/daily-backend-brief.md) | 일일 백엔드 브리프 운영 |
-| [Korea Dev/AI News Daily](./operations/daily-news-ops.md) | 한국 개발/AI 뉴스 브리프 운영 |
+| [Dev News Daily](./operations/daily-news-ops.md) | 한국 개발/AI 뉴스 브리프 운영 |
 | [Backend Career Site Radar](./operations/career-site-radar.md) | 주간 커리어 사이트 레이더 운영 |
 | [Daily Growth Ops](./operations/daily-growth-ops.md) | Daily Backend Brief의 growth artifact 해석 |
 | [Backend Growth Curriculum](./operations/backend-growth-curriculum.md) | Daily Backend Brief 실무 충전 정책 |

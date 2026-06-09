@@ -8,15 +8,15 @@
 
 | 경로 | 실행 | 산출물 |
 | --- | --- | --- |
-| Daily Backend Brief | `CAREER_FEED_BACKEND_DAILY_TIME` 기준 평일 runtime gate 실행 | `reports/briefs/kr-tech-daily.md` |
-| Korea Dev/AI News Daily | `CAREER_FEED_NEWS_DAILY_TIME` 기준 평일 runtime gate 실행 | `reports/briefs/kr-tech-news-daily.md` |
-| Backend Career Site Radar | `CAREER_FEED_CAREER_WEEKLY_DAY`, `CAREER_FEED_CAREER_WEEKLY_TIME` 기준 주간 runtime gate 실행 또는 수동 실행 | `reports/briefs/kr-backend-career-weekly.md` |
+| Daily Backend Brief | `CAREER_FEED_BACKEND_DAILY_TIME` 기준 평일 runtime gate 실행 | `reports/briefs/ko-KR/backend-daily.md` |
+| Dev News Daily | `CAREER_FEED_NEWS_DAILY_TIME` 기준 평일 runtime gate 실행 | `reports/briefs/ko-KR/news-daily.md` |
+| Backend Career Site Radar | `CAREER_FEED_CAREER_WEEKLY_DAY`, `CAREER_FEED_CAREER_WEEKLY_TIME` 기준 주간 runtime gate 실행 또는 수동 실행 | `reports/briefs/ko-KR/backend-career-weekly.md` |
 | Mark PS Solved | 수동 실행 | `data/ps-progress.json` |
 
 ## 상세 운영 문서
 
 - [Daily Backend Brief](./daily-backend-brief.md)
-- [Korea Dev/AI News Daily](./daily-news-ops.md)
+- [Dev News Daily](./daily-news-ops.md)
 - [Backend Career Site Radar](./career-site-radar.md)
 - [로컬 검증 가이드](./local-validation.md)
 - [Daily Growth Ops](./daily-growth-ops.md)

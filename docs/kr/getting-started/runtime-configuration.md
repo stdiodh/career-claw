@@ -28,8 +28,8 @@ Variables는 노출되어도 보안 사고가 되지 않는 실행 설정값입�
 
 | 구분 | 저장할 값 | 예시 |
 | --- | --- | --- |
-| Secrets | API key, Webhook URL, client secret | `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KR_TECH_DAILY` |
-| Variables | timezone, 실행 시간, 요일, delivery flag | `CAREER_FEED_TIMEZONE`, `CAREER_FEED_BACKEND_DAILY_TIME` |
+| Secrets | API key, Webhook URL, client secret | `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` |
+| Variables | locale 목록, provider 이름, timezone, 실행 시간, delivery flag | `CAREER_FEED_ENABLED_LOCALES`, `CAREER_FEED_TIMEZONE` |
 
 ## 필수 Secrets
 
@@ -38,11 +38,16 @@ Variables는 노출되어도 보안 사고가 되지 않는 실행 설정값입�
 | Secret | Required | 사용처 |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | Yes | Daily Backend Brief와 News Daily 초안 생성 |
-| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Discord 전송 시 Yes | Daily Backend Brief 전송 |
-| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Discord 전송 시 Yes | Korea Dev/AI News Daily 전송 |
+| `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | `ko-KR` Discord 전송 시 Yes | Daily Backend Brief 전송 |
+| `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | `en-US` Discord 전송 시 Yes | Daily Backend Brief 전송 |
+| `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | `ko-KR` Discord 전송 시 Yes | Dev News Daily 전송 |
+| `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | `en-US` Discord 전송 시 Yes | Dev News Daily 전송 |
+| `DISCORD_WEBHOOK_KR_TECH_DAILY` | Compatibility fallback | `ko-KR` Daily Backend Brief 전송 |
+| `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Compatibility fallback | `ko-KR` Dev News Daily 전송 |
 | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Discord 전송 시 Yes | Backend Career Site Radar 전송 |
 | `NAVER_CLIENT_ID` | Optional | 한국 뉴스 후보 수집 보강 |
 | `NAVER_CLIENT_SECRET` | Optional | 한국 뉴스 후보 수집 보강 |
+| `BRAVE_SEARCH_API_KEY` | Optional | 영어권 검색 provider 보강 |
 | `DISCORD_WEBHOOK_CAREER_FEED_OPS` | Optional | workflow 실패 알림 |
 
 `DISCORD_WEBHOOK_CAREER_FEED_OPS`가 없어도 실패 알림 전송만 건너뛰어야 하며, 그 이유만으로 workflow가 실패하면 안 됩니다.
@@ -55,9 +60,13 @@ Variables는 `Settings > Secrets and variables > Actions > Variables`에 등록�
 
 | Name | Required | Default | Example | Description |
 | --- | --- | --- | --- | --- |
+| `CAREER_FEED_ENABLED_LOCALES` | Optional | `ko-KR` | `ko-KR,en-US` | 생성할 locale 목록 |
+| `CAREER_FEED_DEFAULT_LOCALE` | Optional | `ko-KR` | `ko-KR` | 호환 동작의 기본 locale |
+| `CAREER_FEED_SEARCH_PROVIDERS_KO_KR` | Optional | `naver,rss,github` | `naver,rss,github` | `ko-KR` provider 순서 |
+| `CAREER_FEED_SEARCH_PROVIDERS_EN_US` | Optional | `brave,rss,github` | `brave,rss,github` | `en-US` provider 순서 |
 | `CAREER_FEED_TIMEZONE` | Optional | `Asia/Seoul` | `Asia/Seoul` | runtime gate가 사용할 기준 시간대 |
 | `CAREER_FEED_BACKEND_DAILY_TIME` | Optional | `09:00` | `09:00` | Daily Backend Brief 실행 희망 시간 |
-| `CAREER_FEED_NEWS_DAILY_TIME` | Optional | `09:05` | `09:05` | Korea Dev/AI News Daily 실행 희망 시간 |
+| `CAREER_FEED_NEWS_DAILY_TIME` | Optional | `09:05` | `09:05` | Dev News Daily 실행 희망 시간 |
 | `CAREER_FEED_CAREER_WEEKLY_DAY` | Optional | `MON` | `MON` | Backend Career Site Radar 실행 요일 |
 | `CAREER_FEED_CAREER_WEEKLY_TIME` | Optional | `09:00` | `09:00` | Backend Career Site Radar 실행 희망 시간 |
 | `CAREER_FEED_OSS_RECENT_DAYS` | Optional | `30` | `30` | OSS 후보 `created_at` freshness 기준일 |
@@ -201,9 +210,26 @@ Backend Career Site Radar는 이번 Phase에서 별도 delivery lock을 추가�
 
 scheduled run은 runtime gate의 30분 미만 window로 중복 실행 위험을 낮춥니다.
 
+## Locale별 artifact
+
+Daily workflow는 locale별 canonical path에 산출물을 씁니다.
+
+| Workflow | Canonical output |
+| --- | --- |
+| Daily Backend Brief | `reports/briefs/{locale}/backend-daily.md` |
+| Dev News Daily | `reports/briefs/{locale}/news-daily.md` |
+
+v0.2 compatibility 기간에는 `ko-KR`에 대해 `reports/briefs/ko-KR/backend-daily.md` 같은 legacy mirror도 함께 만듭니다.
+
+## Provider fallback
+
+Provider 이름은 Variables이고, provider credential은 Secrets입니다.
+
+설정된 provider 하나가 실패해도 warning을 남기고 남은 provider로 계속 진행합니다. `en-US`는 Naver secret 없이 동작하고, `ko-KR`은 Brave Search secret 없이 동작합니다.
+
 ## Dry-run 관계
 
-Daily Backend Brief와 Korea Dev/AI News Daily는 `dry_run=true`로 수동 실행할 수 있습니다.
+Daily Backend Brief와 Dev News Daily는 `dry_run=true`로 수동 실행할 수 있습니다.
 
 이 경우 후보 수집, 초안 생성, validator, artifact 업로드는 실행됩니다.
 

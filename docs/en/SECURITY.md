@@ -10,7 +10,7 @@ Security guidance applies to the current default branch and the latest v0.1.x re
 
 ## Supported scope
 
-The main operational paths are Daily Backend Brief, Korea Dev/AI News Daily, Backend Career Site Radar, and the PS progress marker workflow.
+The main operational paths are Daily Backend Brief, Dev News Daily, Backend Career Site Radar, and the PS progress marker workflow.
 
 ## Not in scope
 

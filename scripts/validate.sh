@@ -19,7 +19,13 @@ python3 -m py_compile \
   scripts/collect-kr-feeds.py \
   scripts/evaluate-news-daily-quality.py \
   scripts/estimate-prompt-budget.py \
+  scripts/locale_config.py \
   scripts/render-weekly-career-site-radar.py \
+  scripts/search_providers/base.py \
+  scripts/search_providers/brave.py \
+  scripts/search_providers/github.py \
+  scripts/search_providers/naver.py \
+  scripts/search_providers/rss.py \
   scripts/select-ps-problem.py \
   scripts/send-discord.py \
   scripts/should-run-now.py \
@@ -29,9 +35,9 @@ python3 -m py_compile \
   scripts/write-news-daily-run-summary.py
 
 echo "==> Checking current workflows"
-test -f .github/workflows/kr-tech-daily.yml
-test -f .github/workflows/kr-tech-news-daily.yml
-test -f .github/workflows/kr-backend-career-weekly.yml
+test -f .github/workflows/backend-daily.yml
+test -f .github/workflows/dev-news-daily.yml
+test -f .github/workflows/backend-career-weekly.yml
 test -f .github/workflows/mark-ps-solved.yml
 test -f .github/workflows/pr-checks.yml
 
@@ -42,6 +48,9 @@ removed_workflows=(
   ".github/workflows/ai-brief-""manual.yml"
   ".github/workflows/daily-""feed.yml"
   ".github/workflows/daily-""news.yml"
+  ".github/workflows/kr-backend-career-weekly.yml"
+  ".github/workflows/kr-tech-daily.yml"
+  ".github/workflows/kr-tech-news-daily.yml"
   ".github/workflows/kr-""pre""mium-brief.yml"
 )
 
@@ -69,128 +78,142 @@ if grep -q 'DISCORD_WEBHOOK\|contents: write\|git push' .github/workflows/pr-che
   echo "PR checks workflow must not use Discord webhook secrets, contents: write, or git push." >&2
   exit 1
 fi
-grep -q 'uses: actions/checkout@v5' .github/workflows/kr-tech-daily.yml
-grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-tech-daily.yml
-grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-tech-daily.yml
-grep -q 'cron: "5,35 \* \* \* \*"' .github/workflows/kr-tech-daily.yml
-if grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-daily.yml; then
+grep -q 'uses: actions/checkout@v5' .github/workflows/backend-daily.yml
+grep -q 'uses: actions/setup-python@v6' .github/workflows/backend-daily.yml
+grep -q 'uses: actions/upload-artifact@v6' .github/workflows/backend-daily.yml
+grep -q 'cron: "5,35 \* \* \* \*"' .github/workflows/backend-daily.yml
+if grep -q 'timezone: "Asia/Seoul"' .github/workflows/backend-daily.yml; then
   echo "Backend Daily workflow should use runtime timezone variables, not schedule timezone." >&2
   exit 1
 fi
-grep -q 'workflow_dispatch:' .github/workflows/kr-tech-daily.yml
-grep -q 'dry_run:' .github/workflows/kr-tech-daily.yml
-grep -q 'force_send:' .github/workflows/kr-tech-daily.yml
-grep -q 'Check runtime schedule' .github/workflows/kr-tech-daily.yml
-grep -q 'should-run-now.py --workflow backend_daily' .github/workflows/kr-tech-daily.yml
-grep -q 'CAREER_FEED_TIMEZONE' .github/workflows/kr-tech-daily.yml
-grep -q 'CAREER_FEED_BACKEND_DAILY_TIME' .github/workflows/kr-tech-daily.yml
-grep -q 'CAREER_FEED_OSS_RECENT_DAYS' .github/workflows/kr-tech-daily.yml
-grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED' .github/workflows/kr-tech-daily.yml
-grep -q 'discord_delivery_disabled' .github/workflows/kr-tech-daily.yml
-grep -q 'contents: write' .github/workflows/kr-tech-daily.yml
-grep -q 'actions: read' .github/workflows/kr-tech-daily.yml
-grep -q 'persist-credentials: true' .github/workflows/kr-tech-daily.yml
-grep -q 'timeout-minutes: 75' .github/workflows/kr-tech-daily.yml
-grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-daily.yml
-grep -q 'collect-kr-feeds.py --mode daily-backend' .github/workflows/kr-tech-daily.yml
-if grep -q 'collect-kr-feeds.py --mode daily-tech' .github/workflows/kr-tech-daily.yml; then
+grep -q 'workflow_dispatch:' .github/workflows/backend-daily.yml
+grep -q 'dry_run:' .github/workflows/backend-daily.yml
+grep -q 'force_send:' .github/workflows/backend-daily.yml
+grep -q 'Check runtime schedule' .github/workflows/backend-daily.yml
+grep -q 'should-run-now.py --workflow backend_daily' .github/workflows/backend-daily.yml
+grep -q 'CAREER_FEED_TIMEZONE' .github/workflows/backend-daily.yml
+grep -q 'CAREER_FEED_BACKEND_DAILY_TIME' .github/workflows/backend-daily.yml
+grep -q 'CAREER_FEED_OSS_RECENT_DAYS' .github/workflows/backend-daily.yml
+grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED' .github/workflows/backend-daily.yml
+grep -q 'discord_delivery_disabled' .github/workflows/backend-daily.yml
+grep -q 'contents: write' .github/workflows/backend-daily.yml
+grep -q 'actions: read' .github/workflows/backend-daily.yml
+grep -q 'persist-credentials: true' .github/workflows/backend-daily.yml
+grep -q 'timeout-minutes: 75' .github/workflows/backend-daily.yml
+grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/backend-daily.yml
+grep -q 'DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY' .github/workflows/backend-daily.yml
+grep -q 'DISCORD_WEBHOOK_EN_US_BACKEND_DAILY' .github/workflows/backend-daily.yml
+grep -q 'CAREER_FEED_ENABLED_LOCALES' .github/workflows/backend-daily.yml
+grep -q 'CAREER_FEED_SEARCH_PROVIDERS_KO_KR' .github/workflows/backend-daily.yml
+grep -q 'CAREER_FEED_SEARCH_PROVIDERS_EN_US' .github/workflows/backend-daily.yml
+grep -q 'Resolve locale runtime paths' .github/workflows/backend-daily.yml
+grep -q 'collect-kr-feeds.py' .github/workflows/backend-daily.yml
+grep -q -- '--mode daily-backend' .github/workflows/backend-daily.yml
+grep -q -- '--locale "${LOCALE}"' .github/workflows/backend-daily.yml
+if grep -q 'collect-kr-feeds.py --mode daily-tech' .github/workflows/backend-daily.yml; then
   echo "Backend Daily workflow must not use --mode daily-tech." >&2
   exit 1
 fi
-grep -q -- '--type daily-tech' .github/workflows/kr-tech-daily.yml
-grep -q 'career-feed-backend-sent-' .github/workflows/kr-tech-daily.yml
-grep -q 'actions/cache/restore@v5' .github/workflows/kr-tech-daily.yml
-grep -q 'actions/cache/save@v5' .github/workflows/kr-tech-daily.yml
-grep -q 'group: career-feed-backend-daily-${{ github.ref }}' .github/workflows/kr-tech-daily.yml
-grep -q 'Wait until configured Backend Daily send time' .github/workflows/kr-tech-daily.yml
-grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/kr-tech-daily.yml
-grep -q 'target_epoch="$(TZ="${RUNTIME_TIMEZONE}" date -d "${RUNTIME_LOCAL_DATE} ${TARGET_TIME}:00" +%s)"' .github/workflows/kr-tech-daily.yml
-grep -q 'sent_at_local=' .github/workflows/kr-tech-daily.yml
-grep -q 'backend-daily-run-summary.json' .github/workflows/kr-tech-daily.yml
-grep -q 'reports/candidates/cs-core-daily-topic.json' .github/workflows/kr-tech-daily.yml
-grep -q 'reports/candidates/backend-term-daily.json' .github/workflows/kr-tech-daily.yml
-grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/kr-tech-daily.yml
-grep -q 'if: always()' .github/workflows/kr-tech-daily.yml
-grep -q 'reports/ops/\*.json' .github/workflows/kr-tech-daily.yml
-grep -q 'reports/ops/\*.md' .github/workflows/kr-tech-daily.yml
-grep -q 'retention-days: 14' .github/workflows/kr-tech-daily.yml
-grep -q 'Commit Programmers assignment progress' .github/workflows/kr-tech-daily.yml
-grep -q 'data/ps-progress.json' .github/workflows/kr-tech-daily.yml
-grep -q 'data/spring-jvm-blog-topic-progress.json' .github/workflows/kr-tech-daily.yml
-grep -q 'git push' .github/workflows/kr-tech-daily.yml
-grep -q 'commit-ps-progress' .github/workflows/kr-tech-daily.yml
-grep -q 'ps_progress_commit_attempted' .github/workflows/kr-tech-daily.yml
-grep -q 'ps_progress_commit_success' .github/workflows/kr-tech-daily.yml
-grep -q 'oss_safe_candidate_count' .github/workflows/kr-tech-daily.yml
-grep -q 'oss_filtered_out_count' .github/workflows/kr-tech-daily.yml
-grep -q 'oss_source_errors_count' .github/workflows/kr-tech-daily.yml
-grep -q 'selected_oss_issue_url' .github/workflows/kr-tech-daily.yml
-grep -q 'OSS 후보 상태' .github/workflows/kr-tech-daily.yml
-grep -q 'CAREER_FEED_OSS_RECENT_DAYS: ${{ vars.CAREER_FEED_OSS_RECENT_DAYS }}' .github/workflows/kr-tech-daily.yml
-grep -q 'backend-daily-validation-report.md' .github/workflows/kr-tech-daily.yml
-grep -q 'cat "${validation_report}" >> "${GITHUB_STEP_SUMMARY}"' .github/workflows/kr-tech-daily.yml
-grep -q 'validator error: ${validation_error}' .github/workflows/kr-tech-daily.yml
-if grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY\|kr-dev-ai-news.json\|kr-ai-tech-news.json' .github/workflows/kr-tech-daily.yml; then
+grep -q -- '--type daily-tech' .github/workflows/backend-daily.yml
+grep -q 'career-feed-${LOCALE}-backend-daily-sent-' .github/workflows/backend-daily.yml
+grep -q 'actions/cache/restore@v5' .github/workflows/backend-daily.yml
+grep -q 'actions/cache/save@v5' .github/workflows/backend-daily.yml
+grep -q 'group: career-feed-backend-daily-${{ github.ref }}' .github/workflows/backend-daily.yml
+grep -q 'Wait until configured Backend Daily send time' .github/workflows/backend-daily.yml
+grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/backend-daily.yml
+grep -q 'target_epoch="$(TZ="${RUNTIME_TIMEZONE}" date -d "${RUNTIME_LOCAL_DATE} ${TARGET_TIME}:00" +%s)"' .github/workflows/backend-daily.yml
+grep -q 'sent_at_local=' .github/workflows/backend-daily.yml
+grep -q 'backend-daily-run-summary.json' .github/workflows/backend-daily.yml
+grep -q 'cs-core-daily-topic.json' .github/workflows/backend-daily.yml
+grep -q 'backend-term-daily.json' .github/workflows/backend-daily.yml
+grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/backend-daily.yml
+grep -q 'if: always()' .github/workflows/backend-daily.yml
+grep -q 'reports/ops/${{ matrix.locale }}/' .github/workflows/backend-daily.yml
+grep -q 'retention-days: 14' .github/workflows/backend-daily.yml
+grep -q 'Commit Programmers assignment progress' .github/workflows/backend-daily.yml
+grep -q 'data/ps-progress.json' .github/workflows/backend-daily.yml
+grep -q 'data/spring-jvm-blog-topic-progress.json' .github/workflows/backend-daily.yml
+grep -q 'git push' .github/workflows/backend-daily.yml
+grep -q 'commit-ps-progress' .github/workflows/backend-daily.yml
+grep -q 'ps_progress_commit_attempted' .github/workflows/backend-daily.yml
+grep -q 'ps_progress_commit_success' .github/workflows/backend-daily.yml
+grep -q 'oss_safe_candidate_count' .github/workflows/backend-daily.yml
+grep -q 'oss_filtered_out_count' .github/workflows/backend-daily.yml
+grep -q 'oss_source_errors_count' .github/workflows/backend-daily.yml
+grep -q 'selected_oss_issue_url' .github/workflows/backend-daily.yml
+grep -q 'OSS 후보 상태' .github/workflows/backend-daily.yml
+grep -q 'CAREER_FEED_OSS_RECENT_DAYS: ${{ vars.CAREER_FEED_OSS_RECENT_DAYS }}' .github/workflows/backend-daily.yml
+grep -q 'backend-daily-validation-report.md' .github/workflows/backend-daily.yml
+grep -q 'cat "${VALIDATION_REPORT}" >> "${GITHUB_STEP_SUMMARY}"' .github/workflows/backend-daily.yml
+grep -q 'validator error: ${validation_error}' .github/workflows/backend-daily.yml
+if grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY\|kr-dev-ai-news.json\|kr-ai-tech-news.json' .github/workflows/backend-daily.yml; then
   echo "Backend Daily workflow must not use the news webhook or news candidate files." >&2
   exit 1
 fi
 
-grep -q 'uses: actions/checkout@v5' .github/workflows/kr-tech-news-daily.yml
-grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-tech-news-daily.yml
-grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-tech-news-daily.yml
-grep -q 'cron: "5,35 \* \* \* \*"' .github/workflows/kr-tech-news-daily.yml
-if grep -q 'timezone: "Asia/Seoul"' .github/workflows/kr-tech-news-daily.yml; then
+grep -q 'uses: actions/checkout@v5' .github/workflows/dev-news-daily.yml
+grep -q 'uses: actions/setup-python@v6' .github/workflows/dev-news-daily.yml
+grep -q 'uses: actions/upload-artifact@v6' .github/workflows/dev-news-daily.yml
+grep -q 'cron: "5,35 \* \* \* \*"' .github/workflows/dev-news-daily.yml
+if grep -q 'timezone: "Asia/Seoul"' .github/workflows/dev-news-daily.yml; then
   echo "News Daily workflow should use runtime timezone variables, not schedule timezone." >&2
   exit 1
 fi
-grep -q 'workflow_dispatch:' .github/workflows/kr-tech-news-daily.yml
-grep -q 'dry_run:' .github/workflows/kr-tech-news-daily.yml
-grep -q 'force_send:' .github/workflows/kr-tech-news-daily.yml
-grep -q 'Check runtime schedule' .github/workflows/kr-tech-news-daily.yml
-grep -q 'should-run-now.py --workflow news_daily' .github/workflows/kr-tech-news-daily.yml
-grep -q 'CAREER_FEED_TIMEZONE' .github/workflows/kr-tech-news-daily.yml
-grep -q 'CAREER_FEED_NEWS_DAILY_TIME' .github/workflows/kr-tech-news-daily.yml
-grep -q 'CAREER_FEED_OSS_RECENT_DAYS' .github/workflows/kr-tech-news-daily.yml
-grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED' .github/workflows/kr-tech-news-daily.yml
-grep -q 'discord_delivery_disabled' .github/workflows/kr-tech-news-daily.yml
-grep -q 'contents: read' .github/workflows/kr-tech-news-daily.yml
-if grep -q 'contents: write' .github/workflows/kr-tech-news-daily.yml; then
+grep -q 'workflow_dispatch:' .github/workflows/dev-news-daily.yml
+grep -q 'dry_run:' .github/workflows/dev-news-daily.yml
+grep -q 'force_send:' .github/workflows/dev-news-daily.yml
+grep -q 'Check runtime schedule' .github/workflows/dev-news-daily.yml
+grep -q 'should-run-now.py --workflow news_daily' .github/workflows/dev-news-daily.yml
+grep -q 'CAREER_FEED_TIMEZONE' .github/workflows/dev-news-daily.yml
+grep -q 'CAREER_FEED_NEWS_DAILY_TIME' .github/workflows/dev-news-daily.yml
+grep -q 'CAREER_FEED_OSS_RECENT_DAYS' .github/workflows/dev-news-daily.yml
+grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED' .github/workflows/dev-news-daily.yml
+grep -q 'discord_delivery_disabled' .github/workflows/dev-news-daily.yml
+grep -q 'contents: read' .github/workflows/dev-news-daily.yml
+if grep -q 'contents: write' .github/workflows/dev-news-daily.yml; then
   echo "News Daily workflow must not request contents: write." >&2
   exit 1
 fi
-grep -q 'actions: read' .github/workflows/kr-tech-news-daily.yml
-grep -q 'timeout-minutes: 75' .github/workflows/kr-tech-news-daily.yml
-grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY' .github/workflows/kr-tech-news-daily.yml
-grep -q 'collect-kr-feeds.py --mode daily-news' .github/workflows/kr-tech-news-daily.yml
-grep -q 'build-daily-news-shortlist.py' .github/workflows/kr-tech-news-daily.yml
-grep -q 'estimate-prompt-budget.py' .github/workflows/kr-tech-news-daily.yml
-grep -q 'evaluate-news-daily-quality.py' .github/workflows/kr-tech-news-daily.yml
-grep -q 'kr-tech-news-shortlist.json' .github/workflows/kr-tech-news-daily.yml
+grep -q 'actions: read' .github/workflows/dev-news-daily.yml
+grep -q 'timeout-minutes: 75' .github/workflows/dev-news-daily.yml
+grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY' .github/workflows/dev-news-daily.yml
+grep -q 'DISCORD_WEBHOOK_KO_KR_NEWS_DAILY' .github/workflows/dev-news-daily.yml
+grep -q 'DISCORD_WEBHOOK_EN_US_NEWS_DAILY' .github/workflows/dev-news-daily.yml
+grep -q 'CAREER_FEED_ENABLED_LOCALES' .github/workflows/dev-news-daily.yml
+grep -q 'CAREER_FEED_SEARCH_PROVIDERS_KO_KR' .github/workflows/dev-news-daily.yml
+grep -q 'CAREER_FEED_SEARCH_PROVIDERS_EN_US' .github/workflows/dev-news-daily.yml
+grep -q 'Resolve locale runtime paths' .github/workflows/dev-news-daily.yml
+grep -q 'collect-kr-feeds.py' .github/workflows/dev-news-daily.yml
+grep -q -- '--mode daily-news' .github/workflows/dev-news-daily.yml
+grep -q -- '--locale "${LOCALE}"' .github/workflows/dev-news-daily.yml
+grep -q 'build-daily-news-shortlist.py' .github/workflows/dev-news-daily.yml
+grep -q 'estimate-prompt-budget.py' .github/workflows/dev-news-daily.yml
+grep -q 'evaluate-news-daily-quality.py' .github/workflows/dev-news-daily.yml
+grep -q 'news-shortlist.json' .github/workflows/dev-news-daily.yml
 grep -q 'news-daily-token-budget.json' scripts/write-news-daily-run-summary.py
 grep -q 'news-daily-quality-report.json' scripts/write-news-daily-run-summary.py
-grep -q -- '--type daily-news' .github/workflows/kr-tech-news-daily.yml
-grep -q 'career-feed-news-sent-' .github/workflows/kr-tech-news-daily.yml
-grep -q 'actions/cache/restore@v5' .github/workflows/kr-tech-news-daily.yml
-grep -q 'actions/cache/save@v5' .github/workflows/kr-tech-news-daily.yml
+grep -q -- '--type daily-news' .github/workflows/dev-news-daily.yml
+grep -q 'career-feed-${LOCALE}-news-daily-sent-' .github/workflows/dev-news-daily.yml
+grep -q 'actions/cache/restore@v5' .github/workflows/dev-news-daily.yml
+grep -q 'actions/cache/save@v5' .github/workflows/dev-news-daily.yml
 if grep -Eq 'actions/cache(/[^@[:space:]]*)?@v4' .github/workflows/*.yml; then
   echo "GitHub Actions cache v4 usage must not remain." >&2
   exit 1
 fi
-grep -q 'group: career-feed-news-daily-${{ github.ref }}' .github/workflows/kr-tech-news-daily.yml
-grep -q 'Wait until configured News Daily send time' .github/workflows/kr-tech-news-daily.yml
-grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/kr-tech-news-daily.yml
-grep -q 'target_epoch="$(TZ="${RUNTIME_TIMEZONE}" date -d "${RUNTIME_LOCAL_DATE} ${TARGET_TIME}:00" +%s)"' .github/workflows/kr-tech-news-daily.yml
-grep -q 'sent_at_local=' .github/workflows/kr-tech-news-daily.yml
-grep -q 'news-daily-run-summary.json' .github/workflows/kr-tech-news-daily.yml
-grep -q 'news-daily-validation-report.md' .github/workflows/kr-tech-news-daily.yml
-grep -q 'cat "${validation_report}" >> "${GITHUB_STEP_SUMMARY}"' .github/workflows/kr-tech-news-daily.yml
-grep -q 'validator error: ${validation_error}' .github/workflows/kr-tech-news-daily.yml
-grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/kr-tech-news-daily.yml
-grep -q 'if: always()' .github/workflows/kr-tech-news-daily.yml
-grep -q 'reports/ops/\*.json' .github/workflows/kr-tech-news-daily.yml
-grep -q 'reports/ops/\*.md' .github/workflows/kr-tech-news-daily.yml
+grep -q 'group: career-feed-news-daily-${{ github.ref }}' .github/workflows/dev-news-daily.yml
+grep -q 'Wait until configured News Daily send time' .github/workflows/dev-news-daily.yml
+grep -q "if: github.event_name == 'schedule' && steps.delivery.outputs.should_send == 'true'" .github/workflows/dev-news-daily.yml
+grep -q 'target_epoch="$(TZ="${RUNTIME_TIMEZONE}" date -d "${RUNTIME_LOCAL_DATE} ${TARGET_TIME}:00" +%s)"' .github/workflows/dev-news-daily.yml
+grep -q 'sent_at_local=' .github/workflows/dev-news-daily.yml
+grep -q 'run_summary_json' .github/workflows/dev-news-daily.yml
+grep -q 'news-daily-validation-report.md' .github/workflows/dev-news-daily.yml
+grep -q 'cat "${VALIDATION_REPORT}" >> "${GITHUB_STEP_SUMMARY}"' .github/workflows/dev-news-daily.yml
+grep -q 'validator error: ${validation_error}' .github/workflows/dev-news-daily.yml
+grep -q 'DISCORD_WEBHOOK_CAREER_FEED_OPS' .github/workflows/dev-news-daily.yml
+grep -q 'if: always()' .github/workflows/dev-news-daily.yml
+grep -q 'reports/ops/${{ matrix.locale }}/' .github/workflows/dev-news-daily.yml
 grep -q 'raw_candidate_count_total' scripts/write-news-daily-run-summary.py
-grep -q 'write-news-daily-run-summary.py' .github/workflows/kr-tech-news-daily.yml
+grep -q 'write-news-daily-run-summary.py' .github/workflows/dev-news-daily.yml
 grep -q 'tech_selected_count' scripts/write-news-daily-run-summary.py
 grep -q 'investment_selected_count' scripts/write-news-daily-run-summary.py
 grep -q 'bridge_present' scripts/write-news-daily-run-summary.py
@@ -203,32 +226,32 @@ grep -q 'growth_action_quality' scripts/write-news-daily-run-summary.py
 grep -q 'investment_advice_risk' scripts/write-news-daily-run-summary.py
 grep -q 'price_move_only_risk' scripts/write-news-daily-run-summary.py
 grep -q 'estimated_prompt_tokens_rough' scripts/write-news-daily-run-summary.py
-grep -q 'retention-days: 14' .github/workflows/kr-tech-news-daily.yml
-if grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/kr-tech-news-daily.yml; then
+grep -q 'retention-days: 14' .github/workflows/dev-news-daily.yml
+if grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/dev-news-daily.yml; then
   echo "News Daily workflow must not use the Backend Daily webhook." >&2
   exit 1
 fi
-if grep -q 'data/ps-progress.json\|Commit Programmers assignment progress\|git push' .github/workflows/kr-tech-news-daily.yml; then
+if grep -q 'data/ps-progress.json\|Commit Programmers assignment progress\|git push' .github/workflows/dev-news-daily.yml; then
   echo "News Daily workflow must not commit PS progress." >&2
   exit 1
 fi
 
-grep -q 'uses: actions/checkout@v5' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'uses: actions/setup-python@v6' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'uses: actions/upload-artifact@v6' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'contents: read' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'cron: "5,35 \* \* \* \*"' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'workflow_dispatch:' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'send_to_discord:' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'Check runtime schedule' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'should-run-now.py --workflow career_weekly' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'CAREER_FEED_CAREER_WEEKLY_DAY' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'CAREER_FEED_CAREER_WEEKLY_TIME' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'manual_delivery_disabled' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'discord_delivery_disabled' .github/workflows/kr-backend-career-weekly.yml
-grep -q 'render-weekly-career-site-radar.py' .github/workflows/kr-backend-career-weekly.yml
-if grep -q 'openai/codex-action\|OPENAI_API_KEY\|NAVER_CLIENT_ID\|NAVER_CLIENT_SECRET\|git commit' .github/workflows/kr-backend-career-weekly.yml; then
+grep -q 'uses: actions/checkout@v5' .github/workflows/backend-career-weekly.yml
+grep -q 'uses: actions/setup-python@v6' .github/workflows/backend-career-weekly.yml
+grep -q 'uses: actions/upload-artifact@v6' .github/workflows/backend-career-weekly.yml
+grep -q 'contents: read' .github/workflows/backend-career-weekly.yml
+grep -q 'cron: "5,35 \* \* \* \*"' .github/workflows/backend-career-weekly.yml
+grep -q 'workflow_dispatch:' .github/workflows/backend-career-weekly.yml
+grep -q 'send_to_discord:' .github/workflows/backend-career-weekly.yml
+grep -q 'Check runtime schedule' .github/workflows/backend-career-weekly.yml
+grep -q 'should-run-now.py --workflow career_weekly' .github/workflows/backend-career-weekly.yml
+grep -q 'CAREER_FEED_CAREER_WEEKLY_DAY' .github/workflows/backend-career-weekly.yml
+grep -q 'CAREER_FEED_CAREER_WEEKLY_TIME' .github/workflows/backend-career-weekly.yml
+grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED' .github/workflows/backend-career-weekly.yml
+grep -q 'manual_delivery_disabled' .github/workflows/backend-career-weekly.yml
+grep -q 'discord_delivery_disabled' .github/workflows/backend-career-weekly.yml
+grep -q 'render-weekly-career-site-radar.py' .github/workflows/backend-career-weekly.yml
+if grep -q 'openai/codex-action\|OPENAI_API_KEY\|NAVER_CLIENT_ID\|NAVER_CLIENT_SECRET\|git commit' .github/workflows/backend-career-weekly.yml; then
   echo "Weekly site radar workflow must not use OpenAI, Naver, or cache commits." >&2
   exit 1
 fi
@@ -309,6 +332,14 @@ required_files=(
   "README.md"
   "configs/audience-profile.json"
   "configs/kr-sources.json"
+  "configs/locales/ko-KR/audience-profile.json"
+  "configs/locales/ko-KR/sources.json"
+  "configs/locales/ko-KR/prompts/backend-daily.md"
+  "configs/locales/ko-KR/prompts/news-daily.md"
+  "configs/locales/en-US/audience-profile.json"
+  "configs/locales/en-US/sources.json"
+  "configs/locales/en-US/prompts/backend-daily.md"
+  "configs/locales/en-US/prompts/news-daily.md"
   "configs/backend-practical-knowledge-curriculum.json"
   "configs/backend-core-cs-curriculum.json"
   "configs/backend-terms-glossary.json"
@@ -415,14 +446,23 @@ required_files=(
   ".github/ISSUE_TEMPLATE/release-readiness.yml"
   ".github/ISSUE_TEMPLATE/source-suggestion.yml"
   ".github/ISSUE_TEMPLATE/validation-fixture.yml"
+  ".github/codex/prompts/kr-tech-daily-brief.md"
   ".github/codex/prompts/kr-tech-news-daily.md"
-  ".github/workflows/kr-tech-news-daily.yml"
+  ".github/workflows/backend-daily.yml"
+  ".github/workflows/backend-career-weekly.yml"
+  ".github/workflows/dev-news-daily.yml"
   "scripts/build-daily-news-shortlist.py"
   "scripts/check-workflow-schedules.py"
   "scripts/collect-kr-feeds.py"
   "scripts/evaluate-news-daily-quality.py"
   "scripts/estimate-prompt-budget.py"
+  "scripts/locale_config.py"
   "scripts/render-weekly-career-site-radar.py"
+  "scripts/search_providers/base.py"
+  "scripts/search_providers/brave.py"
+  "scripts/search_providers/github.py"
+  "scripts/search_providers/naver.py"
+  "scripts/search_providers/rss.py"
   "scripts/select-ps-problem.py"
   "scripts/send-discord.py"
   "scripts/should-run-now.py"
@@ -454,6 +494,8 @@ required_files=(
   "tests/fixtures/kr-tech-news-daily-invalid-too-many-investment.md"
   "tests/fixtures/kr-tech-news-daily-invalid-growth-missing.md"
   "tests/fixtures/kr-backend-career-weekly-valid.md"
+  "tests/fixtures/en-us-backend-daily-valid.md"
+  "tests/fixtures/en-us-news-daily-valid.md"
   "tests/fixtures/oss-recency-candidates.json"
   "tests/fixtures/candidates-empty/kr-oss-contribution-opportunities.json"
   "tests/test_daily_oss_contract.py"
@@ -913,12 +955,26 @@ for item in oss_payload.get("items", []):
 print("daily-backend CS/term candidate smoke check passed")
 PY
 
+python3 scripts/collect-kr-feeds.py \
+  --mode daily-backend \
+  --dry-run \
+  --locale ko-KR \
+  --config configs/locales/ko-KR/sources.json \
+  --output-dir reports/candidates/ko-KR
+
+python3 scripts/collect-kr-feeds.py \
+  --mode daily-backend \
+  --dry-run \
+  --locale en-US \
+  --config configs/locales/en-US/sources.json \
+  --output-dir reports/candidates/en-US
+
 echo "==> Checking Backend Daily run summary smoke"
 EVENT_NAME=workflow_dispatch \
 EVENT_SCHEDULE= \
 DRY_RUN=true \
 FORCE_SEND=false \
-DELIVERY_LOCK_KEY=career-feed-backend-sent-test \
+DELIVERY_LOCK_KEY=career-feed-ko-KR-backend-daily-sent-test \
 DELIVERY_LOCK_HIT=false \
 SHOULD_GENERATE=true \
 SHOULD_SEND=false \
@@ -926,12 +982,15 @@ SKIP_REASON=dry_run \
 DISCORD_SEND_OUTCOME=skipped \
 PS_PROGRESS_COMMIT_OUTCOME=skipped \
 PS_PROGRESS_CHANGED=false \
+LOCALE=ko-KR \
+OPS_DIR=reports/ops/ko-KR \
+CANDIDATE_DIR=reports/candidates/ko-KR \
 python3 - <<'PY'
 import json
 import os
 from pathlib import Path
 
-workflow = Path(".github/workflows/kr-tech-daily.yml").read_text(encoding="utf-8").splitlines()
+workflow = Path(".github/workflows/backend-daily.yml").read_text(encoding="utf-8").splitlines()
 step_start = next(
     index
     for index, line in enumerate(workflow)
@@ -950,9 +1009,9 @@ heredoc_end = next(
 code_lines = []
 for line in workflow[heredoc_start + 1 : heredoc_end]:
     code_lines.append(line[10:] if line.startswith("          ") else line)
-exec(compile("\n".join(code_lines), "kr-tech-daily-run-summary", "exec"), {})
+exec(compile("\n".join(code_lines), "backend-daily-run-summary", "exec"), {})
 
-summary = json.loads(Path("reports/ops/backend-daily-run-summary.json").read_text(encoding="utf-8"))
+summary = json.loads(Path("reports/ops/ko-KR/backend-daily-run-summary.json").read_text(encoding="utf-8"))
 required_fields = [
     "oss_safe_candidate_count",
     "oss_candidate_count",
@@ -966,7 +1025,7 @@ required_fields = [
 missing = [field for field in required_fields if field not in summary]
 if missing:
     raise SystemExit("Backend Daily run summary misses OSS field(s): " + ", ".join(missing))
-summary_md = Path("reports/ops/backend-daily-run-summary.md").read_text(encoding="utf-8")
+summary_md = Path("reports/ops/ko-KR/backend-daily-run-summary.md").read_text(encoding="utf-8")
 for text in ("OSS 후보 상태", "선택 후보", "linked work check degraded"):
     if text not in summary_md:
         raise SystemExit(f"Backend Daily run summary markdown misses: {text}")
@@ -974,6 +1033,12 @@ print("Backend Daily run summary smoke check passed")
 PY
 
 python3 scripts/collect-kr-feeds.py --mode daily-news --dry-run
+python3 scripts/collect-kr-feeds.py \
+  --mode daily-news \
+  --dry-run \
+  --locale en-US \
+  --config configs/locales/en-US/sources.json \
+  --output-dir reports/candidates/en-US
 python3 scripts/build-daily-news-shortlist.py
 python3 scripts/estimate-prompt-budget.py --kst-now "2026-05-29 09:05:00 KST"
 python3 - <<'PY'
@@ -1232,6 +1297,8 @@ expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-too-many-investment.md --type daily-news
 expect_fail python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-tech-news-daily-invalid-growth-missing.md --type daily-news
 python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-weekly-valid.md --type weekly-career
+python3 scripts/validate-career-feed-brief.py tests/fixtures/en-us-backend-daily-valid.md --type daily-tech --locale en-US
+python3 scripts/validate-career-feed-brief.py tests/fixtures/en-us-news-daily-valid.md --type daily-news --locale en-US
 python3 tests/test_daily_oss_contract.py
 python3 tests/test_oss_reliability_gate.py
 python3 tests/test_should_run_now.py

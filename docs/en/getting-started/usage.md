@@ -75,9 +75,9 @@ Open `Actions`, select the workflow, click `Run workflow`, confirm the branch an
 
 | Operating path | GitHub Actions workflow | Main output |
 | --- | --- | --- |
-| Daily Backend Brief | Daily Korea Tech Brief | `reports/briefs/kr-tech-daily.md` |
-| Korea Dev/AI News Daily | Daily Korea Dev AI News | `reports/briefs/kr-tech-news-daily.md` |
-| Backend Career Site Radar | Backend Career Site Radar | `reports/briefs/kr-backend-career-weekly.md` |
+| Daily Backend Brief | Backend Daily Brief | `reports/briefs/{locale}/backend-daily.md` |
+| Dev News Daily | Dev News Daily | `reports/briefs/{locale}/news-daily.md` |
+| Backend Career Site Radar | Backend Career Site Radar | `reports/briefs/ko-KR/backend-career-weekly.md` |
 | Mark PS Solved | Mark PS Solved | `data/ps-progress.json` |
 
 ## Recommended first run: dry-run
@@ -86,7 +86,7 @@ Run Daily Backend Brief with `dry_run=true` and `force_send=false`.
 
 Check generated brief, candidate JSON files, validation report, and run summary.
 
-Run Korea Dev/AI News Daily the same way. Sparse or empty news days can still be valid.
+Run Dev News Daily the same way. Sparse or empty news days can still be valid.
 
 For Backend Career Site Radar, use `send_to_discord=false` to inspect artifacts first.
 
@@ -104,7 +104,7 @@ For Daily Backend, inspect the generated brief, candidate JSON, `backend-daily-v
 
 For News Daily, inspect shortlist, token budget, quality report, validation report, generated brief, and run summary.
 
-For Site Radar, inspect `weekly-career-site-radar.json` and `kr-backend-career-weekly.md`.
+For Site Radar, inspect `reports/candidates/ko-KR/weekly-career-site-radar.json` and `reports/briefs/ko-KR/backend-career-weekly.md`.
 
 ## Sending to Discord
 
@@ -162,7 +162,7 @@ The workflow updates `data/ps-progress.json` and commits only when a change is d
 - [Runtime Configuration](runtime-configuration.md)
 - [Demo Guide](../demo.md)
 - [Daily Backend Brief](../operations/daily-backend-brief.md)
-- [Korea Dev/AI News Daily](../operations/daily-news-ops.md)
+- [Dev News Daily](../operations/daily-news-ops.md)
 - [Backend Career Site Radar](../operations/career-site-radar.md)
 - [Local Validation](../operations/local-validation.md)
 - [Operations Guide](../operations/operations.md)

@@ -17,7 +17,7 @@ Career Feed generates scheduled Markdown briefs through GitHub Actions, then rev
 ## Ways to contribute
 
 - Improve setup and operations documentation.
-- Suggest reliable public sources for Korea Dev/AI News Daily or career site radar.
+- Suggest reliable public sources for Dev News Daily or career site radar.
 - Improve examples and validation fixtures.
 - Propose Java/Kotlin backend learning topics.
 - Suggest safe OSS contribution candidates.

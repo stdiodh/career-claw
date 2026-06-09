@@ -8,7 +8,7 @@ Daily Backend Brief는 Discord 전송 결과만 보는 흐름이 아니라, arti
 
 ## dry_run으로 후보 확인
 
-Actions에서 `Daily Korea Tech Brief` workflow를 수동 실행할 때 `dry_run=true`,
+Actions에서 `Backend Daily Brief` workflow를 수동 실행할 때 `dry_run=true`,
 `force_send=false`로 실행합니다.
 
 - 후보 수집, Codex 생성, validator, artifact 업로드까지 실행합니다.
@@ -25,11 +25,11 @@ python3 scripts/collect-kr-feeds.py --mode daily-backend --dry-run
 
 workflow run의 artifact `career-feed-kr-tech-daily-<run_id>`를 내려받아 아래 파일을 봅니다.
 
-- `reports/candidates/kr-oss-contribution-opportunities.json`
-- `reports/ops/backend-daily-run-summary.json`
-- `reports/ops/backend-daily-run-summary.md`
-- `reports/ops/backend-daily-validation-report.md`
-- `reports/briefs/kr-tech-daily.md`
+- `reports/candidates/ko-KR/oss-contribution-opportunities.json`
+- `reports/ops/ko-KR/backend-daily-run-summary.json`
+- `reports/ops/ko-KR/backend-daily-run-summary.md`
+- `reports/ops/ko-KR/backend-daily-validation-report.md`
+- `reports/briefs/ko-KR/backend-daily.md`
 
 `backend-daily-run-summary.md`의 OSS 영역은 사람이 빠르게 보는 요약입니다.
 
@@ -81,6 +81,6 @@ Daily](./daily-news-ops.md)를 따릅니다.
 
 운영 점검 파일:
 
-- token budget: `reports/ops/news-daily-token-budget.json`
-- quality report: `reports/ops/news-daily-quality-report.json`
-- run summary: `reports/ops/news-daily-run-summary.json`
+- token budget: `reports/ops/ko-KR/news-daily-token-budget.json`
+- quality report: `reports/ops/ko-KR/news-daily-quality-report.json`
+- run summary: `reports/ops/ko-KR/news-daily-run-summary.json`

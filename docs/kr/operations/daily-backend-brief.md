@@ -8,25 +8,25 @@ Daily Backend Brief는 평일 오전에 백엔드 학습, PS 루틴, OSS 기여 
 
 | 항목 | 값 |
 | --- | --- |
-| workflow | `.github/workflows/kr-tech-daily.yml` |
-| prompt | `.github/codex/prompts/kr-tech-daily-brief.md` |
+| workflow | `.github/workflows/backend-daily.yml` |
+| prompt | `configs/locales/ko-KR/prompts/backend-daily.md` |
 | collector | `python3 scripts/collect-kr-feeds.py --mode daily-backend` |
-| validator | `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-daily.md --type daily-tech --candidates-dir reports/candidates` |
-| report | `reports/briefs/kr-tech-daily.md` |
-| Discord secret | `DISCORD_WEBHOOK_KR_TECH_DAILY` |
-| delivery lock | `career-feed-backend-sent-${LOCAL_DATE}` |
-| 운영 요약 | `reports/ops/backend-daily-run-summary.json`, `reports/ops/backend-daily-run-summary.md` |
+| validator | `python3 scripts/validate-career-feed-brief.py reports/briefs/ko-KR/backend-daily.md --type daily-tech --locale ko-KR --candidates-dir reports/candidates/ko-KR` |
+| report | `reports/briefs/ko-KR/backend-daily.md` |
+| Discord secret | `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` (`DISCORD_WEBHOOK_KR_TECH_DAILY` fallback) |
+| delivery lock | `career-feed-ko-KR-backend-daily-sent-${LOCAL_DATE}` |
+| 운영 요약 | `reports/ops/ko-KR/backend-daily-run-summary.json`, `reports/ops/ko-KR/backend-daily-run-summary.md` |
 
 ## 후보 파일
 
 Daily Backend Brief는 아래 후보 JSON을 입력으로 사용합니다.
 
-- `reports/candidates/spring-study-topic.json`
-- `reports/candidates/ps-weekly-routine.json`
-- `reports/candidates/kr-oss-contribution-opportunities.json`
-- `reports/candidates/backend-practical-knowledge.json`
-- `reports/candidates/cs-core-daily-topic.json`
-- `reports/candidates/backend-term-daily.json`
+- `reports/candidates/ko-KR/spring-study-topic.json`
+- `reports/candidates/ko-KR/ps-weekly-routine.json`
+- `reports/candidates/ko-KR/oss-contribution-opportunities.json`
+- `reports/candidates/ko-KR/backend-practical-knowledge.json`
+- `reports/candidates/ko-KR/cs-core-daily-topic.json`
+- `reports/candidates/ko-KR/backend-term-daily.json`
 
 ## 출력 섹션
 

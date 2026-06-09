@@ -2,7 +2,7 @@
 
 > Language: [한국어](../../kr/examples/daily-backend-brief.example.md) | [English](./daily-backend-brief.example.md)
 
-This example shows the shape of a Daily Backend Brief. Real workflow output is generated under `reports/briefs/kr-tech-daily.md`.
+This example shows the shape of a Daily Backend Brief. Real workflow output is generated under `reports/briefs/{locale}/backend-daily.md`.
 
 ## Backend Study Topic
 

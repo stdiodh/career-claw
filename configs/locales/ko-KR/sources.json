@@ -1,0 +1,619 @@
+{
+  "mode": "CAREER_FEED",
+  "naver": {
+    "endpoint": "https://openapi.naver.com/v1/search/news.json",
+    "display": 10,
+    "sort": "date",
+    "recent_hours": 72
+  },
+  "reliability_domains": {
+    "official": [
+      "boho.or.kr",
+      "kisa.or.kr",
+      "krcert.or.kr",
+      "ncloud.com",
+      "kakao.ai",
+      "kakao.com",
+      "kakaocorp.com",
+      "tech.kakao.com",
+      "upstage.ai",
+      "wrtn.ai",
+      "rebellion.ai",
+      "furiosa.ai",
+      "d2.naver.com",
+      "techblog.woowahan.com",
+      "toss.tech",
+      "engineering.linecorp.com",
+      "recruit.navercorp.com",
+      "careers.kakao.com",
+      "careers.linecorp.com",
+      "coupang.jobs",
+      "career.woowahan.com",
+      "toss.im",
+      "about.daangn.com"
+    ],
+    "major_media": [
+      "etnews.com",
+      "zdnet.co.kr",
+      "bloter.net",
+      "aitimes.com",
+      "ddaily.co.kr",
+      "itworld.co.kr",
+      "cio.com"
+    ],
+    "platform": [
+      "dacon.io",
+      "programmers.co.kr",
+      "aifactory.space",
+      "linkareer.com",
+      "wevity.com",
+      "all-con.co.kr",
+      "wanted.co.kr",
+      "jumpit.co.kr",
+      "saramin.co.kr",
+      "jobkorea.co.kr",
+      "yw.work24.go.kr",
+      "zero-base.co.kr"
+    ],
+    "aggregator": [
+      "naver.com",
+      "news.naver.com"
+    ]
+  },
+  "penalty_keywords": [
+    "루머",
+    "찌라시",
+    "주가",
+    "급등",
+    "급락",
+    "목표가",
+    "투자의견",
+    "매수",
+    "매도",
+    "증권가",
+    "관련주",
+    "테마주",
+    "단독 홍보",
+    "경영진 인터뷰"
+  ],
+  "categories": [
+    {
+      "id": "kr-ai-tech-news",
+      "name": "한국 AI 테크 뉴스",
+      "output_file": "reports/candidates/kr-ai-tech-news.json",
+      "max_candidates": 30,
+      "tags": ["ai", "developer"],
+      "naver_queries": [
+        {"track": "tech", "query": "국내 AI API 개발자"},
+        {"track": "tech", "query": "LLM 서비스 인프라 백엔드"},
+        {"track": "tech", "query": "AI 서비스 보안 데이터 거버넌스"},
+        {"track": "tech", "query": "AI 에이전트 개발자 플랫폼"},
+        {"track": "tech", "query": "국내 개발자 플랫폼 SDK API"},
+        {"track": "tech", "query": "AI 코딩 에이전트 개발 생산성"},
+        {"track": "investment", "query": "AI 반도체 HBM 실적 데이터센터"},
+        {"track": "investment", "query": "클라우드 CAPEX AI 인프라"},
+        {"track": "investment", "query": "GPU 서버 수요 AI 서비스"},
+        {"track": "investment", "query": "HBM 수요 AI 서버 공급망"},
+        {"track": "investment", "query": "네이버 카카오 AI 클라우드 실적"},
+        {"track": "investment", "query": "삼성전자 SK하이닉스 HBM 데이터센터 수요"},
+        {"track": "investment", "query": "기업용 AI 매출 API 플랫폼"}
+      ],
+      "rss_sources": [
+        {
+          "name": "ETNews AI RSS",
+          "url": "http://rss.etnews.com/04046.xml",
+          "type": "rss",
+          "source_reliability": "major_media"
+        }
+      ],
+      "reference_pages": [
+        {
+          "name": "Naver Cloud AI Services",
+          "url": "https://www.ncloud.com/product/aiService",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kakao AI",
+          "url": "https://www.kakao.ai/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Upstage",
+          "url": "https://www.upstage.ai/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Wrtn",
+          "url": "https://wrtn.ai/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Rebellions",
+          "url": "https://rebellions.ai/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "FuriosaAI",
+          "url": "https://furiosa.ai/",
+          "source_reliability": "official"
+        }
+      ],
+      "korea_keywords": [
+        "한국",
+        "국내",
+        "국산",
+        "네이버",
+        "카카오",
+        "업스테이지",
+        "뤼튼",
+        "리벨리온",
+        "퓨리오사",
+        "SKT",
+        "KT",
+        "LG",
+        "삼성"
+      ],
+      "developer_keywords": [
+        "API",
+        "SDK",
+        "LLM",
+        "모델",
+        "에이전트",
+        "개발자",
+        "플랫폼",
+        "오픈소스",
+        "클라우드",
+        "코딩",
+        "AI 인프라",
+        "AI 반도체",
+        "데이터센터",
+        "GPU",
+        "HBM",
+        "서버 인프라"
+      ]
+    },
+    {
+      "id": "kr-backend-tech-news",
+      "name": "한국 백엔드/개발자 기술 뉴스",
+      "output_file": "reports/candidates/kr-dev-ai-news.json",
+      "max_candidates": 30,
+      "tags": ["backend", "developer"],
+      "naver_queries": [
+        {"track": "tech", "query": "Spring Boot Kotlin 기술 블로그"},
+        {"track": "tech", "query": "Kubernetes 클라우드 장애 분석"},
+        {"track": "tech", "query": "백엔드 개발 기술 API 서버"},
+        {"track": "tech", "query": "Java Kotlin 백엔드 운영"},
+        {"track": "tech", "query": "Kafka Redis PostgreSQL 운영 장애"},
+        {"track": "tech", "query": "MSA 백엔드 관측성"},
+        {"track": "tech", "query": "국내 개발자 플랫폼 SDK API"},
+        {"track": "investment", "query": "데이터센터 투자 클라우드 가이던스"},
+        {"track": "investment", "query": "기업용 AI API 플랫폼 매출"}
+      ],
+      "rss_sources": [
+        {
+          "name": "ETNews SW RSS",
+          "url": "http://rss.etnews.com/04.xml",
+          "type": "rss",
+          "source_reliability": "major_media"
+        },
+        {
+          "name": "ETNews SW Detail RSS",
+          "url": "http://rss.etnews.com/04043.xml",
+          "type": "rss",
+          "source_reliability": "major_media"
+        }
+      ],
+      "reference_pages": [
+        {
+          "name": "Naver D2",
+          "url": "https://d2.naver.com/home",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kakao Tech",
+          "url": "https://tech.kakao.com/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Woowa Tech",
+          "url": "https://techblog.woowahan.com/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Toss Tech",
+          "url": "https://toss.tech/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "LINE Engineering",
+          "url": "https://engineering.linecorp.com/ko/",
+          "source_reliability": "official"
+        }
+      ],
+      "korea_keywords": [
+        "한국",
+        "국내",
+        "네이버",
+        "카카오",
+        "쿠팡",
+        "토스",
+        "배달의민족",
+        "우아한형제들",
+        "라인",
+        "당근",
+        "무신사"
+      ],
+      "developer_keywords": [
+        "백엔드",
+        "서버",
+        "Spring",
+        "Spring Boot",
+        "Java",
+        "Kotlin",
+        "Kubernetes",
+        "쿠버네티스",
+        "PostgreSQL",
+        "Redis",
+        "Kafka",
+        "MSA",
+        "API",
+        "DB",
+        "성능",
+        "장애",
+        "배포",
+        "관측성",
+        "클라우드",
+        "테크블로그",
+        "개발자"
+      ]
+    },
+    {
+      "id": "spring-jvm-study-topics",
+      "name": "Spring/JVM 학습 후보",
+      "output_file": "reports/candidates/spring-study-topic.json",
+      "max_candidates": 30,
+      "tags": ["spring", "jvm", "backend", "developer"],
+      "naver_queries": [],
+      "rss_sources": [
+        {
+          "name": "Spring Blog",
+          "url": "https://spring.io/blog.atom",
+          "type": "atom",
+          "source_reliability": "official"
+        }
+      ],
+      "reference_pages": [
+        {
+          "name": "Spring Boot Release Highlights",
+          "url": "https://spring.io/projects/release-highlights",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring Boot Reference",
+          "url": "https://docs.spring.io/spring-boot/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring Framework Reference",
+          "url": "https://docs.spring.io/spring-framework/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring AI Reference",
+          "url": "https://docs.spring.io/spring-ai/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring gRPC Reference",
+          "url": "https://docs.spring.io/spring-grpc/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Spring Modulith Reference",
+          "url": "https://docs.spring.io/spring-modulith/reference/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "OpenJDK JEPs",
+          "url": "https://openjdk.org/jeps/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Inside Java",
+          "url": "https://inside.java/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "OpenTelemetry Docs",
+          "url": "https://opentelemetry.io/docs/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Micrometer Docs",
+          "url": "https://micrometer.io/docs",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kotlin Docs",
+          "url": "https://kotlinlang.org/docs/home.html",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Gradle User Manual",
+          "url": "https://docs.gradle.org/current/userguide/userguide.html",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Testcontainers Docs",
+          "url": "https://testcontainers.com/guides/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Docker Docs",
+          "url": "https://docs.docker.com/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kubernetes Docs",
+          "url": "https://kubernetes.io/docs/",
+          "source_reliability": "official"
+        }
+      ],
+      "korea_keywords": [],
+      "developer_keywords": [
+        "Spring",
+        "Spring Boot",
+        "Spring Framework",
+        "Spring AI",
+        "Spring gRPC",
+        "Spring Modulith",
+        "Java",
+        "JVM",
+        "JDK",
+        "JEP",
+        "Kotlin",
+        "Gradle",
+        "Micrometer",
+        "OpenTelemetry",
+        "Docker",
+        "Kubernetes",
+        "Testcontainers",
+        "REST",
+        "API",
+        "observability",
+        "security",
+        "transaction",
+        "virtual thread"
+      ]
+    },
+    {
+      "id": "kr-backend-career-events",
+      "name": "백엔드 커리어 기회",
+      "output_file": "reports/candidates/kr-backend-career-events.json",
+      "max_candidates": 30,
+      "tags": ["backend", "internship", "hackathon", "contest"],
+      "naver_queries": [],
+      "rss_sources": [],
+      "reference_pages": [
+        {
+          "name": "Linkareer Intern",
+          "url": "https://linkareer.com/list/intern?filterBy_activityTypeID=5&filterBy_jobTypes=INTERN&filterBy_status=OPEN&orderBy_direction=DESC&orderBy_field=RECENT&page=1",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "JobKorea",
+          "url": "https://www.jobkorea.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Saramin",
+          "url": "https://www.saramin.co.kr/zf_user/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Wanted",
+          "url": "https://www.wanted.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Work24 Youth Work Experience",
+          "url": "https://yw.work24.go.kr/d/a/selectWkexPrgmList.do",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "ZeroBase Zero Intern",
+          "url": "https://zero-base.co.kr/event/zero_intern",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Jumpit",
+          "url": "https://www.jumpit.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "NAVER Careers",
+          "url": "https://recruit.navercorp.com/rcrt/list.do",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Kakao Careers",
+          "url": "https://careers.kakao.com/jobs?company=ALL",
+          "source_reliability": "official"
+        },
+        {
+          "name": "LINE Careers",
+          "url": "https://careers.linecorp.com/ko/jobs",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Coupang Jobs",
+          "url": "https://www.coupang.jobs/en/jobs/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Woowa Careers",
+          "url": "https://career.woowahan.com/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Toss Careers",
+          "url": "https://toss.im/career",
+          "source_reliability": "official"
+        },
+        {
+          "name": "Daangn Careers",
+          "url": "https://about.daangn.com/jobs/",
+          "source_reliability": "official"
+        },
+        {
+          "name": "DACON Competitions",
+          "url": "https://dacon.io/competitions",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Programmers",
+          "url": "https://programmers.co.kr/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "AI Factory",
+          "url": "https://aifactory.space/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Linkareer Activities",
+          "url": "https://linkareer.com/list/activity?filterBy_status=OPEN&orderBy_direction=DESC&orderBy_field=RECENT&page=1",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Linkareer",
+          "url": "https://linkareer.com/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "Wevity",
+          "url": "https://www.wevity.com/",
+          "source_reliability": "platform"
+        },
+        {
+          "name": "All-Con",
+          "url": "https://www.all-con.co.kr/",
+          "source_reliability": "platform"
+        }
+      ],
+      "korea_keywords": [
+        "한국",
+        "국내",
+        "서울",
+        "경기",
+        "대전",
+        "부산",
+        "대구",
+        "광주",
+        "인천",
+        "데이콘",
+        "프로그래머스",
+        "인공지능팩토리",
+        "링커리어",
+        "위비티",
+        "올콘",
+        "원티드",
+        "점핏",
+        "사람인",
+        "잡코리아",
+        "워크24",
+        "제로베이스",
+        "네이버",
+        "카카오",
+        "라인",
+        "쿠팡",
+        "우아한형제들",
+        "토스",
+        "당근"
+      ],
+      "developer_keywords": [
+        "백엔드 인턴",
+        "서버 개발 인턴",
+        "Backend Engineer Intern",
+        "Software Engineer Backend Intern",
+        "Spring Boot",
+        "Kotlin",
+        "Java",
+        "REST API",
+        "DB",
+        "MySQL",
+        "PostgreSQL",
+        "신입 개발자",
+        "주니어 개발자",
+        "New Grad",
+        "해커톤",
+        "공모전",
+        "경진대회",
+        "데이터 경진대회",
+        "AI 서비스",
+        "API 서버",
+        "대학생",
+        "채용연계형",
+        "전환형",
+        "지원",
+        "모집"
+      ]
+    },
+    {
+      "id": "kr-oss-contribution-opportunities",
+      "name": "Spring/Kotlin 오픈소스 기여 후보",
+      "output_file": "reports/candidates/kr-oss-contribution-opportunities.json",
+      "max_candidates": 20,
+      "tags": ["oss", "spring", "kotlin", "junior", "backend"],
+      "github_repositories": [
+        "spring-projects/spring-boot",
+        "spring-projects/spring-framework",
+        "spring-projects/spring-data-commons",
+        "spring-projects/spring-security",
+        "JetBrains/kotlin",
+        "Kotlin/kotlinx.coroutines",
+        "Kotlin/kotlinx.serialization",
+        "JetBrains/Exposed"
+      ],
+      "positive_labels": [
+        "good first issue",
+        "help wanted",
+        "documentation",
+        "type: documentation",
+        "type: enhancement",
+        "status: ideal-for-contribution",
+        "good first contribution"
+      ],
+      "positive_keywords": [
+        "documentation",
+        "docs",
+        "sample",
+        "example",
+        "test",
+        "reproducer",
+        "getting started",
+        "beginner",
+        "good first",
+        "help wanted",
+        "Spring Boot",
+        "Kotlin",
+        "Java",
+        "Gradle"
+      ],
+      "negative_keywords": [
+        "security vulnerability",
+        "CVE",
+        "release blocker",
+        "breaking change",
+        "compiler backend",
+        "IR backend",
+        "requires design",
+        "RFC",
+        "epic",
+        "blocked",
+        "needs team decision",
+        "assigned"
+      ]
+    }
+  ]
+}

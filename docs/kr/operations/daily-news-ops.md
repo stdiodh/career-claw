@@ -1,32 +1,32 @@
-# Korea Dev/AI News Daily
+# Dev News Daily
 
 > Language: [한국어](./daily-news-ops.md) | [English](../../en/operations/daily-news-ops.md)
 
-Korea Dev/AI News Daily는 평일 오전에 한국 개발/AI 뉴스를 정리해 별도 Discord Webhook으로 전송합니다.
+Dev News Daily는 평일 오전에 한국 개발/AI 뉴스를 정리해 별도 Discord Webhook으로 전송합니다.
 
 ## 실행 구성
 
 | 항목 | 값 |
 | --- | --- |
-| workflow | `.github/workflows/kr-tech-news-daily.yml` |
-| prompt | `.github/codex/prompts/kr-tech-news-daily.md` |
+| workflow | `.github/workflows/dev-news-daily.yml` |
+| prompt | `configs/locales/ko-KR/prompts/news-daily.md` |
 | collector | `python3 scripts/collect-kr-feeds.py --mode daily-news` |
 | shortlist | `python3 scripts/build-daily-news-shortlist.py` |
 | token budget | `python3 scripts/estimate-prompt-budget.py` |
 | quality report | `python3 scripts/evaluate-news-daily-quality.py` |
 | run summary | `python3 scripts/write-news-daily-run-summary.py` |
-| validator | `python3 scripts/validate-career-feed-brief.py reports/briefs/kr-tech-news-daily.md --type daily-news` |
-| report | `reports/briefs/kr-tech-news-daily.md` |
-| Discord secret | `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` |
-| delivery lock | `career-feed-news-sent-${LOCAL_DATE}` |
+| validator | `python3 scripts/validate-career-feed-brief.py reports/briefs/ko-KR/news-daily.md --type daily-news --locale ko-KR` |
+| report | `reports/briefs/ko-KR/news-daily.md` |
+| Discord secret | `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` (`DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` fallback) |
+| delivery lock | `career-feed-ko-KR-news-daily-sent-${LOCAL_DATE}` |
 
 ## 후보 파일
 
-- `reports/candidates/kr-dev-ai-news.json`
-- `reports/candidates/kr-ai-tech-news.json`
-- `reports/candidates/kr-tech-news-shortlist.json`
+- `reports/candidates/ko-KR/dev-ai-news.json`
+- `reports/candidates/ko-KR/backend-tech-news.json`
+- `reports/candidates/ko-KR/news-shortlist.json`
 
-Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist인 `kr-tech-news-shortlist.json`을 중심으로
+Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist인 `news-shortlist.json`을 중심으로
 사용합니다.
 
 ## 뉴스 정책
@@ -66,12 +66,12 @@ Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist인 
 
 ## 운영 점검 파일
 
-- `reports/ops/news-daily-token-budget.json`: raw 후보 수, shortlist 수, prompt 문자 수, rough
+- `reports/ops/ko-KR/news-daily-token-budget.json`: raw 후보 수, shortlist 수, prompt 문자 수, rough
   token 추정치
-- `reports/ops/news-daily-validation-report.md`: validator 상태, 오류 한 줄, stdout/stderr 마지막
+- `reports/ops/ko-KR/news-daily-validation-report.md`: validator 상태, 오류 한 줄, stdout/stderr 마지막
   30줄
-- `reports/ops/news-daily-quality-report.json`: 비중, 성장 행동, 투자 조언 위험, token 효율
-- `reports/ops/news-daily-run-summary.json`: 선택 수, bridge 여부, 성장 판단, quality summary
+- `reports/ops/ko-KR/news-daily-quality-report.json`: 비중, 성장 행동, 투자 조언 위험, token 효율
+- `reports/ops/ko-KR/news-daily-run-summary.json`: 선택 수, bridge 여부, 성장 판단, quality summary
 
 `configs/audience-profile.json`의 `market_context`는 이전 호환용이며, 현재 기준은
 `content_tracks.daily_ratio_policy`와 `content_tracks.investment`입니다.
@@ -80,13 +80,13 @@ Codex 입력은 원본 후보 전체가 아니라 track별 compact shortlist인 
 
 News Daily를 수동으로 다시 보낼 때는 먼저 검증 run과 전송 run을 분리합니다.
 
-1. `Actions > Daily Korea Dev AI News > Run workflow`를 엽니다.
+1. `Actions > Dev News Daily > Run workflow`를 엽니다.
 2. `dry_run=true`, `force_send=false`로 실행해 후보 수집, shortlist 생성, Codex Markdown 생성,
    validator, artifact 업로드를 확인합니다.
-3. artifact에서 `reports/ops/news-daily-validation-report.md`를 열어 validator가 통과했는지 확인합니다.
-4. 실패하면 같은 artifact의 `reports/briefs/kr-tech-news-daily.md`,
-   `reports/candidates/kr-tech-news-shortlist.json`,
-   `reports/ops/news-daily-validation-report.md`를 함께 확인합니다.
+3. artifact에서 `reports/ops/ko-KR/news-daily-validation-report.md`를 열어 validator가 통과했는지 확인합니다.
+4. 실패하면 같은 artifact의 `reports/briefs/ko-KR/news-daily.md`,
+   `reports/candidates/ko-KR/news-shortlist.json`,
+   `reports/ops/ko-KR/news-daily-validation-report.md`를 함께 확인합니다.
 5. validator 통과 후에만 `dry_run=false`, `force_send=true`로 한 번 전송합니다.
 
 `dry_run=true`에서는 Discord 전송과 delivery lock 저장을 하지 않습니다. `force_send=true`는 오늘 delivery
