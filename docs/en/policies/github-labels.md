@@ -10,15 +10,15 @@ Use labels to clarify contribution type, review state, source category, and main
 
 ## Core labels
 
-Recommended core labels include documentation, bug, enhancement, validation, workflow, config, source, and question.
+Recommended core labels include documentation, bug, enhancement, source, oss-candidate, validation fixture, release readiness, and question.
 
 ## Contributor labels
 
-Contributor-facing labels should identify good first issue, help wanted, source suggestion, OSS candidate, backend career question, and docs improvement.
+Contributor-facing labels should identify good first issue, help wanted, source, oss-candidate, validation fixture, question, and documentation.
 
 ## Maintainer labels
 
-Maintainer labels may track needs triage, blocked, accepted, declined, duplicate, out of scope, and release candidate.
+Maintainer labels may track duplicate, invalid, wontfix, release readiness, and issue type labels.
 
 ## Review checklist
 

@@ -2,7 +2,7 @@ name: 문서 개선 제안
 description: fork setup, runtime config, validation, demo, contributor 문서 개선을 제안합니다.
 title: "[문서] "
 labels:
-  - docs
+  - documentation
 body:
   - type: markdown
     attributes:

@@ -11,6 +11,17 @@ Use this guide when showing Career Feed in a README, issue, pull request, or sho
 3. Open generated artifacts, validation reports, and run summaries.
 4. Explain that Discord delivery remains disabled until explicitly enabled.
 
+The current repository includes mock redacted screenshots for this flow.
+They are explanatory demo images, not live GitHub or Discord captures.
+
+![GitHub Actions manual dry-run mock screen](../assets/demo/github-actions-dispatch-redacted.png)
+
+![Actions summary and artifacts mock screen](../assets/demo/actions-summary-redacted.png)
+
+![Validation report and generated brief preview mock screen](../assets/demo/validation-report-redacted.png)
+
+![Discord briefing mock screen](../assets/demo/discord-brief-redacted.png)
+
 ## What to Show
 
 - The language gateway.
@@ -25,6 +36,13 @@ Do not show real API keys, webhook URLs, private logs, private repository data, 
 ## Screenshot Rules
 
 Blur repository secrets, account identifiers, private webhook names, and unrelated browser tabs. Prefer screenshots from dry-run artifacts.
+
+Current linked files:
+
+- `docs/assets/demo/github-actions-dispatch-redacted.png`
+- `docs/assets/demo/actions-summary-redacted.png`
+- `docs/assets/demo/validation-report-redacted.png`
+- `docs/assets/demo/discord-brief-redacted.png`
 
 ## Optional GIF
 

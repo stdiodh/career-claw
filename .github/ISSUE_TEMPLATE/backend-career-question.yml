@@ -3,7 +3,6 @@ description: 백엔드 학습이나 커리어 준비에서 막막한 점을 공�
 title: "[질문] "
 labels:
   - question
-  - backend-career
 body:
   - type: markdown
     attributes:

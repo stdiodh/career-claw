@@ -8,6 +8,9 @@ This project is still an early open-source automation tool. Release notes descri
 
 ### Added
 
+- OSS readiness and impact evidence in the README.
+- Redacted demo evidence links for dry-run dispatch, artifact summary, validation report, and Discord output.
+- Release preparation wording for `v0.1.0` before the GitHub Release is created.
 - v0.1.0 release checklist and release note draft.
 - Contributor task ideas for small documentation, fixture, and validation improvements.
 - Roadmap for near-term and later project directions.
@@ -15,6 +18,7 @@ This project is still an early open-source automation tool. Release notes descri
 
 ### Changed
 
+- Issue template labels now match actual GitHub label names.
 - Contributor and pull request guidance now points to fork setup, runtime configuration, OSS policy, and release readiness docs.
 
 ### Security
@@ -56,6 +60,7 @@ This project is still an early open-source automation tool. Release notes descri
 ### Known limitations
 
 - v0.1.0 is not a stable commercial product release.
+- No stars, downloads, active users, or adoption metrics are claimed for v0.1.0.
 - Users must review generated links and artifacts before acting on a brief.
 - GitHub Actions schedule timing is not real-time.
 - External source availability may affect generated content.
