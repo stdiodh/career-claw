@@ -1,6 +1,6 @@
 # v0.2.0 Release Baseline
 
-This document mirrors the current v0.2.0 repository baseline for reviewers and maintainers.
+This document mirrors the v0.2.0 repository baseline for reviewers and maintainers.
 
 It does not replace the GitHub Release or tag history. The tag and workflow files remain the source of truth for exact behavior.
 
@@ -159,7 +159,7 @@ If enabling `en-US`, add the matching `en-US` webhook Secrets before turning on 
 
 ## v0.2.1 Patch Candidates
 
-- Correct v0.1.x wording in release, security, issue, and maintainer docs.
+- Correct stale historical v0.1 wording in release, security, issue, and maintainer docs.
 - Add or improve provider/source policy docs.
 - Improve issue templates for locale and artifact triage.
 - Strengthen validation docs around locale fixtures and canonical paths.

@@ -6,10 +6,11 @@ Do not create a tag or publish a GitHub Release until the maintainer intentional
 
 ## Release Baseline
 
-- Current release baseline: `v0.2.0`.
+- Current release baseline: `v0.2.1`.
 - Current default supported locale: `ko-KR`.
 - Current experimental foundation locale: `en-US`.
 - Current operating model: fork-based GitHub Actions, dry-run artifacts, validation, optional Discord Webhook delivery.
+- Current onboarding model: first Backend Daily dry-run needs only `OPENAI_API_KEY`; repository Variables are optional overrides.
 
 ## Pre-Release Checks
 

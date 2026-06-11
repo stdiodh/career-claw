@@ -37,6 +37,7 @@ Additional locales are later community-maintained work.
 | --- | --- |
 | Who uses this | Early project for fork-based use by Java/Kotlin backend learners, Discord study groups, and mentoring groups that want reviewable daily briefs. |
 | Why this matters | It turns scattered backend learning, locale-specific dev/AI news, OSS contribution prep, and career source checks into repeatable GitHub Actions artifacts. |
+| First fork setup | First Backend Daily dry-run needs only the `OPENAI_API_KEY` repository Secret; repository Variables are optional overrides. |
 | Maintainer workload | Contributor entry points are intentionally small: documentation fixes, source suggestions, validation fixtures, and OSS candidate review. |
 | Codex/API usage | OpenAI-assisted output is constrained to reviewable Markdown drafts, validation summaries, topic prioritization, and OSS candidate notes. |
 | Usage signal | No adoption metric is claimed yet; the repository is presented as fork-ready, not as a project with existing stars, downloads, or active-user numbers. |
@@ -60,15 +61,16 @@ Additional locales are later community-maintained work.
 ## Project Status
 
 - Status: Early Public OSS
-- Latest release: [`v0.2.0`](https://github.com/stdiodh/career-feed/releases/tag/v0.2.0)
-- Release date: 2026-06-10
-- Release baseline: fork-based GitHub Actions workflows with dry-run artifact review and optional Discord Webhook delivery.
+- Latest release: [`v0.2.1`](https://github.com/stdiodh/career-feed/releases/tag/v0.2.1)
+- Release date: 2026-06-11
+- Release baseline: fork-based GitHub Actions workflows with one-secret first dry-run, dry-run artifact review, schedule-disabled-by-default safety, and optional Discord Webhook delivery.
 
 Workflow files are the source of truth for actual cron, inputs, and dispatch behavior.
 
 Release and compatibility details:
 
-- [v0.2.0 release baseline](./docs/project/release-v0.2.0.md)
+- [v0.2.1 changelog](./CHANGELOG.md)
+- [v0.2.0 locale foundation baseline](./docs/project/release-v0.2.0.md)
 - [v0.2 compatibility notes](./docs/project/v0.2-compatibility.md)
 - [release checklist](./docs/project/release-checklist.md)
 
@@ -126,6 +128,9 @@ New forks should use the canonical workflow names, locale-specific artifact path
 
 - API keys and Discord webhook URLs must stay in GitHub Actions Secrets or local environment variables.
 - Discord delivery is disabled by default, and `dry_run=true` never sends to Discord.
+- First Backend Daily dry-run requires only `OPENAI_API_KEY`; Discord, Naver, Brave, and repository Variables are optional later setup.
+- Scheduled generation is disabled by default with `CAREER_FEED_SCHEDULE_ENABLED=false`; manual `workflow_dispatch` still works.
+- Discord delivery can use `DISCORD_WEBHOOK_CAREER_FEED` as a generic fallback after specific and legacy webhook Secrets.
 - Generated briefs must pass validation before Discord delivery.
 - OSS candidates are recommended only when they satisfy the configured `created_at` recency policy.
 - If no safe candidate exists, Career Feed renders a fallback preparation routine instead of forcing old issues.

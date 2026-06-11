@@ -8,6 +8,28 @@ This project is still an early open-source automation tool. Release notes descri
 
 No unreleased changes.
 
+## [0.2.1] - 2026-06-11
+
+### Added
+
+- Added `scripts/setup-fork.sh` as an optional GitHub CLI setup helper for fork users.
+- Added a generic Discord delivery fallback Secret, `DISCORD_WEBHOOK_CAREER_FEED`, while preserving locale/feed-specific and legacy webhook Secret names.
+- Added `CAREER_FEED_SCHEDULE_ENABLED` with scheduled generation disabled by default for new forks.
+
+### Changed
+
+- Simplified first Backend Daily manual dry-run setup so a fresh fork only needs the `OPENAI_API_KEY` repository Secret.
+- Clarified that repository Variables are optional overrides, not required first-run setup.
+- Changed manual daily workflow defaults so `dry_run=true` and `force_send=false`.
+- Kept manual `workflow_dispatch` runs available even when scheduled generation is disabled.
+- Updated fork setup, fresh fork smoke test, runtime configuration, webhook setup, Codex application, and promotion readiness docs to match the v0.2.1 onboarding path.
+
+### Safety
+
+- Scheduled events now skip safely with `schedule_disabled` unless `CAREER_FEED_SCHEDULE_ENABLED=true`.
+- Discord delivery remains gated by dry-run status, delivery flag, webhook availability, validation, and delivery-lock behavior.
+- No usage, adoption, stars, downloads, active users, organization usage, or production deployment metrics are claimed.
+
 ## [0.2.0] - 2026-06-10
 
 ### Added
@@ -69,7 +91,7 @@ No unreleased changes.
 
 ### Security
 
-- Security guidance now clarifies initial v0.1.x support scope and secret reporting expectations.
+- Security guidance clarified the v0.1.0 historical baseline and secret reporting expectations.
 - Secrets and Variables are documented separately.
 - Discord delivery is disabled by default for fork users.
 - Generated briefs are validated before delivery.

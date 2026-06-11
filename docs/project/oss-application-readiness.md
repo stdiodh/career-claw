@@ -4,7 +4,7 @@ This checklist helps evaluate whether Career Feed is ready for a Codex for OSS a
 
 ## Current Readiness
 
-Current score: 8 out of 10 after v0.2 hardening docs.
+Current score: 8 out of 10 after v0.2.1 onboarding hardening.
 
 What the repository proves:
 
@@ -12,6 +12,10 @@ What the repository proves:
 - dry-run artifact review before Discord delivery
 - validation scripts and fixtures
 - secret-safe setup guidance
+- first dry-run setup with only `OPENAI_API_KEY`
+- schedule-disabled-by-default safety
+- generic Discord webhook fallback
+- optional GitHub CLI setup helper
 - `ko-KR` default supported locale
 - `en-US` foundation / experimental preset
 - locale-specific webhook Secret naming
@@ -30,15 +34,15 @@ What it does not prove:
 
 ## Pre-Application Checklist
 
-- [ ] README describes v0.2.0 accurately.
-- [ ] CHANGELOG includes v0.2.0.
-- [ ] Release docs identify v0.2.0 as current baseline.
+- [ ] README describes v0.2.1 accurately.
+- [ ] CHANGELOG includes v0.2.1.
+- [ ] Release docs identify v0.2.1 as current baseline.
 - [ ] `ko-KR` remains default supported locale.
 - [ ] `en-US` is described as foundation/experimental.
 - [ ] Provider scaffolds are not overclaimed.
 - [ ] Security docs warn against secret leaks.
 - [ ] Issue templates collect locale, workflow, provider/source, validation, and redaction details.
-- [ ] Roadmap separates v0.2.1 patch work from v0.3.0 feature work.
+- [ ] Roadmap separates v0.2.x patch work from v0.3.0 feature work.
 - [ ] Validation commands pass.
 
 ## Remaining Blockers

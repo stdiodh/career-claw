@@ -65,7 +65,7 @@ Review these files first.
 - `reports/ops/ko-KR/backend-daily-run-summary.md`
 - `reports/candidates/ko-KR/oss-contribution-opportunities.json`
 
-If the current `ko-KR` v0.2.0 workflow and validation report also use `reports/candidates/ko-KR/kr-oss-contribution-opportunities.json`, review that file too.
+If the `ko-KR` workflow and validation report also use `reports/candidates/ko-KR/kr-oss-contribution-opportunities.json`, review that file too.
 
 ## What success means
 

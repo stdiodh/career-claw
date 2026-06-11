@@ -10,12 +10,12 @@ Choose a documentation language.
 
 | Document | Purpose |
 | --- | --- |
-| [v0.2.0 Release Baseline](./project/release-v0.2.0.md) | Current release behavior, limits, and patch candidates |
+| [v0.2.0 Release Baseline](./project/release-v0.2.0.md) | Locale foundation behavior, limits, and compatibility notes |
 | [v0.2 Compatibility Notes](./project/v0.2-compatibility.md) | Compatibility window for locale paths, secrets, and artifacts |
 | [Provider Expansion](./project/provider-expansion.md) | Provider maturity, expansion rules, and validation expectations |
 | [Source Policy](./project/source-policy.md) | Source quality, reliability, and spam-avoidance policy |
 | [Validation](./project/validation.md) | Current v0.2 validation commands and artifact expectations |
-| [Roadmap](./project/roadmap.md) | Current baseline, v0.2.1 patch candidates, and v0.3.0 roadmap |
+| [Roadmap](./project/roadmap.md) | Current baseline, v0.2.x patch candidates, and v0.3.0 roadmap |
 | [v0.2.1 Plan](./project/v0.2.1-plan.md) | Patch-sized follow-up candidates |
 | [v0.3.0 Roadmap](./project/v0.3.0-roadmap.md) | Larger feature candidates |
 | [OSS Application Readiness](./project/oss-application-readiness.md) | Codex for OSS readiness checklist |

@@ -10,7 +10,7 @@ body:
         어떤 문서가 헷갈렸는지 알려 주세요.
 
         secret, webhook URL, private Discord 정보, 개인 식별자는 포함하지 마세요.
-        v0.2.0 현재 동작과 다른 설명을 발견했다면 관련 workflow나 artifact path도 함께 적어 주세요.
+        v0.2.x 현재 동작과 다른 설명을 발견했다면 관련 workflow나 artifact path도 함께 적어 주세요.
   - type: input
     id: document
     attributes:

@@ -8,7 +8,7 @@ This checklist describes the current v0.2.x release gate. Actual GitHub tags and
 
 ## v0.2.x release goal
 
-Keep the v0.2.0 locale-aware foundation accurate, compatible, and reviewable while planning small v0.2.1 patches and larger v0.3.0 provider work separately.
+Keep the v0.2.x locale-aware foundation accurate, compatible, and reviewable while planning small patches and larger v0.3.0 provider work separately.
 
 ## v0.2.x readiness
 
@@ -19,7 +19,7 @@ Keep the v0.2.0 locale-aware foundation accurate, compatible, and reviewable whi
 - Keep Discord delivery disabled by default.
 - Require generated brief validation before Discord delivery.
 
-## Current v0.2.0 scope
+## Current v0.2.x scope
 
 - Daily Backend Brief.
 - Dev News Daily.
@@ -29,6 +29,10 @@ Keep the v0.2.0 locale-aware foundation accurate, compatible, and reviewable whi
 - `en-US` as a foundation / experimental preset.
 - Locale-specific daily Discord webhook Secret names.
 - `ko-KR` legacy webhook fallback names and mirror artifacts during v0.2.x.
+- First Backend Daily dry-run with only `OPENAI_API_KEY`.
+- Repository Variables as optional overrides.
+- Generic `DISCORD_WEBHOOK_CAREER_FEED` fallback.
+- Scheduled generation disabled by default.
 
 ## v0.2.x acceptance criteria
 
@@ -59,6 +63,6 @@ python3 scripts/check-doc-format.py
 
 ## Release note draft
 
-Use [v0.2.0 Release Notes](../release-notes/v0.2.0.md) and [shared v0.2 baseline](../../project/release-v0.2.0.md) as the current reference.
+Use `CHANGELOG.md`, [v0.2.0 Release Notes](../release-notes/v0.2.0.md), and [shared v0.2 baseline](../../project/release-v0.2.0.md) as the release reference set.
 
 Do not rewrite published release history. Add corrections through docs or a later patch release.

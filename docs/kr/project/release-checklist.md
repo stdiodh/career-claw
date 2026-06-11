@@ -4,9 +4,9 @@
 
 This checklist is for maintainers preparing v0.2.x patch releases and later public Career Feed releases.
 
-현재 baseline은 `v0.2.0`입니다.
+현재 baseline은 `v0.2.1`입니다.
 
-`v0.1.0`은 과거 첫 fork 기반 릴리스로 유지하고, 새 릴리스 준비 문서는 v0.2.0 이후를 기준으로 작성합니다.
+`v0.1.0`은 과거 첫 fork 기반 릴리스로 유지하고, 새 릴리스 준비 문서는 v0.2.x 이후를 기준으로 작성합니다.
 
 ## v0.2.x release goal
 
@@ -23,9 +23,9 @@ v0.2.x의 목표는 locale-aware foundation을 작고 안전하게 유지하면�
 - Discord delivery는 기본 비활성화 상태로 유지합니다.
 - Discord 전송 전 generated brief validation이 통과해야 합니다.
 
-## Current v0.2.0 scope
+## Current v0.2.x scope
 
-Included in v0.2.0:
+Included in current v0.2.x:
 
 - Daily Backend Brief workflow
 - Dev News Daily workflow
@@ -34,15 +34,19 @@ Included in v0.2.0:
 - `ko-KR` default supported locale
 - `en-US` foundation / experimental preset
 - GitHub Actions Secrets and Variables based setup
+- `OPENAI_API_KEY` 하나로 시작하는 첫 Backend Daily dry-run
+- optional Repository Variables
 - locale-specific daily Discord webhook Secret names
+- generic `DISCORD_WEBHOOK_CAREER_FEED` fallback
 - `ko-KR` legacy webhook fallback names
+- schedule-disabled-by-default safety
 - locale-specific daily artifact paths
 - `ko-KR` legacy mirror artifact paths
 - provider preset foundation for Naver, RSS, GitHub, and Brave Search
 - generated brief validation before Discord delivery
 - dry-run first artifact review flow
 
-Not included in v0.2.0:
+Not included in current v0.2.x:
 
 - mature global provider coverage
 - fully mature `en-US` source quality
@@ -62,7 +66,7 @@ Before a v0.2.x patch release:
 
 - [ ] A fresh fork can follow `docs/kr/getting-started/fork-setup.md` to complete a `ko-KR` dry-run.
 - [ ] `en-US` is documented as foundation/experimental unless implementation evidence changes.
-- [ ] Required Secrets and optional Variables are documented.
+- [ ] `OPENAI_API_KEY` only first dry-run path and optional Variables are documented.
 - [ ] Discord delivery is disabled by default.
 - [ ] dry-run generates artifacts without sending Discord messages.
 - [ ] Generated brief validation runs before Discord delivery.
@@ -155,7 +159,7 @@ Do not treat a successful command as enough for release. Review the generated ar
 
 ## Release note draft
 
-Use [v0.2.0 Release Notes](../release-notes/v0.2.0.md) and [shared v0.2 baseline](../../project/release-v0.2.0.md) as the current baseline reference.
+Use `CHANGELOG.md`, [v0.2.0 Release Notes](../release-notes/v0.2.0.md), and [shared v0.2 baseline](../../project/release-v0.2.0.md) as the release reference set.
 
 Before publishing, confirm that:
 

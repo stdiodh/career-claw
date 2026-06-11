@@ -8,11 +8,11 @@ Items below are planned or being explored. They should not be described as curre
 
 ## Current Baseline
 
-현재 baseline은 `v0.2.0`입니다.
+현재 baseline은 `v0.2.1`입니다.
 
-Career Feed는 현재 fork-based GitHub Actions workflow, dry-run artifact, validation, optional Discord Webhook delivery, `ko-KR` 기본 지원, `en-US` foundation / experimental preset을 제공합니다.
+Career Feed는 현재 fork-based GitHub Actions workflow, `OPENAI_API_KEY` 하나로 시작하는 첫 dry-run, optional Variables, schedule-disabled-by-default safety, validation, optional Discord Webhook delivery, `ko-KR` 기본 지원, `en-US` foundation / experimental preset을 제공합니다.
 
-## v0.2.1 Patch Candidates
+## v0.2.x Patch Candidates
 
 - v0.2 behavior 문서 보정
 - locale config와 fixture validation hardening

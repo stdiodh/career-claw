@@ -20,16 +20,22 @@ Discord 전송은 선택 사항이며, 기본 흐름은 dry-run artifact 검토�
 
 백엔드 학습자, 주니어 개발자, Discord 스터디 그룹, 멘토가 반복 가능한 학습 주제, 뉴스 요약, OSS 기여 준비 자료를 만들고 검토하는 데 도움을 줍니다.
 
-## 3. Current evidence in v0.2.0
+## 3. Current evidence in v0.2.1
 
-v0.2.0에서 확인할 수 있는 근거는 다음과 같습니다.
+v0.2.1에서 확인할 수 있는 근거는 다음과 같습니다.
 
 - `ko-KR` 기본 지원 locale
 - `en-US` experimental foundation
 - Daily Backend Brief, Dev News Daily, Backend Career Site Radar, PS progress workflow
 - locale-aware artifact path
 - locale-specific Discord webhook Secret 이름
+- `OPENAI_API_KEY` 하나로 시작하는 첫 Backend Daily dry-run
+- Repository Variables를 선택 override로 정리한 setup 문서
 - Discord delivery disabled-by-default 흐름
+- `CAREER_FEED_SCHEDULE_ENABLED=false` 기본값으로 scheduled generation 비활성화
+- schedule이 꺼져 있어도 수동 `workflow_dispatch` 실행 가능
+- specific/legacy webhook 이후 `DISCORD_WEBHOOK_CAREER_FEED` generic fallback 지원
+- 선택 GitHub CLI setup helper `scripts/setup-fork.sh`
 - dry-run artifact review
 - generated brief validation before delivery
 - validation script와 fixture
@@ -82,7 +88,7 @@ Secrets, webhook URLs, API keys, private identifiers는 문서나 issue에 포�
 아래 문구는 500자 미만입니다.
 
 ```text
-Career Feed는 v0.2.0 기준 Early Public OSS인 fork 기반 GitHub Actions 자동화입니다. 프로덕션 백엔드 의존성, 프레임워크, 데이터베이스, SaaS가 아니라 백엔드 학습자, 주니어 개발자, Discord 스터디, 멘토의 온보딩과 OSS 기여 준비를 돕는 검토 가능한 브리핑 도구입니다. 사용 지표는 아직 주장하지 않습니다.
+Career Feed는 v0.2.1 기준 Early Public OSS인 fork 기반 GitHub Actions 자동화입니다. 프로덕션 백엔드 의존성, 프레임워크, 데이터베이스, SaaS가 아니라 백엔드 학습자, 주니어 개발자, Discord 스터디, 멘토의 온보딩과 OSS 기여 준비를 돕는 검토 가능한 브리핑 도구입니다. 사용 지표는 아직 주장하지 않습니다.
 ```
 
 ## 8. Copy-ready API credit usage text
