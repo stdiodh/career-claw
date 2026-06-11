@@ -10,11 +10,29 @@ No unreleased changes.
 
 ## [0.2.0] - 2026-06-10
 
+### Added
+
+- Added the locale-aware runtime foundation for `ko-KR` and `en-US`.
+- Added locale-specific config, audience profile, and prompt paths under `configs/locales/{locale}/`.
+- Added locale-specific daily artifact paths under `reports/briefs/{locale}/`, `reports/candidates/{locale}/`, and `reports/ops/{locale}/`.
+- Added locale-specific Discord webhook Secret names for Daily Backend Brief and Dev News Daily.
+- Added provider preset configuration for `naver,rss,github` and `brave,rss,github`.
+- Added `en-US` validation fixtures for the v0.2 foundation.
+
 ### Changed
 
 - Documented the v0.2 locale-aware foundation for `ko-KR` and `en-US`.
 - Clarified canonical locale artifact paths and `ko-KR` legacy mirror paths.
 - Clarified that `en-US` is an experimental preset, not a fully global service.
+- Kept `ko-KR` as the default supported locale and preserved legacy webhook fallback names during the v0.2 compatibility window.
+- Kept Backend Career Site Radar centered on `ko-KR` while using a canonical `reports/briefs/ko-KR/backend-career-weekly.md` output path.
+
+### Known limitations
+
+- `en-US` is a foundation/experimental preset and does not yet have the same source maturity as the `ko-KR` default path.
+- Provider marker modules exist, but the v0.2 collector still contains much of the source collection implementation for compatibility.
+- Additional locales remain future community-maintained work.
+- No usage, adoption, stars, downloads, or production deployment metrics are claimed.
 
 ## [0.1.0] - 2026-06-09
 

@@ -21,6 +21,9 @@ Career Feed documentation is split by language.
 | Document | Purpose |
 | --- | --- |
 | [Fork Setup Guide](./getting-started/fork-setup.md) | First dry-run and Discord delivery setup from a fork |
+| [CLI Setup](./getting-started/cli-setup.md) | Optional `gh` helper for fork Secrets and Variables |
+| [Fresh Fork Smoke Test](./getting-started/fresh-fork-smoke-test.md) | First Backend Daily dry-run without editing workflow YAML |
+| [Webhook Setup](./getting-started/webhook-setup.md) | Locale-specific Discord webhook Secret names and fallback rules |
 | [Runtime Configuration](./getting-started/runtime-configuration.md) | Secrets, Variables, and runtime gate reference |
 | [Usage Guide](./getting-started/usage.md) | Routine workflow runs, artifact review, and delivery operations |
 
@@ -50,6 +53,8 @@ Career Feed documentation is split by language.
 | [Contributing](./CONTRIBUTING.md) | Contribution rules and PR expectations |
 | [Contribution Guide Index](./contributing/README.md) | Contributor document index |
 | [Contributor Task Ideas](./project/contributor-tasks.md) | Small starter tasks |
+| [Provider Expansion](./project/provider-expansion.md) | Provider status and contribution rules |
+| [Source Policy](./project/source-policy.md) | Source quality and reliability rules |
 | [Good Suggestion Criteria](./contributing/good-suggestion-criteria.md) | Criteria for useful suggestions |
 | [Source Suggestion Guide](./contributing/source-suggestion-guide.md) | Source suggestion rules |
 | [OSS Candidate Guide](./contributing/oss-candidate-guide.md) | OSS candidate suggestion rules |
@@ -63,6 +68,7 @@ Career Feed documentation is split by language.
 | [Security Policy](./SECURITY.md) | Secret, webhook, and API key handling |
 | [Support](./SUPPORT.md) | Support scope and issue guidance |
 | [Maintainer Guide](./operations/maintainer-guide.md) | Maintainer checklist |
+| [Adoption Evidence](./project/adoption-evidence.md) | Safe usage and feedback evidence policy |
 | [OSS Candidate Policy](./policies/oss-candidate-policy.md) | Safe OSS candidate policy |
 | [Spring/JVM Blog Topic Policy](./policies/daily-spring-jvm-blog-topic-policy.md) | Daily Spring/JVM topic policy |
 | [GitHub Labels](./policies/github-labels.md) | Label management |
@@ -72,9 +78,14 @@ Career Feed documentation is split by language.
 | Document | Purpose |
 | --- | --- |
 | [Roadmap](./project/roadmap.md) | Current and future scope |
+| [Shared Roadmap](../project/roadmap.md) | v0.2.1 and v0.3.0 planning baseline |
+| [Codex for OSS Application](./project/codex-for-oss-application.md) | Honest application positioning |
+| [Promotion Readiness](./project/promotion-readiness.md) | Public launch checklist after v0.2.1 |
 | [Changelog](../../CHANGELOG.md) | Change history |
 | [Release Checklist](./project/release-checklist.md) | Maintainer release checklist |
-| [v0.1.0 Release Notes](./release-notes/v0.1.0.md) | Release note draft |
+| [v0.2.0 Release Notes](./release-notes/v0.2.0.md) | Current release baseline |
+| [v0.1.0 Release Notes](./release-notes/v0.1.0.md) | Historical first release notes |
+| [Shared v0.2 Compatibility Notes](../project/v0.2-compatibility.md) | Locale and webhook compatibility window |
 | [Ecosystem Importance](./project/ecosystem-importance.md) | Ecosystem value and limits |
 
 ## Repository Level Documents

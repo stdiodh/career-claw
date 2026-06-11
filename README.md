@@ -27,6 +27,10 @@ Set `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US` to generate separate dry-run artif
 Webhook URLs remain GitHub Secrets, while enabled locales and provider names are GitHub Variables.
 Additional locales are later community-maintained work.
 
+`ko-KR` is the supported default path today. It includes the Korean source assumptions, Discord webhook fallback names, legacy mirror artifact paths, and validation fixtures that existing fork users rely on.
+
+`en-US` is available as a v0.2 foundation for testing locale-aware prompts, artifacts, fixtures, and webhook naming. Its source/provider coverage is still experimental and should not be described as mature global support.
+
 ## OSS Readiness / Impact
 
 | Signal | Current evidence |
@@ -61,6 +65,23 @@ Additional locales are later community-maintained work.
 - Release baseline: fork-based GitHub Actions workflows with dry-run artifact review and optional Discord Webhook delivery.
 
 Workflow files are the source of truth for actual cron, inputs, and dispatch behavior.
+
+Release and compatibility details:
+
+- [v0.2.0 release baseline](./docs/project/release-v0.2.0.md)
+- [v0.2 compatibility notes](./docs/project/v0.2-compatibility.md)
+- [release checklist](./docs/project/release-checklist.md)
+
+## Provider Status
+
+| Provider | Locale role | Current status |
+| --- | --- | --- |
+| Naver News Search | `ko-KR` news enrichment | Optional credential-backed collection path for Korean news candidates |
+| RSS / Atom | `ko-KR`, `en-US` | Active source input through locale config and collector logic |
+| GitHub | Daily Backend OSS candidates | Active OSS candidate discovery and safety validation path |
+| Brave Search | `en-US` preset | v0.2 scaffold/foundation; optional credential warning exists, deeper integration remains roadmap work |
+
+Provider marker modules live under `scripts/search_providers/`, but the v0.2 collector still keeps much of the implementation in `scripts/collect-kr-feeds.py` for compatibility.
 
 ## How It Works
 
@@ -111,6 +132,13 @@ New forks should use the canonical workflow names, locale-specific artifact path
 - Career Feed does not auto-comment, open pull requests, assign issues, or change labels on external GitHub repositories.
 - Briefs are starting points for review, not final career advice.
 
+Not supported yet:
+
+- Mature provider abstraction for every provider module.
+- Fully mature `en-US` source quality comparable to the `ko-KR` default path.
+- Locale expansion beyond `ko-KR` and the experimental `en-US` foundation.
+- Hosted dashboards, persistent services, databases, Discord Gateway Bots, Slash Commands, account systems, or recruiting matching.
+
 ## Documentation
 
 | Language | Start | First setup |
@@ -148,6 +176,16 @@ Community expectations:
 | 한국어 | English |
 | --- | --- |
 | [행동 규범](./docs/kr/CODE_OF_CONDUCT.md) | [Code of Conduct](./docs/en/CODE_OF_CONDUCT.md) |
+
+Useful contributor entry points include documentation corrections, source suggestions, validation fixtures, provider expansion notes, issue triage improvements, and small compatibility fixes. Do not add fake usage metrics or claim adoption that is not evidenced in the repository.
+
+Before opening a PR, run the most relevant checks:
+
+```bash
+git diff --check
+python3 scripts/check-doc-format.py
+./scripts/validate.sh
+```
 
 ## License
 

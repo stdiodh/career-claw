@@ -18,6 +18,7 @@ DEFAULT_NEWS_DAILY_TIME = "09:05"
 DEFAULT_CAREER_WEEKLY_DAY = "MON"
 DEFAULT_CAREER_WEEKLY_TIME = "09:00"
 DEFAULT_OSS_RECENT_DAYS = 30
+DEFAULT_SCHEDULE_ENABLED = False
 DEFAULT_DISCORD_DELIVERY_ENABLED = False
 TOLERANCE_MINUTES = 30
 DAILY_WEEKDAYS = {0, 1, 2, 3, 4}
@@ -35,6 +36,7 @@ WORKFLOWS = {"backend_daily", "news_daily", "career_weekly"}
 
 @dataclass(frozen=True)
 class RuntimeConfig:
+    schedule_enabled: bool
     timezone_name: str
     timezone: ZoneInfo
     backend_daily_time: time
@@ -49,6 +51,7 @@ class RuntimeConfig:
 class GateDecision:
     should_run: bool
     reason: str
+    schedule_enabled: bool
     timezone_name: str
     target_time: str
     local_now: str
@@ -123,6 +126,14 @@ def read_config(env: Mapping[str, str]) -> RuntimeConfig:
     timezone_name = env_value(env, "CAREER_FEED_TIMEZONE", DEFAULT_TIMEZONE).strip()
     resolved_timezone = resolve_timezone(timezone_name)
     return RuntimeConfig(
+        schedule_enabled=parse_bool(
+            env_value(
+                env,
+                "CAREER_FEED_SCHEDULE_ENABLED",
+                str(DEFAULT_SCHEDULE_ENABLED).lower(),
+            ),
+            name="CAREER_FEED_SCHEDULE_ENABLED",
+        ),
         timezone_name=timezone_name,
         timezone=resolved_timezone,
         backend_daily_time=parse_time(
@@ -170,6 +181,19 @@ def target_for_workflow(workflow: str, config: RuntimeConfig) -> tuple[time, str
     raise ValueError(f"unsupported workflow: {workflow}")
 
 
+def raw_target_for_workflow(workflow: str, env: Mapping[str, str]) -> tuple[str, str]:
+    if workflow == "backend_daily":
+        return env_value(env, "CAREER_FEED_BACKEND_DAILY_TIME", DEFAULT_BACKEND_DAILY_TIME), ""
+    if workflow == "news_daily":
+        return env_value(env, "CAREER_FEED_NEWS_DAILY_TIME", DEFAULT_NEWS_DAILY_TIME), ""
+    if workflow == "career_weekly":
+        return (
+            env_value(env, "CAREER_FEED_CAREER_WEEKLY_TIME", DEFAULT_CAREER_WEEKLY_TIME),
+            env_value(env, "CAREER_FEED_CAREER_WEEKLY_DAY", DEFAULT_CAREER_WEEKLY_DAY),
+        )
+    raise ValueError(f"unsupported workflow: {workflow}")
+
+
 def format_local_now(value: datetime) -> str:
     return value.strftime("%Y-%m-%d %H:%M:%S %Z")
 
@@ -213,6 +237,21 @@ def make_decision(
         return GateDecision(
             should_run=True,
             reason="manual_dispatch",
+            schedule_enabled=config.schedule_enabled,
+            timezone_name=config.timezone_name,
+            target_time=target_time_text,
+            local_now=local_now_text,
+            local_date=local_now.date().isoformat(),
+            discord_delivery_enabled=config.discord_delivery_enabled,
+            oss_recent_days=config.oss_recent_days,
+            target_weekday=target_weekday,
+        )
+
+    if not config.schedule_enabled:
+        return GateDecision(
+            should_run=False,
+            reason="schedule_disabled",
+            schedule_enabled=config.schedule_enabled,
             timezone_name=config.timezone_name,
             target_time=target_time_text,
             local_now=local_now_text,
@@ -231,6 +270,7 @@ def make_decision(
         return GateDecision(
             should_run=False,
             reason="outside_schedule_window",
+            schedule_enabled=config.schedule_enabled,
             timezone_name=config.timezone_name,
             target_time=target_time_text,
             local_now=local_now_text,
@@ -246,6 +286,7 @@ def make_decision(
         return GateDecision(
             should_run=False,
             reason="daily_weekend",
+            schedule_enabled=config.schedule_enabled,
             timezone_name=config.timezone_name,
             target_time=target_time_text,
             local_now=local_now_text,
@@ -259,6 +300,7 @@ def make_decision(
         return GateDecision(
             should_run=False,
             reason="weekly_day_mismatch",
+            schedule_enabled=config.schedule_enabled,
             timezone_name=config.timezone_name,
             target_time=target_time_text,
             local_now=local_now_text,
@@ -271,12 +313,52 @@ def make_decision(
     return GateDecision(
         should_run=True,
         reason="scheduled_window_match",
+        schedule_enabled=config.schedule_enabled,
         timezone_name=config.timezone_name,
         target_time=target_time_text,
         local_now=local_now_text,
         local_date=target_date,
         discord_delivery_enabled=config.discord_delivery_enabled,
         oss_recent_days=config.oss_recent_days,
+        target_weekday=target_weekday,
+    )
+
+
+def parse_schedule_enabled(env: Mapping[str, str]) -> bool:
+    return parse_bool(
+        env_value(
+            env,
+            "CAREER_FEED_SCHEDULE_ENABLED",
+            str(DEFAULT_SCHEDULE_ENABLED).lower(),
+        ),
+        name="CAREER_FEED_SCHEDULE_ENABLED",
+    )
+
+
+def schedule_disabled_decision(
+    workflow: str,
+    env: Mapping[str, str],
+    now_utc: datetime,
+) -> GateDecision:
+    if now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=timezone.utc)
+    now_utc = now_utc.astimezone(timezone.utc)
+    target_time, target_weekday = raw_target_for_workflow(workflow, env)
+    timezone_name = env_value(env, "CAREER_FEED_TIMEZONE", DEFAULT_TIMEZONE)
+    try:
+        local_now = now_utc.astimezone(resolve_timezone(timezone_name))
+    except ValueError:
+        local_now = now_utc
+    return GateDecision(
+        should_run=False,
+        reason="schedule_disabled",
+        schedule_enabled=False,
+        timezone_name=timezone_name,
+        target_time=target_time,
+        local_now=format_local_now(local_now),
+        local_date=local_now.date().isoformat(),
+        discord_delivery_enabled=DEFAULT_DISCORD_DELIVERY_ENABLED,
+        oss_recent_days=DEFAULT_OSS_RECENT_DAYS,
         target_weekday=target_weekday,
     )
 
@@ -290,18 +372,11 @@ def invalid_config_decision(
     if now_utc.tzinfo is None:
         now_utc = now_utc.replace(tzinfo=timezone.utc)
     now_utc = now_utc.astimezone(timezone.utc)
-    target_time = ""
-    target_weekday = ""
-    if workflow == "backend_daily":
-        target_time = env_value(env, "CAREER_FEED_BACKEND_DAILY_TIME", DEFAULT_BACKEND_DAILY_TIME)
-    elif workflow == "news_daily":
-        target_time = env_value(env, "CAREER_FEED_NEWS_DAILY_TIME", DEFAULT_NEWS_DAILY_TIME)
-    elif workflow == "career_weekly":
-        target_time = env_value(env, "CAREER_FEED_CAREER_WEEKLY_TIME", DEFAULT_CAREER_WEEKLY_TIME)
-        target_weekday = env_value(env, "CAREER_FEED_CAREER_WEEKLY_DAY", DEFAULT_CAREER_WEEKLY_DAY)
+    target_time, target_weekday = raw_target_for_workflow(workflow, env)
     return GateDecision(
         should_run=False,
         reason=f"invalid_config:{message}",
+        schedule_enabled=DEFAULT_SCHEDULE_ENABLED,
         timezone_name=env_value(env, "CAREER_FEED_TIMEZONE", DEFAULT_TIMEZONE),
         target_time=target_time,
         local_now=now_utc.strftime("%Y-%m-%d %H:%M:%S UTC"),
@@ -322,6 +397,9 @@ def evaluate_gate(
     if now_utc is None:
         now_utc = datetime.now(tz=timezone.utc)
     try:
+        schedule_enabled = parse_schedule_enabled(env)
+        if event_name != "workflow_dispatch" and not schedule_enabled:
+            return schedule_disabled_decision(workflow, env, now_utc)
         config = read_config(env)
         return make_decision(
             workflow,
@@ -339,6 +417,7 @@ def write_github_output(decision: GateDecision, output_path: str) -> None:
     lines = {
         "should_run": str(decision.should_run).lower(),
         "reason": decision.reason,
+        "schedule_enabled": str(decision.schedule_enabled).lower(),
         "timezone": decision.timezone_name,
         "target_time": decision.target_time,
         "local_now": decision.local_now,
@@ -355,6 +434,7 @@ def write_github_output(decision: GateDecision, output_path: str) -> None:
 def print_decision(decision: GateDecision) -> None:
     print(f"should_run={str(decision.should_run).lower()}")
     print(f"reason={decision.reason}")
+    print(f"schedule_enabled={str(decision.schedule_enabled).lower()}")
     print(f"timezone={decision.timezone_name}")
     print(f"target_time={decision.target_time}")
     if decision.target_weekday:

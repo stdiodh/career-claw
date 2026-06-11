@@ -6,8 +6,12 @@ Career Feed를 fork한 뒤 GitHub Actions에서 첫 dry-run을 실행하고, gen
 
 이 문서 하나만 따라 하면 첫 dry-run 성공까지 도달하는 것을 목표로 합니다.
 
-상세 설정값은 [Runtime Configuration](runtime-configuration.md), 반복 운영 방법은 [Usage Guide](usage.md),
+상세 설정값은 [Runtime Configuration](runtime-configuration.md), webhook 이름은 [Webhook Setup](webhook-setup.md), 반복 운영 방법은 [Usage Guide](usage.md),
 OSS 후보 정책은 [OSS Candidate Policy](../policies/oss-candidate-policy.md)를 참고하세요.
+
+workflow YAML을 수정하지 않는 첫 점검만 필요하면 [Fresh Fork Smoke Test](fresh-fork-smoke-test.md)를 먼저 따라가세요.
+
+Actions를 활성화한 뒤 GitHub CLI를 쓰고 싶다면 선택 사항인 [CLI Setup](cli-setup.md) helper를 사용할 수 있습니다.
 
 ## Before You Start
 
@@ -16,15 +20,15 @@ OSS 후보 정책은 [OSS Candidate Policy](../policies/oss-candidate-policy.md)
 - GitHub 계정
 - fork한 Career Feed repository
 - OpenAI API key
-- Discord Webhook URL
-- 선택 사항: Naver 또는 Brave Search API credential
+- 선택 사항: 나중에 Discord 전송을 켤 때 사용할 Discord Webhook URL
+- 선택 사항: 나중에 source 보강에 사용할 Naver 또는 Brave Search API credential
 
 보안 기준:
 
 - 실제 API key, webhook URL, token, client secret은 README, docs, issue, PR, commit, Actions log, screenshot에 쓰지 않습니다.
 - API key, Discord Webhook URL, client secret은 GitHub Actions Secrets에 넣습니다.
-- timezone, 실행 시간, delivery flag처럼 노출되어도 되는 값만 GitHub Actions Variables에 넣습니다.
-- 첫 실행은 반드시 `dry_run=true`, `force_send=false`로 시작합니다.
+- Repository Variables는 첫 실행 필수 설정이 아니라 선택 override입니다.
+- 첫 실행은 `dry_run=true`, `force_send=false`로 시작합니다. Daily 수동 workflow의 `dry_run` 기본값은 `true`입니다.
 
 이 문서의 화면 이미지는 실제 GitHub 화면을 기준으로 합니다.
 권한이 필요한 Settings나 workflow input 화면은 fork repository에 로그인한 사용자에게만 보일 수 있습니다.
@@ -40,7 +44,7 @@ GitHub에서 `stdiodh/career-feed`를 fork합니다.
 2. 내 GitHub 계정 또는 organization 아래에 repository를 만듭니다.
 3. fork한 repository의 default branch를 기준으로 이후 단계를 진행합니다.
 
-처음에는 workflow YAML을 직접 수정하지 말고 Secrets와 Variables만 설정하세요.
+처음에는 workflow YAML을 직접 수정하지 말고 필수 Secret만 설정하세요.
 
 ## Step 2. Enable GitHub Actions
 
@@ -58,6 +62,8 @@ scheduled run은 default branch에서만 안정적으로 동작합니다.
 
 GitHub repository에서 `Settings > Secrets and variables > Actions > Secrets`로 이동합니다.
 
+CLI 대안: `gh auth login` 이후 clone한 fork에서 `scripts/setup-fork.sh --minimal`을 실행하거나 [CLI Setup](cli-setup.md)을 참고하세요.
+
 ![GitHub Actions Secrets 화면에서 New repository secret 버튼 위치](../../assets/getting-started/02-secrets-new-repository-secret.png)
 
 1. `Secrets` 탭을 선택합니다.
@@ -68,16 +74,24 @@ GitHub repository에서 `Settings > Secrets and variables > Actions > Secrets`�
 
 ![GitHub Actions Secrets의 Name, Secret 입력 필드와 Add secret 버튼](../../assets/getting-started/03-secrets-add-secret-form.png)
 
+첫 Backend Daily dry-run에는 아래 Secret 하나만 추가합니다.
+
 | Name | Required | Used by |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | Required | Brief generation |
-| `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | `ko-KR` Daily Backend delivery 시 Required | Daily Backend Brief |
-| `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | `en-US` Daily Backend delivery 시 Required | Daily Backend Brief |
-| `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | `ko-KR` News Daily delivery 시 Required | Dev News Daily |
-| `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | `en-US` News Daily delivery 시 Required | Dev News Daily |
+| `OPENAI_API_KEY` | 첫 dry-run에 Required | Brief generation |
+
+Discord 전송과 source 보강용 Secret은 나중에 추가해도 됩니다.
+
+| Name | Required | Used by |
+| --- | --- | --- |
+| `DISCORD_WEBHOOK_CAREER_FEED` | Optional generic delivery Secret | 모든 Discord delivery |
+| `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | Optional specific delivery Secret | Daily Backend Brief |
+| `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | Optional specific delivery Secret | Daily Backend Brief |
+| `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | Optional specific delivery Secret | Dev News Daily |
+| `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | Optional specific delivery Secret | Dev News Daily |
 | `DISCORD_WEBHOOK_KR_TECH_DAILY` | Compatibility fallback | `ko-KR` Daily Backend Brief |
 | `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Compatibility fallback | `ko-KR` Dev News Daily |
-| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Required for Career Radar delivery | Backend Career Site Radar |
+| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Optional specific delivery Secret | Backend Career Site Radar |
 | `NAVER_CLIENT_ID` | Optional | `ko-KR` source integration |
 | `NAVER_CLIENT_SECRET` | Optional | `ko-KR` source integration |
 | `BRAVE_SEARCH_API_KEY` | Optional | `en-US` source integration |
@@ -85,41 +99,11 @@ GitHub repository에서 `Settings > Secrets and variables > Actions > Secrets`�
 
 placeholder가 필요하면 `your-openai-api-key`, `your-discord-webhook-url`, `your-naver-client-id`처럼 명확히 가짜 값만 사용합니다.
 
-## Step 4. Add GitHub Actions Variables
+## Step 4. Confirm First Dry-run Defaults
 
-GitHub repository에서 `Settings > Secrets and variables > Actions > Variables`로 이동합니다.
+첫 dry-run에는 repository Variables가 필요하지 않습니다.
 
-![GitHub Actions Variables 탭과 New repository variable 버튼](../../assets/getting-started/04-variables-tab-new-variable.png)
-
-1. `Variables` 탭을 선택합니다.
-2. `Repository variables` 영역의 `New repository variable` 버튼을 누릅니다.
-3. `Name`에는 아래 표의 variable 이름을 입력합니다.
-4. `Value`에는 설정값을 입력합니다.
-5. `Add variable` 버튼을 누릅니다.
-
-![GitHub Actions Variables의 Name, Value 입력 필드와 Add variable 버튼](../../assets/getting-started/05-variables-add-variable-form.png)
-
-| Name | Required | Default | First value |
-| --- | --- | --- | --- |
-| `CAREER_FEED_ENABLED_LOCALES` | Optional | `ko-KR` | `ko-KR` |
-| `CAREER_FEED_DEFAULT_LOCALE` | Optional | `ko-KR` | `ko-KR` |
-| `CAREER_FEED_SEARCH_PROVIDERS_KO_KR` | Optional | `naver,rss,github` | `naver,rss,github` |
-| `CAREER_FEED_SEARCH_PROVIDERS_EN_US` | Optional | `brave,rss,github` | `brave,rss,github` |
-| `CAREER_FEED_TIMEZONE` | Optional | `Asia/Seoul` | `Asia/Seoul` |
-| `CAREER_FEED_BACKEND_DAILY_TIME` | Optional | `09:00` | `09:00` |
-| `CAREER_FEED_NEWS_DAILY_TIME` | Optional | `09:05` | `09:05` |
-| `CAREER_FEED_CAREER_WEEKLY_DAY` | Optional | `MON` | `MON` |
-| `CAREER_FEED_CAREER_WEEKLY_TIME` | Optional | `09:00` | `09:00` |
-| `CAREER_FEED_OSS_RECENT_DAYS` | Optional | `30` | `30` |
-| `CAREER_FEED_DISCORD_DELIVERY_ENABLED` | Optional | `false` | `false` |
-
-첫 dry-run 전에는 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`를 유지하세요.
-이 값이 `true`가 아니면 `dry_run=false`로 실행하더라도 Discord 전송은 시도되지 않습니다.
-
-시간은 `HH:MM`, 요일은 `MON`부터 `SUN`, timezone은 `Asia/Seoul` 같은 IANA timezone 이름을 사용합니다.
-
-첫 fork 설정은 `CAREER_FEED_ENABLED_LOCALES=ko-KR` 기준으로 시작합니다.
-나중에 `en-US` v0.2 foundation을 테스트하려면 `ko-KR,en-US`로 바꾸고, 전송을 켜기 전에 `en-US`용 Discord webhook Secret을 함께 등록합니다.
+위에서 추가한 `OPENAI_API_KEY` Secret만 사용하고, Discord delivery는 아직 설정하지 않으며, 기본 `ko-KR` locale을 사용합니다.
 
 ## Step 5. Run Workflow with Dry Run
 
@@ -156,6 +140,8 @@ Daily Backend Brief에서 먼저 볼 파일:
 - `reports/ops/ko-KR/backend-daily-run-summary.md`
 - `reports/candidates/ko-KR/oss-contribution-opportunities.json`
 
+artifact에 `reports/candidates/ko-KR/kr-oss-contribution-opportunities.json`가 함께 있으면 그 파일도 확인합니다.
+
 확인할 내용:
 
 - generated Markdown이 기대한 언어와 섹션으로 생성되었는지 확인합니다.
@@ -165,13 +151,56 @@ Daily Backend Brief에서 먼저 볼 파일:
 
 validation이 실패하면 Discord delivery를 켜지 말고 report의 error code와 관련 URL을 먼저 확인하세요.
 
+## Optional GitHub Actions Variables
+
+첫 dry-run에서는 이 섹션을 건너뜁니다.
+
+Repository Variables는 schedule, delivery, locale, provider, timezone, target time 동작을 바꾸는 선택 override입니다.
+
+GitHub repository에서 `Settings > Secrets and variables > Actions > Variables`로 이동합니다.
+
+![GitHub Actions Variables 탭과 New repository variable 버튼](../../assets/getting-started/04-variables-tab-new-variable.png)
+
+1. `Variables` 탭을 선택합니다.
+2. `Repository variables` 영역의 `New repository variable` 버튼을 누릅니다.
+3. `Name`에는 아래 표의 variable 이름을 입력합니다.
+4. `Value`에는 설정값을 입력합니다.
+5. `Add variable` 버튼을 누릅니다.
+
+![GitHub Actions Variables의 Name, Value 입력 필드와 Add variable 버튼](../../assets/getting-started/05-variables-add-variable-form.png)
+
+| Name | Required | Default | First value |
+| --- | --- | --- | --- |
+| `CAREER_FEED_ENABLED_LOCALES` | Optional | `ko-KR` | `ko-KR` |
+| `CAREER_FEED_DEFAULT_LOCALE` | Optional | `ko-KR` | `ko-KR` |
+| `CAREER_FEED_SEARCH_PROVIDERS_KO_KR` | Optional | `naver,rss,github` | `naver,rss,github` |
+| `CAREER_FEED_SEARCH_PROVIDERS_EN_US` | Optional | `brave,rss,github` | `brave,rss,github` |
+| `CAREER_FEED_TIMEZONE` | Optional | `Asia/Seoul` | `Asia/Seoul` |
+| `CAREER_FEED_BACKEND_DAILY_TIME` | Optional | `09:00` | `09:00` |
+| `CAREER_FEED_NEWS_DAILY_TIME` | Optional | `09:05` | `09:05` |
+| `CAREER_FEED_CAREER_WEEKLY_DAY` | Optional | `MON` | `MON` |
+| `CAREER_FEED_CAREER_WEEKLY_TIME` | Optional | `09:00` | `09:00` |
+| `CAREER_FEED_OSS_RECENT_DAYS` | Optional | `30` | `30` |
+| `CAREER_FEED_SCHEDULE_ENABLED` | Optional | `false` | `true` |
+| `CAREER_FEED_DISCORD_DELIVERY_ENABLED` | Optional | `false` | `false` |
+
+나중에 `CAREER_FEED_DISCORD_DELIVERY_ENABLED`를 만들었다면 artifact 검토가 통과할 때까지 `false`로 둡니다.
+이 값이 `true`가 아니면 `dry_run=false`로 실행하더라도 Discord 전송은 시도되지 않습니다.
+
+시간은 `HH:MM`, 요일은 `MON`부터 `SUN`, timezone은 `Asia/Seoul` 같은 IANA timezone 이름을 사용합니다.
+
+첫 fork는 기본값만으로 `ko-KR` locale을 사용합니다.
+나중에 `en-US` v0.2 foundation을 테스트하려면 `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US`로 설정하고, 전송을 켜기 전에 artifact를 먼저 검토합니다.
+
+반복 scheduled generation이 필요할 때만 `CAREER_FEED_SCHEDULE_ENABLED=true`를 설정합니다. 수동 `workflow_dispatch` 실행은 schedule이 꺼져 있어도 동작합니다.
+
 ## Step 7. Enable Discord Delivery
 
 dry-run 결과가 맞을 때만 Discord delivery를 켭니다.
 
 ![CAREER_FEED_DISCORD_DELIVERY_ENABLED variable 설정 위치](../../assets/getting-started/08-enable-discord-delivery-variable.png)
 
-1. 필요한 Discord webhook Secret이 등록되어 있는지 확인합니다.
+1. `DISCORD_WEBHOOK_CAREER_FEED` 또는 workflow-specific Discord webhook Secret을 등록합니다.
 2. `Settings > Secrets and variables > Actions > Variables`로 이동합니다.
 3. `CAREER_FEED_DISCORD_DELIVERY_ENABLED` 값을 `true`로 변경합니다.
 4. GitHub `Actions` 탭에서 Daily workflow를 다시 수동 실행합니다.
@@ -184,21 +213,20 @@ Discord 전송이 실제로 일어나려면 아래 조건을 모두 만족해야
 
 1. `dry_run=false`
 2. `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`
-3. 해당 workflow에 필요한 Discord webhook Secret 존재
+3. Discord webhook Secret 존재
 4. generated brief validation 통과
 5. runtime gate 통과
 6. delivery lock 또는 중복 방지 정책 통과
 
 dry-run에서는 Discord 메시지가 오지 않는 것이 정상입니다.
 
+specific webhook Secret이 legacy fallback보다 우선하고, legacy fallback이 `DISCORD_WEBHOOK_CAREER_FEED`보다 우선합니다.
+
 ## Success Checklist
 
 - [ ] Repository를 fork했습니다.
 - [ ] fork에서 GitHub Actions를 활성화했습니다.
 - [ ] `OPENAI_API_KEY`를 Secrets에 등록했습니다.
-- [ ] 필요한 Discord webhook Secret을 Secrets에 등록했습니다.
-- [ ] runtime Variables를 확인했습니다.
-- [ ] 첫 dry-run 전 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`를 유지했습니다.
 - [ ] `Backend Daily Brief`를 `dry_run=true`, `force_send=false`로 실행했습니다.
 - [ ] generated brief artifact를 확인했습니다.
 - [ ] validation report가 통과했습니다.
@@ -224,7 +252,7 @@ dry-run에서는 Discord 메시지가 오지 않는 것이 정상입니다.
 
 1. `dry_run` 값이 `true`였는지 확인합니다.
 2. `CAREER_FEED_DISCORD_DELIVERY_ENABLED`가 `true`인지 확인합니다.
-3. webhook Secret 이름이 workflow가 기대하는 이름과 같은지 확인합니다.
+3. `DISCORD_WEBHOOK_CAREER_FEED` 또는 workflow-specific webhook Secret이 있는지 확인합니다.
 4. validation report가 통과했는지 확인합니다.
 5. runtime gate log에서 `should_run`과 `reason`을 확인합니다.
 6. delivery lock log에서 이미 같은 날짜에 전송되었는지 확인합니다.
@@ -251,6 +279,8 @@ dry-run에서는 Discord 메시지가 오지 않는 것이 정상입니다.
 
 ## Related Documents
 
+- [CLI Setup](cli-setup.md)
+- [Fresh Fork Smoke Test](fresh-fork-smoke-test.md)
 - [Usage Guide](usage.md)
 - [Runtime Configuration](runtime-configuration.md)
 - [Daily Backend Brief](../operations/daily-backend-brief.md)

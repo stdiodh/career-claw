@@ -94,6 +94,7 @@ grep -q 'should-run-now.py --workflow backend_daily' .github/workflows/backend-d
 grep -q 'CAREER_FEED_TIMEZONE' .github/workflows/backend-daily.yml
 grep -q 'CAREER_FEED_BACKEND_DAILY_TIME' .github/workflows/backend-daily.yml
 grep -q 'CAREER_FEED_OSS_RECENT_DAYS' .github/workflows/backend-daily.yml
+grep -q 'CAREER_FEED_SCHEDULE_ENABLED' .github/workflows/backend-daily.yml
 grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED' .github/workflows/backend-daily.yml
 grep -q 'discord_delivery_disabled' .github/workflows/backend-daily.yml
 grep -q 'contents: write' .github/workflows/backend-daily.yml
@@ -103,6 +104,7 @@ grep -q 'timeout-minutes: 75' .github/workflows/backend-daily.yml
 grep -q 'DISCORD_WEBHOOK_KR_TECH_DAILY' .github/workflows/backend-daily.yml
 grep -q 'DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY' .github/workflows/backend-daily.yml
 grep -q 'DISCORD_WEBHOOK_EN_US_BACKEND_DAILY' .github/workflows/backend-daily.yml
+grep -q 'DISCORD_WEBHOOK_CAREER_FEED' .github/workflows/backend-daily.yml
 grep -q 'CAREER_FEED_ENABLED_LOCALES' .github/workflows/backend-daily.yml
 grep -q 'CAREER_FEED_SEARCH_PROVIDERS_KO_KR' .github/workflows/backend-daily.yml
 grep -q 'CAREER_FEED_SEARCH_PROVIDERS_EN_US' .github/workflows/backend-daily.yml
@@ -167,6 +169,7 @@ grep -q 'should-run-now.py --workflow news_daily' .github/workflows/dev-news-dai
 grep -q 'CAREER_FEED_TIMEZONE' .github/workflows/dev-news-daily.yml
 grep -q 'CAREER_FEED_NEWS_DAILY_TIME' .github/workflows/dev-news-daily.yml
 grep -q 'CAREER_FEED_OSS_RECENT_DAYS' .github/workflows/dev-news-daily.yml
+grep -q 'CAREER_FEED_SCHEDULE_ENABLED' .github/workflows/dev-news-daily.yml
 grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED' .github/workflows/dev-news-daily.yml
 grep -q 'discord_delivery_disabled' .github/workflows/dev-news-daily.yml
 grep -q 'contents: read' .github/workflows/dev-news-daily.yml
@@ -179,6 +182,7 @@ grep -q 'timeout-minutes: 75' .github/workflows/dev-news-daily.yml
 grep -q 'DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY' .github/workflows/dev-news-daily.yml
 grep -q 'DISCORD_WEBHOOK_KO_KR_NEWS_DAILY' .github/workflows/dev-news-daily.yml
 grep -q 'DISCORD_WEBHOOK_EN_US_NEWS_DAILY' .github/workflows/dev-news-daily.yml
+grep -q 'DISCORD_WEBHOOK_CAREER_FEED' .github/workflows/dev-news-daily.yml
 grep -q 'CAREER_FEED_ENABLED_LOCALES' .github/workflows/dev-news-daily.yml
 grep -q 'CAREER_FEED_SEARCH_PROVIDERS_KO_KR' .github/workflows/dev-news-daily.yml
 grep -q 'CAREER_FEED_SEARCH_PROVIDERS_EN_US' .github/workflows/dev-news-daily.yml
@@ -247,7 +251,9 @@ grep -q 'Check runtime schedule' .github/workflows/backend-career-weekly.yml
 grep -q 'should-run-now.py --workflow career_weekly' .github/workflows/backend-career-weekly.yml
 grep -q 'CAREER_FEED_CAREER_WEEKLY_DAY' .github/workflows/backend-career-weekly.yml
 grep -q 'CAREER_FEED_CAREER_WEEKLY_TIME' .github/workflows/backend-career-weekly.yml
+grep -q 'CAREER_FEED_SCHEDULE_ENABLED' .github/workflows/backend-career-weekly.yml
 grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED' .github/workflows/backend-career-weekly.yml
+grep -q 'DISCORD_WEBHOOK_CAREER_FEED' .github/workflows/backend-career-weekly.yml
 grep -q 'manual_delivery_disabled' .github/workflows/backend-career-weekly.yml
 grep -q 'discord_delivery_disabled' .github/workflows/backend-career-weekly.yml
 grep -q 'render-weekly-career-site-radar.py' .github/workflows/backend-career-weekly.yml
@@ -376,6 +382,7 @@ required_files=(
   "docs/kr/examples/career-site-radar.example.md"
   "docs/kr/examples/daily-backend-brief.example.md"
   "docs/kr/examples/korea-dev-ai-news-daily.example.md"
+  "docs/kr/getting-started/cli-setup.md"
   "docs/kr/getting-started/fork-setup.md"
   "docs/kr/getting-started/runtime-configuration.md"
   "docs/kr/getting-started/sample-output.md"
@@ -411,6 +418,7 @@ required_files=(
   "docs/en/examples/career-site-radar.example.md"
   "docs/en/examples/daily-backend-brief.example.md"
   "docs/en/examples/korea-dev-ai-news-daily.example.md"
+  "docs/en/getting-started/cli-setup.md"
   "docs/en/getting-started/fork-setup.md"
   "docs/en/getting-started/runtime-configuration.md"
   "docs/en/getting-started/sample-output.md"
@@ -465,6 +473,7 @@ required_files=(
   "scripts/search_providers/rss.py"
   "scripts/select-ps-problem.py"
   "scripts/send-discord.py"
+  "scripts/setup-fork.sh"
   "scripts/should-run-now.py"
   "scripts/update-oss-progress.py"
   "scripts/update-ps-progress.py"
@@ -499,6 +508,7 @@ required_files=(
   "tests/fixtures/oss-recency-candidates.json"
   "tests/fixtures/candidates-empty/kr-oss-contribution-opportunities.json"
   "tests/test_daily_oss_contract.py"
+  "tests/test_locale_config.py"
   "tests/test_oss_reliability_gate.py"
   "tests/test_should_run_now.py"
 )
@@ -715,7 +725,9 @@ grep -q 'created_within_recent_window' scripts/validate-career-feed-brief.py
 grep -q 'CAREER_FEED_OSS_RECENT_DAYS' docs/kr/policies/oss-candidate-policy.md
 grep -q 'created_at' docs/kr/policies/oss-candidate-policy.md
 grep -q 'Fork Setup Guide' docs/kr/getting-started/fork-setup.md
-grep -q 'CAREER_FEED_DISCORD_DELIVERY_ENABLED=false' docs/kr/getting-started/fork-setup.md
+grep -q 'OPENAI_API_KEY' docs/kr/getting-started/fork-setup.md
+grep -q '첫 dry-run에는 repository Variables가 필요하지 않습니다' docs/kr/getting-started/fork-setup.md
+grep -q 'DISCORD_WEBHOOK_CAREER_FEED' docs/kr/getting-started/fork-setup.md
 grep -q 'OSS_ISSUE_URL_NOT_IN_SAFE_CANDIDATES' docs/kr/getting-started/fork-setup.md
 grep -q 'docs/kr/getting-started/fork-setup.md' README.md
 grep -q 'docs/en/getting-started/fork-setup.md' README.md
@@ -1300,6 +1312,7 @@ python3 scripts/validate-career-feed-brief.py tests/fixtures/kr-backend-career-w
 python3 scripts/validate-career-feed-brief.py tests/fixtures/en-us-backend-daily-valid.md --type daily-tech --locale en-US
 python3 scripts/validate-career-feed-brief.py tests/fixtures/en-us-news-daily-valid.md --type daily-news --locale en-US
 python3 tests/test_daily_oss_contract.py
+python3 tests/test_locale_config.py
 python3 tests/test_oss_reliability_gate.py
 python3 tests/test_should_run_now.py
 python3 tests/test_weekly_career_collector.py

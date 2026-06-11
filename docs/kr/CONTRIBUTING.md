@@ -108,6 +108,12 @@ Blank issue는 닫혀 있으므로 가장 가까운 전용 템플릿을 선택�
 
 요청한 범위와 직접 관련된 파일만 수정해 주세요.
 
+fake metric, 확인되지 않은 adoption claim, production usage claim을 추가하지 마세요.
+
+`en-US`는 v0.2 foundation / experimental preset입니다. 구현 근거가 바뀌기 전까지 mature global support로 설명하지 마세요.
+
+v0.2.x 동안 `ko-KR` legacy fallback behavior를 보존합니다. 제거가 필요하다면 이후 breaking release 계획으로 별도 논의해 주세요.
+
 코드나 script를 변경했다면 가능한 범위에서 관련 검증 명령을 함께 적어 주세요.
 
 generated brief, validator, Discord delivery 정책을 바꾸는 경우 dry-run artifact 또는 validation report를 확인해 주세요.
@@ -127,9 +133,11 @@ cd career-feed
 문서만 수정했다면 다음 명령도 함께 확인해 주세요.
 
 ```bash
-python3 scripts/check-doc-format.py
 git diff --check
+python3 scripts/check-doc-format.py
 ```
+
+locale routing을 바꿨다면 `scripts/locale_config.py paths`로 `ko-KR`와 `en-US` 경로도 확인해 주세요.
 
 PR을 열면 Pull Request Checks workflow가 자동으로 빠른 파일 검사와 전체 `./scripts/validate.sh` 검사를 실행합니다.
 

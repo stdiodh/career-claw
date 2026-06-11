@@ -6,32 +6,32 @@ This roadmap describes direction, not a delivery promise.
 
 Items below are planned or being explored. They should not be described as current behavior until implemented and validated.
 
-## v0.1.x
+## Current Baseline
 
-- Improve source configuration examples.
-- Add more Java/Kotlin backend source presets.
-- Improve validation report readability.
-- Add more sample output fixtures.
-- Improve demo screenshots and redaction guidance.
-- Add contributor-friendly test fixtures.
-- Clarify per-workflow setup examples for fork users.
+현재 baseline은 `v0.2.0`입니다.
 
-## v0.2.x
+Career Feed는 현재 fork-based GitHub Actions workflow, dry-run artifact, validation, optional Discord Webhook delivery, `ko-KR` 기본 지원, `en-US` foundation / experimental preset을 제공합니다.
 
-- `ko-KR`와 experimental `en-US` preset을 대상으로 locale-aware engine foundation을 만든다.
-- workflow YAML 수정 없이 `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US`로 locale별 dry-run artifact를 생성한다.
-- locale별 config를 `configs/locales/{locale}/` 아래에 둔다.
-- daily artifact를 `reports/briefs/{locale}/`, `reports/candidates/{locale}/` 아래에 쓴다.
-- v0.2 compatibility 기간에는 `ko-KR` legacy artifact mirror를 유지한다.
-- `naver,rss,github`, `brave,rss,github` 같은 provider preset을 도입한다.
-- fork 커뮤니티용 예시와 contributor onboarding을 보강한다.
+## v0.2.1 Patch Candidates
 
-## Later
+- v0.2 behavior 문서 보정
+- locale config와 fixture validation hardening
+- 작은 fixture 수정
+- issue template cleanup
+- release note correction
+- webhook fallback과 artifact mirror compatibility clarification
+- `ko-KR` behavior를 보존하는 safe bug fix
 
-- Explore optional dashboard summary for local artifacts.
-- Support more community-maintained source lists and locales.
-- Improve duplicate delivery protection beyond the initial lock model.
-- Explore additional sample briefs for study groups and mentoring contexts.
+## v0.3.0 Feature Candidates
+
+- deeper `en-US` provider maturity
+- source policy review 이후 additional provider implementation
+- richer provider output validation
+- improved source quality scoring
+- better OSS candidate filtering
+- review capacity가 있을 때만 `ko-KR`/`en-US` 외 locale expansion
+- optional workflow improvements
+- better artifact summaries
 
 ## Out of scope
 
@@ -46,6 +46,12 @@ The following are not planned for the current operating model:
 - storing secrets in repository files
 - hosted multi-tenant SaaS dashboard
 - Discord Gateway Bot or Slash Command service
+
+## Shared Planning Docs
+
+- [Shared Roadmap](../../project/roadmap.md)
+- [v0.2.1 Plan](../../project/v0.2.1-plan.md)
+- [v0.3.0 Roadmap](../../project/v0.3.0-roadmap.md)
 
 ## How to suggest roadmap changes
 

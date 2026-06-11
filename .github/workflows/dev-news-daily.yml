@@ -9,7 +9,7 @@ on:
         description: "Generate and validate artifacts without sending Discord"
         required: false
         type: boolean
-        default: false
+        default: true
       force_send:
         description: "Send even if today's delivery lock exists"
         required: false
@@ -69,6 +69,7 @@ jobs:
           CAREER_FEED_CAREER_WEEKLY_DAY: ${{ vars.CAREER_FEED_CAREER_WEEKLY_DAY }}
           CAREER_FEED_CAREER_WEEKLY_TIME: ${{ vars.CAREER_FEED_CAREER_WEEKLY_TIME }}
           CAREER_FEED_OSS_RECENT_DAYS: ${{ vars.CAREER_FEED_OSS_RECENT_DAYS }}
+          CAREER_FEED_SCHEDULE_ENABLED: ${{ vars.CAREER_FEED_SCHEDULE_ENABLED }}
           CAREER_FEED_DISCORD_DELIVERY_ENABLED: ${{ vars.CAREER_FEED_DISCORD_DELIVERY_ENABLED }}
           CAREER_FEED_ENABLED_LOCALES: ${{ vars.CAREER_FEED_ENABLED_LOCALES }}
           CAREER_FEED_DEFAULT_LOCALE: ${{ vars.CAREER_FEED_DEFAULT_LOCALE }}
@@ -162,6 +163,7 @@ jobs:
           DISCORD_WEBHOOK_KO_KR_NEWS_DAILY: ${{ secrets.DISCORD_WEBHOOK_KO_KR_NEWS_DAILY }}
           DISCORD_WEBHOOK_EN_US_NEWS_DAILY: ${{ secrets.DISCORD_WEBHOOK_EN_US_NEWS_DAILY }}
           DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY: ${{ secrets.DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY }}
+          DISCORD_WEBHOOK_CAREER_FEED: ${{ secrets.DISCORD_WEBHOOK_CAREER_FEED }}
         run: |
           set -euo pipefail
 
@@ -178,13 +180,13 @@ jobs:
           webhook_available="false"
 
           if [ "${LOCALE}" = "ko-KR" ]; then
-            webhook_secret_name="DISCORD_WEBHOOK_KO_KR_NEWS_DAILY or DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY"
-            if [ -n "${DISCORD_WEBHOOK_KO_KR_NEWS_DAILY:-${DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY:-}}" ]; then
+            webhook_secret_name="DISCORD_WEBHOOK_KO_KR_NEWS_DAILY or DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY or DISCORD_WEBHOOK_CAREER_FEED"
+            if [ -n "${DISCORD_WEBHOOK_KO_KR_NEWS_DAILY:-${DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY:-${DISCORD_WEBHOOK_CAREER_FEED:-}}}" ]; then
               webhook_available="true"
             fi
           elif [ "${LOCALE}" = "en-US" ]; then
-            webhook_secret_name="DISCORD_WEBHOOK_EN_US_NEWS_DAILY"
-            if [ -n "${DISCORD_WEBHOOK_EN_US_NEWS_DAILY:-}" ]; then
+            webhook_secret_name="DISCORD_WEBHOOK_EN_US_NEWS_DAILY or DISCORD_WEBHOOK_CAREER_FEED"
+            if [ -n "${DISCORD_WEBHOOK_EN_US_NEWS_DAILY:-${DISCORD_WEBHOOK_CAREER_FEED:-}}" ]; then
               webhook_available="true"
             fi
           fi
@@ -493,12 +495,13 @@ jobs:
           DISCORD_WEBHOOK_KO_KR_NEWS_DAILY: ${{ secrets.DISCORD_WEBHOOK_KO_KR_NEWS_DAILY }}
           DISCORD_WEBHOOK_EN_US_NEWS_DAILY: ${{ secrets.DISCORD_WEBHOOK_EN_US_NEWS_DAILY }}
           DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY: ${{ secrets.DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY }}
+          DISCORD_WEBHOOK_CAREER_FEED: ${{ secrets.DISCORD_WEBHOOK_CAREER_FEED }}
         run: |
           set -euo pipefail
           if [ "${LOCALE}" = "ko-KR" ]; then
-            export DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_KO_KR_NEWS_DAILY:-${DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY:-}}"
+            export DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_KO_KR_NEWS_DAILY:-${DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY:-${DISCORD_WEBHOOK_CAREER_FEED:-}}}"
           elif [ "${LOCALE}" = "en-US" ]; then
-            export DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_EN_US_NEWS_DAILY:-}"
+            export DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_EN_US_NEWS_DAILY:-${DISCORD_WEBHOOK_CAREER_FEED:-}}"
           fi
           python3 scripts/send-discord.py "${REPORT_FILE}"
 

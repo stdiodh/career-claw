@@ -10,8 +10,10 @@
 
 ## Release checklist
 
-v0.1.0 공개 릴리스 전에는 [Release Checklist](../project/release-checklist.md)를 따라 CHANGELOG, release note, docs link, secret safety,
+릴리스 전에는 [Release Checklist](../project/release-checklist.md)와 shared [v0.2 release checklist](../../project/release-checklist.md)를 따라 CHANGELOG, release note, docs link, secret safety, compatibility note,
 validation artifact를 확인합니다.
+
+v0.2.x에서는 `ko-KR` legacy fallback behavior를 보존하고, 구현 근거가 바뀌기 전까지 `en-US`를 foundation/experimental preset으로 설명합니다.
 
 ## Validation-before-send checklist
 

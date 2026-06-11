@@ -4,9 +4,9 @@
 
 ## Supported versions
 
-`v0.1.x` is the initial open-source release line.
+`v0.2.x` is the current release line.
 
-Security guidance applies to the current default branch and the latest v0.1.x release while the project is in early public development.
+Security guidance applies to the current default branch and the latest v0.2.x release while the project is in early public development.
 
 ## Supported scope
 
@@ -38,6 +38,7 @@ Daily Backend Brief, Dev News Daily, Backend Career Site Radar, PS 진행 표시
 - Discord Webhook URL
 - GitHub token
 - Naver API credentials
+- Brave Search API key
 - OpenAI organization ID
 - 개인 이메일
 - 기타 credentials
@@ -81,7 +82,9 @@ Discord Webhook URL은 secret입니다.
 
 노출되었다면 Discord에서 webhook을 폐기하고 새 URL을 발급하세요.
 
-첫 설정에서는 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`와 `dry_run=true`로 전송을 막고 artifact부터 확인하세요.
+첫 설정에서는 별도 delivery Variable을 만들지 않아도 기본값이 전송을 막습니다. `dry_run=true`로 artifact부터 확인하세요.
+
+v0.2.x 동안 `ko-KR` daily workflow는 legacy webhook fallback 이름을 지원합니다. 이 값도 GitHub Secrets에만 저장하고, breaking release 계획 없이 fallback behavior를 제거하지 않습니다.
 
 ## GitHub Actions logs
 
@@ -116,6 +119,7 @@ Secret 노출이 의심되면 우선 credential 폐기와 교체를 진행합니
 - Secret 값을 공개 issue에 붙여 넣지 않습니다.
 - API key, token, webhook URL을 commit하지 않습니다.
 - Discord Webhook URL을 스크린샷이나 로그에 노출하지 않습니다.
+- 노출된 Discord Webhook은 Discord에서 폐기하고 새 URL로 교체합니다.
 - GitHub Actions log에 민감 정보가 출력되지 않도록 합니다.
 - 외부 저장소 자동 댓글, 자동 PR, 자동 assign, 자동 label 변경을 추가하지 않습니다.
 - OpenAI API output은 maintainer가 검토 가능한 초안으로만 사용합니다.

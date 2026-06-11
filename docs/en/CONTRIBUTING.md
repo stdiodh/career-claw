@@ -42,13 +42,18 @@ Blank issues are disabled, so choose the closest structured template.
 - Keep diffs focused.
 - Do not commit generated `reports/` output.
 - Do not hardcode secrets or webhook URLs.
+- Do not add fake metrics, unverified adoption claims, or production-usage claims.
+- Do not describe `en-US` as mature global support while it remains a v0.2 foundation / experimental preset.
+- Preserve `ko-KR` legacy fallback behavior during v0.2.x unless a later breaking-release plan explicitly changes it.
 - Update validation when document paths or required files change.
 
 ## Development setup
 
 Pull Request Checks run automatically when a PR is opened or updated.
 
-Before opening a PR, run `python3 scripts/check-doc-format.py`, `git diff --check`, and `./scripts/validate.sh` locally when possible.
+Before opening a PR, run `git diff --check`, `python3 scripts/check-doc-format.py`, and `./scripts/validate.sh` locally when possible.
+
+If a change affects locale routing, also run the relevant `scripts/locale_config.py paths` checks for `ko-KR` and `en-US`.
 
 ## Commit convention
 

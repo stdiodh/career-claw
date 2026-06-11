@@ -10,6 +10,7 @@ body:
         버그를 보고해 주셔서 감사합니다.
 
         API key, token, Discord webhook URL, private Discord 정보, 개인 식별자는 절대 붙여 넣지 마세요.
+        로그와 screenshot은 먼저 redaction한 뒤 필요한 부분만 공유해 주세요.
   - type: dropdown
     id: workflow
     attributes:
@@ -21,6 +22,17 @@ body:
         - Mark PS Solved
         - Local validation
         - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: locale
+    attributes:
+      label: 관련 locale
+      options:
+        - ko-KR
+        - en-US
+        - locale-independent
+        - unknown
     validations:
       required: true
   - type: dropdown
@@ -39,6 +51,24 @@ body:
     attributes:
       label: dry-run 또는 delivery 입력값
       placeholder: 예) dry_run=true, force_send=false
+    validations:
+      required: false
+  - type: input
+    id: artifact-path
+    attributes:
+      label: 관련 artifact path
+      description: 가능하면 실패한 report, candidate, ops artifact 경로를 적어 주세요.
+      placeholder: 예) reports/ops/ko-KR/news-daily-validation-report.md
+    validations:
+      required: false
+  - type: textarea
+    id: validation-output
+    attributes:
+      label: 검증 명령과 출력
+      description: 실행한 명령과 실패한 마지막 부분을 붙여 주세요. secret은 제거해 주세요.
+      placeholder: |
+        command: ./scripts/validate.sh
+        output: ...
     validations:
       required: false
   - type: textarea
@@ -66,5 +96,5 @@ body:
           required: false
         - label: generated artifact를 확인했습니다.
           required: false
-        - label: secret, webhook URL, private identifier를 제거했습니다.
+        - label: secret, webhook URL, GitHub token, OpenAI API key, private identifier를 제거했습니다.
           required: true

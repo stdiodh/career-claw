@@ -52,7 +52,7 @@ First-time setup steps live in [Fork Setup Guide](fork-setup.md). Supported Secr
 
 GitHub cron cannot read repository Variables. Workflows wake up periodically and run `scripts/should-run-now.py` to decide whether to continue.
 
-Manual `workflow_dispatch` runs are not blocked by the runtime time window.
+Manual `workflow_dispatch` runs are not blocked by `CAREER_FEED_SCHEDULE_ENABLED` or the runtime time window.
 
 ## Running local validation
 

@@ -11,6 +11,7 @@ body:
         지역 또는 언어 확장은 검토용 제안으로 받습니다.
 
         이 이슈를 연다고 해서 새 workflow나 새 지역 지원이 바로 추가되지는 않습니다.
+        v0.2.0 현재 지원은 ko-KR 기본 지원과 en-US foundation입니다.
   - type: input
     id: region-locale
     attributes:
@@ -24,6 +25,13 @@ body:
     attributes:
       label: timezone
       placeholder: 예) Asia/Tokyo
+    validations:
+      required: true
+  - type: textarea
+    id: provider-plan
+    attributes:
+      label: provider 또는 source 수집 방향
+      description: RSS, 공식 문서, 검색 API, GitHub 등 어떤 provider가 필요한지 적어 주세요.
     validations:
       required: true
   - type: textarea
@@ -56,5 +64,7 @@ body:
           required: true
         - label: 공개적으로 확인 가능한 출처만 포함했습니다.
           required: true
-        - label: secret이나 private identifier를 포함하지 않았습니다.
+        - label: secret, webhook URL, token, private identifier를 포함하지 않았습니다.
           required: true
+        - label: source review와 언어 검토를 도울 maintainer 또는 contributor capacity를 설명했습니다.
+          required: false

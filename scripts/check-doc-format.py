@@ -126,11 +126,13 @@ ISSUE_TEMPLATE_FILES = [
     ".github/ISSUE_TEMPLATE/config.yml",
     ".github/ISSUE_TEMPLATE/docs-improvement.yml",
     ".github/ISSUE_TEMPLATE/feature-request.yml",
+    ".github/ISSUE_TEMPLATE/fork-trial-report.yml",
     ".github/ISSUE_TEMPLATE/maintainer-question.yml",
     ".github/ISSUE_TEMPLATE/oss-candidate-suggestion.yml",
     ".github/ISSUE_TEMPLATE/regional-language-expansion.yml",
     ".github/ISSUE_TEMPLATE/release-readiness.yml",
     ".github/ISSUE_TEMPLATE/source-suggestion.yml",
+    ".github/ISSUE_TEMPLATE/study-group-feedback.yml",
     ".github/ISSUE_TEMPLATE/validation-fixture.yml",
 ]
 
