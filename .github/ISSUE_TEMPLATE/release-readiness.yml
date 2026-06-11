@@ -61,5 +61,5 @@ body:
           required: true
         - label: secret, webhook URL, token, private identifier를 포함하지 않았습니다.
           required: true
-        - label: v0.2.0 release history를 다시 쓰자는 요청이 아닙니다.
+        - label: 기존 release history를 다시 쓰자는 요청이 아닙니다.
           required: true

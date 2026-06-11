@@ -11,7 +11,7 @@ body:
         지역 또는 언어 확장은 검토용 제안으로 받습니다.
 
         이 이슈를 연다고 해서 새 workflow나 새 지역 지원이 바로 추가되지는 않습니다.
-        v0.2.0 현재 지원은 ko-KR 기본 지원과 en-US foundation입니다.
+        v0.2.x 현재 지원은 ko-KR 기본 지원과 en-US foundation입니다.
   - type: input
     id: region-locale
     attributes:

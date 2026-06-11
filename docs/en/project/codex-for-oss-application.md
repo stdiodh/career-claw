@@ -20,16 +20,22 @@ Its value is in the onboarding layer of the backend ecosystem.
 
 It helps backend learners, junior developers, Discord study groups, and mentors produce reviewable study prompts, news summaries, and OSS contribution preparation material.
 
-## 3. Current evidence in v0.2.0
+## 3. Current evidence in v0.2.1
 
-Evidence available in v0.2.0 includes:
+Evidence available in v0.2.1 includes:
 
 - `ko-KR` as the default supported locale
 - `en-US` as an experimental foundation
 - Daily Backend Brief, Dev News Daily, Backend Career Site Radar, and PS progress workflows
 - locale-aware artifact paths
 - locale-specific Discord webhook Secret names
+- first Backend Daily dry-run with only `OPENAI_API_KEY`
+- repository Variables documented as optional overrides
 - Discord delivery disabled by default
+- scheduled generation disabled by default with `CAREER_FEED_SCHEDULE_ENABLED=false`
+- manual `workflow_dispatch` still available while schedule is disabled
+- generic `DISCORD_WEBHOOK_CAREER_FEED` fallback after specific and legacy webhook Secrets
+- optional `scripts/setup-fork.sh` GitHub CLI setup helper
 - dry-run artifact review
 - generated brief validation before delivery
 - validation scripts and fixtures
@@ -82,7 +88,7 @@ Secrets, webhook URLs, API keys, and private identifiers stay out of docs and is
 The text below is under 500 characters.
 
 ```text
-Career Feed is an Early Public OSS, fork-based GitHub Actions automation project at v0.2.0. It is not a production backend dependency, framework, database, or hosted SaaS. Its value is onboarding support for backend learners, junior developers, Discord study groups, mentors, and OSS contribution preparation. Usage metrics are not yet claimed.
+Career Feed is an Early Public OSS, fork-based GitHub Actions automation project at v0.2.1. It is not a production backend dependency, framework, database, or hosted SaaS. Its value is onboarding support for backend learners, junior developers, Discord study groups, mentors, and OSS contribution preparation. Usage metrics are not yet claimed.
 ```
 
 ## 8. Copy-ready API credit usage text

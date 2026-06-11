@@ -82,10 +82,10 @@ Career Feed 문서는 처음 실행하는 사용자, 반복 운영자, 기여자
 | [Roadmap](./project/roadmap.md) | 현재 범위와 향후 방향 |
 | [Shared Roadmap](../project/roadmap.md) | v0.2.1과 v0.3.0 계획 기준 |
 | [Codex for OSS Application](./project/codex-for-oss-application.md) | 정직한 신청 문서 기준 |
-| [Promotion Readiness](./project/promotion-readiness.md) | v0.2.1 이후 공개 소개 전 점검 |
+| [Promotion Readiness](./project/promotion-readiness.md) | v0.2.1 공개 소개 전 점검 |
 | [Changelog](../../CHANGELOG.md) | 변경 이력 |
 | [Release Checklist](./project/release-checklist.md) | maintainer용 릴리스 전 점검 |
-| [v0.2.0 Release Notes](./release-notes/v0.2.0.md) | 현재 릴리스 기준 |
+| [v0.2.0 Release Notes](./release-notes/v0.2.0.md) | locale foundation 릴리스 기록 |
 | [v0.1.0 Release Notes](./release-notes/v0.1.0.md) | 과거 첫 릴리스 기록 |
 | [Shared v0.2 Compatibility Notes](../project/v0.2-compatibility.md) | locale과 webhook 호환성 기준 |
 | [Ecosystem Importance](./project/ecosystem-importance.md) | 백엔드 생태계에서의 의미와 한계 |

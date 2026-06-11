@@ -80,10 +80,10 @@ Career Feed documentation is split by language.
 | [Roadmap](./project/roadmap.md) | Current and future scope |
 | [Shared Roadmap](../project/roadmap.md) | v0.2.1 and v0.3.0 planning baseline |
 | [Codex for OSS Application](./project/codex-for-oss-application.md) | Honest application positioning |
-| [Promotion Readiness](./project/promotion-readiness.md) | Public launch checklist after v0.2.1 |
+| [Promotion Readiness](./project/promotion-readiness.md) | Public launch checklist for v0.2.1 |
 | [Changelog](../../CHANGELOG.md) | Change history |
 | [Release Checklist](./project/release-checklist.md) | Maintainer release checklist |
-| [v0.2.0 Release Notes](./release-notes/v0.2.0.md) | Current release baseline |
+| [v0.2.0 Release Notes](./release-notes/v0.2.0.md) | Locale foundation release notes |
 | [v0.1.0 Release Notes](./release-notes/v0.1.0.md) | Historical first release notes |
 | [Shared v0.2 Compatibility Notes](../project/v0.2-compatibility.md) | Locale and webhook compatibility window |
 | [Ecosystem Importance](./project/ecosystem-importance.md) | Ecosystem value and limits |

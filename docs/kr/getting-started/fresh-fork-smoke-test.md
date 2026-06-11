@@ -65,7 +65,7 @@ GitHub가 checkbox label을 description으로 표시할 수 있습니다. 첫 �
 - `reports/ops/ko-KR/backend-daily-run-summary.md`
 - `reports/candidates/ko-KR/oss-contribution-opportunities.json`
 
-현재 `ko-KR` v0.2.0 workflow와 validation report가 `reports/candidates/ko-KR/kr-oss-contribution-opportunities.json` 이름을 함께 사용하면 그 파일도 확인합니다.
+`ko-KR` workflow와 validation report가 `reports/candidates/ko-KR/kr-oss-contribution-opportunities.json` 이름을 함께 사용하면 그 파일도 확인합니다.
 
 ## What success means
 

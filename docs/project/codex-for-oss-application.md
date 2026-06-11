@@ -21,7 +21,7 @@ Career Feed turns scattered public learning and career signals into reproducible
 
 Its value is maintainability, safety, and reviewability rather than adoption metrics.
 
-## 4. Current v0.2.0 Maturity
+## 4. Current v0.2.1 Maturity
 
 Current support:
 
@@ -33,6 +33,11 @@ Current support:
 - Mark PS progress workflow.
 - Locale-specific daily webhook Secret names.
 - `ko-KR` legacy webhook fallback during v0.2.x.
+- First Backend Daily dry-run with only `OPENAI_API_KEY`.
+- Repository Variables documented as optional overrides.
+- Scheduled generation disabled by default with `CAREER_FEED_SCHEDULE_ENABLED=false`.
+- Generic `DISCORD_WEBHOOK_CAREER_FEED` fallback after specific and legacy webhook Secrets.
+- Optional GitHub CLI setup helper at `scripts/setup-fork.sh`.
 - Validation scripts and fixtures.
 
 Current limitations:
@@ -48,6 +53,7 @@ Current limitations:
 - `scripts/check-doc-format.py`
 - `tests/fixtures/`
 - `configs/locales/`
+- `CHANGELOG.md`
 - `docs/project/release-v0.2.0.md`
 - `docs/project/v0.2-compatibility.md`
 - `.github/ISSUE_TEMPLATE/`
@@ -104,7 +110,7 @@ Safety controls:
 ## 10. Pre-Application Checklist
 
 - [ ] Final validation passes.
-- [ ] README and release docs identify v0.2.0 as current.
+- [ ] README and release docs identify v0.2.1 as current.
 - [ ] No fake metrics are present.
 - [ ] No secret values are present.
 - [ ] `ko-KR` compatibility is documented.

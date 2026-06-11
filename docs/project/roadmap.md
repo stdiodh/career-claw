@@ -4,12 +4,15 @@ This shared roadmap separates current behavior from patch candidates and larger 
 
 ## Current Baseline
 
-Current release baseline: `v0.2.0`.
+Current release baseline: `v0.2.1`.
 
-What v0.2.0 currently supports:
+What v0.2.1 currently supports:
 
 - fork-based GitHub Actions automation
 - dry-run artifact review
+- first Backend Daily dry-run with only `OPENAI_API_KEY`
+- repository Variables as optional overrides
+- scheduled generation disabled by default
 - optional Discord Webhook delivery
 - Daily Backend Brief
 - Dev News Daily
@@ -18,10 +21,12 @@ What v0.2.0 currently supports:
 - `ko-KR` as the default supported locale
 - `en-US` as a foundation / experimental preset
 - locale-specific daily webhook Secret names
+- generic `DISCORD_WEBHOOK_CAREER_FEED` fallback
 - `ko-KR` legacy webhook fallback names during v0.2.x
+- optional GitHub CLI setup helper
 - provider preset foundation for Naver, RSS, GitHub, and Brave Search
 
-## v0.2.1 Patch Candidates
+## v0.2.x Patch Candidates
 
 Patch candidates should be small and safe:
 
@@ -33,7 +38,7 @@ Patch candidates should be small and safe:
 - compatibility clarifications
 - safe bug fixes that preserve `ko-KR` behavior
 
-See [v0.2.1 Plan](./v0.2.1-plan.md).
+See [v0.2.1 Plan](./v0.2.1-plan.md) for the patch that introduced the current onboarding hardening.
 
 ## v0.3.0 Feature Candidates
 
