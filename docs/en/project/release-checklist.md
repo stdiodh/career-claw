@@ -4,9 +4,20 @@
 
 This checklist describes the current v0.2.x release gate. Actual GitHub tags and releases remain the source of truth.
 
+`v0.1.0` remains the historical first public OSS baseline for fork-based automation.
+
 ## v0.2.x release goal
 
 Keep the v0.2.0 locale-aware foundation accurate, compatible, and reviewable while planning small v0.2.1 patches and larger v0.3.0 provider work separately.
+
+## v0.2.x readiness
+
+- Confirm locale-aware artifact paths under `reports/briefs/{locale}/`, `reports/candidates/{locale}/`, and `reports/ops/{locale}/`.
+- Keep `ko-KR` as the default supported locale.
+- Describe `en-US` only as an experimental foundation.
+- Start from dry-run artifact review.
+- Keep Discord delivery disabled by default.
+- Require generated brief validation before Discord delivery.
 
 ## Current v0.2.0 scope
 

@@ -14,6 +14,15 @@ v0.2.x의 목표는 locale-aware foundation을 작고 안전하게 유지하면�
 
 `en-US`는 foundation/experimental preset으로 다루며, provider와 source maturity가 충분히 검증되기 전까지 완성된 global support로 설명하지 않습니다.
 
+## v0.2.x readiness
+
+- locale-aware artifact path가 `reports/briefs/{locale}/`, `reports/candidates/{locale}/`, `reports/ops/{locale}/` 기준으로 동작하는지 확인합니다.
+- `ko-KR`은 기본 지원 locale로 유지합니다.
+- `en-US`는 experimental foundation으로만 설명합니다.
+- 첫 실행은 dry-run artifact 검토 흐름을 기준으로 안내합니다.
+- Discord delivery는 기본 비활성화 상태로 유지합니다.
+- Discord 전송 전 generated brief validation이 통과해야 합니다.
+
 ## Current v0.2.0 scope
 
 Included in v0.2.0:

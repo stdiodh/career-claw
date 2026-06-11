@@ -6,6 +6,8 @@ This guide gets a forked Career Feed repository to the first successful dry-run,
 
 For setting details, see [Runtime Configuration](runtime-configuration.md). For webhook naming, see [Webhook Setup](webhook-setup.md). For routine operation, see [Usage Guide](usage.md). For OSS rules, see [OSS Candidate Policy](../policies/oss-candidate-policy.md).
 
+If you only need the first check without editing workflow YAML, start with [Fresh Fork Smoke Test](fresh-fork-smoke-test.md).
+
 ## Before You Start
 
 Prepare these items:
@@ -222,6 +224,7 @@ Review the validation report and `kr-oss-contribution-opportunities.json` before
 
 ## Related Documents
 
+- [Fresh Fork Smoke Test](fresh-fork-smoke-test.md)
 - [Usage Guide](usage.md)
 - [Runtime Configuration](runtime-configuration.md)
 - [Daily Backend Brief](../operations/daily-backend-brief.md)

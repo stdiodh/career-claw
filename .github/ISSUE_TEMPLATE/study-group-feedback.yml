@@ -1,0 +1,84 @@
+name: Study group feedback
+description: Share redacted study group trial notes without private Discord data.
+title: "[Study feedback] "
+labels:
+  - documentation
+  - question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share feedback from a study or mentoring trial using Career Feed artifacts.
+
+        Do not include private Discord screenshots, invite links, member names, profile images, API keys, webhook URLs, tokens, private repository links, or personal identifiers.
+
+        Adoption evidence policy:
+        https://github.com/stdiodh/career-feed/blob/main/docs/en/project/adoption-evidence.md
+  - type: dropdown
+    id: group-context
+    attributes:
+      label: Trial context
+      options:
+        - Discord study group
+        - mentoring group
+        - small peer group
+        - individual review for a group
+        - other
+    validations:
+      required: true
+  - type: dropdown
+    id: locale
+    attributes:
+      label: Locale
+      options:
+        - ko-KR
+        - en-US
+        - both
+        - unknown
+    validations:
+      required: true
+  - type: dropdown
+    id: workflow
+    attributes:
+      label: Artifact or workflow reviewed
+      options:
+        - Backend Daily Brief
+        - Dev News Daily
+        - Backend Career Site Radar
+        - Sample Output
+        - other
+    validations:
+      required: true
+  - type: textarea
+    id: artifact-paths
+    attributes:
+      label: Artifact paths or docs reviewed
+      description: List paths only. Do not paste private screenshots or secret values.
+      placeholder: |
+        reports/briefs/ko-KR/backend-daily.md
+        docs/kr/getting-started/sample-output.md
+    validations:
+      required: false
+  - type: textarea
+    id: use-case
+    attributes:
+      label: How was the artifact used?
+      description: Describe the study prompt, discussion, mentoring, or review use. Do not include private names.
+    validations:
+      required: true
+  - type: textarea
+    id: feedback
+    attributes:
+      label: What helped, failed, or should improve?
+      description: Include concrete feedback, confusing sections, sparse output notes, or source quality issues.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety and citation
+      options:
+        - label: I did not include private Discord screenshots, invite links, member names, profile images, API keys, webhook URLs, tokens, private links, or personal identifiers.
+          required: true
+        - label: Maintainers may summarize this public issue in docs or application material without naming private people or groups.
+          required: false

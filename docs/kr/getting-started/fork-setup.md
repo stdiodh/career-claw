@@ -9,6 +9,8 @@ Career Feed를 fork한 뒤 GitHub Actions에서 첫 dry-run을 실행하고, gen
 상세 설정값은 [Runtime Configuration](runtime-configuration.md), webhook 이름은 [Webhook Setup](webhook-setup.md), 반복 운영 방법은 [Usage Guide](usage.md),
 OSS 후보 정책은 [OSS Candidate Policy](../policies/oss-candidate-policy.md)를 참고하세요.
 
+workflow YAML을 수정하지 않는 첫 점검만 필요하면 [Fresh Fork Smoke Test](fresh-fork-smoke-test.md)를 먼저 따라가세요.
+
 ## Before You Start
 
 준비물:
@@ -251,6 +253,7 @@ dry-run에서는 Discord 메시지가 오지 않는 것이 정상입니다.
 
 ## Related Documents
 
+- [Fresh Fork Smoke Test](fresh-fork-smoke-test.md)
 - [Usage Guide](usage.md)
 - [Runtime Configuration](runtime-configuration.md)
 - [Daily Backend Brief](../operations/daily-backend-brief.md)
