@@ -92,7 +92,7 @@ The workflows therefore wake up periodically and run `scripts/should-run-now.py`
 
 If the configured local time does not match the current runtime window, the expensive generation and send steps are skipped successfully.
 
-Manual `workflow_dispatch` runs are not blocked by the runtime time window.
+Manual `workflow_dispatch` runs are not blocked by `CAREER_FEED_SCHEDULE_ENABLED` or the runtime time window.
 
 ## Running local validation
 
@@ -131,7 +131,7 @@ Confirm the branch, input values, and delivery options before starting the run.
 
 Daily workflows can run on schedule, but manual runs are safer for first verification because you can choose dry-run inputs and inspect artifacts immediately.
 
-Before a first dry-run, confirm that the runtime Variables are present or that the defaults in [Runtime Configuration](runtime-configuration.md) are acceptable.
+For the first Backend Daily dry-run, configure only the `OPENAI_API_KEY` Secret and leave repository Variables unset unless you intentionally need an override.
 
 The active operating workflows are listed below.
 
@@ -206,7 +206,7 @@ For repeated same-day checks, keep `force_send=false` so the delivery lock can p
 
 For Backend Career Site Radar, set `send_to_discord=true`.
 
-Delivery is blocked in this priority order: `dry_run=true`, manual delivery option set to false, `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`, then missing webhook secret.
+Delivery is blocked in this priority order: `dry_run=true`, manual delivery option set to false, `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`, then missing webhook secret. Webhook resolution uses the specific Secret first, then a legacy fallback, then `DISCORD_WEBHOOK_CAREER_FEED`.
 
 The Discord message should look like a briefing, not a chat bot conversation.
 

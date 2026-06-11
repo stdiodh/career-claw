@@ -82,7 +82,7 @@ Discord Webhook URL은 secret입니다.
 
 노출되었다면 Discord에서 webhook을 폐기하고 새 URL을 발급하세요.
 
-첫 설정에서는 `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`와 `dry_run=true`로 전송을 막고 artifact부터 확인하세요.
+첫 설정에서는 별도 delivery Variable을 만들지 않아도 기본값이 전송을 막습니다. `dry_run=true`로 artifact부터 확인하세요.
 
 v0.2.x 동안 `ko-KR` daily workflow는 legacy webhook fallback 이름을 지원합니다. 이 값도 GitHub Secrets에만 저장하고, breaking release 계획 없이 fallback behavior를 제거하지 않습니다.
 

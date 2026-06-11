@@ -2,7 +2,7 @@
 
 > Language: [한국어](./runtime-configuration.md) | [English](../../en/getting-started/runtime-configuration.md)
 
-Career Feed fork는 workflow YAML을 직접 수정하지 않고도 실행 시간과 Discord 전송 여부를 설정할 수 있습니다.
+Career Feed fork는 첫 Backend Daily dry-run을 `OPENAI_API_KEY` 하나로 실행한 뒤, workflow YAML을 직접 수정하지 않고도 실행 시간과 Discord 전송 여부를 설정할 수 있습니다.
 
 설정 위치는 GitHub repository의 `Settings > Secrets and variables > Actions`입니다.
 
@@ -30,23 +30,26 @@ Variables는 노출되어도 보안 사고가 되지 않는 실행 설정값입�
 
 | 구분 | 저장할 값 | 예시 |
 | --- | --- | --- |
-| Secrets | API key, Webhook URL, client secret | `OPENAI_API_KEY`, `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` |
-| Variables | locale 목록, provider 이름, timezone, 실행 시간, delivery flag | `CAREER_FEED_ENABLED_LOCALES`, `CAREER_FEED_TIMEZONE` |
+| Secrets | API key, Webhook URL, client secret | `OPENAI_API_KEY`, `DISCORD_WEBHOOK_CAREER_FEED` |
+| Variables | locale 목록, provider 이름, timezone, 실행 시간, delivery flag | `CAREER_FEED_ENABLED_LOCALES`, `CAREER_FEED_SCHEDULE_ENABLED` |
 
-## 필수 Secrets
+## Secrets
 
-브리핑 생성과 Discord 전송에 사용하는 민감값입니다.
+첫 수동 Backend Daily dry-run에는 `OPENAI_API_KEY`만 필요합니다.
+
+Discord webhook, Naver, Brave Secret은 artifact 검토 뒤에 선택적으로 추가할 수 있습니다.
 
 | Secret | Required | 사용처 |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | Yes | Daily Backend Brief와 News Daily 초안 생성 |
-| `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | `ko-KR` Discord 전송 시 Yes | Daily Backend Brief 전송 |
-| `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | `en-US` Discord 전송 시 Yes | Daily Backend Brief 전송 |
-| `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | `ko-KR` Discord 전송 시 Yes | Dev News Daily 전송 |
-| `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | `en-US` Discord 전송 시 Yes | Dev News Daily 전송 |
+| `OPENAI_API_KEY` | 첫 dry-run에 Required | Daily Backend Brief와 News Daily 초안 생성 |
+| `DISCORD_WEBHOOK_CAREER_FEED` | Optional generic delivery Secret | 모든 Discord delivery |
+| `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | Optional specific delivery Secret | Daily Backend Brief 전송 |
+| `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | Optional specific delivery Secret | Daily Backend Brief 전송 |
+| `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | Optional specific delivery Secret | Dev News Daily 전송 |
+| `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | Optional specific delivery Secret | Dev News Daily 전송 |
 | `DISCORD_WEBHOOK_KR_TECH_DAILY` | Compatibility fallback | `ko-KR` Daily Backend Brief 전송 |
 | `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | Compatibility fallback | `ko-KR` Dev News Daily 전송 |
-| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Discord 전송 시 Yes | Backend Career Site Radar 전송 |
+| `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | Optional specific delivery Secret | Backend Career Site Radar 전송 |
 | `NAVER_CLIENT_ID` | Optional | 한국 뉴스 후보 수집 보강 |
 | `NAVER_CLIENT_SECRET` | Optional | 한국 뉴스 후보 수집 보강 |
 | `BRAVE_SEARCH_API_KEY` | Optional | 영어권 검색 provider 보강 |
@@ -72,6 +75,7 @@ Variables는 `Settings > Secrets and variables > Actions > Variables`에 등록�
 | `CAREER_FEED_CAREER_WEEKLY_DAY` | Optional | `MON` | `MON` | Backend Career Site Radar 실행 요일 |
 | `CAREER_FEED_CAREER_WEEKLY_TIME` | Optional | `09:00` | `09:00` | Backend Career Site Radar 실행 희망 시간 |
 | `CAREER_FEED_OSS_RECENT_DAYS` | Optional | `30` | `30` | OSS 후보 `created_at` freshness 기준일 |
+| `CAREER_FEED_SCHEDULE_ENABLED` | Optional | `false` | `true` | 반복 scheduled generation 활성화 여부 |
 | `CAREER_FEED_DISCORD_DELIVERY_ENABLED` | Optional | `false` | `false` | Discord 전송 활성화 여부 |
 
 `CAREER_FEED_OSS_RECENT_DAYS`는 Daily Backend Brief의 OSS 후보 추천에서 `created_at` 기준 최근 N일 hard gate로 사용합니다.
@@ -86,6 +90,8 @@ candidate artifact allowlist에 없거나 `created_at` window 밖인 issue URL�
 365를 초과하면 365로 clamp하고 warning을 남깁니다.
 
 값을 너무 넓게 잡으면 오래된 open issue가 후보 pool에 더 많이 남을 수 있으므로, 기본 30일을 먼저 사용하는 것을 권장합니다.
+
+첫 smoke test에서는 의도한 override가 없다면 Variables를 만들지 않습니다.
 
 ## 시간 형식
 
@@ -164,6 +170,8 @@ GitHub Actions의 `on.schedule` cron은 repository Variables를 직접 참조할
 
 대신 workflow가 `5,35 * * * *` cron으로 주기적으로 깨어나고, 초반에 `scripts/should-run-now.py`를 실행합니다.
 
+scheduled generation은 기본값으로 꺼져 있습니다. scheduled event는 `CAREER_FEED_SCHEDULE_ENABLED=true`가 아니면 `should_run=false`, `reason=schedule_disabled`로 안전하게 종료됩니다.
+
 runtime gate는 다음을 수행합니다.
 
 1. 현재 UTC 시각을 구합니다.
@@ -175,7 +183,9 @@ runtime gate는 다음을 수행합니다.
 
 Daily workflow는 기존 동작을 보존하기 위해 local weekday 기준 월요일부터 금요일까지만 scheduled run을 통과시킵니다.
 
-수동 `workflow_dispatch` 실행은 시간 window와 요일 비교를 통과하지 않아도 `should_run=true`로 처리합니다.
+수동 `workflow_dispatch` 실행은 `CAREER_FEED_SCHEDULE_ENABLED`, 시간 window, 요일 비교를 통과하지 않아도 `should_run=true`로 처리합니다.
+
+잘못된 설정값은 비싼 생성을 시작하기 전에 safe skip으로 처리합니다.
 
 ## GitHub Actions Output
 
@@ -191,6 +201,7 @@ runtime gate는 최신 방식인 `$GITHUB_OUTPUT`에 값을 씁니다.
 | `target_time` | workflow별 target time |
 | `local_now` | timezone 기준 현재 시각 |
 | `local_date` | delivery lock에 사용할 local date |
+| `schedule_enabled` | 반복 scheduled generation 활성화 여부 |
 
 `::set-output`은 사용하지 않습니다.
 
@@ -201,10 +212,12 @@ Discord 전송은 다음 순서로 결정합니다.
 1. `dry_run=true`이면 무조건 전송하지 않습니다.
 2. `workflow_dispatch`에서 명시적으로 delivery를 끈 경우 전송하지 않습니다.
 3. `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`이면 전송하지 않습니다.
-4. 필요한 Discord Webhook secret이 없으면 전송하지 않고 명확한 오류를 냅니다.
+4. Discord Webhook secret이 없으면 전송하지 않고 명확한 오류를 냅니다.
 5. 위 조건을 모두 통과하면 전송할 수 있습니다.
 
 처음 fork한 사용자의 실수 전송을 막기 위해 `CAREER_FEED_DISCORD_DELIVERY_ENABLED` 기본값은 `false`입니다.
+
+webhook 우선순위는 specific locale/feed Secret, legacy fallback Secret, `DISCORD_WEBHOOK_CAREER_FEED` 순서입니다.
 
 Daily workflow는 Discord 전송이 성공했을 때만 delivery lock marker를 저장합니다.
 
@@ -271,6 +284,7 @@ python3 scripts/should-run-now.py --workflow backend_daily --now-utc 2026-06-08T
 
 - `CAREER_FEED_DISCORD_DELIVERY_ENABLED`를 `true`로 바꾸지 않아 Discord 전송이 skip됩니다.
 - `dry_run=true`로 실행해 놓고 Discord 메시지를 기다립니다.
+- `CAREER_FEED_SCHEDULE_ENABLED=false` 상태에서 scheduled run을 기다립니다.
 - Webhook URL을 Variables에 넣습니다.
 - `09:00` 대신 `9:00`을 입력합니다.
 - `America/Los Angeles`처럼 공백이 있는 timezone 이름을 입력합니다.
@@ -280,7 +294,7 @@ python3 scripts/should-run-now.py --workflow backend_daily --now-utc 2026-06-08T
 
 ## 이번 Phase 한계
 
-runtime gate와 Discord delivery flag는 workflow 초반 실행 여부를 제어합니다.
+runtime gate, schedule flag, Discord delivery flag는 workflow 초반 실행 여부와 전송 시도 여부를 제어합니다.
 
 OSS 후보 최근 N일 필터링은 Daily Backend Brief 후보 수집 단계에서 적용합니다.
 

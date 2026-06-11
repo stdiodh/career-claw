@@ -23,6 +23,7 @@ Career Feed 문서는 처음 실행하는 사용자, 반복 운영자, 기여자
 | Document | Purpose |
 | --- | --- |
 | [Fork Setup Guide](./getting-started/fork-setup.md) | fork 후 첫 dry-run과 Discord delivery 설정 |
+| [CLI Setup](./getting-started/cli-setup.md) | fork Secret과 Variable을 설정하는 선택 `gh` helper |
 | [Fresh Fork Smoke Test](./getting-started/fresh-fork-smoke-test.md) | workflow YAML 수정 없이 첫 Backend Daily dry-run 점검 |
 | [Webhook Setup](./getting-started/webhook-setup.md) | locale-specific Discord webhook Secret 이름과 fallback 규칙 |
 | [Runtime Configuration](./getting-started/runtime-configuration.md) | Secrets, Variables, runtime gate 설정값 reference |

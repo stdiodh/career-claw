@@ -14,21 +14,27 @@ Discord Gateway Bot이나 Slash Command service를 사용하지 않습니다.
 
 - `dry_run=false`
 - `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`
-- workflow와 locale에 맞는 webhook Secret이 있음
+- generic 또는 workflow-specific webhook Secret이 있음
 - validator 통과
 - delivery lock 규칙상 전송 가능
 
 ## Secret Naming
 
-Daily workflow는 locale-specific webhook Secret을 사용합니다.
+새 fork는 generic Secret 하나로 Discord delivery를 시작할 수 있습니다.
 
-| Workflow | Locale | Preferred Secret | v0.2 fallback |
-| --- | --- | --- | --- |
-| Daily Backend Brief | `ko-KR` | `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | `DISCORD_WEBHOOK_KR_TECH_DAILY` |
-| Daily Backend Brief | `en-US` | `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | none |
-| Dev News Daily | `ko-KR` | `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` |
-| Dev News Daily | `en-US` | `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | none |
-| Backend Career Site Radar | `ko-KR` | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | none |
+- `DISCORD_WEBHOOK_CAREER_FEED`
+
+Daily workflow는 locale-specific webhook Secret도 사용할 수 있습니다.
+
+| Workflow | Locale | Preferred Secret | Legacy fallback | Generic fallback |
+| --- | --- | --- | --- | --- |
+| Daily Backend Brief | `ko-KR` | `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | `DISCORD_WEBHOOK_KR_TECH_DAILY` | `DISCORD_WEBHOOK_CAREER_FEED` |
+| Daily Backend Brief | `en-US` | `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | none | `DISCORD_WEBHOOK_CAREER_FEED` |
+| Dev News Daily | `ko-KR` | `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | `DISCORD_WEBHOOK_CAREER_FEED` |
+| Dev News Daily | `en-US` | `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | none | `DISCORD_WEBHOOK_CAREER_FEED` |
+| Backend Career Site Radar | `ko-KR` | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | none | `DISCORD_WEBHOOK_CAREER_FEED` |
+
+해석 순서는 preferred Secret, legacy fallback, `DISCORD_WEBHOOK_CAREER_FEED`입니다.
 
 선택 실패 알림은 `DISCORD_WEBHOOK_CAREER_FEED_OPS`를 사용합니다. 이 Secret이 없으면 실패 알림 전송만 건너뛰어야 하며 workflow 실패 원인이 되면 안 됩니다.
 
@@ -48,6 +54,7 @@ Variables에는 노출되어도 보안 사고가 되지 않는 설정만 넣습�
 - `CAREER_FEED_CAREER_WEEKLY_DAY`
 - `CAREER_FEED_CAREER_WEEKLY_TIME`
 - `CAREER_FEED_OSS_RECENT_DAYS`
+- `CAREER_FEED_SCHEDULE_ENABLED`
 - `CAREER_FEED_DISCORD_DELIVERY_ENABLED`
 
 ## ko-KR Compatibility
@@ -59,7 +66,7 @@ v0.2.x 동안 기존 fork는 아래 legacy webhook Secret 이름을 계속 사�
 - `DISCORD_WEBHOOK_KR_TECH_DAILY`
 - `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY`
 
-새 fork는 preferred locale-specific 이름을 사용하는 것을 권장합니다.
+새 fork는 `DISCORD_WEBHOOK_CAREER_FEED`로 시작할 수 있습니다. feed 또는 locale별로 다른 채널을 쓰고 싶을 때 preferred locale-specific 이름을 사용하세요.
 
 ## en-US Foundation
 
@@ -71,7 +78,7 @@ v0.2.x 동안 기존 fork는 아래 legacy webhook Secret 이름을 계속 사�
 CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US
 ```
 
-그리고 아래 Secret을 추가합니다.
+그리고 `DISCORD_WEBHOOK_CAREER_FEED` 또는 아래 locale-specific Secret을 추가합니다.
 
 - `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY`
 - `DISCORD_WEBHOOK_EN_US_NEWS_DAILY`
@@ -81,12 +88,12 @@ Discord delivery를 켜기 전에 먼저 등록하세요. `en-US` source/provide
 ## Safe Setup Order
 
 1. `OPENAI_API_KEY`를 Secret으로 등록합니다.
-2. 테스트할 locale과 workflow에 맞는 webhook Secret을 등록합니다.
-3. `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`를 유지합니다.
-4. `dry_run=true`로 workflow를 실행합니다.
-5. artifact와 validation report를 검토합니다.
-6. `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`로 바꿉니다.
-7. validator가 통과한 뒤에만 `dry_run=false`로 실행합니다.
+2. Backend Daily workflow를 `dry_run=true`로 실행합니다.
+3. artifact와 validation report를 검토합니다.
+4. `DISCORD_WEBHOOK_CAREER_FEED` 또는 테스트할 locale과 workflow에 맞는 webhook Secret을 등록합니다.
+5. `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`로 바꿉니다.
+6. validator가 통과한 뒤에만 `dry_run=false`로 실행합니다.
+7. 반복 scheduled generation이 필요할 때만 `CAREER_FEED_SCHEDULE_ENABLED=true`를 설정합니다.
 
 ## Validation
 

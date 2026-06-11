@@ -32,6 +32,7 @@ def utc_datetime(value: str) -> datetime:
 
 def test_default_timezone_is_asia_seoul() -> None:
     config = gate.read_config({})
+    assert config.schedule_enabled is False
     assert config.timezone_name == "Asia/Seoul"
     assert str(config.timezone) == "Asia/Seoul"
 
@@ -52,22 +53,41 @@ def test_invalid_time_format_fails() -> None:
             raise AssertionError(f"Expected invalid time to fail: {value}")
 
 
-def test_backend_daily_runs_inside_target_window() -> None:
+def test_backend_daily_schedule_skips_by_default() -> None:
     decision = gate.evaluate_gate(
         "backend_daily",
         {"CAREER_FEED_BACKEND_DAILY_TIME": "09:00"},
         event_name="schedule",
         now_utc=utc_datetime("2026-06-08T00:05:00Z"),
     )
+    assert decision.should_run is False
+    assert decision.reason == "schedule_disabled"
+    assert decision.schedule_enabled is False
+
+
+def test_backend_daily_runs_inside_target_window_when_schedule_enabled() -> None:
+    decision = gate.evaluate_gate(
+        "backend_daily",
+        {
+            "CAREER_FEED_SCHEDULE_ENABLED": "true",
+            "CAREER_FEED_BACKEND_DAILY_TIME": "09:00",
+        },
+        event_name="schedule",
+        now_utc=utc_datetime("2026-06-08T00:05:00Z"),
+    )
     assert decision.should_run is True
     assert decision.reason == "scheduled_window_match"
+    assert decision.schedule_enabled is True
     assert decision.local_date == "2026-06-08"
 
 
 def test_backend_daily_skips_outside_target_window() -> None:
     decision = gate.evaluate_gate(
         "backend_daily",
-        {"CAREER_FEED_BACKEND_DAILY_TIME": "09:00"},
+        {
+            "CAREER_FEED_SCHEDULE_ENABLED": "true",
+            "CAREER_FEED_BACKEND_DAILY_TIME": "09:00",
+        },
         event_name="schedule",
         now_utc=utc_datetime("2026-06-08T01:05:00Z"),
     )
@@ -79,6 +99,7 @@ def test_career_weekly_runs_on_configured_weekday() -> None:
     decision = gate.evaluate_gate(
         "career_weekly",
         {
+            "CAREER_FEED_SCHEDULE_ENABLED": "true",
             "CAREER_FEED_CAREER_WEEKLY_DAY": "MON",
             "CAREER_FEED_CAREER_WEEKLY_TIME": "09:00",
         },
@@ -93,6 +114,7 @@ def test_career_weekly_skips_when_weekday_differs() -> None:
     decision = gate.evaluate_gate(
         "career_weekly",
         {
+            "CAREER_FEED_SCHEDULE_ENABLED": "true",
             "CAREER_FEED_CAREER_WEEKLY_DAY": "MON",
             "CAREER_FEED_CAREER_WEEKLY_TIME": "09:00",
         },
@@ -106,18 +128,25 @@ def test_career_weekly_skips_when_weekday_differs() -> None:
 def test_manual_dispatch_always_runs_with_valid_config() -> None:
     decision = gate.evaluate_gate(
         "backend_daily",
-        {"CAREER_FEED_BACKEND_DAILY_TIME": "09:00"},
+        {
+            "CAREER_FEED_SCHEDULE_ENABLED": "false",
+            "CAREER_FEED_BACKEND_DAILY_TIME": "09:00",
+        },
         event_name="workflow_dispatch",
         now_utc=utc_datetime("2026-06-08T01:05:00Z"),
     )
     assert decision.should_run is True
     assert decision.reason == "manual_dispatch"
+    assert decision.schedule_enabled is False
 
 
 def test_invalid_timezone_returns_clear_skip_reason() -> None:
     decision = gate.evaluate_gate(
         "backend_daily",
-        {"CAREER_FEED_TIMEZONE": "Mars/Base"},
+        {
+            "CAREER_FEED_SCHEDULE_ENABLED": "true",
+            "CAREER_FEED_TIMEZONE": "Mars/Base",
+        },
         event_name="schedule",
         now_utc=utc_datetime("2026-06-08T00:05:00Z"),
     )
@@ -129,3 +158,36 @@ def test_invalid_timezone_returns_clear_skip_reason() -> None:
 def test_discord_delivery_enabled_defaults_to_false() -> None:
     config = gate.read_config({})
     assert config.discord_delivery_enabled is False
+
+
+def test_invalid_schedule_enabled_returns_clear_skip_reason() -> None:
+    decision = gate.evaluate_gate(
+        "backend_daily",
+        {"CAREER_FEED_SCHEDULE_ENABLED": "yes"},
+        event_name="schedule",
+        now_utc=utc_datetime("2026-06-08T00:05:00Z"),
+    )
+    assert decision.should_run is False
+    assert decision.reason.startswith("invalid_config:")
+    assert "CAREER_FEED_SCHEDULE_ENABLED" in decision.reason
+
+
+def main() -> int:
+    test_default_timezone_is_asia_seoul()
+    test_hh_mm_time_parses()
+    test_invalid_time_format_fails()
+    test_backend_daily_schedule_skips_by_default()
+    test_backend_daily_runs_inside_target_window_when_schedule_enabled()
+    test_backend_daily_skips_outside_target_window()
+    test_career_weekly_runs_on_configured_weekday()
+    test_career_weekly_skips_when_weekday_differs()
+    test_manual_dispatch_always_runs_with_valid_config()
+    test_invalid_timezone_returns_clear_skip_reason()
+    test_discord_delivery_enabled_defaults_to_false()
+    test_invalid_schedule_enabled_returns_clear_skip_reason()
+    print("Runtime gate tests passed")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

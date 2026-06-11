@@ -13,46 +13,46 @@ Prepare:
 - GitHub account
 - forked Career Feed repository
 - `OPENAI_API_KEY`
-- optional Discord webhook URL
-- optional Naver credentials
-- optional Brave Search credentials
+- optional Discord webhook URL for later delivery
+- optional Naver credentials for later enrichment
+- optional Brave Search credentials for later enrichment
 
 Do not place real API keys, webhook URLs, tokens, or private identifiers in docs, issues, pull requests, commits, Actions logs, or screenshots.
 
 ## Required first run settings
 
-Use these repository Variables and workflow inputs for the first smoke test.
+Use one repository Secret and the safe workflow inputs for the first smoke test.
+
+Repository Secret:
+
+- `OPENAI_API_KEY`
 
 Repository Variables:
 
-- `CAREER_FEED_ENABLED_LOCALES=ko-KR`
-- `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`
+- none required
 
 Workflow inputs:
 
-- `dry_run=true`
+- `dry_run=true` (default)
 - `force_send=false`
 
 A `dry_run=true` run should not send Discord messages.
 
-The Discord webhook Secret is needed later only when you enable delivery. It is not required for the first dry-run artifact review.
+The Discord webhook Secret is needed later only when you enable delivery. Naver and Brave credentials are optional enrichment. They are not required for the first dry-run artifact review.
 
 ## Backend Daily Brief smoke test
 
 1. Open `Settings > Secrets and variables > Actions > Secrets` in the fork.
 2. Add `OPENAI_API_KEY` as a repository Secret.
-3. Optionally add `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET`, and `BRAVE_SEARCH_API_KEY`.
-4. Open `Settings > Secrets and variables > Actions > Variables`.
-5. Keep `CAREER_FEED_ENABLED_LOCALES` set to `ko-KR`.
-6. Keep `CAREER_FEED_DISCORD_DELIVERY_ENABLED` set to `false`.
-7. Open the repository `Actions` tab.
-8. Select the `Backend Daily Brief` workflow.
-9. Click `Run workflow`.
-10. Confirm the branch is the default branch.
-11. Set `dry_run` to `true`.
-12. Set `force_send` to `false`.
-13. Click `Run workflow`.
-14. After the run finishes, open the Actions summary and uploaded artifact.
+3. Do not add repository Variables for the first smoke test.
+4. Open the repository `Actions` tab.
+5. Select the `Backend Daily Brief` workflow.
+6. Click `Run workflow`.
+7. Confirm the branch is the default branch.
+8. Keep `dry_run` as `true`.
+9. Keep `force_send` as `false`.
+10. Click `Run workflow`.
+11. After the run finishes, open the Actions summary and uploaded artifact.
 
 GitHub may display boolean input descriptions as checkbox labels. The first boolean input is `dry_run`; the second boolean input is `force_send`.
 
@@ -82,7 +82,7 @@ Rich OSS candidates or rich source data are not required for success.
 
 Some days may produce zero safe OSS candidates and use fallback preparation output.
 
-If Naver or Brave credentials are missing, some providers may be skipped and artifacts may be sparse.
+If Naver or Brave credentials are missing, some providers may be skipped and artifacts may be sparse. That is acceptable for the first dry-run.
 
 ## When validation fails
 
@@ -105,12 +105,13 @@ Check these items before enabling Discord delivery.
 - The dry-run artifact is suitable to send as a reviewed draft.
 - The validation report passed.
 - The run summary showed `dry_run=true` and `force_send=false`.
-- The Discord webhook Secret name matches the workflow expectation.
+- `DISCORD_WEBHOOK_CAREER_FEED` or a workflow-specific Discord webhook Secret exists.
 - You have a clear reason to set `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`.
 - Keep `force_send=false` for the first live send.
 - Do not use `force_send=true` unless you understand same-day duplicate delivery risk.
+- Set `CAREER_FEED_SCHEDULE_ENABLED=true` only when you want recurring scheduled generation.
 
-Expect actual delivery only when `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`, `dry_run=false`, the required Discord webhook Secret exists, validation passes, and delivery lock conditions allow sending.
+Expect actual delivery only when `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`, `dry_run=false`, a Discord webhook Secret exists, validation passes, and delivery lock conditions allow sending.
 
 ## Related documents
 

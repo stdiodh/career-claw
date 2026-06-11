@@ -83,6 +83,7 @@ def check_scheduled_workflow(
     require_contains(text, "CAREER_FEED_CAREER_WEEKLY_DAY", path)
     require_contains(text, "CAREER_FEED_CAREER_WEEKLY_TIME", path)
     require_contains(text, "CAREER_FEED_OSS_RECENT_DAYS", path)
+    require_contains(text, "CAREER_FEED_SCHEDULE_ENABLED", path)
     require_contains(text, "CAREER_FEED_DISCORD_DELIVERY_ENABLED", path)
     require_contains(text, "steps.runtime_gate.outputs.should_run == 'true'", path)
     require_contains(text, "discord_delivery_disabled", path)
@@ -93,6 +94,7 @@ def check_scheduled_workflow(
             path,
         )
     require_contains(text, secret, path)
+    require_contains(text, "DISCORD_WEBHOOK_CAREER_FEED", path)
     require_absent(text, forbidden_secret, path)
     require_contains(text, "validate-career-feed-brief.py", path)
     require_contains(text, f"--type {validator_type}", path)
@@ -170,6 +172,7 @@ def check_weekly_site_radar_workflow() -> None:
     require_contains(text, "CAREER_FEED_TIMEZONE", WEEKLY_WORKFLOW)
     require_contains(text, "CAREER_FEED_CAREER_WEEKLY_DAY", WEEKLY_WORKFLOW)
     require_contains(text, "CAREER_FEED_CAREER_WEEKLY_TIME", WEEKLY_WORKFLOW)
+    require_contains(text, "CAREER_FEED_SCHEDULE_ENABLED", WEEKLY_WORKFLOW)
     require_contains(text, "CAREER_FEED_DISCORD_DELIVERY_ENABLED", WEEKLY_WORKFLOW)
     require_contains(text, "Decide delivery action", WEEKLY_WORKFLOW)
     require_contains(text, "manual_delivery_disabled", WEEKLY_WORKFLOW)
@@ -177,6 +180,7 @@ def check_weekly_site_radar_workflow() -> None:
     require_contains(text, "steps.delivery.outputs.should_generate == 'true'", WEEKLY_WORKFLOW)
     require_contains(text, "steps.delivery.outputs.should_send == 'true'", WEEKLY_WORKFLOW)
     require_contains(text, "DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY", WEEKLY_WORKFLOW)
+    require_contains(text, "DISCORD_WEBHOOK_CAREER_FEED", WEEKLY_WORKFLOW)
     require_contains(text, "render-weekly-career-site-radar.py", WEEKLY_WORKFLOW)
     require_contains(text, "validate-career-feed-brief.py", WEEKLY_WORKFLOW)
     require_contains(

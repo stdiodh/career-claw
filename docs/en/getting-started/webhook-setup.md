@@ -12,21 +12,27 @@ Delivery is disabled by default. A workflow sends to Discord only when:
 
 - `dry_run=false`
 - `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`
-- the required webhook Secret for the workflow and locale exists
+- a generic or workflow-specific webhook Secret exists
 - validation passes
 - delivery lock rules allow the send
 
 ## Secret Naming
 
-Daily workflows use locale-specific webhook Secrets.
+New forks can enable delivery with one generic Secret:
 
-| Workflow | Locale | Preferred Secret | v0.2 fallback |
-| --- | --- | --- | --- |
-| Daily Backend Brief | `ko-KR` | `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | `DISCORD_WEBHOOK_KR_TECH_DAILY` |
-| Daily Backend Brief | `en-US` | `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | none |
-| Dev News Daily | `ko-KR` | `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` |
-| Dev News Daily | `en-US` | `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | none |
-| Backend Career Site Radar | `ko-KR` | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | none |
+- `DISCORD_WEBHOOK_CAREER_FEED`
+
+Daily workflows can also use locale-specific webhook Secrets.
+
+| Workflow | Locale | Preferred Secret | Legacy fallback | Generic fallback |
+| --- | --- | --- | --- | --- |
+| Daily Backend Brief | `ko-KR` | `DISCORD_WEBHOOK_KO_KR_BACKEND_DAILY` | `DISCORD_WEBHOOK_KR_TECH_DAILY` | `DISCORD_WEBHOOK_CAREER_FEED` |
+| Daily Backend Brief | `en-US` | `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY` | none | `DISCORD_WEBHOOK_CAREER_FEED` |
+| Dev News Daily | `ko-KR` | `DISCORD_WEBHOOK_KO_KR_NEWS_DAILY` | `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY` | `DISCORD_WEBHOOK_CAREER_FEED` |
+| Dev News Daily | `en-US` | `DISCORD_WEBHOOK_EN_US_NEWS_DAILY` | none | `DISCORD_WEBHOOK_CAREER_FEED` |
+| Backend Career Site Radar | `ko-KR` | `DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY` | none | `DISCORD_WEBHOOK_CAREER_FEED` |
+
+Resolution order is preferred Secret, legacy fallback, then `DISCORD_WEBHOOK_CAREER_FEED`.
 
 Optional failure alerts use `DISCORD_WEBHOOK_CAREER_FEED_OPS`. If it is missing, failure alert delivery should be skipped without failing the workflow.
 
@@ -46,6 +52,7 @@ Use Variables only for non-sensitive settings:
 - `CAREER_FEED_CAREER_WEEKLY_DAY`
 - `CAREER_FEED_CAREER_WEEKLY_TIME`
 - `CAREER_FEED_OSS_RECENT_DAYS`
+- `CAREER_FEED_SCHEDULE_ENABLED`
 - `CAREER_FEED_DISCORD_DELIVERY_ENABLED`
 
 ## ko-KR Compatibility
@@ -57,7 +64,7 @@ During v0.2.x, existing forks can keep these legacy webhook Secret names:
 - `DISCORD_WEBHOOK_KR_TECH_DAILY`
 - `DISCORD_WEBHOOK_KR_TECH_NEWS_DAILY`
 
-New forks should use the preferred locale-specific names.
+New forks can start with `DISCORD_WEBHOOK_CAREER_FEED`. Use the preferred locale-specific names when you want separate channels per feed or locale.
 
 ## en-US Foundation
 
@@ -69,7 +76,7 @@ To test it, set:
 CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US
 ```
 
-Then add:
+Then add `DISCORD_WEBHOOK_CAREER_FEED` or the locale-specific Secrets:
 
 - `DISCORD_WEBHOOK_EN_US_BACKEND_DAILY`
 - `DISCORD_WEBHOOK_EN_US_NEWS_DAILY`
@@ -79,12 +86,12 @@ Do this before enabling Discord delivery. Review `en-US` artifacts first because
 ## Safe Setup Order
 
 1. Add `OPENAI_API_KEY` as a Secret.
-2. Add the webhook Secret for the locale and workflow you want to test.
-3. Keep `CAREER_FEED_DISCORD_DELIVERY_ENABLED=false`.
-4. Run the workflow with `dry_run=true`.
-5. Review artifacts and validation reports.
-6. Set `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`.
-7. Run with `dry_run=false` only after validation is clean.
+2. Run the Backend Daily workflow with `dry_run=true`.
+3. Review artifacts and validation reports.
+4. Add `DISCORD_WEBHOOK_CAREER_FEED` or the specific webhook Secret for the locale and workflow you want to test.
+5. Set `CAREER_FEED_DISCORD_DELIVERY_ENABLED=true`.
+6. Run with `dry_run=false` only after validation is clean.
+7. Set `CAREER_FEED_SCHEDULE_ENABLED=true` only when recurring scheduled generation is intended.
 
 ## Validation
 

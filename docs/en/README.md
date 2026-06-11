@@ -21,6 +21,7 @@ Career Feed documentation is split by language.
 | Document | Purpose |
 | --- | --- |
 | [Fork Setup Guide](./getting-started/fork-setup.md) | First dry-run and Discord delivery setup from a fork |
+| [CLI Setup](./getting-started/cli-setup.md) | Optional `gh` helper for fork Secrets and Variables |
 | [Fresh Fork Smoke Test](./getting-started/fresh-fork-smoke-test.md) | First Backend Daily dry-run without editing workflow YAML |
 | [Webhook Setup](./getting-started/webhook-setup.md) | Locale-specific Discord webhook Secret names and fallback rules |
 | [Runtime Configuration](./getting-started/runtime-configuration.md) | Secrets, Variables, and runtime gate reference |

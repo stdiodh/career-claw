@@ -40,6 +40,7 @@ jobs:
           CAREER_FEED_CAREER_WEEKLY_DAY: ${{ vars.CAREER_FEED_CAREER_WEEKLY_DAY }}
           CAREER_FEED_CAREER_WEEKLY_TIME: ${{ vars.CAREER_FEED_CAREER_WEEKLY_TIME }}
           CAREER_FEED_OSS_RECENT_DAYS: ${{ vars.CAREER_FEED_OSS_RECENT_DAYS }}
+          CAREER_FEED_SCHEDULE_ENABLED: ${{ vars.CAREER_FEED_SCHEDULE_ENABLED }}
           CAREER_FEED_DISCORD_DELIVERY_ENABLED: ${{ vars.CAREER_FEED_DISCORD_DELIVERY_ENABLED }}
         run: |
           set -euo pipefail
@@ -59,6 +60,8 @@ jobs:
           RUNTIME_REASON: ${{ steps.runtime_gate.outputs.reason }}
           DISCORD_DELIVERY_ENABLED: ${{ steps.runtime_gate.outputs.discord_delivery_enabled }}
           INPUT_SEND_TO_DISCORD: ${{ github.event_name == 'workflow_dispatch' && inputs.send_to_discord || 'true' }}
+          DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
+          DISCORD_WEBHOOK_CAREER_FEED: ${{ secrets.DISCORD_WEBHOOK_CAREER_FEED }}
         run: |
           set -euo pipefail
 
@@ -69,6 +72,12 @@ jobs:
           should_generate="true"
           should_send="true"
           skip_reason=""
+          webhook_secret_name="DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY or DISCORD_WEBHOOK_CAREER_FEED"
+          webhook_available="false"
+
+          if [ -n "${DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY:-${DISCORD_WEBHOOK_CAREER_FEED:-}}" ]; then
+            webhook_available="true"
+          fi
 
           if [ "${runtime_should_run}" != "true" ]; then
             should_generate="false"
@@ -80,6 +89,9 @@ jobs:
           elif [ "${discord_delivery_enabled}" != "true" ]; then
             should_send="false"
             skip_reason="discord_delivery_disabled"
+          elif [ "${webhook_available}" != "true" ]; then
+            should_send="false"
+            skip_reason="webhook_missing:${webhook_secret_name}"
           fi
 
           echo "should_generate=${should_generate}" >> "${GITHUB_OUTPUT}"
@@ -124,11 +136,13 @@ jobs:
         if: steps.delivery.outputs.should_send == 'true'
         shell: bash
         env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
+          DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY: ${{ secrets.DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY }}
+          DISCORD_WEBHOOK_CAREER_FEED: ${{ secrets.DISCORD_WEBHOOK_CAREER_FEED }}
         run: |
           set -euo pipefail
+          export DISCORD_WEBHOOK_URL="${DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY:-${DISCORD_WEBHOOK_CAREER_FEED:-}}"
           if [ -z "${DISCORD_WEBHOOK_URL}" ]; then
-            echo "Missing required secret: DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY" >&2
+            echo "Missing required secret: DISCORD_WEBHOOK_BACKEND_CAREER_WEEKLY or DISCORD_WEBHOOK_CAREER_FEED" >&2
             exit 1
           fi
           python3 scripts/send-discord.py reports/briefs/ko-KR/backend-career-weekly.md

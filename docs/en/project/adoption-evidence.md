@@ -66,10 +66,11 @@ Body:
 
 ## First run settings
 
-- CAREER_FEED_ENABLED_LOCALES=ko-KR
-- CAREER_FEED_DISCORD_DELIVERY_ENABLED=false
+- Repository Secret configured: OPENAI_API_KEY
+- Repository Variables added: none / list overrides used
 - dry_run=true
 - force_send=false
+- Discord delivery stayed disabled
 
 ## Artifact paths checked
 
