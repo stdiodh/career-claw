@@ -6,9 +6,11 @@ The roadmap keeps future ideas visible without expanding the current operating s
 
 ## Current Baseline
 
-Current baseline: `v0.2.1`.
+Latest published release baseline: `v0.2.0`.
 
-Career Feed currently provides fork-based GitHub Actions workflows, one-secret first dry-run setup, optional Variables, schedule-disabled-by-default safety, dry-run artifacts, validation, optional Discord Webhook delivery, `ko-KR` default support, and an `en-US` foundation / experimental preset.
+Prepared unpublished patch baseline: `v0.2.1` docs/onboarding updates.
+
+The current default branch provides fork-based GitHub Actions workflows, one-secret first dry-run setup, optional Variables, schedule-disabled-by-default safety, dry-run artifacts, validation, optional Discord Webhook delivery, `ko-KR` default support, and an `en-US` foundation / experimental preset.
 
 ## v0.2.x Patch Candidates
 

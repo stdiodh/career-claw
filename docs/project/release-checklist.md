@@ -6,7 +6,8 @@ Do not create a tag or publish a GitHub Release until the maintainer intentional
 
 ## Release Baseline
 
-- Current release baseline: `v0.2.1`.
+- Latest published release/tag: `v0.2.0`.
+- Prepared unpublished patch baseline: `v0.2.1` docs/onboarding updates dated 2026-06-11.
 - Current default supported locale: `ko-KR`.
 - Current experimental foundation locale: `en-US`.
 - Current operating model: fork-based GitHub Actions, dry-run artifacts, validation, optional Discord Webhook delivery.
@@ -16,6 +17,7 @@ Do not create a tag or publish a GitHub Release until the maintainer intentional
 
 - [ ] `CHANGELOG.md` describes the target release accurately.
 - [ ] README status and release links match the real tag state.
+- [ ] A `v0.2.1` tag and GitHub Release are created only if the maintainer intentionally publishes them.
 - [ ] `docs/project/release-v0.2.0.md` remains accurate for the v0.2 baseline.
 - [ ] `docs/project/v0.2-compatibility.md` covers any compatibility-sensitive change.
 - [ ] Korean and English user-facing docs stay consistent when behavior changes.
@@ -82,3 +84,9 @@ Release notes should include:
 - Whether any compatibility behavior changes.
 
 Do not rewrite existing release history. Add corrections in the next patch release notes or documentation.
+
+## Maintainer Manual Follow-ups
+
+- Rename the GitHub milestone `v0.1.x contributor onboarding` to `contributor onboarding` or `v0.2.x contributor onboarding`.
+- Keep issues #14-#17 as starter tasks if they are still relevant.
+- Do not treat this checklist as evidence that issue metadata was changed from repository files.

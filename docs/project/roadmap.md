@@ -4,9 +4,11 @@ This shared roadmap separates current behavior from patch candidates and larger 
 
 ## Current Baseline
 
-Current release baseline: `v0.2.1`.
+Latest published release baseline: `v0.2.0`.
 
-What v0.2.1 currently supports:
+Prepared unpublished patch baseline: `v0.2.1` docs/onboarding updates.
+
+What the current default branch supports after the prepared v0.2.1 updates:
 
 - fork-based GitHub Actions automation
 - dry-run artifact review
@@ -38,7 +40,7 @@ Patch candidates should be small and safe:
 - compatibility clarifications
 - safe bug fixes that preserve `ko-KR` behavior
 
-See [v0.2.1 Plan](./v0.2.1-plan.md) for the patch that introduced the current onboarding hardening.
+See [v0.2.1 Plan](./v0.2.1-plan.md) for the prepared patch notes and follow-up candidates behind the current onboarding hardening.
 
 ## v0.3.0 Feature Candidates
 

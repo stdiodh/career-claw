@@ -15,8 +15,8 @@ Choose a documentation language.
 | [Provider Expansion](./project/provider-expansion.md) | Provider maturity, expansion rules, and validation expectations |
 | [Source Policy](./project/source-policy.md) | Source quality, reliability, and spam-avoidance policy |
 | [Validation](./project/validation.md) | Current v0.2 validation commands and artifact expectations |
-| [Roadmap](./project/roadmap.md) | Current baseline, v0.2.x patch candidates, and v0.3.0 roadmap |
-| [v0.2.1 Plan](./project/v0.2.1-plan.md) | Patch-sized follow-up candidates |
+| [Roadmap](./project/roadmap.md) | Published baseline, prepared v0.2.x patch candidates, and v0.3.0 roadmap |
+| [v0.2.1 Plan](./project/v0.2.1-plan.md) | Prepared unpublished patch notes and follow-up candidates |
 | [v0.3.0 Roadmap](./project/v0.3.0-roadmap.md) | Larger feature candidates |
 | [OSS Application Readiness](./project/oss-application-readiness.md) | Codex for OSS readiness checklist |
 | [Codex for OSS Application](./project/codex-for-oss-application.md) | Suggested application positioning and answers |

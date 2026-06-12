@@ -20,9 +20,9 @@ Its value is in the onboarding layer of the backend ecosystem.
 
 It helps backend learners, junior developers, Discord study groups, and mentors produce reviewable study prompts, news summaries, and OSS contribution preparation material.
 
-## 3. Current evidence in v0.2.1
+## 3. Current evidence in the prepared v0.2.1 baseline
 
-Evidence available in v0.2.1 includes:
+Evidence available in the current default branch after the prepared v0.2.1 docs/onboarding updates includes:
 
 - `ko-KR` as the default supported locale
 - `en-US` as an experimental foundation
@@ -88,7 +88,7 @@ Secrets, webhook URLs, API keys, and private identifiers stay out of docs and is
 The text below is under 500 characters.
 
 ```text
-Career Feed is an Early Public OSS, fork-based GitHub Actions automation project at v0.2.1. It is not a production backend dependency, framework, database, or hosted SaaS. Its value is onboarding support for backend learners, junior developers, Discord study groups, mentors, and OSS contribution preparation. Usage metrics are not yet claimed.
+Career Feed is an Early Public OSS, fork-based GitHub Actions automation project. Its latest published release is v0.2.0, with prepared unpublished v0.2.1 docs/onboarding updates on the default branch. It is not a production backend dependency, framework, database, or hosted SaaS. Usage metrics are not yet claimed.
 ```
 
 ## 8. Copy-ready API credit usage text

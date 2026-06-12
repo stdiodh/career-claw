@@ -2,7 +2,7 @@
 
 > Language: [한국어](./promotion-readiness.md) | [English](../../en/project/promotion-readiness.md)
 
-이 문서는 v0.2.1 릴리스에서 Career Feed를 공개적으로 소개하기 전에 maintainer가 과장 없이 점검할 항목을 정리합니다.
+이 문서는 prepared v0.2.1 docs/onboarding 업데이트 이후 Career Feed를 공개적으로 소개하기 전에 maintainer가 과장 없이 점검할 항목을 정리합니다.
 
 목표는 blind adoption을 요구하는 것이 아니라 early OSS feedback을 안전하게 요청하는 것입니다.
 
@@ -85,13 +85,13 @@ Who this is not for:
 ### Korean short post
 
 ```text
-Career Feed v0.2.1 공개 피드백을 받고 싶습니다. GitHub Actions, OpenAI API, Discord Webhook으로 백엔드 학습, 개발/AI 뉴스, OSS 기여 준비 자료를 dry-run artifact로 생성하고 검증하는 Early Public OSS입니다. 프로덕션 의존성이나 커리어 조언 정답지가 아니라 fork해서 검토 가능한 자동화 흐름입니다. fresh fork smoke test를 따라 보고 막히는 지점이나 source 제안을 issue로 알려 주세요.
+Career Feed의 v0.2.1 docs/onboarding 준비 상태에 대한 공개 피드백을 받고 싶습니다. GitHub Actions, OpenAI API, Discord Webhook으로 백엔드 학습, 개발/AI 뉴스, OSS 기여 준비 자료를 dry-run artifact로 생성하고 검증하는 Early Public OSS입니다. 프로덕션 의존성이나 커리어 조언 정답지가 아니라 fork해서 검토 가능한 자동화 흐름입니다. fresh fork smoke test를 따라 보고 막히는 지점이나 source 제안을 issue로 알려 주세요.
 ```
 
 ### English short post
 
 ```text
-Career Feed v0.2.1 is looking for early feedback. It is an Early Public OSS project that uses GitHub Actions, the OpenAI API, and Discord Webhooks to generate reviewable dry-run artifacts for backend learning, dev/AI news, and OSS contribution preparation. It is not a production dependency or career-advice oracle. Try the fresh-fork smoke test and open an issue with setup friction, artifact feedback, or source suggestions.
+Career Feed is looking for early feedback on its prepared v0.2.1 docs/onboarding baseline. It is an Early Public OSS project that uses GitHub Actions, the OpenAI API, and Discord Webhooks to generate reviewable dry-run artifacts for backend learning, dev/AI news, and OSS contribution preparation. It is not a production dependency or career-advice oracle. Try the fresh-fork smoke test and open an issue with setup friction, artifact feedback, or source suggestions.
 ```
 
 ### Hacker News Show HN style title
