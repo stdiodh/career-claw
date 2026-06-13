@@ -4,7 +4,7 @@ This checklist helps evaluate whether Career Feed is ready for a Codex for OSS a
 
 ## Current Readiness
 
-Current score: 8 out of 10 after v0.2.1 onboarding hardening.
+Current score: 8 out of 10 after the prepared v0.2.1 onboarding hardening.
 
 What the repository proves:
 
@@ -34,9 +34,9 @@ What it does not prove:
 
 ## Pre-Application Checklist
 
-- [ ] README describes v0.2.1 accurately.
-- [ ] CHANGELOG includes v0.2.1.
-- [ ] Release docs identify v0.2.1 as current baseline.
+- [ ] README describes the published v0.2.0 release and prepared unpublished v0.2.1 baseline accurately.
+- [ ] CHANGELOG includes prepared v0.2.1 notes.
+- [ ] Release docs distinguish the published v0.2.0 release from the unpublished v0.2.1 baseline.
 - [ ] `ko-KR` remains default supported locale.
 - [ ] `en-US` is described as foundation/experimental.
 - [ ] Provider scaffolds are not overclaimed.

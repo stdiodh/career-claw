@@ -61,15 +61,15 @@ Additional locales are later community-maintained work.
 ## Project Status
 
 - Status: Early Public OSS
-- Latest release: [`v0.2.1`](https://github.com/stdiodh/career-feed/releases/tag/v0.2.1)
-- Release date: 2026-06-11
-- Release baseline: fork-based GitHub Actions workflows with one-secret first dry-run, dry-run artifact review, schedule-disabled-by-default safety, and optional Discord Webhook delivery.
+- Latest published release: [`v0.2.0`](https://github.com/stdiodh/career-feed/releases/tag/v0.2.0)
+- Prepared unpublished patch baseline: `v0.2.1` docs/onboarding updates dated 2026-06-11.
+- Current operating baseline: fork-based GitHub Actions workflows with one-secret first dry-run, dry-run artifact review, schedule-disabled-by-default safety, and optional Discord Webhook delivery.
 
 Workflow files are the source of truth for actual cron, inputs, and dispatch behavior.
 
 Release and compatibility details:
 
-- [v0.2.1 changelog](./CHANGELOG.md)
+- [prepared v0.2.1 changelog notes](./CHANGELOG.md)
 - [v0.2.0 locale foundation baseline](./docs/project/release-v0.2.0.md)
 - [v0.2 compatibility notes](./docs/project/v0.2-compatibility.md)
 - [release checklist](./docs/project/release-checklist.md)
@@ -167,6 +167,8 @@ The documentation gateway is [docs/README.md](./docs/README.md).
 | `tests/` | Policy and script validation tests |
 
 Generated reports are written under `reports/` during workflow runs and are not meant to be committed by default.
+
+`app/` is retained legacy/prototype code and is not required for the current Career Feed GitHub Actions workflow. See [LEGACY.md](./LEGACY.md) before considering cleanup of `app/`, `infra/`, workflow, fixture, report, security, or compatibility paths.
 
 ## Contributing
 

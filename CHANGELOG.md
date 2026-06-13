@@ -6,9 +6,13 @@ This project is still an early open-source automation tool. Release notes descri
 
 ## [Unreleased]
 
-No unreleased changes.
+### Changed
+
+- Clarified that `v0.2.0` is the latest published release and `v0.2.1` remains a prepared unpublished docs/onboarding baseline until the maintainer tags and publishes it.
 
 ## [0.2.1] - 2026-06-11
+
+Prepared patch notes for an unpublished v0.2.1 baseline. The maintainer has not created a `v0.2.1` tag or GitHub Release yet.
 
 ### Added
 

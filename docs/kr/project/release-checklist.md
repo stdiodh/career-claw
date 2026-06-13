@@ -4,7 +4,9 @@
 
 This checklist is for maintainers preparing v0.2.x patch releases and later public Career Feed releases.
 
-현재 baseline은 `v0.2.1`입니다.
+최신 published release/tag는 `v0.2.0`입니다.
+
+Prepared unpublished patch baseline은 2026-06-11의 `v0.2.1` docs/onboarding 업데이트입니다.
 
 `v0.1.0`은 과거 첫 fork 기반 릴리스로 유지하고, 새 릴리스 준비 문서는 v0.2.x 이후를 기준으로 작성합니다.
 
@@ -132,6 +134,7 @@ Before a v0.2.x patch release:
 
 - [ ] `CHANGELOG.md` updated.
 - [ ] README links verified.
+- [ ] README release status matches the real tag state.
 - [ ] Tests pass.
 - [ ] Docs validation passes.
 - [ ] Release notes drafted.
@@ -169,3 +172,9 @@ Before publishing, confirm that:
 - limitations remain visible
 - the tag is created manually by the maintainer
 - published release history is not rewritten
+
+## Maintainer manual follow-ups
+
+- Rename the GitHub milestone `v0.1.x contributor onboarding` to `contributor onboarding` or `v0.2.x contributor onboarding`.
+- Keep issues #14-#17 as starter tasks if they are still relevant.
+- Do not treat this checklist as evidence that issue metadata was changed from repository files.

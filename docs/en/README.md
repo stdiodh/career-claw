@@ -78,9 +78,9 @@ Career Feed documentation is split by language.
 | Document | Purpose |
 | --- | --- |
 | [Roadmap](./project/roadmap.md) | Current and future scope |
-| [Shared Roadmap](../project/roadmap.md) | v0.2.1 and v0.3.0 planning baseline |
+| [Shared Roadmap](../project/roadmap.md) | Published v0.2.0, prepared v0.2.1, and v0.3.0 planning baseline |
 | [Codex for OSS Application](./project/codex-for-oss-application.md) | Honest application positioning |
-| [Promotion Readiness](./project/promotion-readiness.md) | Public launch checklist for v0.2.1 |
+| [Promotion Readiness](./project/promotion-readiness.md) | Public feedback checklist for the prepared v0.2.1 baseline |
 | [Changelog](../../CHANGELOG.md) | Change history |
 | [Release Checklist](./project/release-checklist.md) | Maintainer release checklist |
 | [v0.2.0 Release Notes](./release-notes/v0.2.0.md) | Locale foundation release notes |

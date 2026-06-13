@@ -21,7 +21,7 @@ Career Feed turns scattered public learning and career signals into reproducible
 
 Its value is maintainability, safety, and reviewability rather than adoption metrics.
 
-## 4. Current v0.2.1 Maturity
+## 4. Current Default-Branch Maturity
 
 Current support:
 
@@ -110,7 +110,7 @@ Safety controls:
 ## 10. Pre-Application Checklist
 
 - [ ] Final validation passes.
-- [ ] README and release docs identify v0.2.1 as current.
+- [ ] README and release docs distinguish the published v0.2.0 release from the prepared unpublished v0.2.1 baseline.
 - [ ] No fake metrics are present.
 - [ ] No secret values are present.
 - [ ] `ko-KR` compatibility is documented.
