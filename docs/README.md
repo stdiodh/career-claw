@@ -18,8 +18,12 @@ Choose a documentation language.
 | [Roadmap](./project/roadmap.md) | Published baseline, prepared v0.2.x patch candidates, and v0.3.0 roadmap |
 | [v0.2.1 Plan](./project/v0.2.1-plan.md) | Prepared unpublished patch notes and follow-up candidates |
 | [v0.3.0 Roadmap](./project/v0.3.0-roadmap.md) | Larger feature candidates |
+| [OSS Readiness Review](./oss-readiness-review.md) | Evidence-backed readiness, scoring, risks, strengths, and reviewer concerns |
+| [UX Onboarding Review](./ux-onboarding-review.md) | First visitor, fork user, contributor, reviewer, and innovation review |
+| [Roadmap Expansion Opportunities](./roadmap-expansion-opportunities.md) | P0/P1/P2 roadmap with acceptance criteria and validation commands |
 | [OSS Application Readiness](./project/oss-application-readiness.md) | Codex for OSS readiness checklist |
-| [Codex for OSS Application](./project/codex-for-oss-application.md) | Suggested application positioning and answers |
+| [Codex for OSS Application Packet](./codex-for-oss-application.md) | Current root application packet with Korean short answers, rejection risks, and reviewer guardrails |
+| [Codex for OSS Application](./project/codex-for-oss-application.md) | Earlier shared positioning reference; keep it aligned with the root packet before submission |
 | [Release Checklist](./project/release-checklist.md) | Maintainer release checklist for v0.2.x and later |
 
 ## Notes
@@ -27,5 +31,6 @@ Choose a documentation language.
 - Korean links stay inside `docs/kr/**`.
 - English links stay inside `docs/en/**`.
 - Shared release, compatibility, roadmap, and readiness docs may live in `docs/project/**`.
+- Audit and application packet docs may live at the `docs/` root when they need to summarize multiple language trees and workflow surfaces.
 - Shared screenshots and social images stay inside `docs/assets/**`.
 - Root-level community files are language gateways; full content lives in each language tree.

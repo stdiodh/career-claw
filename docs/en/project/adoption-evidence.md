@@ -139,7 +139,7 @@ Before accepting evidence into README, application docs, release notes, or ecosy
 
 ## Safe summary wording
 
-Use careful wording.
+Use careful wording. The example below is template wording, not a current adoption claim. Use it only after a real public issue or public discussion exists and passes the checklist above.
 
 Acceptable:
 

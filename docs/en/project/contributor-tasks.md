@@ -2,29 +2,142 @@
 
 > Language: [한국어](../../kr/project/contributor-tasks.md) | [English](./contributor-tasks.md)
 
-These task ideas are intentionally small so contributors can open focused issues or pull requests.
+This document lists contribution ideas before they become GitHub issues.
+
+It is meant to help first-time contributors choose a small, reviewable task.
+
+Do not start large workflow or policy changes without opening an issue first.
 
 ## Good first issues
 
-- Fix broken or unclear documentation links.
-- Improve English or Korean wording without changing behavior.
-- Add a validation fixture for an existing rule.
-- Improve a sample output to match current policy.
+### docs: improve fork setup wording
+
+Scope:
+
+- Clarify one confusing setup step in `docs/en/getting-started/fork-setup.md`.
+- Keep the fork to dry-run to artifact review to Discord delivery flow intact.
+- Do not change workflow logic.
+
+Verify:
+
+- README links still work.
+- `docs/en/getting-started/fork-setup.md` remains readable.
+- `git diff --check` passes.
+
+### docs: clarify runtime variable examples
+
+Scope:
+
+- Improve one example in `docs/en/getting-started/runtime-configuration.md`.
+- Keep existing defaults unchanged.
+- Do not edit workflow YAML.
+
+Verify:
+
+- Invalid time examples still show clearly invalid values.
+- Timezone examples remain IANA timezone names.
+
+### test: add stale OSS candidate fixture
+
+Scope:
+
+- Add one fixture for an issue older than the recent window.
+- Ensure it is not `safe_to_recommend`.
+- Keep `created_at` as the freshness source.
+
+Verify:
+
+- Related candidate or validator tests pass.
+- `updated_at` does not make a stale issue safe.
+
+### docs: improve sample output notes
+
+Scope:
+
+- Improve `docs/en/getting-started/sample-output.md`.
+- Use existing example files or placeholder links only.
+- Do not add real Discord screenshots or webhook URLs.
+
+Verify:
+
+- No real webhook or secret appears.
+- Relative links resolve.
+
+### docs: improve demo guide redaction notes
+
+Scope:
+
+- Improve `docs/en/demo.md` screenshot redaction rules.
+- Keep demo assets limited to GitHub Actions, validation artifacts, generated briefs, and Discord output.
+- Do not add placeholder image files.
+
+Verify:
+
+- No missing image link is introduced.
+- `python3 scripts/check-doc-format.py` passes.
 
 ## Help wanted
 
-- Review source quality for configured career pages.
-- Improve backend learning topic descriptions.
-- Suggest safe OSS candidate labels for configured repositories.
-- Improve troubleshooting for dry-run artifacts.
+### docs: add Java/Kotlin source curation guide
+
+Scope:
+
+- Explain what makes a good source for Java/Kotlin backend developers.
+- Include public availability, update cadence, and reliability caveats.
+- Avoid unverified claims.
+
+Verify:
+
+- Source suggestion issue template still asks for usefulness and cautions.
+- No paywalled or private source is presented as generally available.
+
+### feat: improve validation report readability
+
+Scope:
+
+- Make validation errors easier to understand.
+- Preserve existing validation rules.
+- Do not downgrade unsafe OSS URL failures to warnings.
+
+Verify:
+
+- Stale URL still fails.
+- Hallucinated issue URL still fails.
+- Safe fallback still passes.
+
+### test: add contributor-friendly validator fixtures
+
+Scope:
+
+- Add small fixtures that show one validation failure per file.
+- Keep fixture names explicit.
+- Avoid real secrets and private URLs.
+
+Verify:
+
+- `./scripts/validate.sh` passes.
+- Failure fixtures fail for the intended reason.
 
 ## Not accepted contributions
 
-- Persistent server or database implementation.
-- Discord Gateway Bot or Slash Command features.
-- Secret values in examples.
-- Broad rewrites unrelated to active workflows.
+- fake usage metrics
+- fake stars, forks, downloads, active users, or adoption stories
+- auto-claiming external GitHub issues
+- auto-commenting on external repositories
+- auto-assigning or auto-labeling external issues
+- storing secrets in docs or fixtures
+- adding scraped private data
+- bypassing validation to force Discord delivery
+- presenting planned roadmap items as current features
+- persistent server or database implementation
+- Discord Gateway Bot or Slash Command features
+- broad rewrites unrelated to active workflows
 
 ## Before opening a PR
 
-Run the relevant checks, keep generated reports out of the commit, and link the issue or reason for the change.
+- Read [Contributing](../CONTRIBUTING.md).
+- Check [Fork Setup Guide](../getting-started/fork-setup.md) if the change affects user setup.
+- Check [OSS Candidate Policy](../policies/oss-candidate-policy.md) if the change affects OSS candidates.
+- Run the smallest relevant validation command.
+- Keep generated `reports/` artifacts out of the commit unless a maintainer asks for a fixture or public example.
+- Explain what changed and why in the pull request body.

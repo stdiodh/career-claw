@@ -33,7 +33,7 @@ The default enabled locale remains `ko-KR`.
 
 ## ko-KR Default Support
 
-`ko-KR` is the production-ready path for the current project scope.
+`ko-KR` is the most complete supported path for the current project scope.
 
 It includes Korean-oriented source assumptions, existing workflow behavior, legacy webhook fallback names, legacy artifact mirrors, and the strongest documentation coverage.
 

@@ -27,7 +27,7 @@ Set `CAREER_FEED_ENABLED_LOCALES=ko-KR,en-US` to generate separate dry-run artif
 Webhook URLs remain GitHub Secrets, while enabled locales and provider names are GitHub Variables.
 Additional locales are later community-maintained work.
 
-`ko-KR` is the supported default path today. It includes the Korean source assumptions, Discord webhook fallback names, legacy mirror artifact paths, and validation fixtures that existing fork users rely on.
+`ko-KR` is the supported default path today. It includes the Korean source assumptions, Discord webhook fallback names, legacy mirror artifact paths, and validation fixtures preserved for v0.2 compatibility.
 
 `en-US` is available as a v0.2 foundation for testing locale-aware prompts, artifacts, fixtures, and webhook naming. Its source/provider coverage is still experimental and should not be described as mature global support.
 
@@ -130,6 +130,7 @@ New forks should use the canonical workflow names, locale-specific artifact path
 - Discord delivery is disabled by default, and `dry_run=true` never sends to Discord.
 - First Backend Daily dry-run requires only `OPENAI_API_KEY`; Discord, Naver, Brave, and repository Variables are optional later setup.
 - Scheduled generation is disabled by default with `CAREER_FEED_SCHEDULE_ENABLED=false`; manual `workflow_dispatch` still works.
+- OpenAI generation can consume API credits when workflows generate briefs; keep scheduled generation disabled until recurring runs are intentional.
 - Discord delivery can use `DISCORD_WEBHOOK_CAREER_FEED` as a generic fallback after specific and legacy webhook Secrets.
 - Generated briefs must pass validation before Discord delivery.
 - OSS candidates are recommended only when they satisfy the configured `created_at` recency policy.
@@ -151,7 +152,7 @@ Not supported yet:
 | 한국어 | [docs/kr/README.md](./docs/kr/README.md) | [Fork Setup Guide](./docs/kr/getting-started/fork-setup.md) |
 | English | [docs/en/README.md](./docs/en/README.md) | [Fork Setup Guide](./docs/en/getting-started/fork-setup.md) |
 
-The documentation gateway is [docs/README.md](./docs/README.md).
+The documentation gateway is [docs/README.md](./docs/README.md). Reviewer-facing audit and application artifacts start at [OSS Readiness Review](./docs/oss-readiness-review.md), [UX Onboarding Review](./docs/ux-onboarding-review.md), [Roadmap Expansion Opportunities](./docs/roadmap-expansion-opportunities.md), and [Codex for OSS Application Packet](./docs/codex-for-oss-application.md).
 
 ## Repository Structure
 

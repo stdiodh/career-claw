@@ -36,6 +36,9 @@ body:
       label: 막힌 영역
       options:
         - fork setup
+        - README or docs navigation
+        - first-time visitor explanation
+        - Korean and English docs divergence
         - runtime configuration
         - dry-run and artifacts
         - validation

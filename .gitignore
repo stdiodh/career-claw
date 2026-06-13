@@ -54,11 +54,17 @@ infra/openclaw/data/
 reports/*.md
 reports/*.markdown
 reports/candidates/*.json
+reports/candidates/*/*.json
 reports/briefs/*.md
 reports/briefs/*.markdown
+reports/briefs/*/*.md
+reports/briefs/*/*.markdown
 reports/ops/*.json
 reports/ops/*.md
+reports/ops/*/*.json
+reports/ops/*/*.md
 reports/ops/delivery-locks/*
+reports/ops/*/delivery-locks/*
 !reports/.gitkeep
 !reports/candidates/.gitkeep
 !reports/briefs/.gitkeep
