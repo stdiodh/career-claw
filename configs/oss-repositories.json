@@ -1,531 +1,286 @@
 {
-  "version": 2,
-  "source": "framework-oss-contribution-recommendation-guide",
-  "policy": {
-    "platform": "GitHub Issues",
-    "ecosystem": "Java/Kotlin backend framework OSS",
-    "no_openjdk_jbs_collection": true,
-    "no_issue_mutation": true,
-    "no_fixed_issue_numbers": true,
-    "inspect_current_github_issue_state": true,
-    "primary_output": "reports/candidates/kr-oss-contribution-opportunities.json"
+  "schema_version": 2,
+  "checked_at": "2026-07-16",
+  "valid_until": "2026-10-14",
+  "audit": {
+    "performed_by": "Codex",
+    "performed_by_type": "AUTOMATED",
+    "method": "GitHub REST repository and pull request metadata plus official CONTRIBUTING/build instructions",
+    "human_attested": false
   },
-  "repositories": [
-    "spring-projects/spring-security",
-    "spring-projects/spring-restdocs",
-    "spring-projects/spring-boot",
-    "gradle/gradle",
-    "ktorio/ktor-documentation",
-    "quarkusio/quarkus",
-    "testcontainers/testcontainers-java",
-    "micronaut-projects/micronaut-core",
-    "spring-projects/spring-framework"
-  ],
-  "weekly_observation_repositories": [
-    "ktorio/ktor",
-    "Kotlin/kotlinx.coroutines"
-  ],
-  "score_model": {
-    "technical_fit": 30,
-    "external_contribution_signal": 20,
-    "scope_clarity": 15,
-    "validation_feasibility": 15,
-    "maintainer_signal": 10,
-    "portfolio_value": 10,
-    "interpretation": {
-      "85+": "top candidate for today",
-      "75-84": "eligible for top 3",
-      "65-74": "hold or weekly candidate",
-      "0-64": "exclude from today's recommendation"
-    }
-  },
-  "global_positive_labels": [
-    "good first issue",
-    "help wanted",
-    "ideal-for-contribution",
-    "first-timers-only",
-    "documentation",
-    "docs",
-    "testing",
-    "javadoc",
-    "kdoc",
-    "sample",
-    "example",
-    "bug",
-    "reproducible",
-    "comprehensibility"
-  ],
-  "global_exclusion_signals": [
-    "team-only",
-    "blocked",
-    "on-hold",
-    "pending-design-work",
-    "needs-design",
-    "needs-decision",
-    "internal-feedback",
-    "breaking-change",
-    "major",
-    "epic",
-    "security vulnerability",
-    "CVE",
-    "release blocker"
-  ],
-  "repository_profiles": [
+  "excluded_repositories": [
     {
       "repository": "spring-projects/spring-security",
-      "display_name": "Spring Security",
-      "priority": "A",
-      "initial_fit_score": 90,
-      "ecosystem_tags": ["spring", "security", "oauth2", "jvm", "backend"],
-      "preferred_contribution_types": ["docs", "test", "sample", "bug-repro", "javadoc", "error-message"],
-      "beginner_labels": [
-        "status: ideal-for-contribution",
-        "in: docs",
-        "type: documentation",
-        "type: enhancement",
-        "in: testing",
-        "waiting-for-triage"
-      ],
-      "positive_title_keywords": [
-        "authentication",
-        "authorization",
-        "OAuth2",
-        "Resource Server",
-        "SecurityFilterChain",
-        "debugging guide",
-        "logging",
-        "documentation",
-        "sample",
-        "test"
-      ],
-      "avoid_labels": [
-        "team-only",
-        "blocked",
-        "pending-design-work",
-        "waiting-for-internal-feedback"
-      ],
-      "avoid_title_keywords": [
-        "security vulnerability",
-        "CVE",
-        "authentication bypass",
-        "authorization bypass",
-        "breaking change",
-        "major API",
-        "RFC",
-        "epic"
-      ],
-      "contribution_guide": "CONTRIBUTING.adoc와 reference docs, samples를 먼저 확인합니다.",
-      "search_urls": [
-        "https://github.com/spring-projects/spring-security/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22status%3A+ideal-for-contribution%22",
-        "https://github.com/spring-projects/spring-security/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22in%3A+docs%22"
-      ],
-      "search_queries": [
-        {"name": "ideal_for_contribution", "query": "is:issue is:open no:assignee label:\"status: ideal-for-contribution\""},
-        {"name": "docs", "query": "is:issue is:open no:assignee label:\"in: docs\""},
-        {"name": "testing", "query": "is:issue is:open no:assignee label:\"in: testing\""},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
-      ],
-      "local_check_hints": ["./gradlew test", "./gradlew :docs:asciidoctor"],
-      "docs_or_test_hints": ["docs", "samples", "config 관련 테스트", "oauth2 관련 테스트"],
-      "junior_notes": "인증/인가 문서, sample, 테스트 재현처럼 보안 취약점이 아닌 학습 가치가 큰 이슈를 우선합니다."
-    },
-    {
-      "repository": "spring-projects/spring-restdocs",
-      "display_name": "Spring REST Docs",
-      "priority": "A",
-      "initial_fit_score": 84,
-      "ecosystem_tags": ["spring", "documentation", "testing", "jvm", "backend"],
-      "preferred_contribution_types": ["docs", "sample", "test"],
-      "beginner_labels": ["type: documentation", "in: docs", "status: ideal-for-contribution", "help wanted"],
-      "positive_title_keywords": [
-        "API documentation",
-        "test-based docs",
-        "Spring Boot",
-        "example",
-        "sample",
-        "error documentation",
-        "documentation"
-      ],
-      "avoid_labels": ["team-only", "blocked", "pending-design-work", "status: on-hold"],
-      "avoid_title_keywords": ["breaking change", "major API", "design proposal", "RFC", "epic"],
-      "contribution_guide": "CONTRIBUTING.adoc와 reference documentation, sample snippets를 먼저 확인합니다.",
-      "search_urls": [
-        "https://github.com/spring-projects/spring-restdocs/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+documentation",
-        "https://github.com/spring-projects/spring-restdocs/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+sample"
-      ],
-      "search_queries": [
-        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
-        {"name": "sample", "query": "is:issue is:open no:assignee sample"},
-        {"name": "test", "query": "is:issue is:open no:assignee test"},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
-      ],
-      "local_check_hints": ["./gradlew test", "./gradlew docs"],
-      "docs_or_test_hints": ["docs", "samples", "src/test", "reference documentation snippets"],
-      "junior_notes": "문서와 테스트 기반 API 문서화 예제가 중심이라 첫 문서/샘플 기여 후보로 적합합니다."
-    },
+      "checked_at": "2026-07-16",
+      "window_start": "2026-04-17",
+      "merged_pull_request_count": 132,
+      "external_human_merged_pull_request_count": 0,
+      "reason": "no_external_human_merged_pr_within_90_days",
+      "evidence_url": "https://github.com/spring-projects/spring-security/pulls?q=is%3Apr%20is%3Amerged%20merged%3A%3E%3D2026-04-17"
+    }
+  ],
+  "policy": {
+    "lookback_days": 180,
+    "fresh_days": 90,
+    "warm_days": 180,
+    "search_per_repository": 10,
+    "preselect_limit": 3,
+    "request_limit": 19
+  },
+  "repositories": [
     {
       "repository": "spring-projects/spring-boot",
-      "display_name": "Spring Boot",
-      "priority": "A",
-      "initial_fit_score": 82,
-      "ecosystem_tags": ["spring", "spring-boot", "jvm", "backend", "testing"],
-      "preferred_contribution_types": ["docs", "test", "bug-repro", "error-message", "sample"],
-      "beginner_labels": [
+      "checked_at": "2026-07-16",
+      "include_labels": [
         "status: ideal-for-contribution",
-        "status: first-timers-only",
-        "type: documentation",
-        "type: bug",
-        "status: waiting-for-triage",
-        "theme: containers",
-        "theme: config-data",
-        "theme: grpc",
-        "theme: aot"
+        "status: first-timers-only"
       ],
-      "positive_title_keywords": [
-        "reference docs",
-        "Kotlin",
-        "Actuator",
-        "Config",
-        "Logging",
-        "Docker Compose",
-        "Testcontainers",
-        "documentation",
-        "sample",
-        "error message"
-      ],
-      "avoid_labels": [
-        "status: team-only",
-        "status: pending-design-work",
+      "exclude_labels": [
         "status: blocked",
-        "status: on-hold"
+        "status: waiting-for-feedback",
+        "status: waiting-for-internal-feedback",
+        "status: pending-design-work",
+        "status: on-hold",
+        "status: team-only",
+        "type: blocker",
+        "type: epic"
       ],
-      "avoid_title_keywords": [
-        "security vulnerability",
-        "CVE",
-        "breaking change",
-        "major API",
-        "native image internals",
-        "RFC",
-        "epic"
-      ],
-      "contribution_guide": "CONTRIBUTING.adoc와 Spring Boot reference docs를 먼저 확인합니다.",
-      "search_urls": [
-        "https://github.com/spring-projects/spring-boot/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22status%3A+ideal-for-contribution%22",
-        "https://github.com/spring-projects/spring-boot/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22type%3A+documentation%22"
-      ],
-      "search_queries": [
-        {"name": "ideal_for_contribution", "query": "is:issue is:open no:assignee label:\"status: ideal-for-contribution\""},
-        {"name": "first_timers", "query": "is:issue is:open no:assignee label:\"status: first-timers-only\""},
-        {"name": "documentation", "query": "is:issue is:open no:assignee label:\"type: documentation\""},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
-      ],
-      "local_check_hints": ["./gradlew test", "./gradlew :spring-boot-project:spring-boot-docs:asciidoctor"],
-      "docs_or_test_hints": ["spring-boot-project/spring-boot-docs", "spring-boot-project/spring-boot-autoconfigure 테스트", "Actuator 테스트"],
-      "junior_notes": "reference docs, Kotlin 사용, Actuator/Config/Logging처럼 실무 백엔드 학습과 연결되는 작은 이슈를 우선합니다."
-    },
-    {
-      "repository": "gradle/gradle",
-      "display_name": "Gradle",
-      "priority": "B",
-      "initial_fit_score": 78,
-      "ecosystem_tags": ["gradle", "build", "java", "kotlin-dsl", "backend"],
-      "preferred_contribution_types": ["docs", "test", "bug-repro", "error-message"],
-      "beginner_labels": [
-        "good first issue",
-        "help wanted",
-        "a:documentation",
-        "a:bug",
-        "re:comprehensibility",
-        "in:java-plugins",
-        "in:testing",
-        "in:kotlin-dsl"
-      ],
-      "positive_title_keywords": [
-        "Kotlin DSL",
-        "Java plugin",
-        "test fixtures",
-        "dependency management",
-        "error",
-        "comprehensibility",
-        "documentation"
-      ],
-      "avoid_labels": ["blocked", "team-only", "needs-design", "breaking-change"],
-      "avoid_title_keywords": ["breaking change", "major API", "configuration cache redesign", "daemon internals", "epic"],
-      "contribution_guide": "CONTRIBUTING.md와 contributor guide, user manual 문서 빌드 절차를 먼저 확인합니다.",
-      "search_urls": [
-        "https://github.com/gradle/gradle/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22good+first+issue%22",
-        "https://github.com/gradle/gradle/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22a%3Adocumentation%22"
-      ],
-      "search_queries": [
-        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"good first issue\""},
-        {"name": "help_wanted", "query": "is:issue is:open no:assignee label:\"help wanted\""},
-        {"name": "documentation", "query": "is:issue is:open no:assignee label:\"a:documentation\""},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
-      ],
-      "local_check_hints": ["./gradlew test", "./gradlew docs:docs"],
-      "docs_or_test_hints": ["platforms/documentation", "subprojects/core/src/test", "Kotlin DSL samples"],
-      "junior_notes": "빌드 오류 이해, Kotlin DSL, Java plugin 문서/테스트처럼 백엔드 개발자 생산성과 직접 연결되는 이슈를 우선합니다."
-    },
-    {
-      "repository": "ktorio/ktor-documentation",
-      "display_name": "Ktor Documentation",
-      "priority": "B",
-      "initial_fit_score": 76,
-      "ecosystem_tags": ["ktor", "kotlin", "documentation", "server", "backend"],
-      "preferred_contribution_types": ["docs", "sample"],
-      "beginner_labels": ["good first issue", "help wanted", "documentation", "docs"],
-      "positive_title_keywords": ["Kotlin server", "routing", "auth", "client testing", "server testing", "tutorial", "sample"],
-      "avoid_labels": ["blocked", "team-only", "needs-design", "on-hold"],
-      "avoid_title_keywords": ["breaking change", "major API", "engine internals", "RFC", "epic"],
-      "contribution_guide": "README와 documentation contribution guide, tutorial 구조를 먼저 확인합니다.",
-      "search_urls": [
-        "https://github.com/ktorio/ktor-documentation/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+documentation",
-        "https://github.com/ktorio/ktor-documentation/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+sample"
-      ],
-      "search_queries": [
-        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
-        {"name": "sample", "query": "is:issue is:open no:assignee sample"},
-        {"name": "tutorial", "query": "is:issue is:open no:assignee tutorial"},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
-      ],
-      "local_check_hints": ["README의 문서 빌드 절차 확인"],
-      "docs_or_test_hints": ["topics/server", "topics/client", "codeSnippets", "tutorials"],
-      "junior_notes": "Ktor core보다 documentation 저장소의 routing/auth/testing 튜토리얼과 sample 이슈를 먼저 봅니다."
-    },
-    {
-      "repository": "quarkusio/quarkus",
-      "display_name": "Quarkus",
-      "priority": "B",
-      "initial_fit_score": 74,
-      "ecosystem_tags": ["quarkus", "java", "cloud-native", "backend", "security"],
-      "preferred_contribution_types": ["docs", "test", "sample", "bug-repro"],
-      "beginner_labels": [
-        "good first issue",
-        "help wanted",
-        "kind/documentation",
-        "area/logging",
-        "area/security",
-        "area/oidc",
-        "area/testing",
-        "area/devtools",
-        "area/config"
-      ],
-      "positive_title_keywords": ["logging", "tracing", "observability", "OIDC", "security", "devtools", "config", "documentation", "test"],
-      "avoid_labels": ["blocked", "team-only", "triage/needs-design", "kind/epic"],
-      "avoid_title_keywords": ["breaking change", "major API", "extension redesign", "RFC", "epic"],
-      "contribution_guide": "CONTRIBUTING.md와 Quarkus contributor guide, docs module을 먼저 확인합니다.",
-      "search_urls": [
-        "https://github.com/quarkusio/quarkus/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22good+first+issue%22",
-        "https://github.com/quarkusio/quarkus/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22kind%2Fdocumentation%22"
-      ],
-      "search_queries": [
-        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"good first issue\""},
-        {"name": "documentation", "query": "is:issue is:open no:assignee label:\"kind/documentation\""},
-        {"name": "testing", "query": "is:issue is:open no:assignee label:\"area/testing\""},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
-      ],
-      "local_check_hints": ["./mvnw -DskipTests install", "./mvnw test"],
-      "docs_or_test_hints": ["docs/src/main/asciidoc", "integration-tests", "extensions/*/deployment/src/test"],
-      "junior_notes": "logging, OIDC/security, config, testing 문서와 재현 테스트처럼 범위를 작은 모듈로 제한할 수 있는 이슈를 우선합니다."
-    },
-    {
-      "repository": "testcontainers/testcontainers-java",
-      "display_name": "Testcontainers Java",
-      "priority": "B",
-      "initial_fit_score": 72,
-      "ecosystem_tags": ["testcontainers", "java", "integration-test", "docker", "backend"],
-      "preferred_contribution_types": ["docs", "sample", "test", "bug-repro"],
-      "beginner_labels": ["good first issue", "help wanted", "documentation", "type: documentation", "area/docs"],
-      "positive_title_keywords": ["Spring Boot", "integration tests", "database", "messaging", "example", "Docker", "documentation"],
-      "avoid_labels": ["blocked", "team-only", "needs-design", "status: on-hold"],
-      "avoid_title_keywords": ["new module", "large module", "breaking change", "major API", "security vulnerability", "epic"],
-      "contribution_guide": "CONTRIBUTING.md와 docs/examples 구조를 먼저 확인합니다.",
-      "search_urls": [
-        "https://github.com/testcontainers/testcontainers-java/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22good+first+issue%22",
-        "https://github.com/testcontainers/testcontainers-java/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+documentation"
-      ],
-      "search_queries": [
-        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"good first issue\""},
-        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
-        {"name": "spring_boot_examples", "query": "is:issue is:open no:assignee \"Spring Boot\" example"},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
-      ],
-      "local_check_hints": ["./gradlew test", "./gradlew docs"],
-      "docs_or_test_hints": ["docs", "examples", "modules/*/src/test"],
-      "junior_notes": "Spring Boot 통합 테스트와 DB/messaging 예제 문서처럼 포트폴리오 가치가 큰 작은 이슈를 우선하고, 큰 신규 module 제안은 피합니다."
-    },
-    {
-      "repository": "micronaut-projects/micronaut-core",
-      "display_name": "Micronaut Core",
-      "priority": "B",
-      "initial_fit_score": 70,
-      "ecosystem_tags": ["micronaut", "java", "kotlin", "backend", "http"],
-      "preferred_contribution_types": ["docs", "test", "sample", "bug-repro"],
-      "beginner_labels": ["help wanted", "info: good first issue"],
-      "positive_title_keywords": ["DI", "HTTP", "configuration", "security", "Kotlin", "example", "documentation", "test"],
-      "avoid_labels": ["blocked", "team-only", "type: major", "status: on-hold"],
-      "avoid_title_keywords": ["breaking change", "major API", "core redesign", "AOT internals", "epic"],
-      "contribution_guide": "CONTRIBUTING.md와 documentation/test structure를 먼저 확인합니다.",
-      "search_urls": [
-        "https://github.com/micronaut-projects/micronaut-core/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22info%3A+good+first+issue%22",
-        "https://github.com/micronaut-projects/micronaut-core/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22help+wanted%22"
-      ],
-      "search_queries": [
-        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"info: good first issue\""},
-        {"name": "help_wanted", "query": "is:issue is:open no:assignee label:\"help wanted\""},
-        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
-      ],
-      "local_check_hints": ["./gradlew test", "./gradlew docs"],
-      "docs_or_test_hints": ["src/main/docs", "test-suite", "http-server tests"],
-      "junior_notes": "DI, HTTP, configuration, Kotlin example처럼 Spring과 비교 학습하기 좋은 작은 문서/테스트 이슈를 우선합니다."
+      "module_label_to_build_command": {
+        "theme: config-data": "./gradlew :core:spring-boot:test",
+        "theme: containers": "./gradlew :core:spring-boot-docker-compose:test",
+        "theme: observability": "./gradlew :module:spring-boot-actuator:test"
+      },
+      "contribution_type_by_label": {
+        "type: documentation": "docs"
+      },
+      "default_contribution_type": "code/test",
+      "relevance_reason": "Spring Boot 설정, Actuator, 컨테이너 통합 코드를 직접 읽고 검증할 수 있습니다.",
+      "contributing_url": "https://github.com/spring-projects/spring-boot/blob/main/CONTRIBUTING.adoc",
+      "eligibility_evidence": {
+        "repository_url": "https://github.com/spring-projects/spring-boot",
+        "archived": false,
+        "fork": false,
+        "issues_enabled": true,
+        "default_branch": "main",
+        "default_branch_commit_sha": "046d4c64bcc9ac9499963c4575024f321a1141a0",
+        "default_branch_commit_url": "https://github.com/spring-projects/spring-boot/commit/046d4c64bcc9ac9499963c4575024f321a1141a0",
+        "default_branch_pushed_at": "2026-07-15T18:43:23Z",
+        "external_merged_pull_request": {
+          "number": 50892,
+          "url": "https://github.com/spring-projects/spring-boot/pull/50892",
+          "author_login": "sourabh-bhattacharjee",
+          "author_type": "User",
+          "author_association": "CONTRIBUTOR",
+          "merged_at": "2026-07-15T18:37:55Z"
+        },
+        "build_test": {
+          "instructions_url": "https://github.com/spring-projects/spring-boot/blob/main/CONTRIBUTING.adoc",
+          "command": "./gradlew check",
+          "proprietary_environment_required": false
+        },
+        "jvm_backend_relevant": true
+      }
     },
     {
       "repository": "spring-projects/spring-framework",
-      "display_name": "Spring Framework",
-      "priority": "C",
-      "initial_fit_score": 66,
-      "ecosystem_tags": ["spring", "spring-framework", "jvm", "backend", "web"],
-      "preferred_contribution_types": ["docs", "test", "bug-repro", "javadoc"],
-      "beginner_labels": ["status: ideal-for-contribution", "type: documentation", "in: documentation"],
-      "positive_title_keywords": ["reference docs", "Javadoc", "Kotlin docs", "reproducer", "documentation", "test"],
-      "avoid_labels": ["status: blocked", "status: pending-design-work", "status: team-only", "security", "in: core"],
-      "avoid_title_keywords": ["security vulnerability", "CVE", "breaking change", "major API", "core container internals", "RFC", "epic"],
-      "contribution_guide": "CONTRIBUTING.md와 framework reference docs를 먼저 확인합니다.",
-      "search_urls": [
-        "https://github.com/spring-projects/spring-framework/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22status%3A+ideal-for-contribution%22",
-        "https://github.com/spring-projects/spring-framework/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22type%3A+documentation%22"
+      "checked_at": "2026-07-16",
+      "include_labels": [
+        "status: ideal-for-contribution"
       ],
-      "search_queries": [
-        {"name": "ideal_for_contribution", "query": "is:issue is:open no:assignee label:\"status: ideal-for-contribution\""},
-        {"name": "documentation", "query": "is:issue is:open no:assignee label:\"type: documentation\""},
-        {"name": "javadoc", "query": "is:issue is:open no:assignee Javadoc"},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      "exclude_labels": [
+        "status: blocked",
+        "status: waiting-for-feedback",
+        "status: waiting-for-internal-feedback",
+        "status: pending-design-work",
+        "status: on-hold"
       ],
-      "local_check_hints": ["./gradlew test", "./gradlew docs"],
-      "docs_or_test_hints": ["framework-docs", "spring-web 테스트", "spring-test 테스트", "Javadoc"],
-      "junior_notes": "진입 장벽이 높으므로 reference docs, Javadoc, Kotlin docs, 최소 재현 sample처럼 작은 범위만 신중하게 봅니다."
+      "module_label_to_build_command": {
+        "in: core": "./gradlew :spring-aop:test :spring-beans:test :spring-context:test :spring-core:test :spring-expression:test",
+        "in: data": "./gradlew :spring-jdbc:test :spring-orm:test :spring-oxm:test :spring-tx:test",
+        "in: test": "./gradlew :spring-test:test",
+        "in: web": "./gradlew :spring-web:test :spring-webflux:test :spring-webmvc:test :spring-websocket:test",
+        "theme: kotlin": "./gradlew test"
+      },
+      "contribution_type_by_label": {
+        "in: test": "test"
+      },
+      "default_contribution_type": "code/test",
+      "relevance_reason": "Spring Web, transaction, core container와 Kotlin 지원의 기반 구현을 학습할 수 있습니다.",
+      "contributing_url": "https://github.com/spring-projects/spring-framework/blob/main/CONTRIBUTING.md",
+      "eligibility_evidence": {
+        "repository_url": "https://github.com/spring-projects/spring-framework",
+        "archived": false,
+        "fork": false,
+        "issues_enabled": true,
+        "default_branch": "main",
+        "default_branch_commit_sha": "99b991b6f378c9804381a013530cb8393094b8d9",
+        "default_branch_commit_url": "https://github.com/spring-projects/spring-framework/commit/99b991b6f378c9804381a013530cb8393094b8d9",
+        "default_branch_pushed_at": "2026-07-13T08:16:37Z",
+        "external_merged_pull_request": {
+          "number": 36967,
+          "url": "https://github.com/spring-projects/spring-framework/pull/36967",
+          "author_login": "junhyeong9812",
+          "author_type": "User",
+          "author_association": "CONTRIBUTOR",
+          "merged_at": "2026-07-12T09:56:01Z"
+        },
+        "build_test": {
+          "instructions_url": "https://github.com/spring-projects/spring-framework/wiki/Build-from-Source#build-from-the-command-line",
+          "command": "./gradlew build",
+          "proprietary_environment_required": false
+        },
+        "jvm_backend_relevant": true
+      }
     },
     {
-      "repository": "ktorio/ktor",
-      "display_name": "Ktor",
-      "priority": "C",
-      "initial_fit_score": 62,
-      "ecosystem_tags": ["ktor", "kotlin", "server", "backend"],
-      "preferred_contribution_types": ["docs", "test", "bug-repro", "sample"],
-      "beginner_labels": ["good first issue", "help wanted", "documentation"],
-      "positive_title_keywords": ["routing", "auth", "server test", "documentation", "sample"],
-      "avoid_labels": ["blocked", "team-only", "needs-design"],
-      "avoid_title_keywords": ["breaking change", "major API", "engine internals", "RFC", "epic"],
-      "contribution_guide": "Ktor core는 weekly observation 대상으로만 보며, 첫 기여는 documentation 저장소를 우선합니다.",
-      "search_urls": [
-        "https://github.com/ktorio/ktor/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+label%3A%22good+first+issue%22"
+      "repository": "detekt/detekt",
+      "checked_at": "2026-07-16",
+      "include_labels": [
+        "good first issue"
       ],
-      "search_queries": [
-        {"name": "good_first_issue", "query": "is:issue is:open no:assignee label:\"good first issue\""},
-        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      "exclude_labels": [
+        "blocked",
+        "breaking change",
+        "discussion",
+        "needs type and symbol solving"
       ],
-      "local_check_hints": ["./gradlew test"],
-      "docs_or_test_hints": ["ktor-server", "ktor-client", "ktor-test-host"],
-      "junior_notes": "Daily 후보를 밀어내지 않는 weekly observation 대상입니다."
+      "module_label_to_build_command": {
+        "cli": "./gradlew :detekt-cli:test",
+        "compiler-plugin": "./gradlew :detekt-compiler-plugin:test",
+        "core": "./gradlew :detekt-core:test",
+        "gradle-plugin": "./gradlew -p detekt-gradle-plugin test"
+      },
+      "contribution_type_by_label": {
+        "documentation": "docs"
+      },
+      "default_contribution_type": "code/test",
+      "relevance_reason": "Kotlin 정적 분석 규칙과 Gradle 플러그인 구현을 작은 범위에서 연습할 수 있습니다.",
+      "contributing_url": "https://github.com/detekt/detekt/blob/main/.github/CONTRIBUTING.md",
+      "eligibility_evidence": {
+        "repository_url": "https://github.com/detekt/detekt",
+        "archived": false,
+        "fork": false,
+        "issues_enabled": true,
+        "default_branch": "main",
+        "default_branch_commit_sha": "bc1e091e56ba5e9b516b639bfdc847129fb9d567",
+        "default_branch_commit_url": "https://github.com/detekt/detekt/commit/bc1e091e56ba5e9b516b639bfdc847129fb9d567",
+        "default_branch_pushed_at": "2026-07-16T01:00:36Z",
+        "external_merged_pull_request": {
+          "number": 9492,
+          "url": "https://github.com/detekt/detekt/pull/9492",
+          "author_login": "mwaddo",
+          "author_type": "User",
+          "author_association": "CONTRIBUTOR",
+          "merged_at": "2026-07-12T06:58:55Z"
+        },
+        "build_test": {
+          "instructions_url": "https://github.com/detekt/detekt/blob/main/.github/CONTRIBUTING.md",
+          "command": "./gradlew build -x dokkaGenerate",
+          "proprietary_environment_required": false
+        },
+        "jvm_backend_relevant": true
+      }
     },
     {
-      "repository": "Kotlin/kotlinx.coroutines",
-      "display_name": "Kotlinx Coroutines",
-      "priority": "C",
-      "initial_fit_score": 60,
-      "ecosystem_tags": ["kotlin", "coroutines", "jvm", "async"],
-      "preferred_contribution_types": ["docs", "test", "bug-repro"],
-      "beginner_labels": ["good first issue", "help wanted", "documentation"],
-      "positive_title_keywords": ["documentation", "guide", "example", "test"],
-      "avoid_labels": ["compiler", "runtime internals", "breaking change", "native"],
-      "avoid_title_keywords": ["compiler", "runtime internals", "native", "scheduler redesign", "major API"],
-      "contribution_guide": "README와 CONTRIBUTING.md를 확인하되 weekly observation 대상으로만 봅니다.",
-      "search_urls": [
-        "https://github.com/Kotlin/kotlinx.coroutines/issues?q=is%3Aissue+is%3Aopen+no%3Aassignee+documentation"
+      "repository": "micrometer-metrics/micrometer",
+      "checked_at": "2026-07-16",
+      "include_labels": [
+        "help wanted"
       ],
-      "search_queries": [
-        {"name": "documentation", "query": "is:issue is:open no:assignee documentation"},
-        {"name": "guide", "query": "is:issue is:open no:assignee guide"},
-        {"name": "recent_open", "query": "is:issue is:open no:assignee updated:>=<computed_30_days_ago>"}
+      "exclude_labels": [
+        "blocked",
+        "breaking-change",
+        "internal",
+        "needs: design work",
+        "question",
+        "waiting for team"
       ],
-      "local_check_hints": ["./gradlew test"],
-      "docs_or_test_hints": ["docs", "guide 예제", "coroutines test"],
-      "junior_notes": "코루틴 런타임 내부보다 문서, 가이드 예제, 재현 테스트만 low-frequency로 관찰합니다."
-    }
-  ],
-  "trusted_maintainers": {
-    "spring-projects/spring-security": [],
-    "spring-projects/spring-restdocs": [],
-    "spring-projects/spring-boot": [],
-    "gradle/gradle": [],
-    "ktorio/ktor-documentation": [],
-    "quarkusio/quarkus": [],
-    "testcontainers/testcontainers-java": [],
-    "micronaut-projects/micronaut-core": [],
-    "spring-projects/spring-framework": [],
-    "ktorio/ktor": [],
-    "Kotlin/kotlinx.coroutines": []
-  },
-  "difficulty_model": {
-    "p5_like": {
-      "description": "첫 기여에 적합한 문서, 예제, Javadoc/KDoc, 테스트, 재현, 오류 메시지 개선 작업",
-      "positive_labels": [
-        "status: ideal-for-contribution",
-        "status: first-timers-only",
-        "good first issue",
-        "help wanted",
-        "type: documentation",
-        "kind/documentation",
-        "a:documentation",
-        "in: docs",
-        "documentation",
-        "docs",
-        "info: good first issue"
-      ],
-      "positive_keywords": [
-        "documentation",
-        "docs",
-        "javadoc",
-        "kdoc",
-        "sample",
-        "example",
-        "test",
-        "reproducer",
-        "repro",
-        "typo",
-        "clarify",
-        "getting started",
-        "error message"
-      ]
+      "module_label_to_build_command": {
+        "module: micrometer-core": "./gradlew :micrometer-core:test",
+        "module: micrometer-observation": "./gradlew :micrometer-observation:test",
+        "module: micrometer-test": "./gradlew :micrometer-test:test"
+      },
+      "contribution_type_by_label": {
+        "doc-update": "docs",
+        "java": "code",
+        "kotlin": "code"
+      },
+      "default_contribution_type": "code/test",
+      "relevance_reason": "Spring 관측성의 기반인 meter와 observation 동작을 Java 테스트로 검증할 수 있습니다.",
+      "contributing_url": "https://github.com/micrometer-metrics/micrometer/blob/main/CONTRIBUTING.md",
+      "eligibility_evidence": {
+        "repository_url": "https://github.com/micrometer-metrics/micrometer",
+        "archived": false,
+        "fork": false,
+        "issues_enabled": true,
+        "default_branch": "main",
+        "default_branch_commit_sha": "442eccb19727950fa1de77b2109bae6e665deb5b",
+        "default_branch_commit_url": "https://github.com/micrometer-metrics/micrometer/commit/442eccb19727950fa1de77b2109bae6e665deb5b",
+        "default_branch_pushed_at": "2026-07-15T23:49:27Z",
+        "external_merged_pull_request": {
+          "number": 7509,
+          "url": "https://github.com/micrometer-metrics/micrometer/pull/7509",
+          "author_login": "schiemon",
+          "author_type": "User",
+          "author_association": "CONTRIBUTOR",
+          "merged_at": "2026-07-03T04:49:54Z"
+        },
+        "build_test": {
+          "instructions_url": "https://github.com/micrometer-metrics/micrometer/blob/main/CONTRIBUTING.md#testing-changes-locally",
+          "command": "./gradlew check",
+          "proprietary_environment_required": false
+        },
+        "jvm_backend_relevant": true
+      }
     },
-    "p4_like": {
-      "description": "주니어가 범위를 제한해 도전할 만한 작은 개선 또는 명확한 버그",
-      "positive_labels": [
-        "type: enhancement",
-        "type: bug",
-        "a:bug",
-        "area/testing",
-        "in: testing",
-        "theme: containers",
-        "theme: config-data",
-        "area/config",
-        "re:comprehensibility"
+    {
+      "repository": "testcontainers/testcontainers-java",
+      "checked_at": "2026-07-16",
+      "include_labels": [
+        "good first issue"
       ],
-      "positive_keywords": [
-        "Kotlin DSL",
-        "configuration",
-        "starter",
-        "Actuator",
-        "logging",
-        "security",
-        "OIDC",
-        "Testcontainers",
-        "Docker Compose",
-        "comprehensibility",
-        "small bug"
-      ]
+      "exclude_labels": [
+        "blocker",
+        "resolution/duplicate",
+        "resolution/invalid",
+        "resolution/waiting-for-info"
+      ],
+      "module_label_to_build_command": {
+        "modules/jdbc": "./gradlew :testcontainers-jdbc:test",
+        "modules/jupiter": "./gradlew :testcontainers-junit-jupiter:test",
+        "modules/kafka": "./gradlew :testcontainers-kafka:test",
+        "modules/postgres": "./gradlew :testcontainers-postgresql:test"
+      },
+      "contribution_type_by_label": {
+        "java": "code"
+      },
+      "default_contribution_type": "code/test",
+      "relevance_reason": "Java 기반 실제 인프라 integration test와 컨테이너 수명주기를 연습할 수 있습니다.",
+      "contributing_url": "https://github.com/testcontainers/testcontainers-java/blob/main/CONTRIBUTING.md",
+      "eligibility_evidence": {
+        "repository_url": "https://github.com/testcontainers/testcontainers-java",
+        "archived": false,
+        "fork": false,
+        "issues_enabled": true,
+        "default_branch": "main",
+        "default_branch_commit_sha": "deb78e1e6e47675f56e8d7b3f4747093d66f1baa",
+        "default_branch_commit_url": "https://github.com/testcontainers/testcontainers-java/commit/deb78e1e6e47675f56e8d7b3f4747093d66f1baa",
+        "default_branch_pushed_at": "2026-06-22T16:56:04Z",
+        "external_merged_pull_request": {
+          "number": 11845,
+          "url": "https://github.com/testcontainers/testcontainers-java/pull/11845",
+          "author_login": "jprinet",
+          "author_type": "User",
+          "author_association": "CONTRIBUTOR",
+          "merged_at": "2026-06-22T16:56:05Z"
+        },
+        "build_test": {
+          "instructions_url": "https://github.com/testcontainers/testcontainers-java/blob/main/docs/contributing.md",
+          "command": "./gradlew check",
+          "proprietary_environment_required": false
+        },
+        "jvm_backend_relevant": true
+      }
     }
-  }
+  ]
 }

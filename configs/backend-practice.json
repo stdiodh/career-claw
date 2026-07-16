@@ -1,0 +1,328 @@
+{
+  "schema_version": 2,
+  "profile_id": "jvm-spring-2026q3-v1",
+  "lessons": [
+    {
+      "id": "spring-mvc-validation-problem-detail",
+      "track": "Spring Web",
+      "title": "DTO validation 실패를 ProblemDetail 계약으로 고정하기",
+      "setup": "JDK 21에서 `lab/`을 열고 OrderController, ApiExceptionHandler, OrderControllerWebMvcTest를 확인한다.",
+      "situation": "잘못된 주문 요청이 500 또는 제각각인 JSON으로 응답해 클라이언트가 실패 원인을 처리할 수 없다.",
+      "core_concept": "입력 경계는 Bean Validation으로 거부하고 예외 응답은 `application/problem+json`과 필드 오류 증거로 일관되게 만든다.",
+      "failure_mode": "검증 애너테이션만 붙이고 MVC 예외 계약을 테스트하지 않아 상태 코드와 응답 형식이 변경된다.",
+      "practice_steps": [
+        "`lab/src/main/kotlin/dev/careerfeed/lab/order/OrderController.kt`의 DTO 제약과 `@Valid` 경계를 찾는다.",
+        "`ApiExceptionHandler.kt`가 status, detail, fieldErrors를 만드는 흐름을 실패 입력과 함께 추적한다.",
+        "검증 명령을 실행하고 LAB-WEB-001이 400, content type, 필드 오류를 모두 확인하는지 읽는다."
+      ],
+      "evidence": "LAB-WEB-001 통과 결과와 invalid field가 포함된 ProblemDetail assertion",
+      "official_refs": [
+        "https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html",
+        "https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-ann-rest-exceptions.html"
+      ],
+      "check_question": "잘못된 필드 하나가 500이 아니라 재현 가능한 400 ProblemDetail로 반환되는가?"
+    },
+    {
+      "id": "spring-testing-layers",
+      "track": "테스트",
+      "title": "unit, MVC slice, JPA slice의 책임을 분리하기",
+      "setup": "PureUnitBoundaryTest, OrderControllerWebMvcTest, OrderRepositoryTest를 나란히 연다.",
+      "situation": "모든 검증이 전체 Spring context를 띄워 느리고, 실패 원인이 비즈니스 규칙인지 프레임워크 연결인지 구분되지 않는다.",
+      "core_concept": "순수 규칙은 Spring 없는 unit, HTTP 계약은 MVC slice, 영속성 계약은 JPA slice로 가장 작은 경계에서 검증한다.",
+      "failure_mode": "테스트 종류와 상관없이 `@SpringBootTest`만 사용해 피드백이 느리고 대체 객체가 실제 경계를 숨긴다.",
+      "practice_steps": [
+        "LAB-TEST-001에서 Spring import 없이 검증되는 규칙과 입력을 표시한다.",
+        "LAB-TEST-002에서 service mock과 MVC validation 중 무엇을 검증하는지 구분한다.",
+        "LAB-TEST-003에서 실제 SQL과 persistence context가 필요한 assertion을 찾고 세 테스트를 함께 실행한다."
+      ],
+      "evidence": "LAB-TEST-001/002/003 통과 결과와 각 테스트가 소유하는 경계 한 줄",
+      "official_refs": [
+        "https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html",
+        "https://docs.spring.io/spring-framework/reference/testing/mockmvc.html"
+      ],
+      "check_question": "같은 실패를 가장 작은 테스트 경계에서 재현하도록 선택 이유를 설명할 수 있는가?"
+    },
+    {
+      "id": "jpa-persistence-query-shaping",
+      "track": "JPA",
+      "title": "persistence context, lazy loading, projection pagination을 실행으로 구분하기",
+      "setup": "OrderEntities, OrderRepositories, OrderRepositoryTest와 생성된 SQL을 확인한다.",
+      "situation": "엔티티 그래프와 조회 응답을 구분하지 않아 session 밖 lazy 접근이나 목록 N+1이 운영에서 드러난다.",
+      "core_concept": "연관 로딩은 persistence context 경계 안에서 의도하고, 목록은 필요한 컬럼만 projection과 Page로 조회한다.",
+      "failure_mode": "엔티티를 API까지 노출하거나 모든 연관을 eager로 바꿔 문제를 감추고 쿼리 수와 데이터 양을 키운다.",
+      "practice_steps": [
+        "LAB-JPA-001의 transaction 안팎 접근과 lazy association 초기화 시점을 추적한다.",
+        "LAB-JPA-002의 projection 필드와 page size가 반환 타입에 어떻게 반영되는지 확인한다.",
+        "두 테스트를 실행하고 엔티티 반환과 projection 반환의 차이를 SQL·타입 기준으로 기록한다."
+      ],
+      "evidence": "LAB-JPA-001/002 통과 결과, lazy 경계와 projection page assertion",
+      "official_refs": [
+        "https://docs.spring.io/spring-data/jpa/reference/repositories/projections.html",
+        "https://docs.spring.io/spring-data/jpa/reference/repositories/core-concepts.html",
+        "https://docs.jboss.org/hibernate/orm/7.4/userguide/html_single/Hibernate_User_Guide.html#fetching-basics"
+      ],
+      "check_question": "목록 API가 persistence context 밖의 lazy 객체 대신 필요한 projection page만 반환하는가?"
+    },
+    {
+      "id": "db-index-design-for-read-traffic",
+      "track": "PostgreSQL",
+      "title": "고정 fixture에서 복합 인덱스가 실제 plan에 쓰이는지 검증하기",
+      "setup": "Docker와 `postgres:17.10-bookworm`을 사용해 PostgresIndexPlanTest를 실행한다.",
+      "situation": "WHERE와 ORDER BY를 보고 만든 인덱스가 실제 분포에서는 선택되지 않는데도 설계 문서만으로 완료 처리한다.",
+      "core_concept": "버전, 10만 row 분포, query, ANALYZE를 고정한 뒤 EXPLAIN plan의 target index 사용 여부를 검증한다.",
+      "failure_mode": "작은 임의 데이터나 wall-clock 시간만 보고 인덱스 효과를 단정해 재현할 수 없다.",
+      "practice_steps": [
+        "PostgresIndexPlanTest의 orders DDL, 10만 row seed 분포, 복합 인덱스 컬럼 순서를 읽는다.",
+        "user_id/status equality와 created_at 정렬이 인덱스 순서에 어떻게 대응하는지 적는다.",
+        "PostgreSQL 전용 명령을 실행하고 고정 3회 warm-up 뒤의 before/after plan과 `idx_orders_user_status_created` 사용을 확인한다."
+      ],
+      "evidence": "LAB-PG-001 통과 결과, 고정 warm-up 수, 인덱스 전·후 EXPLAIN ANALYZE BUFFERS plan",
+      "official_refs": [
+        "https://www.postgresql.org/docs/17/indexes-multicolumn.html",
+        "https://www.postgresql.org/docs/17/using-explain.html"
+      ],
+      "check_question": "고정된 PostgreSQL 17.10 데이터 분포에서 target index 이름이 plan에 나타나는가?"
+    },
+    {
+      "id": "schema-migration-flyway",
+      "track": "DB migration",
+      "title": "Flyway migration 뒤 Hibernate validate로 schema drift 차단하기",
+      "setup": "V1__backend_lab.sql, application.yml, OrderRepositoryTest를 확인한다.",
+      "situation": "애플리케이션 시작 시 ORM이 schema를 암묵적으로 바꿔 환경별 DB 상태와 배포 순서를 추적할 수 없다.",
+      "core_concept": "schema 변경은 버전 관리된 migration이 담당하고 ORM은 생성이 아니라 validate만 수행한다.",
+      "failure_mode": "`ddl-auto=update`에 의존해 rollback과 리뷰가 불가능하고 운영 schema drift를 뒤늦게 발견한다.",
+      "practice_steps": [
+        "V1 migration이 만드는 테이블·제약·인덱스와 엔티티 mapping을 대조한다.",
+        "application.yml에서 Flyway 실행과 Hibernate validate 설정을 찾는다.",
+        "LAB-MIG-001을 실행해 migration history와 실제 table이 context 시작 전에 생성되는지 확인한다."
+      ],
+      "evidence": "LAB-MIG-001 통과 결과, Flyway history와 Hibernate validate 설정",
+      "official_refs": [
+        "https://docs.spring.io/spring-boot/how-to/data-initialization.html#howto.data-initialization.migration-tool.flyway",
+        "https://documentation.red-gate.com/fd/versioned-migrations-273973333.html"
+      ],
+      "check_question": "빈 DB에서 migration만으로 schema가 만들어지고 ORM mapping 검증까지 통과하는가?"
+    },
+    {
+      "id": "kotlin-spring-boundaries",
+      "track": "Kotlin",
+      "title": "Kotlin nullability, Jackson default, Spring proxy 경계를 테스트하기",
+      "setup": "OrderWorkflowIntegrationTest와 kotlin-spring plugin 설정을 확인한다.",
+      "situation": "Kotlin 타입은 non-null인데 JSON 누락·ORM proxy·AOP proxy가 런타임 경계에서 예상과 다르게 동작한다.",
+      "core_concept": "직렬화 입력의 기본값과 null 정책을 테스트하고 Spring AOP 대상 class가 kotlin-spring으로 열렸는지 실제 proxy로 확인한다.",
+      "failure_mode": "컴파일 성공만 믿고 missing JSON field 또는 final class 때문에 역직렬화와 transaction advice가 깨진다.",
+      "practice_steps": [
+        "LAB-KOTLIN-001에서 optional JSON field 누락이 Kotlin default로 결정되는 지점을 찾는다.",
+        "build.gradle.kts의 kotlin-spring/kotlin-jpa plugin과 strict JSR-305 설정을 확인한다.",
+        "LAB-KOTLIN-002를 실행해 transactional service가 실제 AOP proxy인지 assertion한다."
+      ],
+      "evidence": "LAB-KOTLIN-001/002 통과 결과와 Jackson default·AOP proxy assertion",
+      "official_refs": [
+        "https://docs.spring.io/spring-boot/reference/features/kotlin.html",
+        "https://kotlinlang.org/docs/all-open-plugin.html#spring-support",
+        "https://github.com/FasterXML/jackson-module-kotlin/blob/45e9140440c28e6012e89d28084f74e76b9b2f0d/src/test/kotlin/tools/jackson/module/kotlin/test/github/GitHub876.kt"
+      ],
+      "check_question": "JSON 누락과 Spring proxy가 Kotlin의 compile-time 기대와 일치함을 테스트로 증명했는가?"
+    },
+    {
+      "id": "configuration-secrets",
+      "track": "설정",
+      "title": "타입 안전 설정과 필수 Secret 누락을 시작 시점에 차단하기",
+      "setup": "LabExternalProperties와 LabExternalPropertiesTest를 확인하고 실제 Secret은 사용하지 않는다.",
+      "situation": "문자열 설정과 늦은 null 검사 때문에 잘못된 timeout 또는 누락된 credential이 첫 요청에서야 실패한다.",
+      "core_concept": "`@ConfigurationProperties`로 duration과 정수를 바인딩하고 필수 credential은 validation으로 context 시작 전에 거부한다.",
+      "failure_mode": "`@Value` 문자열이 흩어지고 기본값이 Secret 누락을 숨겨 운영 호출이 잘못된 설정으로 시작된다.",
+      "practice_steps": [
+        "LAB-CONFIG-001에서 active profile과 environment-style duration/retry override가 immutable 객체로 바인딩되는지 확인한다.",
+        "LAB-CONFIG-002에서 blank token일 때 어떤 validation error로 context 생성이 거부되는지 읽는다.",
+        "두 테스트를 실행하고 저장소에 실제 credential이 없음을 검색한다."
+      ],
+      "evidence": "LAB-CONFIG-001/002 통과 결과, active profile/env override와 blank token fail-closed 메시지",
+      "official_refs": [
+        "https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties",
+        "https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties.validation"
+      ],
+      "check_question": "필수 Secret이 없거나 duration 형식이 잘못되면 요청 전 context 시작이 실패하는가?"
+    },
+    {
+      "id": "perf-test-metrics",
+      "track": "관측성",
+      "title": "request ID, health, outcome metric과 결정론적 성능 지표를 연결하기",
+      "setup": "RequestIdFilter, PerformanceMetrics, OrderWorkflowIntegrationTest를 확인한다.",
+      "situation": "오류율과 지연 percentile은 있지만 특정 요청의 로그·health·HTTP outcome을 같은 장애 흐름으로 연결할 수 없다.",
+      "core_concept": "request ID를 응답과 로그에 보존하고 health와 outcome counter를 노출하며 고정 데이터의 p95/p99 계산은 순수 함수로 검증한다.",
+      "failure_mode": "평균 지연이나 임의 wall-clock assertion만 사용해 느린 꼬리와 실패 outcome을 놓친다.",
+      "practice_steps": [
+        "LAB-OBS-001에서 inbound request ID가 응답, MDC, 구조화 method/path/status 로그까지 보존되는 흐름을 추적한다.",
+        "LAB-OBS-002에서 health와 order outcome metric tag/count를 함께 확인한다.",
+        "LAB-OBS-003을 실행해 고정 latency fixture의 throughput, error rate, p95, p99를 재현한다."
+      ],
+      "evidence": "LAB-OBS-001/002/003 통과 결과와 request ID/MDC/구조화 로그·metric·percentile assertion",
+      "official_refs": [
+        "https://docs.spring.io/spring-boot/reference/actuator/metrics.html",
+        "https://docs.spring.io/spring-boot/reference/actuator/endpoints.html#actuator.endpoints.health"
+      ],
+      "check_question": "한 실패 요청을 request ID, health, outcome metric으로 찾고 고정 fixture의 p95를 재현할 수 있는가?"
+    },
+    {
+      "id": "server-check-process",
+      "track": "Java/JVM",
+      "title": "Java 21 virtual thread에서 heap·runtime 증거를 수집하기",
+      "setup": "JvmRuntimeProbe.java와 JvmRuntimeProbeTest를 JDK 21로 실행한다.",
+      "situation": "JVM 장애를 애플리케이션 로그만으로 설명하고 실제 thread 이름, heap 사용량, runtime version 증거를 남기지 못한다.",
+      "core_concept": "Java 코드로 virtual thread를 명시적으로 생성하고 Runtime/Thread API의 관측값을 구조화된 snapshot으로 남긴다.",
+      "failure_mode": "Python 임시 서버나 PID 확인만으로 JVM 자체를 이해했다고 간주해 thread·memory 증거가 없다.",
+      "practice_steps": [
+        "JvmRuntimeProbe.java에서 virtual thread 이름과 heap 계산에 사용되는 JDK API를 찾는다.",
+        "LAB-JVM-001의 thread 종료와 heap invariant assertion을 읽는다.",
+        "테스트를 실행하고 java.version, thread name, used/max heap 값을 기록한다."
+      ],
+      "evidence": "LAB-JVM-001 통과 결과와 Java 21 virtual-thread runtime snapshot",
+      "official_refs": [
+        "https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html",
+        "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Runtime.html"
+      ],
+      "check_question": "JVM 버전·virtual thread·heap 값이 Java 코드와 assertion으로 남는가?"
+    },
+    {
+      "id": "security-authentication",
+      "track": "Spring Security",
+      "title": "익명 401과 인증 성공 경계를 integration test로 고정하기",
+      "setup": "SecurityConfig와 OrderWorkflowIntegrationTest의 인증 시나리오를 확인한다.",
+      "situation": "인가 실패와 인증 실패가 섞여 익명 요청이 403 또는 500으로 응답하고 credential 처리 경계가 모호하다.",
+      "core_concept": "credential로 주체를 확인하는 authentication과 리소스 접근 결정을 분리하고 익명은 일관된 401로 거부한다.",
+      "failure_mode": "controller에서 수동으로 사용자 헤더를 신뢰하거나 모든 실패를 403으로 처리한다.",
+      "practice_steps": [
+        "SecurityConfig의 인증 entry point와 보호 endpoint 규칙을 찾는다.",
+        "LAB-AUTHN-001에서 같은 endpoint의 anonymous와 authenticated 요청을 비교한다.",
+        "테스트를 실행해 anonymous=401, authenticated=성공 assertion을 확인한다."
+      ],
+      "evidence": "LAB-AUTHN-001 통과 결과와 401/성공 상태 비교",
+      "official_refs": [
+        "https://docs.spring.io/spring-security/reference/7.1/servlet/authentication/index.html",
+        "https://docs.spring.io/spring-security/reference/7.1/servlet/architecture.html"
+      ],
+      "check_question": "credential이 없는 요청과 인증된 요청의 결과가 각각 401과 성공으로 고정되는가?"
+    },
+    {
+      "id": "security-authentication-authorization",
+      "track": "Spring Security",
+      "title": "인증된 사용자 사이의 BOLA를 소유권 검사로 차단하기",
+      "setup": "사용자 A와 B의 주문을 고정한 LAB-AUTHZ-001을 확인한다.",
+      "situation": "로그인한 사용자 A가 URL의 order id만 바꿔 사용자 B의 주문을 조회한다.",
+      "core_concept": "authentication 성공 뒤에도 매 요청에서 action, resource, owner를 기준으로 authorization을 수행한다.",
+      "failure_mode": "authenticated 여부만 확인하고 리소스 소유권을 누락해 BOLA/IDOR가 발생한다.",
+      "practice_steps": [
+        "주문 조회가 principal과 order owner를 비교하는 코드 경로를 찾는다.",
+        "LAB-AUTHZ-001에서 owner 요청과 다른 인증 사용자 요청의 fixture를 비교한다.",
+        "테스트를 실행해 owner 성공과 non-owner 403 정책이 함께 고정되는지 확인한다."
+      ],
+      "evidence": "LAB-AUTHZ-001 통과 결과와 owner 성공/non-owner 403 assertion",
+      "official_refs": [
+        "https://docs.spring.io/spring-security/reference/7.1/servlet/authorization/authorize-http-requests.html",
+        "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/"
+      ],
+      "check_question": "인증된 A가 B의 order id를 사용하면 일관되게 403으로 거부되는가?"
+    },
+    {
+      "id": "api-post-idempotency-payment-duplicate",
+      "track": "HTTP/API 정합성",
+      "title": "Idempotency-Key replay와 fingerprint conflict를 DB 제약으로 막기",
+      "setup": "OrderService, migration의 unique constraint, LAB-IDEMP-001/002를 확인한다.",
+      "situation": "결제 생성 POST가 timeout 뒤 재전송되어 재고와 주문이 두 번 변경된다.",
+      "core_concept": "key와 request fingerprint, 저장된 결과를 transaction 안에서 관리하고 같은 key의 다른 body는 409로 거부한다.",
+      "failure_mode": "in-memory map이나 check-then-insert만 사용해 여러 인스턴스와 동시 요청에서 중복이 생긴다.",
+      "practice_steps": [
+        "migration의 idempotency key unique constraint와 service transaction 경계를 찾는다.",
+        "LAB-IDEMP-001에서 같은 key/body replay가 같은 order와 한 번의 stock change를 반환하는지 읽는다.",
+        "LAB-IDEMP-002를 실행해 같은 key의 다른 fingerprint가 409인지 확인한다."
+      ],
+      "evidence": "LAB-IDEMP-001/002 통과 결과, unique constraint와 replay/conflict assertion",
+      "official_refs": [
+        "https://datatracker.ietf.org/doc/html/rfc9110#section-9.2.2",
+        "https://www.postgresql.org/docs/17/ddl-constraints.html#DDL-CONSTRAINTS-UNIQUE-CONSTRAINTS"
+      ],
+      "check_question": "같은 key/body는 결과를 재사용하고 같은 key/다른 body는 409로 끝나는가?"
+    },
+    {
+      "id": "db-failure-transaction-considerations",
+      "track": "트랜잭션 복구",
+      "title": "외부 승인 뒤 DB 실패를 idempotent reconciliation으로 복구하기",
+      "setup": "PaymentRecovery와 PaymentRecoveryTest의 승인·저장 실패 fixture를 확인한다.",
+      "situation": "외부 결제 승인은 성공했지만 로컬 DB 저장이 실패해 승인 사실이 사라지거나 중복 완료된다.",
+      "core_concept": "외부 승인 식별자를 보존하고 pending recovery를 남긴 뒤 reconciliation이 최종 완료를 정확히 한 번 만든다.",
+      "failure_mode": "DB rollback이 외부 승인을 되돌린다고 가정하거나 무조건 재결제해 이중 승인을 만든다.",
+      "practice_steps": [
+        "PaymentRecovery가 외부 approval id와 로컬 상태를 어떤 순서로 기록하는지 추적한다.",
+        "LAB-TX-001에서 DB 실패 직후 허용 상태와 승인 보존 assertion을 찾는다.",
+        "reconciliation을 두 번 실행해도 최종 완료가 한 번뿐인지 테스트로 확인한다."
+      ],
+      "evidence": "LAB-TX-001 통과 결과, 승인 보존과 exactly-once finalization invariant",
+      "official_refs": [
+        "https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative.html",
+        "https://docs.spring.io/spring-framework/reference/data-access/transaction/event.html"
+      ],
+      "check_question": "DB 실패 후에도 승인 id가 남고 반복 reconciliation의 최종 완료 수가 정확히 1인가?"
+    },
+    {
+      "id": "external-integration-timeout",
+      "track": "외부 연동",
+      "title": "JDK 기반 HTTP client의 response timeout을 실패 테스트로 고정하기",
+      "setup": "ExternalPolicies와 ExternalResponseClientTest의 지연 HTTP fixture를 확인한다.",
+      "situation": "외부 API가 응답을 멈추면 request thread가 기본 무제한 대기로 남아 pool을 고갈시킨다.",
+      "core_concept": "한 과제에서는 underlying JDK HttpClient의 response timeout 경계만 고정하고 지연 응답이 시간 제한 예외로 끝나는지 검증한다.",
+      "failure_mode": "connect/read/전체 deadline을 한 번에 주장하면서 실제 client 설정과 실패 유형을 검증하지 않는다.",
+      "practice_steps": [
+        "ExternalResponseClient가 설정 duration을 JDK-backed request timeout에 연결하는 코드를 찾는다.",
+        "LAB-TIMEOUT-001의 지연 server fixture와 기대 예외를 읽는다.",
+        "테스트를 실행해 지연 응답이 정상 body가 아니라 timeout 실패로 끝나는지 확인한다."
+      ],
+      "evidence": "LAB-TIMEOUT-001 통과 결과와 지연 응답의 timeout exception assertion",
+      "official_refs": [
+        "https://docs.oracle.com/en/java/javase/21/docs/api/java.net.http/java/net/http/HttpRequest.Builder.html#timeout(java.time.Duration)",
+        "https://docs.spring.io/spring-framework/reference/integration/rest-clients.html"
+      ],
+      "check_question": "고정 지연 응답이 설정된 response timeout을 넘을 때 예외로 종료되는가?"
+    },
+    {
+      "id": "external-integration-retry",
+      "track": "외부 연동",
+      "title": "3회 시도와 100/200ms backoff를 wall-clock 없이 검증하기",
+      "setup": "RetryPolicy와 RetryPolicyTest의 fake sleeper를 확인한다.",
+      "situation": "모든 오류를 같은 방식으로 재시도해 장애 트래픽을 늘리고 상위 1800ms budget을 넘긴다.",
+      "core_concept": "최대 3회, 시도당 500ms, 두 backoff 100/200ms를 고정하고 fake sleeper로 요청된 지연과 시도 수를 결정론적으로 검증한다.",
+      "failure_mode": "사용되지 않는 세 번째 backoff를 계산하거나 실제 sleep 시간을 exact assertion해 테스트가 느리고 불안정하다.",
+      "practice_steps": [
+        "RetryPolicy의 retryable 결과와 최대 attempts 조건을 읽는다.",
+        "500ms×3 + 100ms + 200ms = 1800ms 계산을 직접 확인한다.",
+        "LAB-RETRY-001을 실행해 attempt=3과 requested sleeps=[100,200]을 assertion한다."
+      ],
+      "evidence": "LAB-RETRY-001 통과 결과, 3 attempts·100/200ms sleeps·1800ms 계산",
+      "official_refs": [
+        "https://datatracker.ietf.org/doc/html/rfc9110#section-9.2.2",
+        "https://docs.spring.io/spring-framework/reference/integration/rest-clients.html"
+      ],
+      "check_question": "실제 대기 없이 시도 수·backoff·최악 budget 1800ms를 재현할 수 있는가?"
+    },
+    {
+      "id": "concurrency-db",
+      "track": "동시성",
+      "title": "동시 재고 차감을 atomic update와 barrier로 재현하기",
+      "setup": "초기 stock=1인 OrderWorkflowIntegrationTest의 LAB-CONC-001을 확인한다.",
+      "situation": "두 요청이 모두 stock=1을 읽고 성공해 재고보다 많은 주문이 승인된다.",
+      "core_concept": "두 요청을 barrier로 동시에 시작하고 조건부 atomic update의 영향 row 수를 성공 여부로 사용한다.",
+      "failure_mode": "순차 테스트나 예상 interleaving 표만 작성해 실제 race와 최종 DB 상태를 검증하지 않는다.",
+      "practice_steps": [
+        "OrderRepository의 `stock > 0` 조건부 update와 반환 row count를 찾는다.",
+        "LAB-CONC-001의 barrier/latch가 두 transaction 시작을 어떻게 맞추는지 읽는다.",
+        "테스트를 반복 실행해 성공 1, 실패 1, 최종 stock 0을 확인한다."
+      ],
+      "evidence": "LAB-CONC-001 반복 통과 결과와 success=1/failure=1/stock=0 assertion",
+      "official_refs": [
+        "https://www.postgresql.org/docs/17/transaction-iso.html",
+        "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/CyclicBarrier.html"
+      ],
+      "check_question": "동시에 두 번 호출해도 성공 합계는 1이고 최종 stock은 0인가?"
+    }
+  ]
+}

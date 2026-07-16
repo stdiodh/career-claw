@@ -1,0 +1,354 @@
+{
+  "tracks": [
+    {
+      "id": "hash",
+      "name": "해시",
+      "goal": "Key-value 기반 조회와 중복/빈도 처리를 익힌다.",
+      "problems": [
+        {
+          "id": "programmers-1845",
+          "title": "폰켓몬",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/1845",
+          "level": 1,
+          "first_thought": "중복 제거 후 선택 가능한 수와 n/2 중 작은 값을 고른다."
+        },
+        {
+          "id": "programmers-42576",
+          "title": "완주하지 못한 선수",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42576",
+          "level": 1,
+          "first_thought": "참가자 이름별 개수를 세고 완주자 개수를 빼서 남는 이름을 찾는다."
+        },
+        {
+          "id": "programmers-42577",
+          "title": "전화번호 목록",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42577",
+          "level": 2,
+          "first_thought": "전화번호를 정렬한 뒤 인접한 번호끼리 prefix 관계인지 확인한다."
+        },
+        {
+          "id": "programmers-42578",
+          "title": "의상",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42578",
+          "level": 2,
+          "first_thought": "종류별 의상 수에 선택하지 않는 경우를 더해 곱하고 아무것도 안 입는 경우를 뺀다."
+        },
+        {
+          "id": "programmers-42579",
+          "title": "베스트앨범",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42579",
+          "level": 3,
+          "first_thought": "장르별 총 재생 수와 곡별 정렬 기준을 분리해 상위 두 곡을 고른다."
+        }
+      ]
+    },
+    {
+      "id": "stack-queue",
+      "name": "스택/큐",
+      "goal": "순서 보존, 대기열, 스택 상태 전이를 익힌다.",
+      "problems": [
+        {
+          "id": "programmers-12906",
+          "title": "같은 숫자는 싫어",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/12906",
+          "level": 1,
+          "first_thought": "직전 값과 다른 값만 결과에 추가해 연속 중복을 제거한다."
+        },
+        {
+          "id": "programmers-42586",
+          "title": "기능개발",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42586",
+          "level": 2,
+          "first_thought": "기능별 완료일까지 계산하고 앞 기능의 배포일을 기준으로 묶는다."
+        },
+        {
+          "id": "programmers-12909",
+          "title": "올바른 괄호",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/12909",
+          "level": 2,
+          "first_thought": "여는 괄호 개수를 누적하고 음수가 되거나 마지막에 남으면 실패로 본다."
+        },
+        {
+          "id": "programmers-42587",
+          "title": "프로세스",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42587",
+          "level": 2,
+          "first_thought": "인덱스와 우선순위를 큐에 같이 넣고 더 높은 우선순위가 있으면 뒤로 보낸다."
+        },
+        {
+          "id": "programmers-42583",
+          "title": "다리를 지나는 트럭",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42583",
+          "level": 2,
+          "first_thought": "다리 위 트럭의 남은 시간과 총 무게를 큐로 관리하며 시간을 진행한다."
+        }
+      ]
+    },
+    {
+      "id": "heap",
+      "name": "힙",
+      "goal": "우선순위 큐로 최솟값/최댓값을 반복적으로 선택하는 패턴을 익힌다.",
+      "problems": [
+        {
+          "id": "programmers-42626",
+          "title": "더 맵게",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42626",
+          "level": 2,
+          "first_thought": "가장 작은 두 값을 반복해서 섞어야 하므로 최소 힙을 사용한다."
+        },
+        {
+          "id": "programmers-42627",
+          "title": "디스크 컨트롤러",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42627",
+          "level": 3,
+          "first_thought": "현재 시각까지 들어온 작업 중 소요 시간이 가장 짧은 작업을 우선 처리한다."
+        },
+        {
+          "id": "programmers-42628",
+          "title": "이중우선순위큐",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42628",
+          "level": 3,
+          "first_thought": "최소/최대 삭제를 함께 지원해야 하므로 두 힙 또는 정렬된 맵을 고려한다."
+        }
+      ]
+    },
+    {
+      "id": "sorting",
+      "name": "정렬",
+      "goal": "정렬 기준을 직접 설계하고 비교 함수를 안정적으로 작성한다.",
+      "problems": [
+        {
+          "id": "programmers-42748",
+          "title": "K번째수",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42748",
+          "level": 1,
+          "first_thought": "구간을 잘라 정렬한 뒤 k번째 값을 선택한다."
+        },
+        {
+          "id": "programmers-42746",
+          "title": "가장 큰 수",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42746",
+          "level": 2,
+          "first_thought": "두 숫자를 문자열로 붙인 결과를 비교해 더 큰 순서를 앞에 둔다."
+        },
+        {
+          "id": "programmers-42747",
+          "title": "H-Index",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42747",
+          "level": 2,
+          "first_thought": "인용 수를 내림차순으로 정렬하고 조건을 만족하는 최대 h를 찾는다."
+        }
+      ]
+    },
+    {
+      "id": "brute-force",
+      "name": "완전탐색",
+      "goal": "가능한 경우를 빠짐없이 만들고 조건으로 걸러내는 연습을 한다.",
+      "problems": [
+        {
+          "id": "programmers-86491",
+          "title": "최소직사각형",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/86491",
+          "level": 1,
+          "first_thought": "각 명함의 긴 변과 짧은 변을 맞춘 뒤 각각의 최댓값을 곱한다."
+        },
+        {
+          "id": "programmers-42840",
+          "title": "모의고사",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42840",
+          "level": 1,
+          "first_thought": "각 수포자의 반복 패턴을 정답 인덱스에 맞춰 비교한다."
+        },
+        {
+          "id": "programmers-42839",
+          "title": "소수 찾기",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42839",
+          "level": 2,
+          "first_thought": "숫자 조각의 모든 순열을 만들고 중복 제거 후 소수 여부를 검사한다."
+        },
+        {
+          "id": "programmers-42842",
+          "title": "카펫",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42842",
+          "level": 2,
+          "first_thought": "전체 칸 수의 약수 쌍 중 테두리 칸 수가 brown과 맞는 크기를 찾는다."
+        },
+        {
+          "id": "programmers-87946",
+          "title": "피로도",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/87946",
+          "level": 2,
+          "first_thought": "던전 방문 순서를 순열 또는 DFS로 모두 시도해 최대 방문 수를 구한다."
+        }
+      ]
+    },
+    {
+      "id": "greedy",
+      "name": "그리디",
+      "goal": "지역 최적 선택이 전체 최적이 되는 조건과 정렬 기반 탐욕 패턴을 익힌다.",
+      "problems": [
+        {
+          "id": "programmers-42862",
+          "title": "체육복",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42862",
+          "level": 1,
+          "first_thought": "여벌과 도난이 겹치는 학생을 먼저 제거하고 앞뒤 학생에게 빌려준다."
+        },
+        {
+          "id": "programmers-42860",
+          "title": "조이스틱",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42860",
+          "level": 2,
+          "first_thought": "문자 변경 비용과 연속된 A 구간을 고려한 최소 좌우 이동을 따로 계산한다."
+        },
+        {
+          "id": "programmers-42883",
+          "title": "큰 수 만들기",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42883",
+          "level": 2,
+          "first_thought": "스택의 뒤쪽 숫자가 현재 숫자보다 작으면 제거해 앞자리를 크게 만든다."
+        },
+        {
+          "id": "programmers-42885",
+          "title": "구명보트",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42885",
+          "level": 2,
+          "first_thought": "가장 무거운 사람과 가장 가벼운 사람을 함께 태울 수 있는지 투 포인터로 본다."
+        },
+        {
+          "id": "programmers-42861",
+          "title": "섬 연결하기",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42861",
+          "level": 3,
+          "first_thought": "간선을 비용순으로 정렬하고 서로소 집합으로 사이클 없이 연결한다."
+        }
+      ]
+    },
+    {
+      "id": "dynamic-programming",
+      "name": "DP",
+      "goal": "상태 정의와 점화식을 세워 중복 계산을 줄이는 연습을 한다.",
+      "problems": [
+        {
+          "id": "programmers-42895",
+          "title": "N으로 표현",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42895",
+          "level": 3,
+          "first_thought": "N을 사용한 횟수별로 만들 수 있는 값을 Set으로 관리하며 조합한다."
+        },
+        {
+          "id": "programmers-43105",
+          "title": "정수 삼각형",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/43105",
+          "level": 3,
+          "first_thought": "각 칸까지 도달하는 최대 합을 위 행의 왼쪽/오른쪽 부모에서 갱신한다."
+        },
+        {
+          "id": "programmers-42898",
+          "title": "등굣길",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42898",
+          "level": 3,
+          "first_thought": "웅덩이를 제외하고 위쪽과 왼쪽에서 오는 경로 수를 누적한다."
+        },
+        {
+          "id": "programmers-42897",
+          "title": "도둑질",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/42897",
+          "level": 4,
+          "first_thought": "원형 배치이므로 첫 집을 터는 경우와 털지 않는 경우를 나누어 선형 DP를 적용한다."
+        }
+      ]
+    },
+    {
+      "id": "dfs-bfs",
+      "name": "DFS/BFS",
+      "goal": "그래프와 상태 공간을 탐색하고 방문 상태를 올바르게 관리한다.",
+      "problems": [
+        {
+          "id": "programmers-43165",
+          "title": "타겟 넘버",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/43165",
+          "level": 2,
+          "first_thought": "각 숫자마다 더하거나 빼는 두 갈래를 DFS로 탐색해 target 도달 횟수를 센다."
+        },
+        {
+          "id": "programmers-43162",
+          "title": "네트워크",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/43162",
+          "level": 3,
+          "first_thought": "방문하지 않은 컴퓨터에서 DFS/BFS를 시작할 때마다 네트워크 수를 하나 늘린다."
+        },
+        {
+          "id": "programmers-1844",
+          "title": "게임 맵 최단거리",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/1844",
+          "level": 2,
+          "first_thought": "가중치가 없는 격자 최단거리이므로 BFS로 거리 배열을 갱신한다."
+        },
+        {
+          "id": "programmers-43163",
+          "title": "단어 변환",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/43163",
+          "level": 3,
+          "first_thought": "한 글자만 다른 단어로 이동하는 그래프를 만들고 BFS로 최소 변환 횟수를 찾는다."
+        },
+        {
+          "id": "programmers-43164",
+          "title": "여행경로",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/43164",
+          "level": 3,
+          "first_thought": "항공권을 모두 사용하는 경로를 DFS로 찾되 도착지를 사전순으로 시도한다."
+        }
+      ]
+    },
+    {
+      "id": "binary-search",
+      "name": "이분탐색",
+      "goal": "정답 범위를 세우고 조건을 만족하는 최소/최대 값을 탐색한다.",
+      "problems": [
+        {
+          "id": "programmers-43238",
+          "title": "입국심사",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/43238",
+          "level": 3,
+          "first_thought": "주어진 시간 안에 심사 가능한 사람 수로 가능 여부를 판단하며 시간을 이분탐색한다."
+        },
+        {
+          "id": "programmers-43236",
+          "title": "징검다리",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/43236",
+          "level": 4,
+          "first_thought": "최소 간격 후보를 정하고 제거해야 하는 바위 수가 n 이하인지 검사한다."
+        }
+      ]
+    },
+    {
+      "id": "graph",
+      "name": "그래프",
+      "goal": "노드와 간선 관계를 모델링하고 최단거리, 순위, 경로 수를 다룬다.",
+      "problems": [
+        {
+          "id": "programmers-49189",
+          "title": "가장 먼 노드",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/49189",
+          "level": 3,
+          "first_thought": "1번 노드에서 BFS로 최단거리를 구하고 가장 큰 거리의 노드 수를 센다."
+        },
+        {
+          "id": "programmers-49191",
+          "title": "순위",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/49191",
+          "level": 3,
+          "first_thought": "승패 관계의 도달 가능성을 전파해 모든 선수와 비교 가능한 선수를 센다."
+        },
+        {
+          "id": "programmers-49190",
+          "title": "방의 개수",
+          "url": "https://school.programmers.co.kr/learn/courses/30/lessons/49190",
+          "level": 5,
+          "first_thought": "대각선 교차를 놓치지 않도록 좌표 이동을 두 배로 나누고 새 간선이 기존 노드에 닿는 횟수를 센다."
+        }
+      ]
+    }
+  ]
+}

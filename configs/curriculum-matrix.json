@@ -1,0 +1,510 @@
+{
+  "schema_version": 1,
+  "profile_id": "jvm-spring-2026q3-v1",
+  "lab_revision": "sha256:46d3ef065c7060604c5159f87fb178924dcde889a84ce47903100be6e399d999",
+  "job_market_audit": "audits/job-market-2026q3.json",
+  "required_competencies": [
+    "spring-mvc-api",
+    "automated-testing",
+    "jpa-data-access",
+    "relational-database",
+    "schema-migration",
+    "kotlin-spring-boundary",
+    "java-jvm-runtime",
+    "configuration-secrets",
+    "observability",
+    "authentication",
+    "authorization",
+    "idempotency",
+    "transaction-consistency",
+    "external-resilience",
+    "concurrency-control"
+  ],
+  "lessons": [
+    {
+      "id": "spring-mvc-validation-problem-detail",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["spring-mvc-api"],
+      "necessity_evidence": {"kind": "MARKET", "keyword_ids": ["HTTP_API", "SPRING"]},
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Spring MVC applies Bean Validation at controller method boundaries.",
+          "url": "https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-validation.html",
+          "revision": "Spring Framework 7.0.8 managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/spring-projects/spring-framework/tree/v7.0.8",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "Spring MVC error responses can use RFC 9457 ProblemDetail through its exception handling contract.",
+          "url": "https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-ann-rest-exceptions.html",
+          "revision": "Spring Framework 7.0.8 managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/spring-projects/spring-framework/tree/v7.0.8",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/order/OrderControllerWebMvcTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*OrderControllerWebMvcTest' --no-daemon",
+        "test_ids": ["LAB-WEB-001"],
+        "expected_assertions": ["Invalid fields return HTTP 400 application/problem+json with field evidence."]
+      }
+    },
+    {
+      "id": "spring-testing-layers",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["automated-testing"],
+      "necessity_evidence": {"kind": "MARKET", "keyword_ids": ["TESTING"]},
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Spring Boot provides focused test slices so unit, MVC, and persistence boundaries can be verified independently.",
+          "url": "https://docs.spring.io/spring-boot/reference/testing/spring-boot-applications.html",
+          "revision": "Spring Boot 4.1.0 reference",
+          "revision_url": "https://github.com/spring-projects/spring-boot/tree/ac2cfe03538b87a0dc9d2619ed52a4c901eaea54",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/PureUnitBoundaryTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*PureUnitBoundaryTest' --tests '*OrderControllerWebMvcTest' --tests '*OrderRepositoryTest' --no-daemon",
+        "test_ids": ["LAB-TEST-001", "LAB-TEST-002", "LAB-TEST-003"],
+        "expected_assertions": ["Pure unit code runs without Spring.", "MVC slice rejects invalid input before service invocation.", "JPA slice persists and queries without the full web context."]
+      }
+    },
+    {
+      "id": "jpa-persistence-query-shaping",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["jpa-data-access"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "JPA query shaping is required to use the Spring and relational-database stack without hidden lazy-loading or N+1 failures.",
+        "market_context_ids": ["RDB_SQL", "SPRING", "ORM_JPA"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Spring Data JPA interface projections expose selected aggregate attributes through accessor methods.",
+          "url": "https://docs.spring.io/spring-data/jpa/reference/repositories/projections.html",
+          "revision": "Spring Data JPA 4.1.0 managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/spring-projects/spring-data-jpa/tree/4.1.0",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "Spring Data repositories accept Pageable and return Page or Slice results for paginated queries.",
+          "url": "https://docs.spring.io/spring-data/jpa/reference/repositories/core-concepts.html",
+          "revision": "Spring Data JPA 4.1.0 managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/spring-projects/spring-data-jpa/tree/4.1.0",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "Hibernate SELECT fetching uses separate SQL and is the fetching strategy commonly associated with N+1, while JOIN fetching retrieves associated data in the same query.",
+          "url": "https://docs.jboss.org/hibernate/orm/7.4/userguide/html_single/Hibernate_User_Guide.html#fetching-basics",
+          "revision": "Hibernate ORM 7.4.1.Final managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/hibernate/hibernate-orm/tree/7.4.1",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "Hibernate requires lazy associations needed by a client to be initialized before the persistence context is closed.",
+          "url": "https://docs.jboss.org/hibernate/orm/7.4/userguide/html_single/Hibernate_User_Guide.html#best-practices-fetching-associations",
+          "revision": "Hibernate ORM 7.4.1.Final managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/hibernate/hibernate-orm/tree/7.4.1",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/order/OrderRepositoryTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*OrderRepositoryTest' --no-daemon",
+        "test_ids": ["LAB-JPA-001", "LAB-JPA-002", "LAB-JPA-003"],
+        "expected_assertions": ["Lazy access is bounded by the persistence context.", "Projection pagination returns the requested page.", "N+1 is reproduced and the shaped query reduces deterministic statement count."]
+      }
+    },
+    {
+      "id": "db-index-design-for-read-traffic",
+      "tier": "CORE",
+      "core_type": "PLATFORM_CORE",
+      "competency_ids": ["relational-database"],
+      "necessity_evidence": {"kind": "MARKET", "keyword_ids": ["RDB_SQL"]},
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 1, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "A multicolumn B-tree is most effective with equality constraints on its leading columns.",
+          "url": "https://www.postgresql.org/docs/17/indexes-multicolumn.html",
+          "revision": "PostgreSQL 17.10 documentation",
+          "revision_url": "https://github.com/postgres/postgres/tree/REL_17_10",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "PostgreSQL EXPLAIN shows the query plan selected by the planner.",
+          "url": "https://www.postgresql.org/docs/17/using-explain.html",
+          "revision": "PostgreSQL 17.10 documentation",
+          "revision_url": "https://github.com/postgres/postgres/tree/REL_17_10",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/postgresTest/kotlin/dev/careerfeed/lab/PostgresIndexPlanTest.kt",
+        "verify_command": "./lab/gradlew -p lab postgresTest --tests '*PostgresIndexPlanTest' --no-daemon",
+        "test_ids": ["LAB-PG-001"],
+        "expected_assertions": ["After three fixed warm-ups per plan, PostgreSQL 17.10 records before/after EXPLAIN ANALYZE BUFFERS output and the indexed plan uses idx_orders_user_status_created for the pinned 100,000-row fixture."]
+      }
+    },
+    {
+      "id": "schema-migration-flyway",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["schema-migration"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "Versioned migrations prevent schema drift in relational-database applications.",
+        "market_context_ids": ["RDB_SQL", "MIGRATION"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Spring Boot runs Flyway migrations on startup when the migration module is present.",
+          "url": "https://docs.spring.io/spring-boot/how-to/data-initialization.html#howto.data-initialization.migration-tool.flyway",
+          "revision": "Spring Boot 4.1.0 reference with Flyway 12.4.0",
+          "revision_url": "https://github.com/spring-projects/spring-boot/tree/ac2cfe03538b87a0dc9d2619ed52a4c901eaea54",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/main/resources/db/migration/V1__backend_lab.sql",
+        "verify_command": "./lab/gradlew -p lab test --tests '*OrderRepositoryTest' --no-daemon",
+        "test_ids": ["LAB-MIG-001"],
+        "expected_assertions": ["Flyway history and application tables exist before Hibernate validation completes."]
+      }
+    },
+    {
+      "id": "kotlin-spring-boundaries",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["kotlin-spring-boundary"],
+      "necessity_evidence": {"kind": "MARKET", "keyword_ids": ["KOTLIN", "SPRING"]},
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Kotlin classes are final by default, and the kotlin-spring plugin opens Spring-annotated types for proxying.",
+          "url": "https://docs.spring.io/spring-boot/reference/features/kotlin.html",
+          "revision": "Spring Boot 4.1.0 with Kotlin 2.4.10",
+          "revision_url": "https://github.com/spring-projects/spring-boot/tree/ac2cfe03538b87a0dc9d2619ed52a4c901eaea54",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "The Kotlin all-open Spring preset opens classes annotated or meta-annotated with supported Spring annotations.",
+          "url": "https://kotlinlang.org/docs/all-open-plugin.html#spring-support",
+          "revision": "Kotlin 2.4.10",
+          "revision_url": "https://github.com/JetBrains/kotlin/tree/5687445832cd835b4509b9fbc264cdf1a8201093",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "Jackson Module Kotlin uses a Kotlin constructor default when the corresponding JSON input property is undefined.",
+          "url": "https://github.com/FasterXML/jackson-module-kotlin/blob/45e9140440c28e6012e89d28084f74e76b9b2f0d/src/test/kotlin/tools/jackson/module/kotlin/test/github/GitHub876.kt",
+          "revision": "Jackson Module Kotlin 3.1.4 managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/FasterXML/jackson-module-kotlin/tree/jackson-module-kotlin-3.1.4",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/order/OrderWorkflowIntegrationTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*OrderWorkflowIntegrationTest' --no-daemon",
+        "test_ids": ["LAB-KOTLIN-001", "LAB-KOTLIN-002"],
+        "expected_assertions": ["A missing optional JSON field uses the Kotlin default.", "The transactional Kotlin service is an actual Spring AOP proxy."]
+      }
+    },
+    {
+      "id": "configuration-secrets",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["configuration-secrets"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "Validated external configuration is required to start cloud workloads without silently missing operational secrets or limits.",
+        "market_context_ids": ["CLOUD"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Type-safe configuration properties support validated immutable binding and can fail application startup on missing required values.",
+          "url": "https://docs.spring.io/spring-boot/reference/features/external-config.html#features.external-config.typesafe-configuration-properties.validation",
+          "revision": "Spring Boot 4.1.0 reference",
+          "revision_url": "https://github.com/spring-projects/spring-boot/tree/ac2cfe03538b87a0dc9d2619ed52a4c901eaea54",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/config/LabExternalPropertiesTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*LabExternalPropertiesTest' --no-daemon",
+        "test_ids": ["LAB-CONFIG-001", "LAB-CONFIG-002"],
+        "expected_assertions": ["An active profile and environment-style duration/retry overrides bind to an immutable object.", "A blank external token fails context startup validation."]
+      }
+    },
+    {
+      "id": "perf-test-metrics",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["observability"],
+      "necessity_evidence": {"kind": "MARKET", "keyword_ids": ["OBSERVABILITY"]},
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Spring Boot Actuator auto-configures Micrometer metrics and exposes registered meters through its metrics facilities.",
+          "url": "https://docs.spring.io/spring-boot/reference/actuator/metrics.html",
+          "revision": "Spring Boot 4.1.0 reference",
+          "revision_url": "https://github.com/spring-projects/spring-boot/tree/ac2cfe03538b87a0dc9d2619ed52a4c901eaea54",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "Spring Boot Actuator's health endpoint reports application health information.",
+          "url": "https://docs.spring.io/spring-boot/reference/actuator/endpoints.html#actuator.endpoints.health",
+          "revision": "Spring Boot 4.1.0 reference",
+          "revision_url": "https://github.com/spring-projects/spring-boot/tree/ac2cfe03538b87a0dc9d2619ed52a4c901eaea54",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/observability/PerformanceMetricsTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*PerformanceMetricsTest' --tests '*OrderWorkflowIntegrationTest' --no-daemon",
+        "test_ids": ["LAB-OBS-001", "LAB-OBS-002", "LAB-OBS-003"],
+        "expected_assertions": ["Request ID is preserved in the response, MDC, and structured request log fields.", "Health and outcome metrics are queryable.", "Fixed data gives deterministic throughput, error rate, p95, and p99."]
+      }
+    },
+    {
+      "id": "server-check-process",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["java-jvm-runtime"],
+      "necessity_evidence": {"kind": "MARKET", "keyword_ids": ["JAVA"]},
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Java 21 virtual threads are Thread instances scheduled by the Java runtime rather than dedicated operating-system threads.",
+          "url": "https://docs.oracle.com/en/java/javase/21/core/virtual-threads.html",
+          "revision": "Java 21.0.11 source and Java SE 21 documentation",
+          "revision_url": "https://github.com/openjdk/jdk21u/tree/jdk-21.0.11-ga",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "java.lang.Runtime reports heap memory quantities and VM processors for the current Java process.",
+          "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Runtime.html",
+          "revision": "Java 21.0.11 source and Java SE 21 API",
+          "revision_url": "https://github.com/openjdk/jdk21u/tree/jdk-21.0.11-ga",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/runtime/JvmRuntimeProbeTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*JvmRuntimeProbeTest' --no-daemon",
+        "test_ids": ["LAB-JVM-001"],
+        "expected_assertions": ["A named Java 21 virtual thread produces a bounded heap/runtime snapshot and terminates."]
+      }
+    },
+    {
+      "id": "security-authentication",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["authentication"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "Authentication must establish a trusted subject before authorization can protect a resource.",
+        "market_context_ids": ["AUTH"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Spring Security authentication converts submitted credentials into an authenticated principal or an authentication failure.",
+          "url": "https://docs.spring.io/spring-security/reference/7.1/servlet/authentication/index.html",
+          "revision": "Spring Security 7.1.0 managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/spring-projects/spring-security/tree/7.1.0",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "Spring Security's filter-chain architecture places authorization after authentication mechanisms so access decisions receive the established security context.",
+          "url": "https://docs.spring.io/spring-security/reference/7.1/servlet/architecture.html",
+          "revision": "Spring Security 7.1.0 managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/spring-projects/spring-security/tree/7.1.0",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/order/OrderWorkflowIntegrationTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*OrderWorkflowIntegrationTest' --no-daemon",
+        "test_ids": ["LAB-AUTHN-001"],
+        "expected_assertions": ["Anonymous and wrong credentials receive 401 while correct credentials traverse the real filter chain."]
+      }
+    },
+    {
+      "id": "security-authentication-authorization",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["authorization"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "Object-level authorization is required to prevent authenticated users from reading or changing another user's data.",
+        "market_context_ids": ["AUTH", "SECURITY"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Object-level authorization must verify that the authenticated subject may act on the requested resource.",
+          "url": "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/",
+          "revision": "OWASP API Security Top 10 2023",
+          "revision_url": "https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/order/OrderWorkflowIntegrationTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*OrderWorkflowIntegrationTest' --no-daemon",
+        "test_ids": ["LAB-AUTHZ-001"],
+        "expected_assertions": ["The owner succeeds and another authenticated user receives the fixed 403 policy."]
+      }
+    },
+    {
+      "id": "api-post-idempotency-payment-duplicate",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["idempotency"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "Retryable write APIs require duplicate-side-effect prevention and a database race invariant.",
+        "market_context_ids": ["HTTP_API", "TRANSACTION"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "A client must not automatically retry a non-idempotent request unless it knows the request semantics make retry safe.",
+          "url": "https://datatracker.ietf.org/doc/html/rfc9110#section-9.2.2",
+          "revision": "RFC 9110",
+          "revision_url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+          "reviewed_at": "2026-07-16"
+        },
+        {
+          "claim": "A PostgreSQL unique constraint rejects duplicate values and provides the database invariant for one idempotency key.",
+          "url": "https://www.postgresql.org/docs/17/ddl-constraints.html#DDL-CONSTRAINTS-UNIQUE-CONSTRAINTS",
+          "revision": "PostgreSQL 17.10 documentation",
+          "revision_url": "https://github.com/postgres/postgres/tree/REL_17_10",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/order/OrderWorkflowIntegrationTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*OrderWorkflowIntegrationTest' --no-daemon",
+        "test_ids": ["LAB-IDEMP-001", "LAB-IDEMP-002", "LAB-IDEMP-003"],
+        "expected_assertions": ["Same key and body replays one result.", "Same key and different fingerprint returns 409.", "Concurrent same-key calls persist one order and consume stock once."]
+      }
+    },
+    {
+      "id": "db-failure-transaction-considerations",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["transaction-consistency"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "External approval and local database failure require an explicit recovery invariant to prevent financial inconsistency.",
+        "market_context_ids": ["TRANSACTION"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Spring declarative transaction management defines local transactional method boundaries and rollback behavior for supported transactional resources.",
+          "url": "https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative.html",
+          "revision": "Spring Framework 7.0.8 managed by Spring Boot 4.1.0",
+          "revision_url": "https://github.com/spring-projects/spring-framework/tree/v7.0.8",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/payment/PaymentRecoveryTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*PaymentRecoveryTest' --no-daemon",
+        "test_ids": ["LAB-TX-001"],
+        "expected_assertions": ["Approval survives the DB failure and repeated reconciliation finalizes exactly once."]
+      }
+    },
+    {
+      "id": "external-integration-timeout",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["external-resilience"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "Bounded waiting is required to prevent a slow dependency from exhausting request-processing capacity.",
+        "market_context_ids": ["RETRY_TIMEOUT", "INCIDENT_RESPONSE"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "Java HttpRequest.Builder.timeout bounds the time allowed for a response to a request.",
+          "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.net.http/java/net/http/HttpRequest.Builder.html#timeout(java.time.Duration)",
+          "revision": "Java 21.0.11 source and Java SE 21 API",
+          "revision_url": "https://github.com/openjdk/jdk21u/tree/jdk-21.0.11-ga",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/external/ExternalResponseClientTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*ExternalResponseClientTest' --no-daemon",
+        "test_ids": ["LAB-TIMEOUT-001"],
+        "expected_assertions": ["A delayed local response ends with the configured timeout exception."]
+      }
+    },
+    {
+      "id": "external-integration-retry",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["external-resilience"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "A bounded retry policy is required to avoid unsafe duplicate writes and retry amplification.",
+        "market_context_ids": ["RETRY_TIMEOUT", "HTTP_API"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "A client should not automatically retry a non-idempotent request unless it knows the request semantics make retry safe.",
+          "url": "https://datatracker.ietf.org/doc/html/rfc9110#section-9.2.2",
+          "revision": "RFC 9110",
+          "revision_url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/external/RetryPolicyTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*RetryPolicyTest' --no-daemon",
+        "test_ids": ["LAB-RETRY-001"],
+        "expected_assertions": ["Three attempts request only 100ms and 200ms fake sleeps inside the calculated 1800ms budget."]
+      }
+    },
+    {
+      "id": "concurrency-db",
+      "tier": "CORE",
+      "core_type": "JVM_CORE",
+      "competency_ids": ["concurrency-control"],
+      "necessity_evidence": {
+        "kind": "PREREQUISITE",
+        "reason": "Atomic concurrency control is required to prevent overselling under simultaneous writes.",
+        "market_context_ids": ["CONCURRENCY", "TRANSACTION"]
+      },
+      "scores": {"necessity": 2, "source_fit": 2, "stack_relevance": 2, "failure_reproduction": 2, "executable_evidence": 2},
+      "source_claims": [
+        {
+          "claim": "At Read Committed, PostgreSQL waits for a concurrent updater and re-evaluates an UPDATE search condition against the updated row version.",
+          "url": "https://www.postgresql.org/docs/17/transaction-iso.html",
+          "revision": "PostgreSQL 17.10 documentation",
+          "revision_url": "https://github.com/postgres/postgres/tree/REL_17_10",
+          "reviewed_at": "2026-07-16"
+        }
+      ],
+      "lab": {
+        "path": "lab/src/test/kotlin/dev/careerfeed/lab/order/OrderWorkflowIntegrationTest.kt",
+        "verify_command": "./lab/gradlew -p lab test --tests '*OrderWorkflowIntegrationTest' --no-daemon",
+        "test_ids": ["LAB-CONC-001"],
+        "expected_assertions": ["Two barrier-aligned decrements produce one success, one failure, and stock zero."]
+      }
+    }
+  ]
+}
