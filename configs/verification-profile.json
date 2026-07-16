@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "profile_id": "jvm-spring-2026q3-v1",
+  "created_at": "2026-07-16",
+  "target": "Kotlin/Java/Spring backend preparation on an LTS JVM",
+  "jdk": {
+    "distribution": "Eclipse Temurin",
+    "version": "21.0.11+10-LTS",
+    "platform": "linux-x64",
+    "archive": "OpenJDK21U-jdk_x64_linux_hotspot_21.0.11_10.tar.gz",
+    "sha256": "4b2220e232a97997b436ca6ab15cbf70171ecff52958a46159dfa5a8c44ca4de",
+    "source": "https://github.com/adoptium/temurin21-binaries/releases/tag/jdk-21.0.11%2B10"
+  },
+  "spring_boot": {
+    "version": "4.1.0",
+    "tag_commit": "ac2cfe03538b87a0dc9d2619ed52a4c901eaea54",
+    "gradle_plugin_jar_sha256": "861fd80bfb542856affc3987899dd4e37f1b2227d813b579ae282305e8905aac",
+    "bom_pom_sha256": "58be9316bd9e34d54b4c0ac20fd188b9f563d4ab10c00afe275e5fa3a12835d1",
+    "source": "https://github.com/spring-projects/spring-boot/releases/tag/v4.1.0"
+  },
+  "managed_dependencies": {
+    "spring_framework": "7.0.8",
+    "spring_security": "7.1.0",
+    "spring_data_jpa": "4.1.0",
+    "flyway": "12.4.0",
+    "hibernate_orm": "7.4.1.Final",
+    "jackson_kotlin": "3.1.4"
+  },
+  "kotlin": {
+    "version": "2.4.10",
+    "tag_commit": "5687445832cd835b4509b9fbc264cdf1a8201093",
+    "gradle_plugin_jar_sha256": "f3f694e4bf9dcfebbbb9db4cc77336746a649d11931056a6cd3a7e06b516f9fb",
+    "source": "https://github.com/JetBrains/kotlin/releases/tag/v2.4.10"
+  },
+  "gradle": {
+    "version": "9.5.0",
+    "distribution": "https://services.gradle.org/distributions/gradle-9.5.0-bin.zip",
+    "distribution_sha256": "553c78f50dafcd54d65b9a444649057857469edf836431389695608536d6b746",
+    "wrapper_jar_sha256": "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7",
+    "source": "https://gradle.org/release-checksums/"
+  },
+  "postgresql": {
+    "image": "postgres:17.10-bookworm",
+    "oci_index_digest": "sha256:4f736ae292687621d4dbe0d499ffd024a36bd2ee7d8ca6f2ccd4c800f047b394",
+    "linux_amd64_digest": "sha256:67870dc097790edf2bd6726658db995dcc830f799d41bb2b78ef07c9a2d5f010",
+    "linux_arm64_digest": "sha256:656bfcd185379cf9eaeea576e1555587c4413f7bbe0e2a55a9b34c8843f8b8ea",
+    "source": "https://www.postgresql.org/about/news/postgresql-184-1710-1614-1518-and-1423-released-3297/"
+  },
+  "compatibility_sources": [
+    "https://docs.spring.io/spring-boot/system-requirements.html",
+    "https://docs.spring.io/spring-boot/reference/features/kotlin.html",
+    "https://kotlinlang.org/docs/gradle-configure-project.html"
+  ],
+  "decision": "Use Java 21 LTS instead of the minimum Java 17 or newest Java 26 so the lab remains current and employment-relevant while staying inside Spring Boot 4.1 and Kotlin 2.4 compatibility ranges."
+}

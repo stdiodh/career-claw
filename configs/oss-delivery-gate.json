@@ -1,0 +1,25 @@
+{
+  "schema_version": 3,
+  "status": "LOCKED",
+  "requirements": {
+    "minimum_distinct_weeks": 4,
+    "minimum_consecutive_qualifying_weeks": 4,
+    "minimum_unique_candidates": 10,
+    "minimum_relevance_percent": 80,
+    "minimum_scope_clarity_percent": 80,
+    "maximum_hard_gate_false_positives": 0,
+    "maximum_approval_lag_days": 14
+  },
+  "scheduled_workflow": {
+    "repository": "stdiodh/career-feed",
+    "workflow_ref": "stdiodh/career-feed/.github/workflows/oss-weekly.yml@refs/heads/main",
+    "event_name": "schedule",
+    "ref": "refs/heads/main",
+    "runner_environment": "github-hosted",
+    "runner_os": "Linux"
+  },
+  "shadow_contract_sha256": "sha256:c9404a544582fdcd3489b5924e956b08de8abef2f368ee6c5591952c8137edc2",
+  "runs": [],
+  "candidate_reviews": [],
+  "approved_at": null
+}

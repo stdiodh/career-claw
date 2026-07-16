@@ -1,0 +1,257 @@
+{
+  "now": "2026-07-16T00:00:00Z",
+  "default_headers": {
+    "X-RateLimit-Resource": "core",
+    "X-RateLimit-Remaining": "59",
+    "X-RateLimit-Reset": "1784163600"
+  },
+  "responses": {
+    "labels:spring-projects/spring-boot": {
+      "body": [
+        {"name": "status: ideal-for-contribution"},
+        {"name": "status: first-timers-only"},
+        {"name": "status: blocked"},
+        {"name": "status: waiting-for-feedback"},
+        {"name": "status: waiting-for-internal-feedback"},
+        {"name": "status: pending-design-work"},
+        {"name": "status: on-hold"},
+        {"name": "status: team-only"},
+        {"name": "type: blocker"},
+        {"name": "type: epic"},
+        {"name": "theme: config-data"},
+        {"name": "theme: containers"},
+        {"name": "theme: observability"},
+        {"name": "type: documentation"}
+      ]
+    },
+    "labels:spring-projects/spring-framework": {
+      "body": [
+        {"name": "status: ideal-for-contribution"},
+        {"name": "status: blocked"},
+        {"name": "status: waiting-for-feedback"},
+        {"name": "status: waiting-for-internal-feedback"},
+        {"name": "status: pending-design-work"},
+        {"name": "status: on-hold"},
+        {"name": "in: core"},
+        {"name": "in: data"},
+        {"name": "in: test"},
+        {"name": "in: web"},
+        {"name": "theme: kotlin"},
+        {"name": "theme: observability"}
+      ]
+    },
+    "labels:detekt/detekt": {
+      "body": [
+        {"name": "good first issue"},
+        {"name": "blocked"},
+        {"name": "breaking change"},
+        {"name": "discussion"},
+        {"name": "needs type and symbol solving"},
+        {"name": "cli"},
+        {"name": "compiler-plugin"},
+        {"name": "core"},
+        {"name": "documentation"},
+        {"name": "gradle-plugin"}
+      ]
+    },
+    "labels:micrometer-metrics/micrometer": {
+      "body": [
+        {"name": "help wanted"},
+        {"name": "blocked"},
+        {"name": "breaking-change"},
+        {"name": "internal"},
+        {"name": "needs: design work"},
+        {"name": "question"},
+        {"name": "waiting for team"},
+        {"name": "module: micrometer-core"},
+        {"name": "module: micrometer-observation"},
+        {"name": "module: micrometer-test"},
+        {"name": "doc-update"},
+        {"name": "java"},
+        {"name": "kotlin"}
+      ]
+    },
+    "labels:testcontainers/testcontainers-java": {
+      "body": [
+        {"name": "good first issue"},
+        {"name": "blocker"},
+        {"name": "resolution/duplicate"},
+        {"name": "resolution/invalid"},
+        {"name": "resolution/waiting-for-info"},
+        {"name": "modules/jdbc"},
+        {"name": "modules/jupiter"},
+        {"name": "modules/kafka"},
+        {"name": "modules/postgres"},
+        {"name": "java"}
+      ]
+    },
+    "search:spring-projects/spring-boot": {
+      "headers": {"X-RateLimit-Resource": "search", "X-RateLimit-Remaining": "9"},
+      "body": {"incomplete_results": false, "items": []}
+    },
+    "search:spring-projects/spring-framework": {
+      "headers": {"X-RateLimit-Resource": "search", "X-RateLimit-Remaining": "8"},
+      "body": {
+        "incomplete_results": false,
+        "items": [
+          {
+            "number": 200,
+            "title": "Clarify web binding test",
+            "html_url": "https://github.com/spring-projects/spring-framework/issues/200",
+            "repository_url": "https://api.github.com/repos/spring-projects/spring-framework",
+            "state": "open",
+            "locked": false,
+            "assignee": null,
+            "assignees": [],
+            "labels": [
+              {"name": "status: ideal-for-contribution"},
+              {"name": "in: web"}
+            ],
+            "created_at": "2026-07-10T00:00:00Z",
+            "updated_at": "2026-07-15T00:00:00Z"
+          }
+        ]
+      }
+    },
+    "search:detekt/detekt": {
+      "headers": {"X-RateLimit-Resource": "search", "X-RateLimit-Remaining": "6"},
+      "body": {"incomplete_results": false, "items": []}
+    },
+    "search:micrometer-metrics/micrometer": {
+      "headers": {"X-RateLimit-Resource": "search", "X-RateLimit-Remaining": "5"},
+      "body": {
+        "incomplete_results": false,
+        "items": [
+          {
+            "number": 300,
+            "title": "Add observation convention test",
+            "html_url": "https://github.com/micrometer-metrics/micrometer/issues/300",
+            "repository_url": "https://api.github.com/repos/micrometer-metrics/micrometer",
+            "state": "open",
+            "locked": false,
+            "assignee": null,
+            "assignees": [],
+            "labels": [
+              {"name": "help wanted"},
+              {"name": "module: micrometer-core"},
+              {"name": "java"}
+            ],
+            "created_at": "2026-07-12T00:00:00Z",
+            "updated_at": "2026-07-15T00:00:00Z"
+          }
+        ]
+      }
+    },
+    "search:testcontainers/testcontainers-java": {
+      "headers": {"X-RateLimit-Resource": "search", "X-RateLimit-Remaining": "4"},
+      "body": {
+        "incomplete_results": false,
+        "items": [
+          {
+            "number": 400,
+            "title": "Improve PostgreSQL container test",
+            "html_url": "https://github.com/testcontainers/testcontainers-java/issues/400",
+            "repository_url": "https://api.github.com/repos/testcontainers/testcontainers-java",
+            "state": "open",
+            "locked": false,
+            "assignee": null,
+            "assignees": [],
+            "labels": [
+              {"name": "good first issue"},
+              {"name": "modules/postgres"},
+              {"name": "java"}
+            ],
+            "created_at": "2026-07-11T00:00:00Z",
+            "updated_at": "2026-07-15T00:00:00Z"
+          }
+        ]
+      }
+    },
+    "detail:micrometer-metrics/micrometer#300": {
+      "body": {
+        "number": 300,
+        "title": "Add observation convention test",
+        "html_url": "https://github.com/micrometer-metrics/micrometer/issues/300",
+        "repository_url": "https://api.github.com/repos/micrometer-metrics/micrometer",
+        "state": "open",
+        "locked": false,
+        "assignee": null,
+        "assignees": [],
+        "labels": [
+          {"name": "help wanted"},
+          {"name": "module: micrometer-core"},
+          {"name": "java"}
+        ],
+        "user": {"login": "external", "type": "User"},
+        "author_association": "NONE",
+        "created_at": "2026-07-12T00:00:00Z",
+        "updated_at": "2026-07-15T00:00:00Z"
+      }
+    },
+    "comments:micrometer-metrics/micrometer#300": {
+      "body": [
+        {
+          "user": {"login": "maintainer", "type": "User"},
+          "author_association": "MEMBER",
+          "body": "Thanks for the report.",
+          "created_at": "2026-07-13T00:00:00Z"
+        }
+      ]
+    },
+    "timeline:micrometer-metrics/micrometer#300": {"body": []},
+    "detail:testcontainers/testcontainers-java#400": {
+      "body": {
+        "number": 400,
+        "title": "Improve PostgreSQL container test",
+        "html_url": "https://github.com/testcontainers/testcontainers-java/issues/400",
+        "repository_url": "https://api.github.com/repos/testcontainers/testcontainers-java",
+        "state": "open",
+        "locked": false,
+        "assignee": null,
+        "assignees": [],
+        "labels": [
+          {"name": "good first issue"},
+          {"name": "modules/postgres"},
+          {"name": "java"}
+        ],
+        "user": {"login": "maintainer", "type": "User"},
+        "author_association": "MEMBER",
+        "created_at": "2026-07-11T00:00:00Z",
+        "updated_at": "2026-07-15T00:00:00Z"
+      }
+    },
+    "comments:testcontainers/testcontainers-java#400": {
+      "body": [
+        {
+          "user": {"login": "contributor", "type": "User"},
+          "author_association": "NONE",
+          "body": "I'd like to work on this issue.",
+          "created_at": "2026-07-14T00:00:00Z"
+        }
+      ]
+    },
+    "timeline:testcontainers/testcontainers-java#400": {"body": []},
+    "detail:spring-projects/spring-framework#200": {
+      "body": {
+        "number": 200,
+        "title": "Clarify web binding test",
+        "html_url": "https://github.com/spring-projects/spring-framework/issues/200",
+        "repository_url": "https://api.github.com/repos/spring-projects/spring-framework",
+        "state": "open",
+        "locked": false,
+        "assignee": null,
+        "assignees": [],
+        "labels": [
+          {"name": "status: ideal-for-contribution"},
+          {"name": "in: web"}
+        ],
+        "user": {"login": "maintainer", "type": "User"},
+        "author_association": "MEMBER",
+        "created_at": "2026-07-10T00:00:00Z",
+        "updated_at": "2026-07-15T00:00:00Z"
+      }
+    },
+    "comments:spring-projects/spring-framework#200": {"body": []},
+    "timeline:spring-projects/spring-framework#200": {"body": []}
+  }
+}

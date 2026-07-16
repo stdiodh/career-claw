@@ -1,43 +1,48 @@
 # AGENTS.md
 
-이 문서는 Codex가 `Career Feed` 프로젝트에서 작업할 때 따를 규칙을 정의한다.
+이 문서는 Codex가 Career Feed 저장소에서 작업할 때 따를 규칙을 정의한다.
 
-## 프로젝트 방향
+## 제품 범위
 
-- 이 프로젝트는 GitHub Actions, Codex, Discord Webhook 기반의 개발자 커리어 뉴스 브리핑 자동화 프로젝트다.
-- 상시 실행 서버, Discord Gateway Bot, Slash Command, 데이터베이스, 웹 대시보드는 초기 범위에 포함하지 않는다.
-- 기본 목표는 매일 Backend Daily Study Brief, 한국 개발/AI 뉴스 피드, 주간 백엔드 커리어 브리핑을 생성한 뒤 Discord Webhook으로 전송하는 것이다.
-- Daily Backend 브리핑은 Spring Boot/JVM 학습, Programmers 주차별 PS 루틴, Spring/JVM/Kotlin OSS 기여 후보, 주니어 백엔드 실무지식으로 구성한다.
-- 한국 개발/AI 뉴스는 별도 News Daily workflow와 Discord Webhook으로 전송한다.
-- Backend Daily와 News Daily는 `dry_run`, `force_send`, delivery lock, catch-up schedule을 사용해 지연/누락/중복 전송 위험을 완화한다.
-- News Daily는 기준을 만족하는 뉴스가 3개 미만이어도 sparse/empty 정책에 맞으면 정상 성공으로 본다.
-- Programmers PS 루틴은 정적 config와 progress 파일만 사용하며 사이트 크롤링이나 제출 결과 자동 수집을 하지 않는다.
-- OpenJDK/JBS는 Spring OSS 난이도 모델의 참고로만 사용하고 직접 수집하지 않는다.
-- 제품명과 문서명은 `Career Feed`로 통일한다. 저장소 이름이나 로컬 경로명은 환경에 따라 다를 수 있다.
-- 현재 운영 경로는 Daily Backend Brief, Korea Dev/AI News Daily, Weekly Backend Career Brief, Mark PS Solved 4개뿐이다.
+- Career Feed는 개인용 한국어 백엔드 성장 루프다.
+- 매일 실무 백엔드 30분 과제 1개와 Programmers 문제 1개를 결정론적으로 렌더링한다.
+- 완료 상태는 `data/progress.json`에서만 관리한다.
+- 예약 실행은 GitHub Actions, 전송은 선택적 Discord Webhook만 사용한다.
+- `lab/`는 Kotlin/Java/Spring 과제를 실제 코드와 테스트로 검증하는 최소 실습 모듈이다.
+- 주간 OSS 경로는 allowlist의 공개 GitHub 이슈를 읽기 전용으로 조회하며 외부 저장소를 수정하지 않는다.
+- LLM/API 생성, 뉴스·투자 수집, 다국어, 상시 실행 서버, 운영 데이터베이스, 웹 UI, 배포 인프라는 범위 밖이다.
 
-## 작업 원칙
+## 변경 원칙
 
-- 작은 변경으로 요청한 범위만 해결한다.
-- 아직 구현되지 않은 기능은 문서에서 Roadmap 또는 TODO로만 표현한다.
-- Secrets, API Key, Webhook URL, 토큰을 코드나 문서 예시에 하드코딩하지 않는다.
-- `OPENAI_API_KEY`, `DISCORD_WEBHOOK_URL` 같은 값은 GitHub Secrets 또는 환경변수로만 다룬다.
-- `DISCORD_WEBHOOK_CAREER_FEED_OPS`는 선택 실패 알림 secret이며, 없을 때 workflow가 실패하면 안 된다.
-- GitHub Actions workflow는 사용자가 명시적으로 요청하기 전까지 생성하지 않는다.
-- 현재 단계에서 `app/`와 `infra/`는 수정하지 않는다.
-- 사용자가 명시적으로 요청하지 않는 한 서버, 배포 workflow, 인프라 설정을 변경하지 않는다.
-- `reports/` 산출물은 기본적으로 커밋하지 않는다.
+- 요청한 문제를 해결하는 최소 변경만 한다.
+- 한 번만 쓰는 로직을 추상화하지 않는다.
+- 커리큘럼 항목 ID를 변경하거나 제거할 때 진행 파일과의 호환성을 확인한다.
+- Secret, 토큰, Webhook URL을 코드·문서·fixture에 하드코딩하지 않는다.
+- `reports/` 생성물과 사용자의 미추적 파일을 커밋 대상으로 만들지 않는다.
+- 새 외부 의존성은 표준 라이브러리로 해결할 수 없을 때만 추가한다.
+- OSS 자동화는 issue 조회와 artifact/Discord 렌더링까지만 허용한다. comment, assign, label, branch, fork, PR 생성은 금지한다.
+- 검증 manifest가 `VERIFIED`가 아닌 핵심 lesson은 기본 브리핑에 노출하지 않는다.
+- 코드 주석은 영어, 사용자 브리핑과 README는 한국어를 기본으로 한다.
 
-## 문서와 코드 스타일
+## 활성 경로
 
-- README와 `docs/` 문서는 한국어 중심으로 작성한다.
-- 코드 내부 주석은 영어로 작성한다.
-- 사용자에게 전달되는 브리핑 문구는 한국어를 기본으로 한다.
-- 불필요한 추상화나 대규모 리팩터링을 피한다.
+- `scripts/generate_backend_daily.py`
+- `scripts/mark_progress.py`
+- `scripts/send_discord.py`
+- `scripts/collect_oss_candidates.py`
+- `scripts/record_oss_shadow.py`
+- `scripts/check_oss_delivery_gate.py`
+- `lab/`
+- `.github/workflows/backend-daily.yml`
+- `.github/workflows/mark-progress.yml`
+- `.github/workflows/oss-weekly.yml`
+- `.github/workflows/pr-checks.yml`
 
 ## 검증
 
-- 파일을 추가하거나 수정한 뒤에는 존재 여부와 핵심 키워드를 확인한다.
-- 스크립트를 수정한 경우 가능한 범위에서 문법 검사를 수행한다.
-- 실행에 필요한 환경변수가 없을 때는 실패 메시지가 명확한지 확인한다.
 - 기본 검증 명령은 `./scripts/validate.sh`다.
+- 스크립트 변경 시 관련 `unittest`를 추가하거나 수정한다.
+- config 변경 시 JSON 문법, ID 고유성, 준비 조건, 완료 증거, 필수 필드, HTTPS 참고 링크를 확인한다.
+- 생성 경로는 임시 파일로 검증하며 `reports/`에 테스트 산출물을 남기지 않는다.
+- `lab/` 변경 시 Gradle Wrapper 기반 테스트를 실행한다.
+- OSS 경로는 fixture 검증, 요청 상한, fail-closed, live dry-run을 확인한다.

@@ -1,7 +1,6 @@
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -13,58 +12,31 @@ coverage/
 venv/
 env/
 
-# Environment files
+# Local environment and editor files
 .env
 .env.*
 !.env.example
-
-# Logs
-*.log
-logs/
-
-# OS files
 .DS_Store
 Thumbs.db
-
-# Build outputs and editor files
-.gradle/
-build/
-out/
-.kotlin/
-app/.gradle/
-app/build/
 .idea/
 *.iws
 *.iml
 *.ipr
 .vscode/
+.codex/
 
-# Local infrastructure state
-infra/certbot/
-infra/nginx/certs/
-infra/openclaw/runtime/
-infra/openclaw/data/
-
-# Local certificates and keys
+# Logs and local credentials
+*.log
+logs/
 *.pem
 *.key
 *.crt
 
-# Generated reports
-reports/*.md
-reports/*.markdown
-reports/candidates/*.json
-reports/candidates/*/*.json
-reports/briefs/*.md
-reports/briefs/*.markdown
-reports/briefs/*/*.md
-reports/briefs/*/*.markdown
-reports/ops/*.json
-reports/ops/*.md
-reports/ops/*/*.json
-reports/ops/*/*.md
-reports/ops/delivery-locks/*
-reports/ops/*/delivery-locks/*
-!reports/.gitkeep
-!reports/candidates/.gitkeep
-!reports/briefs/.gitkeep
+# Generated output
+.gradle/
+.kotlin/
+build/
+out/
+data/*.lock
+configs/*.lock
+reports/*
