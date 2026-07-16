@@ -118,4 +118,4 @@ core quota가 0인 상태에서 추가 실행한 결과:
 
 ## 의도적으로 남겨 둔 승격 gate
 
-같은 날의 live smoke는 API와 fail-closed 구현 검증이다. 달력이 다른 연속 4주와 서로 다른 live 후보 10개 검토를 대체하지 않는다. tracked gate는 Shadow contract `sha256:1a605f4f9707df322b9ab0c3717726b5e0afeeed4a02d29fefa94559cc284837`의 schema 3, 0주/0개 `LOCKED`다. 이 증거를 기록한 약 07:28 UTC의 legacy bot commit 뒤 원격 `main`은 `fc30f51a`, `oss-weekly.yml` API는 404였고 기존 5개 workflow만 활성 상태였다. 당시 현행 OSS 변경은 아직 commit/push되지 않아 GitHub-hosted runner artifact 실행 증거가 없었다. 병합 뒤에도 연속 4주·10개 리뷰를 충족할 때까지 OSS Discord 자동 전송은 잠금 상태다.
+같은 날의 live smoke는 API와 fail-closed 구현 검증이다. 달력이 다른 연속 4주와 서로 다른 live 후보 10개 검토를 대체하지 않는다. tracked gate는 Shadow contract `sha256:c9404a544582fdcd3489b5924e956b08de8abef2f368ee6c5591952c8137edc2`의 schema 3, 0주/0개 `LOCKED`다. 이 증거를 기록한 약 07:28 UTC의 legacy bot commit 뒤 원격 `main`은 `fc30f51a`, `oss-weekly.yml` API는 404였고 기존 5개 workflow만 활성 상태였다. 당시 현행 OSS 변경은 아직 commit/push되지 않아 GitHub-hosted runner artifact 실행 증거가 없었다. 병합 뒤에도 연속 4주·10개 리뷰를 충족할 때까지 OSS Discord 자동 전송은 잠금 상태다.

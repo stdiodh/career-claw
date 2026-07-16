@@ -369,7 +369,7 @@ def build_metadata(
         "discord_delivery_count": int(discord_sent),
         "artifact_sha256": artifact_hash,
         "markdown_sha256": markdown_hash,
-        "provenance": workflow_provenance(environ or os.environ),
+        "provenance": workflow_provenance(os.environ if environ is None else environ),
     }
     write_json_atomic(output_path, payload)
     return payload

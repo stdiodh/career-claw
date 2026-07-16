@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest import mock
 
 from scripts import check_oss_delivery_gate as delivery_gate
 from scripts import record_oss_shadow
@@ -205,16 +207,19 @@ class RecordOssShadowTests(unittest.TestCase):
     def test_build_metadata_rejects_local_environment_without_writing(self) -> None:
         output = self.root / "local-metadata.json"
 
-        with self.assertRaisesRegex(record_oss_shadow.EvidenceError, "GitHub Actions"):
-            record_oss_shadow.build_metadata(
-                0,
-                False,
-                self.artifact_path,
-                self.markdown_path,
-                output,
-                environ={},
-                now=NOW,
-            )
+        with mock.patch.dict(
+            os.environ, self.github_environment("9999", 1), clear=True
+        ):
+            with self.assertRaisesRegex(record_oss_shadow.EvidenceError, "GitHub Actions"):
+                record_oss_shadow.build_metadata(
+                    0,
+                    False,
+                    self.artifact_path,
+                    self.markdown_path,
+                    output,
+                    environ={},
+                    now=NOW,
+                )
 
         self.assertFalse(output.exists())
 
