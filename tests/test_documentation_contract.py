@@ -42,6 +42,8 @@ class DocumentationContractTests(unittest.TestCase):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         for marker in (
             "주간 최대 19회",
+            "백엔드 실무`, `PS`, `OSS 기여 준비`, `백엔드 연결 CS 지식",
+            "configs/delivery-schedule.json",
             "Spring Security는 학습 lab에는 남아 있지만",
             "실제 원격 동작 기준은 기본 브랜치에 병합된 commit",
             "한국어 README를 단일 기준으로 관리합니다",

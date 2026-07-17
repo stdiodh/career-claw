@@ -107,7 +107,7 @@ core quota가 0인 상태에서 추가 실행한 결과:
 
 ## Phase 4 — artifact-only 운영 결정
 
-- `OSS Weekly`은 월요일 00:37 UTC에 read-only artifact와 GitHub Actions provenance metadata를 생성한다.
+- `OSS Weekly`은 단일 발송 시각 설정의 현지 월요일 09:00에 read-only artifact와 GitHub Actions provenance metadata를 생성한다. 기본 timezone은 `Asia/Seoul`이다.
 - `OSS_DELIVERY_ENABLED=true`만으로는 OSS Discord step이 실행되지 않는다. tracked gate의 `APPROVED`가 동시에 필요하다.
 - schema 3 gate는 canonical schedule/main/GitHub-hosted provenance, run/attempt 순서, contract fingerprint, metadata/artifact hash, attestation/review/approval 시간 순서를 검증한다.
 - 성공적으로 업로드되고 운영자가 기록한 실패와 재실행도 ledger에 남지만 첫 attempt 성공만 주차로 계산한다. 미래·역순 시각, 기록된 run의 누락 attempt, incomplete/non-zero, HTTP 403·429, warning/repository failure, source artifact에 없던 후보는 승인 증거가 될 수 없다. metadata 생성 전 runner 실패와 아직 기록하지 않은 마지막 rerun은 GitHub run history를 사람이 대조해야 한다.
@@ -118,4 +118,14 @@ core quota가 0인 상태에서 추가 실행한 결과:
 
 ## 의도적으로 남겨 둔 승격 gate
 
-같은 날의 live smoke는 API와 fail-closed 구현 검증이다. 달력이 다른 연속 4주와 서로 다른 live 후보 10개 검토를 대체하지 않는다. tracked gate는 Shadow contract `sha256:c9404a544582fdcd3489b5924e956b08de8abef2f368ee6c5591952c8137edc2`의 schema 3, 0주/0개 `LOCKED`다. 이 증거를 기록한 약 07:28 UTC의 legacy bot commit 뒤 원격 `main`은 `fc30f51a`, `oss-weekly.yml` API는 404였고 기존 5개 workflow만 활성 상태였다. 당시 현행 OSS 변경은 아직 commit/push되지 않아 GitHub-hosted runner artifact 실행 증거가 없었다. 병합 뒤에도 연속 4주·10개 리뷰를 충족할 때까지 OSS Discord 자동 전송은 잠금 상태다.
+같은 날의 live smoke는 API와 fail-closed 구현 검증이다. 달력이 다른 연속 4주와 서로 다른 live 후보 10개 검토를 대체하지 않는다. tracked gate는 현지 시각 예약 변경을 포함한 Shadow contract `sha256:1134f219ca918ab15767eba3742e6fd32b60eafec75d47597685e9cc0ce80901`의 schema 3, 0주/0개 `LOCKED`다. 이 증거를 기록한 약 07:28 UTC의 legacy bot commit 뒤 원격 `main`은 `fc30f51a`, `oss-weekly.yml` API는 404였고 기존 5개 workflow만 활성 상태였다. 당시 현행 OSS 변경은 아직 commit/push되지 않아 GitHub-hosted runner artifact 실행 증거가 없었다. 병합 뒤에도 연속 4주·10개 리뷰를 충족할 때까지 OSS Discord 자동 전송은 잠금 상태다.
+
+## 2026-07-17 예약 지연 관찰과 시각 계약 수정
+
+- `Backend Daily` [run `29552502554`](https://github.com/stdiodh/career-feed/actions/runs/29552502554)은 당시 `00:07 UTC`(09:07 KST) 예약이었지만 실제 schedule event가 `03:29:26 UTC`(12:29:26 KST)에 생성됐다.
+- checkout부터 Discord 전송과 artifact 업로드까지는 13초 안에 성공했으므로 지연 원인은 생성기나 Discord sender가 아니라 GitHub의 schedule event 생성 전 구간이다.
+- 기본 예약을 UTC 환산값 대신 `cron: 0 9 * * *`와 `timezone: Asia/Seoul`로 명시하고, Daily와 Weekly가 `configs/delivery-schedule.json` 한 파일에서 동기화되도록 변경했다.
+- GitHub-hosted schedule은 부하에 따른 지연·누락 가능성이 있으므로 이 변경은 현지 시각 해석과 사용자 설정을 고정하지만 09:00 도착 SLA를 증명하지 않는다.
+- 변경된 Daily는 백엔드 실무·PS·OSS 기여 준비·백엔드 연결 CS 지식 네 섹션을 같은 입력으로 두 번 생성해 SHA-256 `ece5983a13e01def9e6de2d11f17ff9d6c5ac969364d8730e7d251ddc681ab0d`로 일치했다.
+- Discord 변환은 네 섹션을 2개 chunk(1,494자·747자)로 나눴고 두 chunk 모두 2,000자 제한 이하였다.
+- Python 146개, curriculum 16/16, Kotlin/Spring 25개, PostgreSQL 1개, schedule drift check, pinned actionlint와 diff 검사를 다시 통과했다.

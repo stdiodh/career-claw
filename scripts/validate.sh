@@ -12,6 +12,7 @@ python3 -m py_compile \
   scripts/mark_progress.py \
   scripts/record_oss_shadow.py \
   scripts/send_discord.py \
+  scripts/sync_delivery_schedule.py \
   scripts/verify_curriculum.py
 
 echo "==> Checking JSON"
@@ -19,6 +20,7 @@ python3 -m json.tool audits/job-market-2026q3.json >/dev/null
 python3 -m json.tool configs/backend-practice.json >/dev/null
 python3 -m json.tool configs/competency-taxonomy.json >/dev/null
 python3 -m json.tool configs/curriculum-matrix.json >/dev/null
+python3 -m json.tool configs/delivery-schedule.json >/dev/null
 python3 -m json.tool configs/oss-repositories.json >/dev/null
 python3 -m json.tool configs/oss-delivery-gate.json >/dev/null
 python3 -m json.tool configs/ps-problems.json >/dev/null
@@ -31,6 +33,7 @@ python3 -X dev -W error -m unittest discover -s tests -p 'test_*.py' -v
 
 echo "==> Checking VERIFIED curriculum contracts"
 python3 scripts/verify_curriculum.py >/dev/null
+python3 scripts/sync_delivery_schedule.py --check >/dev/null
 python3 scripts/check_oss_delivery_gate.py >/dev/null
 
 echo "==> Checking deterministic generation and fixture collection"
@@ -41,8 +44,10 @@ python3 scripts/generate_backend_daily.py \
   --output "${temporary}/backend-daily.md"
 test -s "${temporary}/backend-daily.md"
 grep -q '^# Career Feed - Backend Daily$' "${temporary}/backend-daily.md"
-grep -q '^## 오늘의 백엔드 30분 실습$' "${temporary}/backend-daily.md"
+grep -q '^## 오늘의 백엔드 실무$' "${temporary}/backend-daily.md"
 grep -q '^## 오늘의 PS$' "${temporary}/backend-daily.md"
+grep -q '^## 오늘의 OSS 기여 준비$' "${temporary}/backend-daily.md"
+grep -q '^## 오늘의 백엔드 연결 CS 지식$' "${temporary}/backend-daily.md"
 grep -q '검증 profile: `jvm-spring-2026q3-v1`' "${temporary}/backend-daily.md"
 
 python3 scripts/collect_oss_candidates.py \

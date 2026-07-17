@@ -11,7 +11,8 @@
 - Temurin 21.0.11+10, Spring Boot 4.1.0, Kotlin 2.4.10, Gradle 9.5.0, PostgreSQL 17.10을 하나의 profile로 고정했다.
 - 핵심 16개 중 `JVM_CORE`는 15개(93.75%)다.
 - 기본 lab test 25개와 pinned PostgreSQL test 1개가 통과했다.
-- config, source claim과 immutable revision, 채용시장 audit, taxonomy, profile, lab content hash, test ID를 contract hash로 묶고 일치하는 `VERIFIED` 과제만 Daily에 노출한다.
+- config, source claim과 immutable revision, 채용시장 audit, taxonomy, profile, lab content hash, test ID를 contract hash로 묶고 일치하는 `VERIFIED` 과제만 Daily의 실무·연결 CS 영역에 노출한다.
+- Daily의 OSS 기여 준비는 유효한 allowlist의 기여 문서와 build/test 명령만 날짜별로 순환하며 실제 issue 추천은 주간 Shadow gate와 분리한다.
 - OSS 경로는 read-only collector와 artifact-only weekly workflow까지 구현했으며 Discord 승격은 달력 기준 Shadow gate로 잠갔다.
 
 따라서 다음 두 검증을 분리한다.
@@ -57,6 +58,15 @@ raw `updated_at`으로 정렬하지 않는다. 댓글이나 봇 동작만으로 
 - 주간 실행 1회
 - 후보 출력 최대 3개
 - 후보가 없으면 정상적인 empty 결과로 처리
+
+### 1.4 예약 시각 계약
+
+- 기본 목표 시각은 `Asia/Seoul` 09:00이다.
+- `configs/delivery-schedule.json`을 시간 설정의 단일 원본으로 사용하고 동기화 스크립트가 Daily와 Weekly workflow의 `cron`/`timezone`을 함께 갱신한다.
+- 브리핑 기준일과 날짜별 CS·OSS 준비 순환도 같은 timezone을 사용한다.
+- 시간 변경으로 Weekly contract가 달라질 때 Shadow 증거가 없으면 gate hash를 함께 갱신하고, run·리뷰·승인이 이미 있으면 자동 초기화하지 않고 변경을 거부한다.
+- GitHub Actions의 IANA timezone 예약을 사용하며 UTC 변환용 반복 실행을 추가하지 않는다.
+- GitHub-hosted schedule은 부하에 따라 지연·누락될 수 있으므로 09:00은 SLA가 아니라 목표 시각이다.
 
 ## 2. 학습 소스 검증
 
@@ -386,7 +396,7 @@ tracked gate schema 3은 다음 규칙으로 증거를 보존한다.
 - Actions artifact는 run/attempt별 고유 이름과 retention 90일을 사용한다. `reports/` 본문은 git에 넣지 않고 gate에는 hash, READY candidate key, warning과 fail-closed 사유만 남긴다.
 - recorder는 기록된 attempt의 중간 누락은 거부하지만 아직 기록하지 않은 마지막 재실행이나 metadata 생성 전 runner 실패를 GitHub API 없이 발견할 수 없다. 운영자는 `gh run view`의 전체 attempt/conclusion과 ledger를 대조한다.
 
-사용자가 전체 phase 구현을 승인했으므로 별도 `OSS Weekly` workflow는 artifact-only로 먼저 추가했다. `OSS_DELIVERY_ENABLED`가 없으면 전송 step 자체가 실행되지 않는다. 달력 기준 Shadow 조건을 합격한 뒤에만 이 variable을 `true`로 바꾼다. Backend Daily에는 합치지 않으며, 두 번 연속 위험 후보가 나오면 variable을 제거해 즉시 artifact-only로 되돌린다.
+사용자가 전체 phase 구현을 승인했으므로 별도 `OSS Weekly` workflow는 artifact-only로 먼저 추가했다. `OSS_DELIVERY_ENABLED`가 없으면 전송 step 자체가 실행되지 않는다. 달력 기준 Shadow 조건을 합격한 뒤에만 이 variable을 `true`로 바꾼다. Backend Daily에는 allowlist 기반 기여 준비만 포함하고 실제 `READY_TO_ASK` 이슈는 합치지 않는다. 두 번 연속 위험 후보가 나오면 variable을 제거해 즉시 artifact-only로 되돌린다.
 
 같은 날의 반복 live probe는 API 계약과 rate-limit 동작을 검증하는 accelerated smoke일 뿐, 4주 관찰을 대체하지 않는다. 따라서 artifact 생성은 실제 사용 가능하지만 OSS Discord 자동 전송은 의도적으로 잠긴 상태가 정상이다.
 

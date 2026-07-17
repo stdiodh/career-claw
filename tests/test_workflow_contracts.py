@@ -4,6 +4,8 @@ import re
 import unittest
 from pathlib import Path
 
+from scripts import sync_delivery_schedule as sync_schedule
+
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_DIR = ROOT / ".github/workflows"
@@ -46,6 +48,26 @@ class WorkflowContractTests(unittest.TestCase):
                 self.assertIn(expected, content)
                 if name != "mark-progress.yml":
                     self.assertNotIn("contents: write", content)
+
+    def test_delivery_workflows_match_the_single_local_time_config(self) -> None:
+        schedule = sync_schedule.load_schedule(ROOT / sync_schedule.CONFIG_PATH)
+        for relative_path, recurrence in sync_schedule.WORKFLOW_RECURRENCES.items():
+            with self.subTest(workflow=relative_path.name):
+                expected = sync_schedule.render_schedule_block(schedule, recurrence)
+                self.assertIn(expected, self.contents[relative_path.name])
+
+        self.assertEqual(
+            sync_schedule.WORKFLOW_RECURRENCES[
+                Path(".github/workflows/backend-daily.yml")
+            ],
+            "* * *",
+        )
+        self.assertEqual(
+            sync_schedule.WORKFLOW_RECURRENCES[
+                Path(".github/workflows/oss-weekly.yml")
+            ],
+            "* * 1",
+        )
 
     def test_discord_delivery_uses_the_canonical_secret_with_migration_fallback(self) -> None:
         binding = (

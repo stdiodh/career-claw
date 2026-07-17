@@ -5,9 +5,10 @@
 ## 제품 범위
 
 - Career Feed는 개인용 한국어 백엔드 성장 루프다.
-- 매일 실무 백엔드 30분 과제 1개와 Programmers 문제 1개를 결정론적으로 렌더링한다.
+- 매일 실무 백엔드 30분 과제, Programmers 문제, 검증된 과제와 연결된 CS 지식, allowlist 기반 OSS 기여 준비를 결정론적으로 렌더링한다.
 - 완료 상태는 `data/progress.json`에서만 관리한다.
-- 예약 실행은 GitHub Actions, 전송은 선택적 Discord Webhook만 사용한다.
+- 예약 실행은 GitHub Actions, 전송은 선택적 Discord Webhook만 사용하며 기본 목표 시각은 `Asia/Seoul` 09:00이다.
+- 사용자 발송 시각은 `configs/delivery-schedule.json`에서만 바꾸고 workflow 예약 블록은 동기화 스크립트로 생성한다.
 - `lab/`는 Kotlin/Java/Spring 과제를 실제 코드와 테스트로 검증하는 최소 실습 모듈이다.
 - 주간 OSS 경로는 allowlist의 공개 GitHub 이슈를 읽기 전용으로 조회하며 외부 저장소를 수정하지 않는다.
 - LLM/API 생성, 뉴스·투자 수집, 다국어, 상시 실행 서버, 운영 데이터베이스, 웹 UI, 배포 인프라는 범위 밖이다.
@@ -32,6 +33,7 @@
 - `scripts/collect_oss_candidates.py`
 - `scripts/record_oss_shadow.py`
 - `scripts/check_oss_delivery_gate.py`
+- `scripts/sync_delivery_schedule.py`
 - `lab/`
 - `.github/workflows/backend-daily.yml`
 - `.github/workflows/mark-progress.yml`

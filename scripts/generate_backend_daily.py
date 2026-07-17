@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
-"""Render the next backend practice and PS problem without an LLM."""
+"""Render a deterministic backend, PS, OSS-prep, and applied-CS brief."""
 
 from __future__ import annotations
 
 import argparse
 import json
 import sys
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 try:
+    from . import check_oss_delivery_gate as oss_gate
+    from . import collect_oss_candidates as oss_collector
+    from . import sync_delivery_schedule as sync_schedule
     from . import verify_curriculum
 except ImportError:
+    import check_oss_delivery_gate as oss_gate
+    import collect_oss_candidates as oss_collector
+    import sync_delivery_schedule as sync_schedule
     import verify_curriculum
 
 
@@ -28,7 +34,10 @@ TAXONOMY_CONFIG = ROOT / "configs/competency-taxonomy.json"
 JOB_MARKET_AUDIT = ROOT / "audits/job-market-2026q3.json"
 VERIFICATION_MANIFEST = ROOT / "data/curriculum-verification.json"
 LAB_DIR = ROOT / "lab"
-KST = ZoneInfo("Asia/Seoul")
+OSS_CONFIG = ROOT / "configs/oss-repositories.json"
+OSS_GATE = ROOT / "configs/oss-delivery-gate.json"
+SCHEDULE_CONFIG = ROOT / sync_schedule.CONFIG_PATH
+DEFAULT_TIMEZONE = "Asia/Seoul"
 
 BACKEND_REQUIRED_FIELDS = {
     "id",
@@ -59,6 +68,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--job-market-audit", type=Path, default=JOB_MARKET_AUDIT)
     parser.add_argument("--verification-manifest", type=Path, default=VERIFICATION_MANIFEST)
     parser.add_argument("--lab", type=Path, default=LAB_DIR)
+    parser.add_argument("--oss-config", type=Path, default=OSS_CONFIG)
+    parser.add_argument("--oss-gate", type=Path, default=OSS_GATE)
+    parser.add_argument("--schedule-config", type=Path, default=SCHEDULE_CONFIG)
     parser.add_argument("--stdout", action="store_true")
     return parser.parse_args()
 
@@ -152,6 +164,7 @@ def load_verified_backend_lessons(
             continue
         enriched = dict(lesson)
         enriched["_verification"] = {
+            "status": "VERIFIED",
             "profile_id": summary["profile_id"],
             "lab_revision": summary["lab_revision"],
             "verify_command": entries[lesson["id"]]["lab"]["verify_command"],
@@ -252,8 +265,73 @@ def select_ps_problem(
     return None
 
 
+def select_rotating_item(
+    items: list[dict[str, Any]], report_date: date
+) -> dict[str, Any] | None:
+    if not items:
+        return None
+    return items[report_date.toordinal() % len(items)]
+
+
+def select_cs_lesson(
+    lessons: list[dict[str, Any]], report_date: date
+) -> dict[str, Any] | None:
+    verified = [
+        lesson
+        for lesson in lessons
+        if isinstance(lesson.get("_verification"), dict)
+        and lesson["_verification"].get("status") == "VERIFIED"
+    ]
+    return select_rotating_item(verified, report_date)
+
+
+def load_oss_brief(
+    report_date: date,
+    evaluation_time: datetime,
+    config_path: Path = OSS_CONFIG,
+    gate_path: Path = OSS_GATE,
+) -> dict[str, Any]:
+    try:
+        config = oss_collector.load_config(config_path, as_of=report_date)
+        gate = oss_gate.read_object(gate_path)
+        progress = oss_gate.evaluate_gate(
+            gate,
+            oss_gate.allowed_repositories(config),
+            now=evaluation_time,
+        )
+        profile = select_rotating_item(config["repositories"], report_date)
+        if profile is None:
+            raise RuntimeError("OSS allowlist has no repository profiles")
+    except (OSError, RuntimeError):
+        return {"available": False}
+
+    return {
+        "available": True,
+        "profile": profile,
+        "progress": progress,
+        "requirements": oss_gate.REQUIREMENTS,
+    }
+
+
 def render_links(urls: list[str]) -> list[str]:
     return [f"  - [참고 자료 {index}]({url})" for index, url in enumerate(urls, start=1)]
+
+
+def resolve_delivery_datetime(
+    report_date: date,
+    timezone_name: str,
+    hour: int,
+    minute: int,
+) -> datetime:
+    local_delivery = datetime(
+        report_date.year,
+        report_date.month,
+        report_date.day,
+        hour,
+        minute,
+        tzinfo=ZoneInfo(timezone_name),
+    )
+    return local_delivery.astimezone(timezone.utc)
 
 
 def render_report(
@@ -261,21 +339,44 @@ def render_report(
     lessons: list[dict[str, Any]],
     tracks: list[dict[str, Any]],
     progress: dict[str, list[str]],
+    oss_config_path: Path = OSS_CONFIG,
+    oss_gate_path: Path = OSS_GATE,
+    report_timezone: str = DEFAULT_TIMEZONE,
+    report_hour: int = 9,
+    report_minute: int = 0,
 ) -> str:
     lesson_ids = {lesson["id"] for lesson in lessons}
     completed = set(progress["backend_completed"]) & lesson_ids
     solved = set(progress["ps_solved"])
     lesson = select_backend_lesson(lessons, completed)
     ps_selection = select_ps_problem(tracks, solved)
+    lesson_verification = lesson.get("_verification") if lesson else None
+    cs_lesson = (
+        lesson
+        if isinstance(lesson_verification, dict)
+        and lesson_verification.get("status") == "VERIFIED"
+        else select_cs_lesson(lessons, report_date)
+    )
+    oss_brief = load_oss_brief(
+        report_date,
+        resolve_delivery_datetime(
+            report_date,
+            report_timezone,
+            report_hour,
+            report_minute,
+        ),
+        oss_config_path,
+        oss_gate_path,
+    )
 
     lines = [
         "# Career Feed - Backend Daily",
         "",
-        f"기준일: {report_date.isoformat()} KST",
+        f"기준일: {report_date.isoformat()} · {report_timezone}",
         "",
         f"진행: 백엔드 {len(completed)}/{len(lessons)} · PS {len(solved)}/{sum(len(track['problems']) for track in tracks)}",
         "",
-        "## 오늘의 백엔드 30분 실습",
+        "## 오늘의 백엔드 실무",
         "",
     ]
 
@@ -288,8 +389,6 @@ def render_report(
                 f"- 트랙: {lesson['track']}",
                 f"- 준비: {lesson['setup']}",
                 f"- 상황: {lesson['situation']}",
-                f"- 실패 모드: {lesson['failure_mode']}",
-                f"- 핵심: {lesson['core_concept']}",
                 "",
                 "실습:",
             ]
@@ -300,7 +399,6 @@ def render_report(
         lines.extend(
             [
                 "",
-                f"완료 질문: {lesson['check_question']}",
                 f"남길 증거: {lesson['evidence']}",
                 f"완료 ID: `{lesson['id']}`",
             ]
@@ -315,8 +413,6 @@ def render_report(
                     f"검증 test ID: `{test_ids}`",
                 ]
             )
-        lines.extend(["", "참고:"])
-        lines.extend(render_links(lesson["official_refs"][:2]))
         lines.append("")
 
     lines.extend(["## 오늘의 PS", ""])
@@ -335,11 +431,61 @@ def render_report(
             ]
         )
 
+    lines.extend(["## 오늘의 OSS 기여 준비", ""])
+    if not oss_brief["available"]:
+        lines.extend(
+            [
+                "OSS 계약을 검증하지 못해 오늘은 저장소와 이슈 후보를 노출하지 않습니다.",
+                "- 검증 상태: config 또는 gate 계약 오류로 fail-closed",
+                "",
+            ]
+        )
+    else:
+        profile = oss_brief["profile"]
+        gate_progress = oss_brief["progress"]
+        requirements = oss_brief["requirements"]
+        repository = profile["repository"]
+        build_command = profile["eligibility_evidence"]["build_test"]["command"]
+        lines.extend(
+            [
+                f"### [{repository}](https://github.com/{repository})",
+                f"- 관련 이유: {profile['relevance_reason']}",
+                f"- 기여 가이드: {profile['contributing_url']}",
+                f"- 첫 build/test: `{build_command}`",
+                f"- 전송 gate: `{gate_progress['status']}`",
+                "- Shadow 진행: "
+                f"연속 {gate_progress['consecutive_qualifying_weeks']}/"
+                f"{requirements['minimum_consecutive_qualifying_weeks']}주 · "
+                f"후보 리뷰 {gate_progress['unique_candidates']}/"
+                f"{requirements['minimum_unique_candidates']}개",
+            ]
+        )
+        if gate_progress["status"] == "LOCKED":
+            lines.append("- 현재는 저장소 온보딩만 제공하며 실제 이슈 후보는 노출하지 않습니다.")
+        lines.append("")
+
+    lines.extend(["## 오늘의 백엔드 연결 CS 지식", ""])
+    if cs_lesson is None:
+        lines.extend(["현재 노출할 수 있는 VERIFIED CS 연결 주제가 없습니다.", ""])
+    else:
+        lines.extend(
+            [
+                f"### {cs_lesson['track']} — {cs_lesson['title']}",
+                f"- 핵심 개념: {cs_lesson['core_concept']}",
+                f"- 실패 모드: {cs_lesson['failure_mode']}",
+                f"- 확인 질문: {cs_lesson['check_question']}",
+                "",
+                "공식 참고:",
+            ]
+        )
+        lines.extend(render_links(cs_lesson["official_refs"][:2]))
+        lines.append("")
+
     lines.extend(
         [
-            "## 완료 기록",
+            "---",
             "",
-            "GitHub Actions의 `Mark Progress`에서 종류와 완료 ID를 입력합니다.",
+            "완료 기록은 GitHub Actions의 `Mark Progress`에서 종류와 완료 ID를 입력합니다.",
             "로컬에서는 백엔드 과제에 `python3 scripts/mark_progress.py backend <완료 ID>`, "
             "PS에 `python3 scripts/mark_progress.py ps <완료 ID>`를 실행합니다.",
             "",
@@ -348,9 +494,14 @@ def render_report(
     return "\n".join(lines)
 
 
-def resolve_date(value: str | None) -> date:
+def resolve_date(
+    value: str | None,
+    timezone_name: str,
+    now: datetime | None = None,
+) -> date:
     if value is None:
-        return datetime.now(KST).date()
+        current = now or datetime.now(timezone.utc)
+        return current.astimezone(ZoneInfo(timezone_name)).date()
     try:
         return date.fromisoformat(value)
     except ValueError as exc:
@@ -360,6 +511,8 @@ def resolve_date(value: str | None) -> date:
 def main() -> int:
     args = parse_args()
     try:
+        schedule = sync_schedule.load_schedule(args.schedule_config)
+        report_date = resolve_date(args.date, schedule.timezone)
         catalog_lessons = load_backend_lessons(args.backend_config)
         lessons = load_verified_backend_lessons(
             args.backend_config,
@@ -373,7 +526,17 @@ def main() -> int:
         tracks = load_ps_tracks(args.ps_config)
         progress = load_progress(args.progress)
         validate_progress_ids(catalog_lessons, tracks, progress)
-        report = render_report(resolve_date(args.date), lessons, tracks, progress)
+        report = render_report(
+            report_date,
+            lessons,
+            tracks,
+            progress,
+            args.oss_config,
+            args.oss_gate,
+            schedule.timezone,
+            schedule.hour,
+            schedule.minute,
+        )
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(report, encoding="utf-8")
     except (OSError, RuntimeError) as exc:
