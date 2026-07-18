@@ -51,10 +51,10 @@ class WorkflowContractTests(unittest.TestCase):
 
     def test_delivery_workflows_match_the_single_local_time_config(self) -> None:
         schedule = sync_schedule.load_schedule(ROOT / sync_schedule.CONFIG_PATH)
+        self.assertFalse(schedule.enabled)
         for relative_path, recurrence in sync_schedule.WORKFLOW_RECURRENCES.items():
             with self.subTest(workflow=relative_path.name):
-                expected = sync_schedule.render_schedule_block(schedule, recurrence)
-                self.assertIn(expected, self.contents[relative_path.name])
+                self.assertNotIn("  schedule:", self.contents[relative_path.name])
 
         self.assertEqual(
             sync_schedule.WORKFLOW_RECURRENCES[

@@ -1,10 +1,6 @@
 name: OSS Weekly
 
 on:
-  schedule:
-    # Generated from configs/delivery-schedule.json; run python3 scripts/sync_delivery_schedule.py.
-    - cron: "0 9 * * 1"
-      timezone: "Asia/Seoul"
   workflow_dispatch:
     inputs:
       dry_run:

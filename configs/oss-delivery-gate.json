@@ -18,7 +18,7 @@
     "runner_environment": "github-hosted",
     "runner_os": "Linux"
   },
-  "shadow_contract_sha256": "sha256:1134f219ca918ab15767eba3742e6fd32b60eafec75d47597685e9cc0ce80901",
+  "shadow_contract_sha256": "sha256:1fa52f9f7171180f2becb54499efbf4b8f794a9a50da300e138256607bbd8186",
   "runs": [],
   "candidate_reviews": [],
   "approved_at": null

@@ -51,7 +51,7 @@ python3 scripts/mark_progress.py ps programmers-1845
 
 ## 발송 시각 선택
 
-기본 목표 시각은 매일 한국시간 오전 9시입니다. 발송 시각은 콘텐츠와 분리된 [`configs/delivery-schedule.json`](./configs/delivery-schedule.json)의 `local_time`과 `timezone`만 수정합니다. `timezone`은 `Asia/Seoul`, `America/New_York` 같은 IANA 이름을 사용합니다.
+예약 발송은 현재 중지되어 있습니다. [`configs/delivery-schedule.json`](./configs/delivery-schedule.json)의 `enabled`를 `true`로 바꾸고 동기화하면 한국시간 오전 9시 예약을 재개합니다. 발송 시각은 같은 파일의 `local_time`과 `timezone`에서 수정하며, `timezone`은 `Asia/Seoul`, `America/New_York` 같은 IANA 이름을 사용합니다.
 
 ```bash
 python3 scripts/sync_delivery_schedule.py

@@ -22,7 +22,7 @@ except ImportError:
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = Path("configs/delivery-schedule.json")
 GATE_PATH = Path("configs/oss-delivery-gate.json")
-EXPECTED_CONFIG_KEYS = {"schema_version", "timezone", "local_time"}
+EXPECTED_CONFIG_KEYS = {"schema_version", "enabled", "timezone", "local_time"}
 TIME_RE = re.compile(r"(?:[01]\d|2[0-3]):[0-5]\d")
 TIMEZONE_RE = re.compile(r"[A-Za-z0-9._+-]+(?:/[A-Za-z0-9._+-]+)*")
 SCHEDULE_BLOCK_RE = re.compile(
@@ -42,6 +42,7 @@ class ScheduleError(RuntimeError):
 
 @dataclass(frozen=True)
 class DeliverySchedule:
+    enabled: bool
     timezone: str
     hour: int
     minute: int
@@ -71,6 +72,10 @@ def load_schedule(path: Path = ROOT / CONFIG_PATH) -> DeliverySchedule:
     if type(schema_version) is not int or schema_version != 1:
         raise ScheduleError("Schedule config schema_version must be 1")
 
+    enabled = payload["enabled"]
+    if type(enabled) is not bool:
+        raise ScheduleError("Schedule enabled must be a boolean")
+
     local_time = payload["local_time"]
     if not isinstance(local_time, str) or TIME_RE.fullmatch(local_time) is None:
         raise ScheduleError("Schedule local_time must use zero-padded 24-hour HH:MM")
@@ -85,6 +90,7 @@ def load_schedule(path: Path = ROOT / CONFIG_PATH) -> DeliverySchedule:
         raise ScheduleError(f"Unknown IANA timezone: {timezone}") from exc
 
     return DeliverySchedule(
+        enabled=enabled,
         timezone=timezone,
         hour=int(hour_text),
         minute=int(minute_text),
@@ -109,10 +115,24 @@ def render_workflow(
     recurrence: str,
     path: Path,
 ) -> str:
+    if not schedule.enabled:
+        rendered, count = SCHEDULE_BLOCK_RE.subn("", content)
+        if count not in {0, 1}:
+            raise ScheduleError(f"Expected at most one on.schedule block: {path}")
+        return rendered
+
     replacement = render_schedule_block(schedule, recurrence)
     rendered, count = SCHEDULE_BLOCK_RE.subn(lambda _: replacement, content)
+    if count == 0:
+        rendered, count = re.subn(
+            r"^on:\n",
+            "on:\n" + replacement,
+            content,
+            count=1,
+            flags=re.MULTILINE,
+        )
     if count != 1:
-        raise ScheduleError(f"Expected exactly one on.schedule block: {path}")
+        raise ScheduleError(f"Expected one on block: {path}")
     return rendered
 
 

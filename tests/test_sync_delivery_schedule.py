@@ -44,6 +44,7 @@ class DeliveryScheduleTests(unittest.TestCase):
     def write_config(self, **overrides: object) -> None:
         payload: dict[str, object] = {
             "schema_version": 1,
+            "enabled": True,
             "timezone": "Asia/Seoul",
             "local_time": "09:00",
         }
@@ -69,6 +70,7 @@ class DeliveryScheduleTests(unittest.TestCase):
         schedule = sync_schedule.load_schedule(ROOT / sync_schedule.CONFIG_PATH)
 
         self.assertEqual(schedule.timezone, "Asia/Seoul")
+        self.assertFalse(schedule.enabled)
         self.assertEqual(schedule.hour, 9)
         self.assertEqual(schedule.minute, 0)
         self.assertEqual(
@@ -81,6 +83,23 @@ class DeliveryScheduleTests(unittest.TestCase):
 
         with self.assertRaisesRegex(sync_schedule.ScheduleError, "unknown key"):
             sync_schedule.load_schedule(self.root / sync_schedule.CONFIG_PATH)
+
+    def test_disabled_schedule_removes_and_can_restore_triggers(self) -> None:
+        self.write_config(enabled=False)
+
+        sync_schedule.synchronize(self.root)
+
+        for relative_path in sync_schedule.WORKFLOW_RECURRENCES:
+            content = (self.root / relative_path).read_text(encoding="utf-8")
+            self.assertNotIn("  schedule:", content)
+            self.assertIn("  workflow_dispatch:", content)
+
+        self.write_config(enabled=True)
+        sync_schedule.synchronize(self.root)
+
+        for relative_path in sync_schedule.WORKFLOW_RECURRENCES:
+            content = (self.root / relative_path).read_text(encoding="utf-8")
+            self.assertIn("  schedule:", content)
 
     def test_missing_config_key_is_rejected(self) -> None:
         path = self.root / sync_schedule.CONFIG_PATH

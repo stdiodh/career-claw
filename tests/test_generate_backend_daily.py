@@ -279,6 +279,7 @@ class BackendDailyTests(unittest.TestCase):
                 json.dumps(
                     {
                         "schema_version": 1,
+                        "enabled": True,
                         "timezone": "Pacific/Kiritimati",
                         "local_time": "09:00",
                     }
