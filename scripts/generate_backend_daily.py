@@ -100,6 +100,14 @@ def require_string_list(value: object, field: str, item_id: str) -> None:
         require_string(entry, field, item_id)
 
 
+def is_verified_lesson(lesson: dict[str, Any]) -> bool:
+    verification = lesson.get("_verification")
+    return (
+        isinstance(verification, dict)
+        and verification.get("status") == "VERIFIED"
+    )
+
+
 def load_backend_lessons(path: Path) -> list[dict[str, Any]]:
     payload = read_json(path)
     lessons = payload.get("lessons")
@@ -217,6 +225,14 @@ def load_ps_tracks(path: Path) -> list[dict[str, Any]]:
     return tracks
 
 
+def ps_problem_ids(tracks: list[dict[str, Any]]) -> set[str]:
+    return {
+        str(problem["id"])
+        for track in tracks
+        for problem in track["problems"]
+    }
+
+
 def load_progress(path: Path) -> dict[str, list[str]]:
     payload = read_json(path)
     progress: dict[str, list[str]] = {}
@@ -236,11 +252,7 @@ def validate_progress_ids(
     progress: dict[str, list[str]],
 ) -> None:
     lesson_ids = {str(lesson["id"]) for lesson in lessons}
-    problem_ids = {
-        str(problem["id"])
-        for track in tracks
-        for problem in track["problems"]
-    }
+    problem_ids = ps_problem_ids(tracks)
     unknown_lessons = sorted(set(progress["backend_completed"]) - lesson_ids)
     unknown_problems = sorted(set(progress["ps_solved"]) - problem_ids)
     if unknown_lessons:
@@ -276,12 +288,7 @@ def select_rotating_item(
 def select_cs_lesson(
     lessons: list[dict[str, Any]], report_date: date
 ) -> dict[str, Any] | None:
-    verified = [
-        lesson
-        for lesson in lessons
-        if isinstance(lesson.get("_verification"), dict)
-        and lesson["_verification"].get("status") == "VERIFIED"
-    ]
+    verified = [lesson for lesson in lessons if is_verified_lesson(lesson)]
     return select_rotating_item(verified, report_date)
 
 
@@ -350,11 +357,9 @@ def render_report(
     solved = set(progress["ps_solved"])
     lesson = select_backend_lesson(lessons, completed)
     ps_selection = select_ps_problem(tracks, solved)
-    lesson_verification = lesson.get("_verification") if lesson else None
     cs_lesson = (
         lesson
-        if isinstance(lesson_verification, dict)
-        and lesson_verification.get("status") == "VERIFIED"
+        if lesson is not None and is_verified_lesson(lesson)
         else select_cs_lesson(lessons, report_date)
     )
     oss_brief = load_oss_brief(
@@ -374,7 +379,7 @@ def render_report(
         "",
         f"기준일: {report_date.isoformat()} · {report_timezone}",
         "",
-        f"진행: 백엔드 {len(completed)}/{len(lessons)} · PS {len(solved)}/{sum(len(track['problems']) for track in tracks)}",
+        f"진행: 백엔드 {len(completed)}/{len(lessons)} · PS {len(solved)}/{len(ps_problem_ids(tracks))}",
         "",
         "## 오늘의 백엔드 실무",
         "",
