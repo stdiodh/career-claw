@@ -70,11 +70,7 @@ def mark_complete(
         verified_lessons = daily.load_verified_backend_lessons(backend_config)
         valid_ids = {lesson["id"] for lesson in verified_lessons}
     else:
-        valid_ids = {
-            problem["id"]
-            for track in tracks
-            for problem in track["problems"]
-        }
+        valid_ids = daily.ps_problem_ids(tracks)
     if item_id not in valid_ids:
         raise RuntimeError(f"Unknown {item_type} id: {item_id}")
 

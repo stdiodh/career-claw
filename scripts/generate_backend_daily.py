@@ -100,6 +100,14 @@ def require_string_list(value: object, field: str, item_id: str) -> None:
         require_string(entry, field, item_id)
 
 
+def is_verified_lesson(lesson: dict[str, Any]) -> bool:
+    verification = lesson.get("_verification")
+    return (
+        isinstance(verification, dict)
+        and verification.get("status") == "VERIFIED"
+    )
+
+
 def load_backend_lessons(path: Path) -> list[dict[str, Any]]:
     payload = read_json(path)
     lessons = payload.get("lessons")
@@ -217,6 +225,14 @@ def load_ps_tracks(path: Path) -> list[dict[str, Any]]:
     return tracks
 
 
+def ps_problem_ids(tracks: list[dict[str, Any]]) -> set[str]:
+    return {
+        str(problem["id"])
+        for track in tracks
+        for problem in track["problems"]
+    }
+
+
 def load_progress(path: Path) -> dict[str, list[str]]:
     payload = read_json(path)
     progress: dict[str, list[str]] = {}
@@ -236,11 +252,7 @@ def validate_progress_ids(
     progress: dict[str, list[str]],
 ) -> None:
     lesson_ids = {str(lesson["id"]) for lesson in lessons}
-    problem_ids = {
-        str(problem["id"])
-        for track in tracks
-        for problem in track["problems"]
-    }
+    problem_ids = ps_problem_ids(tracks)
     unknown_lessons = sorted(set(progress["backend_completed"]) - lesson_ids)
     unknown_problems = sorted(set(progress["ps_solved"]) - problem_ids)
     if unknown_lessons:
@@ -276,12 +288,7 @@ def select_rotating_item(
 def select_cs_lesson(
     lessons: list[dict[str, Any]], report_date: date
 ) -> dict[str, Any] | None:
-    verified = [
-        lesson
-        for lesson in lessons
-        if isinstance(lesson.get("_verification"), dict)
-        and lesson["_verification"].get("status") == "VERIFIED"
-    ]
+    verified = [lesson for lesson in lessons if is_verified_lesson(lesson)]
     return select_rotating_item(verified, report_date)
 
 
@@ -334,6 +341,121 @@ def resolve_delivery_datetime(
     return local_delivery.astimezone(timezone.utc)
 
 
+def render_backend_section(lesson: dict[str, Any] | None) -> list[str]:
+    lines = ["## 오늘의 백엔드 실무", ""]
+    if lesson is None:
+        return lines + [
+            "모든 백엔드 실습을 완료했습니다. 새 주제를 추가하거나 진행 상태를 초기화하세요.",
+            "",
+        ]
+
+    lines.extend(
+        [
+            f"### {lesson['title']}",
+            f"- 트랙: {lesson['track']}",
+            f"- 준비: {lesson['setup']}",
+            f"- 상황: {lesson['situation']}",
+            "",
+            "실습:",
+        ]
+    )
+    lines.extend(
+        f"{index}. {step}"
+        for index, step in enumerate(lesson["practice_steps"], start=1)
+    )
+    lines.extend(
+        [
+            "",
+            f"남길 증거: {lesson['evidence']}",
+            f"완료 ID: `{lesson['id']}`",
+        ]
+    )
+    verification = lesson.get("_verification")
+    if isinstance(verification, dict):
+        test_ids = ", ".join(verification["test_ids"])
+        lines.extend(
+            [
+                f"검증 profile: `{verification['profile_id']}`",
+                f"검증 명령: `{verification['verify_command']}`",
+                f"검증 test ID: `{test_ids}`",
+            ]
+        )
+    lines.append("")
+    return lines
+
+
+def render_ps_section(
+    selection: tuple[dict[str, Any], dict[str, Any]] | None,
+) -> list[str]:
+    lines = ["## 오늘의 PS", ""]
+    if selection is None:
+        return lines + ["등록된 PS 문제를 모두 풀었습니다.", ""]
+
+    track, problem = selection
+    return lines + [
+        f"### [{problem['title']}]({problem['url']})",
+        f"- 트랙: {track['name']} — {track['goal']}",
+        f"- 난이도: Level {problem['level']}",
+        f"- 막히면 볼 힌트: ||{problem['first_thought']}||",
+        f"- 완료 ID: `{problem['id']}`",
+        "",
+    ]
+
+
+def render_oss_section(oss_brief: dict[str, Any]) -> list[str]:
+    lines = ["## 오늘의 OSS 기여 준비", ""]
+    if not oss_brief["available"]:
+        return lines + [
+            "OSS 계약을 검증하지 못해 오늘은 저장소와 이슈 후보를 노출하지 않습니다.",
+            "- 검증 상태: config 또는 gate 계약 오류로 fail-closed",
+            "",
+        ]
+
+    profile = oss_brief["profile"]
+    gate_progress = oss_brief["progress"]
+    requirements = oss_brief["requirements"]
+    repository = profile["repository"]
+    build_command = profile["eligibility_evidence"]["build_test"]["command"]
+    lines.extend(
+        [
+            f"### [{repository}](https://github.com/{repository})",
+            f"- 관련 이유: {profile['relevance_reason']}",
+            f"- 기여 가이드: {profile['contributing_url']}",
+            f"- 첫 build/test: `{build_command}`",
+            f"- 전송 gate: `{gate_progress['status']}`",
+            "- Shadow 진행: "
+            f"연속 {gate_progress['consecutive_qualifying_weeks']}/"
+            f"{requirements['minimum_consecutive_qualifying_weeks']}주 · "
+            f"후보 리뷰 {gate_progress['unique_candidates']}/"
+            f"{requirements['minimum_unique_candidates']}개",
+        ]
+    )
+    if gate_progress["status"] == "LOCKED":
+        lines.append("- 현재는 저장소 온보딩만 제공하며 실제 이슈 후보는 노출하지 않습니다.")
+    lines.append("")
+    return lines
+
+
+def render_cs_section(cs_lesson: dict[str, Any] | None) -> list[str]:
+    lines = ["## 오늘의 백엔드 연결 CS 지식", ""]
+    if cs_lesson is None:
+        return lines + ["현재 노출할 수 있는 VERIFIED CS 연결 주제가 없습니다.", ""]
+
+    lines.extend(
+        [
+            f"### {cs_lesson['track']} — {cs_lesson['title']}",
+            f"- 핵심 개념: {cs_lesson['core_concept']}",
+            f"- 실패 모드: {cs_lesson['failure_mode']}",
+            f"- 확인 질문: {cs_lesson['check_question']}",
+            "",
+            "공식 참고:",
+        ]
+    )
+    lines.extend(render_links(cs_lesson["official_refs"][:2]))
+    lines.append("")
+    return lines
+
+
 def render_report(
     report_date: date,
     lessons: list[dict[str, Any]],
@@ -350,11 +472,9 @@ def render_report(
     solved = set(progress["ps_solved"])
     lesson = select_backend_lesson(lessons, completed)
     ps_selection = select_ps_problem(tracks, solved)
-    lesson_verification = lesson.get("_verification") if lesson else None
     cs_lesson = (
         lesson
-        if isinstance(lesson_verification, dict)
-        and lesson_verification.get("status") == "VERIFIED"
+        if lesson is not None and is_verified_lesson(lesson)
         else select_cs_lesson(lessons, report_date)
     )
     oss_brief = load_oss_brief(
@@ -369,117 +489,18 @@ def render_report(
         oss_gate_path,
     )
 
-    lines = [
+    lines: list[str] = [
         "# Career Feed - Backend Daily",
         "",
         f"기준일: {report_date.isoformat()} · {report_timezone}",
         "",
-        f"진행: 백엔드 {len(completed)}/{len(lessons)} · PS {len(solved)}/{sum(len(track['problems']) for track in tracks)}",
-        "",
-        "## 오늘의 백엔드 실무",
+        f"진행: 백엔드 {len(completed)}/{len(lessons)} · PS {len(solved)}/{len(ps_problem_ids(tracks))}",
         "",
     ]
-
-    if lesson is None:
-        lines.extend(["모든 백엔드 실습을 완료했습니다. 새 주제를 추가하거나 진행 상태를 초기화하세요.", ""])
-    else:
-        lines.extend(
-            [
-                f"### {lesson['title']}",
-                f"- 트랙: {lesson['track']}",
-                f"- 준비: {lesson['setup']}",
-                f"- 상황: {lesson['situation']}",
-                "",
-                "실습:",
-            ]
-        )
-        lines.extend(
-            f"{index}. {step}" for index, step in enumerate(lesson["practice_steps"], start=1)
-        )
-        lines.extend(
-            [
-                "",
-                f"남길 증거: {lesson['evidence']}",
-                f"완료 ID: `{lesson['id']}`",
-            ]
-        )
-        verification = lesson.get("_verification")
-        if isinstance(verification, dict):
-            test_ids = ", ".join(verification["test_ids"])
-            lines.extend(
-                [
-                    f"검증 profile: `{verification['profile_id']}`",
-                    f"검증 명령: `{verification['verify_command']}`",
-                    f"검증 test ID: `{test_ids}`",
-                ]
-            )
-        lines.append("")
-
-    lines.extend(["## 오늘의 PS", ""])
-    if ps_selection is None:
-        lines.extend(["등록된 PS 문제를 모두 풀었습니다.", ""])
-    else:
-        track, problem = ps_selection
-        lines.extend(
-            [
-                f"### [{problem['title']}]({problem['url']})",
-                f"- 트랙: {track['name']} — {track['goal']}",
-                f"- 난이도: Level {problem['level']}",
-                f"- 막히면 볼 힌트: ||{problem['first_thought']}||",
-                f"- 완료 ID: `{problem['id']}`",
-                "",
-            ]
-        )
-
-    lines.extend(["## 오늘의 OSS 기여 준비", ""])
-    if not oss_brief["available"]:
-        lines.extend(
-            [
-                "OSS 계약을 검증하지 못해 오늘은 저장소와 이슈 후보를 노출하지 않습니다.",
-                "- 검증 상태: config 또는 gate 계약 오류로 fail-closed",
-                "",
-            ]
-        )
-    else:
-        profile = oss_brief["profile"]
-        gate_progress = oss_brief["progress"]
-        requirements = oss_brief["requirements"]
-        repository = profile["repository"]
-        build_command = profile["eligibility_evidence"]["build_test"]["command"]
-        lines.extend(
-            [
-                f"### [{repository}](https://github.com/{repository})",
-                f"- 관련 이유: {profile['relevance_reason']}",
-                f"- 기여 가이드: {profile['contributing_url']}",
-                f"- 첫 build/test: `{build_command}`",
-                f"- 전송 gate: `{gate_progress['status']}`",
-                "- Shadow 진행: "
-                f"연속 {gate_progress['consecutive_qualifying_weeks']}/"
-                f"{requirements['minimum_consecutive_qualifying_weeks']}주 · "
-                f"후보 리뷰 {gate_progress['unique_candidates']}/"
-                f"{requirements['minimum_unique_candidates']}개",
-            ]
-        )
-        if gate_progress["status"] == "LOCKED":
-            lines.append("- 현재는 저장소 온보딩만 제공하며 실제 이슈 후보는 노출하지 않습니다.")
-        lines.append("")
-
-    lines.extend(["## 오늘의 백엔드 연결 CS 지식", ""])
-    if cs_lesson is None:
-        lines.extend(["현재 노출할 수 있는 VERIFIED CS 연결 주제가 없습니다.", ""])
-    else:
-        lines.extend(
-            [
-                f"### {cs_lesson['track']} — {cs_lesson['title']}",
-                f"- 핵심 개념: {cs_lesson['core_concept']}",
-                f"- 실패 모드: {cs_lesson['failure_mode']}",
-                f"- 확인 질문: {cs_lesson['check_question']}",
-                "",
-                "공식 참고:",
-            ]
-        )
-        lines.extend(render_links(cs_lesson["official_refs"][:2]))
-        lines.append("")
+    lines.extend(render_backend_section(lesson))
+    lines.extend(render_ps_section(ps_selection))
+    lines.extend(render_oss_section(oss_brief))
+    lines.extend(render_cs_section(cs_lesson))
 
     lines.extend(
         [
