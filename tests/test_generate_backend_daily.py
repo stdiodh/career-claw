@@ -72,6 +72,39 @@ class BackendDailyTests(unittest.TestCase):
         self.assertIn("기준일: 2026-07-16 · Asia/Seoul", report)
         self.assertNotIn("OPENAI_API_KEY", report)
 
+    def test_report_shows_completion_messages_when_all_items_are_done(self) -> None:
+        progress = {
+            "backend_completed": [lesson["id"] for lesson in self.lessons],
+            "ps_solved": [
+                problem["id"]
+                for track in self.tracks
+                for problem in track["problems"]
+            ],
+        }
+
+        report = daily.render_report(
+            date(2026, 7, 19), self.lessons, self.tracks, progress
+        )
+
+        self.assertIn(
+            f"진행: 백엔드 {len(self.lessons)}/{len(self.lessons)}",
+            report,
+        )
+        self.assertIn("모든 백엔드 실습을 완료했습니다.", report)
+        self.assertIn("등록된 PS 문제를 모두 풀었습니다.", report)
+
+    def test_report_ignores_completed_backend_ids_outside_visible_lessons(self) -> None:
+        visible_lessons = self.lessons[:2]
+        hidden_id = self.lessons[2]["id"]
+        progress = {"backend_completed": [hidden_id], "ps_solved": []}
+
+        report = daily.render_report(
+            date(2026, 7, 19), visible_lessons, self.tracks, progress
+        )
+
+        self.assertIn("진행: 백엔드 0/2", report)
+        self.assertIn(visible_lessons[0]["title"], report)
+
     def test_report_has_four_ordered_sections_without_practical_cs_duplication(self) -> None:
         report_date = date(2026, 7, 17)
         progress = {
