@@ -47,6 +47,7 @@ class DocumentationContractTests(unittest.TestCase):
             "Spring Security는 학습 lab에는 남아 있지만",
             "실제 원격 동작 기준은 기본 브랜치에 병합된 commit",
             "한국어 README를 단일 기준으로 관리합니다",
+            "./career-feed done backend",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, readme)

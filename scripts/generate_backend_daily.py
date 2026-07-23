@@ -71,7 +71,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--oss-config", type=Path, default=OSS_CONFIG)
     parser.add_argument("--oss-gate", type=Path, default=OSS_GATE)
     parser.add_argument("--schedule-config", type=Path, default=SCHEDULE_CONFIG)
-    parser.add_argument("--stdout", action="store_true")
+    output_mode = parser.add_mutually_exclusive_group()
+    output_mode.add_argument(
+        "--stdout",
+        action="store_true",
+        help="Print the report after writing the output file.",
+    )
+    output_mode.add_argument(
+        "--stdout-only",
+        action="store_true",
+        help="Print the report without writing the output file.",
+    )
     return parser.parse_args()
 
 
@@ -380,6 +390,7 @@ def render_backend_section(lesson: dict[str, Any] | None) -> list[str]:
                 f"검증 test ID: `{test_ids}`",
             ]
         )
+    lines.append(f"완료 처리: `./career-feed done backend {lesson['id']}`")
     lines.append("")
     return lines
 
@@ -398,6 +409,7 @@ def render_ps_section(
         f"- 난이도: Level {problem['level']}",
         f"- 막히면 볼 힌트: ||{problem['first_thought']}||",
         f"- 완료 ID: `{problem['id']}`",
+        f"- 완료 처리: `./career-feed done ps {problem['id']}`",
         "",
     ]
 
@@ -506,9 +518,8 @@ def render_report(
         [
             "---",
             "",
-            "완료 기록은 GitHub Actions의 `Mark Progress`에서 종류와 완료 ID를 입력합니다.",
-            "로컬에서는 백엔드 과제에 `python3 scripts/mark_progress.py backend <완료 ID>`, "
-            "PS에 `python3 scripts/mark_progress.py ps <완료 ID>`를 실행합니다.",
+            "로컬에서는 각 항목의 `완료 처리` 명령을 실행합니다.",
+            "GitHub Actions의 `Mark Progress`에서는 종류와 완료 ID를 입력합니다.",
             "",
         ]
     )
@@ -558,15 +569,17 @@ def main() -> int:
             schedule.hour,
             schedule.minute,
         )
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(report, encoding="utf-8")
+        if not args.stdout_only:
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(report, encoding="utf-8")
     except (OSError, RuntimeError) as exc:
         print(f"Failed to generate Backend Daily: {exc}", file=sys.stderr)
         return 1
 
-    if args.stdout:
+    if args.stdout or args.stdout_only:
         print(report, end="")
-    print(f"Wrote Backend Daily: {args.output}", file=sys.stderr)
+    if not args.stdout_only:
+        print(f"Wrote Backend Daily: {args.output}", file=sys.stderr)
     return 0
 
 

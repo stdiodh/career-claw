@@ -5,6 +5,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 echo "==> Checking Python syntax"
+bash -n career-feed
 python3 -m py_compile \
   scripts/collect_oss_candidates.py \
   scripts/check_oss_delivery_gate.py \

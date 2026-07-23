@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+CAREER_FEED_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+show_help() {
+  cat <<'EOF'
+Career Feed의 일상 명령을 한 곳에서 실행합니다.
+
+사용법:
+  ./career-feed                         오늘의 브리핑 보기
+  ./career-feed today [--date YYYY-MM-DD]
+                                        오늘 또는 지정일 브리핑 보기
+  ./career-feed done <backend|ps> <완료 ID>
+                                        지정 항목 완료
+  ./career-feed check                   저장소 전체 검증
+  ./career-feed help                    도움말 보기
+
+예시:
+  ./career-feed done backend spring-mvc-validation-problem-detail
+  ./career-feed done ps programmers-1845
+  ./career-feed today --date 2026-07-23
+EOF
+}
+
+if (($# == 0)); then
+  exec python3 "${CAREER_FEED_ROOT}/scripts/generate_backend_daily.py" --stdout-only
+fi
+
+command_name="$1"
+shift
+
+case "${command_name}" in
+  today)
+    if (($# == 0)); then
+      exec python3 "${CAREER_FEED_ROOT}/scripts/generate_backend_daily.py" --stdout-only
+    fi
+    if (($# == 1)) && [[ "$1" == "help" || "$1" == "-h" || "$1" == "--help" ]]; then
+      show_help
+      exit 0
+    fi
+    if (($# == 1)) && [[ "$1" == --date=* ]]; then
+      exec python3 "${CAREER_FEED_ROOT}/scripts/generate_backend_daily.py" --stdout-only "$1"
+    fi
+    if (($# == 2)) && [[ "$1" == "--date" ]]; then
+      exec python3 "${CAREER_FEED_ROOT}/scripts/generate_backend_daily.py" --stdout-only "$@"
+    fi
+    echo "today 명령은 --date YYYY-MM-DD 옵션만 받습니다." >&2
+    exit 2
+    ;;
+  done)
+    if (($# < 2)); then
+      echo "완료할 종류와 브리핑에 표시된 완료 ID를 입력하세요." >&2
+      show_help >&2
+      exit 2
+    fi
+    exec python3 "${CAREER_FEED_ROOT}/scripts/mark_progress.py" "$@"
+    ;;
+  check)
+    if (($# != 0)); then
+      echo "check 명령은 추가 옵션을 받지 않습니다." >&2
+      exit 2
+    fi
+    exec "${CAREER_FEED_ROOT}/scripts/validate.sh"
+    ;;
+  help | -h | --help)
+    show_help
+    ;;
+  *)
+    echo "알 수 없는 명령: ${command_name}" >&2
+    show_help >&2
+    exit 2
+    ;;
+esac

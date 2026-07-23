@@ -14,21 +14,32 @@ Career Feed는 Kotlin/Java/Spring 백엔드 취업 준비를 매일 실행 가�
 
 ## 빠른 시작
 
-저장소 전체 검증을 실행합니다.
+필수 환경은 Python 3과 JDK 21입니다. Docker는 PostgreSQL 전용 테스트를 실행할 때만 필요합니다.
+
+저장소를 받은 뒤 별도 설치 없이 오늘의 브리핑을 확인합니다.
 
 ```bash
-./scripts/validate.sh
-```
-
-오늘의 브리핑을 확인합니다.
-
-```bash
-python3 scripts/generate_backend_daily.py --stdout
+./career-feed
 ```
 
 출력은 `백엔드 실무`, `PS`, `OSS 기여 준비`, `백엔드 연결 CS 지식` 네 영역으로 구성됩니다. OSS 준비는 기여 문서와 첫 build/test 명령을 안내할 뿐 실제 이슈 착수 승인이 아닙니다.
 
-브리핑에 표시된 명령으로 해당 Kotlin/Spring 테스트를 실행합니다. 전체 기본 lab은 다음 명령으로 확인합니다.
+브리핑에 표시된 검증 명령으로 실습을 확인한 뒤, 같은 항목에 표시된 `완료 처리` 명령을 그대로 실행합니다. 명령에는 안전한 재실행을 위해 완료 ID가 포함됩니다.
+
+```bash
+./career-feed done backend spring-mvc-validation-problem-detail
+./career-feed done ps programmers-1845
+```
+
+완료 상태는 `data/progress.json`에만 저장됩니다. 로컬 변경을 다음 예약 실행에 이어 쓰려면 이 파일을 commit해야 합니다. GitHub에서는 `Mark Progress` workflow에 브리핑의 종류와 완료 ID를 입력합니다.
+
+전체 명령은 `./career-feed help`에서 확인합니다. 저장소 전체 Python·계약·lab 검증은 다음 한 명령으로 실행합니다.
+
+```bash
+./career-feed check
+```
+
+전체 기본 lab만 확인하려면 다음 명령을 실행합니다.
 
 ```bash
 ./lab/gradlew -p lab test --no-daemon
@@ -39,15 +50,6 @@ Docker가 실행 중이면 pinned PostgreSQL integration test도 실행할 수 �
 ```bash
 ./lab/gradlew -p lab postgresTest --no-daemon
 ```
-
-완료한 과제와 Programmers 문제는 ID로 기록합니다.
-
-```bash
-python3 scripts/mark_progress.py backend spring-mvc-validation-problem-detail
-python3 scripts/mark_progress.py ps programmers-1845
-```
-
-완료 상태는 `data/progress.json`에만 저장됩니다. 로컬 변경을 다음 예약 실행에 이어 쓰려면 이 파일을 commit해야 합니다. GitHub에서는 `Mark Progress` workflow가 파일을 직접 갱신합니다.
 
 ## 발송 시각 선택
 
@@ -154,10 +156,10 @@ python3 scripts/record_oss_shadow.py approve
 
 - `Backend Daily`: 기본 `Asia/Seoul` 09:00, 백엔드 실무·PS·OSS 기여 준비·연결 CS 지식 생성
 - `OSS Weekly`: 기본 매주 월요일 `Asia/Seoul` 09:00, read-only 실제 후보 artifact 생성
-- `Mark Progress`: 완료 ID를 `data/progress.json`에 기록
+- `Mark Progress`: 지정한 완료 ID를 `data/progress.json`에 기록
 - `Pull Request Checks`: Python, contract, Gradle, PostgreSQL, 결정론적 생성 검증
 
-repository secret은 `DISCORD_WEBHOOK_URL`을 사용합니다. 기존 저장소의 `DISCORD_WEBHOOK_KR_TECH_DAILY`는 Secret 값을 다시 등록할 때까지 migration fallback으로만 읽으며 둘 중 하나만 있으면 됩니다. 수동 실행은 기본 `dry_run=true`라 전송하지 않습니다. OSS Discord는 위 shadow gate와 `OSS_DELIVERY_ENABLED`를 추가로 통과해야 합니다.
+repository secret은 `DISCORD_WEBHOOK_URL`을 사용합니다. 기존 저장소의 `DISCORD_WEBHOOK_KR_TECH_DAILY`는 Secret 값을 다시 등록할 때까지 migration fallback으로만 읽으며 둘 중 하나만 있으면 됩니다. 수동 실행은 기본 `dry_run=true`라 전송하지 않으며, 생성된 브리핑은 실행 요약에서 바로 확인할 수 있습니다. OSS Discord는 위 shadow gate와 `OSS_DELIVERY_ENABLED`를 추가로 통과해야 합니다.
 
 ### 원격 배포 확인
 
@@ -181,6 +183,7 @@ repository secret은 `DISCORD_WEBHOOK_URL`을 사용합니다. 기존 저장소�
 ## 구조
 
 ```text
+career-feed                 오늘 보기, 완료 처리, 전체 검증 진입점
 .github/workflows/          일일·주간·진행·PR 검증
 audits/                     채용 표본과 검증 증거
 configs/                    커리큘럼, profile, OSS 계약
