@@ -49,6 +49,11 @@ class WorkflowContractTests(unittest.TestCase):
                 if name != "mark-progress.yml":
                     self.assertNotIn("contents: write", content)
 
+    def test_daily_run_exposes_the_brief_in_summary(self) -> None:
+        daily = self.contents["backend-daily.yml"]
+
+        self.assertIn("GITHUB_STEP_SUMMARY", daily)
+
     def test_delivery_workflows_match_the_single_local_time_config(self) -> None:
         schedule = sync_schedule.load_schedule(ROOT / sync_schedule.CONFIG_PATH)
         self.assertFalse(schedule.enabled)

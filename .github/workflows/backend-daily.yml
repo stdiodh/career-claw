@@ -34,6 +34,9 @@ jobs:
       - name: Generate deterministic brief
         run: python3 scripts/generate_backend_daily.py
 
+      - name: Show brief in run summary
+        run: cat reports/backend-daily.md >> "${GITHUB_STEP_SUMMARY}"
+
       - name: Send brief to Discord
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL || secrets.DISCORD_WEBHOOK_KR_TECH_DAILY }}

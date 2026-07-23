@@ -70,6 +70,15 @@ class BackendDailyTests(unittest.TestCase):
         self.assertIn("검증 test ID:", report)
         self.assertIn("백엔드 1/", report)
         self.assertIn("기준일: 2026-07-16 · Asia/Seoul", report)
+        self.assertIn(
+            f"완료 처리: `./career-feed done backend {self.lessons[1]['id']}`",
+            report,
+        )
+        self.assertIn(
+            "완료 처리: `./career-feed done ps "
+            f"{self.tracks[0]['problems'][1]['id']}`",
+            report,
+        )
         self.assertNotIn("OPENAI_API_KEY", report)
 
     def test_report_shows_completion_messages_when_all_items_are_done(self) -> None:
@@ -395,6 +404,56 @@ class BackendDailyTests(unittest.TestCase):
 
         self.assertEqual(result, 1)
         self.assertIn("Failed to generate Backend Daily", stderr.getvalue())
+
+    def test_stdout_only_mode_does_not_write_the_output_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "backend-daily.md"
+            argv = [
+                "generate_backend_daily.py",
+                "--date",
+                "2026-07-17",
+                "--output",
+                str(output_path),
+                "--stdout-only",
+            ]
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with (
+                mock.patch("sys.argv", argv),
+                mock.patch("sys.stdout", stdout),
+                mock.patch("sys.stderr", stderr),
+            ):
+                result = daily.main()
+            self.assertFalse(output_path.exists())
+
+        self.assertEqual(result, 0)
+        self.assertIn("# Career Feed - Backend Daily", stdout.getvalue())
+        self.assertEqual(stderr.getvalue(), "")
+
+    def test_stdout_mode_keeps_writing_the_output_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "backend-daily.md"
+            argv = [
+                "generate_backend_daily.py",
+                "--date",
+                "2026-07-17",
+                "--output",
+                str(output_path),
+                "--stdout",
+            ]
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with (
+                mock.patch("sys.argv", argv),
+                mock.patch("sys.stdout", stdout),
+                mock.patch("sys.stderr", stderr),
+            ):
+                result = daily.main()
+            self.assertTrue(output_path.is_file())
+
+        self.assertEqual(result, 0)
+        self.assertIn("# Career Feed - Backend Daily", stdout.getvalue())
+        self.assertIn("Wrote Backend Daily:", stderr.getvalue())
 
     def test_unknown_progress_id_is_rejected(self) -> None:
         progress = {"backend_completed": ["missing"], "ps_solved": []}
