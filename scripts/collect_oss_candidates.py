@@ -46,6 +46,53 @@ CLAIM_PATTERNS = (
     re.compile(r"\bi(?:'m| am| will be| can be)? ?working on this\b", re.I),
     re.compile(r"\b(?:please )?assign (?:this (?:issue )?)?to me\b", re.I),
     re.compile(r"(?:^|\s)/assign(?:\s|$)", re.I),
+    re.compile(
+        r"\b(?:happy|ready|willing) to (?:create|open|send|submit) "
+        r"(?:a )?(?:pr|pull request)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\bi(?:'d| would)? like to (?:provide|submit|create|open|send) "
+        r"(?:an? )?(?:implementation|pr|pull request)\b",
+        re.I,
+    ),
+)
+ISSUE_TEMPLATE_COMMENT_PATTERN = re.compile(r"<!--.*?-->", re.S)
+MIN_SCOPE_BODY_CHARACTERS = 80
+SCOPE_EVIDENCE_PATTERNS = (
+    re.compile(
+        r"^\s{0,3}#{1,6}\s+(?:scope|description|task|problem|proposed change|범위|설명|작업|문제)\b",
+        re.I | re.M,
+    ),
+    re.compile(
+        r"\b(?:add|change|document|fix|implement|remove|rename|replace|update)\b"
+        r"[^\n]{0,160}\b(?:api|behavior|class|documentation|method|module|test)\b",
+        re.I,
+    ),
+)
+ACCEPTANCE_EVIDENCE_PATTERNS = (
+    re.compile(
+        r"^\s{0,3}#{1,6}\s+(?:acceptance criteria|definition of done|expected (?:behavior|result)|완료 조건|기대 동작)\b",
+        re.I | re.M,
+    ),
+    re.compile(
+        r"^(?:acceptance criteria|definition of done|expected (?:behavior|result)|완료 조건|기대 동작)\s*:",
+        re.I | re.M,
+    ),
+)
+REPRODUCTION_EVIDENCE_PATTERNS = (
+    re.compile(
+        r"^\s{0,3}#{1,6}\s+(?:reproducer|reproduction|steps to reproduce|test plan|verification|재현|검증)\b",
+        re.I | re.M,
+    ),
+    re.compile(r"(?:^|\s)\./gradlew(?:\s|$)", re.I),
+)
+UNDECIDED_DESIGN_PATTERNS = (
+    re.compile(r"\b(?:design\s+(?:is\s+)?tbd|not yet decided|to be decided|undecided)\b", re.I),
+    re.compile(r"\b(?:needs?|requires?)\s+(?:more\s+)?(?:design|discussion)\b", re.I),
+    re.compile(r"\b(?:open questions?|we (?:still )?need to decide)\s*:?", re.I),
+    re.compile(r"\b(?:correct|proper) (?:fix|approach) depends on\b", re.I),
+    re.compile(r"\b(?:worth|need(?:s)?) (?:settling|deciding|clarifying) .{0,40}\bfirst\b", re.I),
 )
 BUILD_COMMAND_PATTERN = re.compile(r"\./gradlew(?: [A-Za-z0-9_.:/-]+)+")
 RATE_LIMIT_MAXIMUMS = {"core": 60, "search": 10}
@@ -660,11 +707,67 @@ def sort_candidates(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
 
 
+def text_claims_work(value: object) -> bool:
+    return isinstance(value, str) and any(pattern.search(value) for pattern in CLAIM_PATTERNS)
+
+
 def comment_claims_work(comment: dict[str, Any]) -> bool:
-    if is_bot(comment.get("user")):
-        return False
-    body = comment.get("body")
-    return isinstance(body, str) and any(pattern.search(body) for pattern in CLAIM_PATTERNS)
+    return not is_bot(comment.get("user")) and text_claims_work(comment.get("body"))
+
+
+def feasibility_evidence(
+    detail: dict[str, Any],
+) -> tuple[dict[str, bool], list[str]]:
+    raw_body = detail.get("body")
+    visible_body = (
+        ISSUE_TEMPLATE_COMMENT_PATTERN.sub("", raw_body).strip()
+        if isinstance(raw_body, str)
+        else ""
+    )
+    body_present = bool(visible_body)
+    scope_defined = (
+        body_present
+        and len(re.sub(r"\s+", "", visible_body)) >= MIN_SCOPE_BODY_CHARACTERS
+        and any(pattern.search(visible_body) for pattern in SCOPE_EVIDENCE_PATTERNS)
+    )
+    acceptance_present = body_present and any(
+        pattern.search(visible_body) for pattern in ACCEPTANCE_EVIDENCE_PATTERNS
+    )
+    reproduction_present = body_present and any(
+        pattern.search(visible_body) for pattern in REPRODUCTION_EVIDENCE_PATTERNS
+    )
+    design_undecided = body_present and any(
+        pattern.search(visible_body) for pattern in UNDECIDED_DESIGN_PATTERNS
+    )
+    author_claim_detected = (
+        body_present
+        and not is_bot(detail.get("user"))
+        and text_claims_work(visible_body)
+    )
+
+    manual_reasons: list[str] = []
+    if not body_present:
+        manual_reasons.append("issue_body_missing")
+    elif not scope_defined:
+        manual_reasons.append("scope_evidence_insufficient")
+    if body_present and not acceptance_present:
+        manual_reasons.append("acceptance_criteria_missing")
+    if body_present and not reproduction_present:
+        manual_reasons.append("reproduction_steps_missing")
+    if design_undecided:
+        manual_reasons.append("design_undecided")
+    if author_claim_detected:
+        manual_reasons.append("issue_author_claims_work")
+
+    return (
+        {
+            "scope_defined": scope_defined,
+            "acceptance_criteria_present": acceptance_present,
+            "reproduction_steps_present": reproduction_present,
+            "current_review_required": False,
+        },
+        manual_reasons,
+    )
 
 
 def is_pull_request_type(value: object) -> bool:
@@ -856,6 +959,9 @@ def evaluate_candidate(
     if timeline_has_linked_pr(timeline):
         hard_failures.append("linked_pull_request")
 
+    evidence, feasibility_manual_reasons = feasibility_evidence(detail)
+    manual_reasons.extend(feasibility_manual_reasons)
+
     external_comments = [
         comment
         for comment in comments
@@ -906,6 +1012,7 @@ def evaluate_candidate(
         decision = "MANUAL_REVIEW"
     else:
         decision = "READY_TO_ASK"
+    evidence["current_review_required"] = decision != "EXCLUDED"
     return {
         "decision": decision,
         "repository": repository,
@@ -922,6 +1029,7 @@ def evaluate_candidate(
         "build_test_command": build_command,
         "last_maintainer_activity_at": format_timestamp(activity_at),
         "freshness": activity_freshness,
+        "feasibility_evidence": evidence,
         "exclusion_reasons": hard_failures,
         "manual_review_reasons": manual_reasons,
     }
@@ -1106,6 +1214,12 @@ def collect_candidates(
                     "build_test_command": None,
                     "last_maintainer_activity_at": None,
                     "freshness": None,
+                    "feasibility_evidence": {
+                        "scope_defined": False,
+                        "acceptance_criteria_present": False,
+                        "reproduction_steps_present": False,
+                        "current_review_required": False,
+                    },
                     "exclusion_reasons": ["api_validation_incomplete"],
                     "manual_review_reasons": [],
                 }
@@ -1154,7 +1268,7 @@ def collect_candidates(
     if not complete:
         ready = []
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "mode": mode,
         "generated_at": format_timestamp(generated_at),
         "checked_at": format_timestamp(last_detail_checked_at),

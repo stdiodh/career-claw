@@ -107,6 +107,12 @@ class RecordOssShadowTests(unittest.TestCase):
             "build_test_command": "./gradlew :core:spring-boot:test",
             "last_maintainer_activity_at": "2026-07-15T00:00:00Z",
             "freshness": "FRESH",
+            "feasibility_evidence": {
+                "scope_defined": True,
+                "acceptance_criteria_present": True,
+                "reproduction_steps_present": True,
+                "current_review_required": True,
+            },
             "exclusion_reasons": [],
             "manual_review_reasons": [],
         }
@@ -118,7 +124,7 @@ class RecordOssShadowTests(unittest.TestCase):
             cls.candidate(102, "2026-07-14T00:00:00Z"),
         ]
         return {
-            "schema_version": 1,
+            "schema_version": 2,
             "mode": "live-dry-run",
             "generated_at": "2026-07-16T00:47:00Z",
             "checked_at": "2026-07-16T00:46:00Z",
@@ -472,6 +478,7 @@ class RecordOssShadowTests(unittest.TestCase):
         excluded["decision"] = "EXCLUDED"
         excluded["title"] = ""
         excluded["exclusion_reasons"] = ["invalid_title"]
+        excluded["feasibility_evidence"]["current_review_required"] = False
         artifact["ready_to_ask"] = [artifact["candidates"][1]]
         self.write_outputs(artifact)
         self.build_metadata(run_id="1006")

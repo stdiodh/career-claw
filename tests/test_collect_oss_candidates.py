@@ -65,6 +65,15 @@ class OssCollectorTests(unittest.TestCase):
             "author_association": "MEMBER",
             "created_at": "2026-07-10T00:00:00Z",
             "updated_at": "2026-07-15T00:00:00Z",
+            "body": (
+                "## Scope\n"
+                "Update the web binding test to document the target method behavior.\n\n"
+                "## Acceptance criteria\n"
+                "- [ ] The focused test captures the expected result.\n"
+                "- [ ] Existing web tests remain green.\n\n"
+                "## Reproduction\n"
+                "Run ./gradlew :spring-web:test before and after the change."
+            ),
         }
         payload.update(updates)
         return payload
@@ -120,9 +129,87 @@ class OssCollectorTests(unittest.TestCase):
             [candidate["repository"] for candidate in result["ready_to_ask"]],
             ["micrometer-metrics/micrometer", "spring-projects/spring-framework"],
         )
+        self.assertFalse(
+            result["candidates"][1]["feasibility_evidence"]["current_review_required"]
+        )
         serialized = json.dumps(result, ensure_ascii=False)
         self.assertNotIn("Thanks for the report", serialized)
         self.assertNotIn("I'd like to work on this", serialized)
+        self.assertNotIn("focused test captures the expected result", serialized)
+
+    def test_feasibility_evidence_is_derived_without_persisting_issue_body(self) -> None:
+        result = self.evaluate()
+
+        self.assertEqual(result["decision"], "READY_TO_ASK")
+        self.assertEqual(
+            result["feasibility_evidence"],
+            {
+                "scope_defined": True,
+                "acceptance_criteria_present": True,
+                "reproduction_steps_present": True,
+                "current_review_required": True,
+            },
+        )
+        self.assertNotIn("focused test captures the expected result", json.dumps(result))
+
+    def test_uncertain_issue_body_requires_manual_review(self) -> None:
+        cases = (
+            (None, "issue_body_missing", False),
+            (
+                "<!-- Complete every section before submitting. -->",
+                "issue_body_missing",
+                False,
+            ),
+            (
+                "Please fix this.",
+                "scope_evidence_insufficient",
+                False,
+            ),
+            (
+                self.framework_detail()["body"]
+                + "\n\nOpen question: we still need to decide which API to change.",
+                "design_undecided",
+                True,
+            ),
+            (
+                self.framework_detail()["body"]
+                + "\n\nI'd like to work on this issue.",
+                "issue_author_claims_work",
+                True,
+            ),
+            (
+                self.framework_detail()["body"]
+                + "\n\nHappy to send a PR once the approach is confirmed.",
+                "issue_author_claims_work",
+                True,
+            ),
+            (
+                "## Scope\nUpdate the web binding test to document the target method behavior. "
+                "Keep the focused change within the spring-web module.\n\n"
+                "## Reproduction\nRun ./gradlew :spring-web:test.",
+                "acceptance_criteria_missing",
+                True,
+            ),
+            (
+                "## Scope\nUpdate the web binding test to document the target method behavior. "
+                "Keep the focused change within the spring-web module.\n\n"
+                "## Acceptance criteria\nThe focused test captures the expected result.",
+                "reproduction_steps_missing",
+                True,
+            ),
+        )
+        for body, expected_reason, scope_defined in cases:
+            with self.subTest(reason=expected_reason):
+                result = self.evaluate(self.framework_detail(body=body))
+
+                self.assertEqual(result["decision"], "MANUAL_REVIEW")
+                self.assertIn(expected_reason, result["manual_review_reasons"])
+                self.assertIs(
+                    result["feasibility_evidence"]["scope_defined"], scope_defined
+                )
+                self.assertTrue(
+                    result["feasibility_evidence"]["current_review_required"]
+                )
 
     def test_empty_searches_complete_without_detail_requests(self) -> None:
         fixture = copy.deepcopy(self.fixture)

@@ -83,8 +83,15 @@ CANDIDATE_KEYS = {
     "build_test_command",
     "last_maintainer_activity_at",
     "freshness",
+    "feasibility_evidence",
     "exclusion_reasons",
     "manual_review_reasons",
+}
+FEASIBILITY_EVIDENCE_KEYS = {
+    "scope_defined",
+    "acceptance_criteria_present",
+    "reproduction_steps_present",
+    "current_review_required",
 }
 EXPECTED_LIMITATIONS = [
     "created_at DESC, repository/number 순으로 고른 최신 3개만 상세 검증합니다.",
@@ -464,8 +471,8 @@ def validate_artifact(
         raise EvidenceError("OSS artifact is not valid UTF-8 JSON") from exc
     if not isinstance(payload, dict) or set(payload) != ARTIFACT_KEYS:
         raise EvidenceError("OSS artifact does not match the exact collector schema")
-    if payload.get("schema_version") != 1 or payload.get("mode") != "live-dry-run":
-        raise EvidenceError("Only schema 1 live-dry-run artifacts can be recorded")
+    if payload.get("schema_version") != 2 or payload.get("mode") != "live-dry-run":
+        raise EvidenceError("Only schema 2 live-dry-run artifacts can be recorded")
 
     generated_at = delivery_gate.parse_utc(payload.get("generated_at"), "generated_at")
     complete = payload.get("complete")
@@ -704,6 +711,15 @@ def validate_artifact(
             raise EvidenceError("OSS artifact candidate decision is invalid")
         exclusion_reasons = candidate["exclusion_reasons"]
         manual_review_reasons = candidate["manual_review_reasons"]
+        feasibility = candidate.get("feasibility_evidence")
+        if (
+            not isinstance(feasibility, dict)
+            or set(feasibility) != FEASIBILITY_EVIDENCE_KEYS
+            or not all(type(value) is bool for value in feasibility.values())
+        ):
+            raise EvidenceError("OSS candidate feasibility evidence is invalid")
+        if feasibility["current_review_required"] != (decision != "EXCLUDED"):
+            raise EvidenceError("OSS candidate current-review evidence contradicts its decision")
         if (
             (decision == "READY_TO_ASK" and (exclusion_reasons or manual_review_reasons))
             or (decision == "MANUAL_REVIEW" and (exclusion_reasons or not manual_review_reasons))
@@ -812,6 +828,9 @@ def validate_artifact(
                 or module_label is None
                 or activity_at is None
                 or freshness not in {"FRESH", "WARM"}
+                or not feasibility["scope_defined"]
+                or not feasibility["acceptance_criteria_present"]
+                or not feasibility["reproduction_steps_present"]
             ):
                 raise EvidenceError("READY_TO_ASK candidates need executable scope evidence")
             expected_ready.append(candidate)
