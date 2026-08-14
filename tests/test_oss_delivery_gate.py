@@ -12,13 +12,20 @@ from scripts import record_oss_shadow as record
 
 
 NOW = datetime(2026, 7, 16, tzinfo=timezone.utc)
-RUN_DATES = ("2026-06-15", "2026-06-22", "2026-06-29", "2026-07-06")
+RUN_DATES = (
+    "2026-06-15",
+    "2026-06-22",
+    "2026-06-29",
+    "2026-07-06",
+    "2026-07-13",
+)
 
 
 class OssDeliveryGateTests(unittest.TestCase):
     def setUp(self) -> None:
         self.repository = "spring-projects/spring-boot"
-        self.repositories = {self.repository}
+        self.other_repository = "micrometer-metrics/micrometer"
+        self.repositories = {self.repository, self.other_repository}
         self.locked = {
             "schema_version": 3,
             "status": "LOCKED",
@@ -39,6 +46,11 @@ class OssDeliveryGateTests(unittest.TestCase):
             "workflow_sha": f"{run_id + 1000:040x}",
         }
 
+    def candidate_key(self, number: int) -> str:
+        repositories = sorted(self.repositories)
+        repository = repositories[(number - 1) % len(repositories)]
+        return f"{repository}#{number}"
+
     def shadow_run(
         self,
         index: int,
@@ -48,6 +60,7 @@ class OssDeliveryGateTests(unittest.TestCase):
         github_run_id: int | None = None,
         attempt: int = 1,
         complete: bool = True,
+        detail_count: int | None = None,
     ) -> dict[str, object]:
         run_id = github_run_id or 1000 + index
         seed = index * 10 + attempt
@@ -69,7 +82,8 @@ class OssDeliveryGateTests(unittest.TestCase):
             "provenance": self.provenance(run_id, attempt),
             "collector_complete": complete,
             "collector_exit_code": 0 if complete else 2,
-            "request_count": 2 * len(self.repositories) + 3 * len(candidate_numbers),
+            "request_count": 2 * len(self.repositories)
+            + 3 * (len(candidate_numbers) if detail_count is None else detail_count),
             "rate_limits": {
                 "core": {
                     "remaining": 40,
@@ -88,21 +102,23 @@ class OssDeliveryGateTests(unittest.TestCase):
             "warnings": [],
             "repository_failures": [],
             "repository_keys": sorted(self.repositories),
-            "candidate_keys": [
-                f"{self.repository}#{number}" for number in candidate_numbers
-            ],
+            "candidate_keys": [self.candidate_key(number) for number in candidate_numbers],
         }
 
     def gate_with_evidence(
         self,
         run_dates: tuple[str, ...] = RUN_DATES,
-        source_indices: tuple[int, ...] = (0, 1, 2, 3),
+        source_indices: tuple[int, ...] = (0, 1, 2, 3, 4),
         *,
         approved: bool = True,
     ) -> dict[str, object]:
         payload = copy.deepcopy(self.locked)
         assignments = {
-            index: [number for number in range(1, 11) if source_indices[(number - 1) % 4] == index]
+            index: [
+                number
+                for number in range(1, 11)
+                if source_indices[(number - 1) % len(source_indices)] == index
+            ]
             for index in range(len(run_dates))
         }
         payload["runs"] = [
@@ -111,9 +127,11 @@ class OssDeliveryGateTests(unittest.TestCase):
         ]
         payload["candidate_reviews"] = [
             {
-                "candidate_key": f"{self.repository}#{number}",
+                "candidate_key": self.candidate_key(number),
                 "source_run_id": (
-                    f"github-{1000 + source_indices[(number - 1) % 4]}-attempt-1"
+                    "github-"
+                    f"{1000 + source_indices[(number - 1) % len(source_indices)]}"
+                    "-attempt-1"
                 ),
                 "reviewed_at": "2026-07-14T00:00:00Z",
                 "reviewer": "backend-reviewer",
@@ -144,15 +162,15 @@ class OssDeliveryGateTests(unittest.TestCase):
         self.assertEqual(result["status"], "LOCKED")
         self.assertFalse(result["approved"])
 
-    def test_four_consecutive_first_attempt_weeks_and_ten_reviews_are_approved(self) -> None:
+    def test_five_consecutive_first_attempt_weeks_and_ten_reviews_are_approved(self) -> None:
         result = gate.evaluate_gate(
             self.gate_with_evidence(), self.repositories, now=NOW
         )
 
         self.assertTrue(result["approved"])
-        self.assertEqual(result["observed_runs"], 4)
-        self.assertEqual(result["qualifying_weeks"], 4)
-        self.assertEqual(result["consecutive_qualifying_weeks"], 4)
+        self.assertEqual(result["observed_runs"], 5)
+        self.assertEqual(result["qualifying_weeks"], 5)
+        self.assertEqual(result["consecutive_qualifying_weeks"], 5)
         self.assertEqual(result["unique_candidates"], 10)
         self.assertEqual(result["relevance_percent"], 100)
         self.assertEqual(result["scope_clarity_percent"], 100)
@@ -201,9 +219,11 @@ class OssDeliveryGateTests(unittest.TestCase):
             "2026-07-06",
             "2026-07-13",
         )
-        qualifying_indices = (0, 1, 3, 4)
-        payload = self.gate_with_evidence(run_dates, qualifying_indices, approved=False)
-        payload["runs"][2] = self.shadow_run(2, run_dates[2], [], complete=False)
+        payload = copy.deepcopy(self.locked)
+        payload["runs"] = [
+            self.shadow_run(index, run_date, [], complete=index != 2)
+            for index, run_date in enumerate(run_dates)
+        ]
 
         result = gate.evaluate_gate(payload, self.repositories, now=NOW)
         self.assertEqual(result["qualifying_weeks"], 4)
@@ -294,14 +314,24 @@ class OssDeliveryGateTests(unittest.TestCase):
         cases.append(("late metadata", late_metadata, "future or reversed"))
 
         too_many_candidates = copy.deepcopy(self.locked)
-        too_many_candidates["runs"] = [
-            self.shadow_run(0, RUN_DATES[0], [1, 2, 3, 4])
-        ]
+        too_many_candidates["runs"] = [self.shadow_run(0, RUN_DATES[0], [1, 2, 3])]
         cases.append(("candidate overflow", too_many_candidates, "artifact contract"))
+
+        same_repository = copy.deepcopy(self.locked)
+        same_repository["runs"] = [self.shadow_run(0, RUN_DATES[0], [1])]
+        same_repository["runs"][0]["candidate_keys"] = [
+            f"{self.repository}#1",
+            f"{self.repository}#2",
+        ]
+        cases.append(
+            ("repository READY overflow", same_repository, "per-repository READY")
+        )
 
         request_overflow = copy.deepcopy(self.locked)
         request_overflow["runs"] = [self.shadow_run(0, RUN_DATES[0], [])]
-        request_overflow["runs"][0]["request_count"] = 12
+        request_overflow["runs"][0]["request_count"] = (
+            2 * len(self.repositories) + 3 * gate.DETAIL_LIMIT + 1
+        )
         cases.append(("request overflow", request_overflow, "allowlist request plan"))
 
         for name, payload, message in cases:
@@ -324,6 +354,17 @@ class OssDeliveryGateTests(unittest.TestCase):
 
         with self.assertRaisesRegex(gate.GateError, "repository coverage"):
             gate.evaluate_gate(payload, self.repositories, now=NOW)
+
+    def test_two_selected_candidates_allow_eight_detailed_candidates(self) -> None:
+        payload = copy.deepcopy(self.locked)
+        payload["runs"] = [
+            self.shadow_run(0, RUN_DATES[0], [1, 2], detail_count=8)
+        ]
+
+        result = gate.evaluate_gate(payload, self.repositories, now=NOW)
+
+        self.assertEqual(result["observed_runs"], 1)
+        self.assertEqual(result["qualifying_weeks"], 1)
 
     def test_date_only_timestamp_fails_closed_as_gate_error(self) -> None:
         payload = self.gate_with_evidence()
@@ -354,7 +395,7 @@ class OssDeliveryGateTests(unittest.TestCase):
             with self.subTest(case=case):
                 payload = self.gate_with_evidence()
                 if case == "run":
-                    payload["runs"][3]["attested_at"] = "2099-07-08T01:00:00Z"
+                    payload["runs"][-1]["attested_at"] = "2099-07-08T01:00:00Z"
                 elif case == "review":
                     payload["candidate_reviews"][0]["reviewed_at"] = (
                         "2099-07-09T00:00:00Z"
@@ -366,7 +407,7 @@ class OssDeliveryGateTests(unittest.TestCase):
 
     def test_review_and_approval_must_follow_attestation(self) -> None:
         payload = self.gate_with_evidence()
-        payload["runs"][3]["attested_at"] = "2026-07-15T12:00:00Z"
+        payload["runs"][-1]["attested_at"] = "2026-07-15T12:00:00Z"
         for review in payload["candidate_reviews"]:
             review["reviewed_at"] = "2026-07-15T13:00:00Z"
         payload["approved_at"] = "2026-07-15T11:00:00Z"
@@ -440,7 +481,7 @@ class OssDeliveryGateTests(unittest.TestCase):
             )
             self.assertEqual(
                 approved_path.read_text(encoding="utf-8"),
-                "approved=true\nqualifying_weeks=4\nunique_candidates=10\n",
+                "approved=true\nqualifying_weeks=5\nunique_candidates=10\n",
             )
 
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 import os
 import tempfile
@@ -14,6 +15,7 @@ from scripts import record_oss_shadow
 
 NOW = datetime(2026, 7, 16, 1, 0, tzinfo=timezone.utc)
 REPOSITORY = "spring-projects/spring-boot"
+OTHER_REPOSITORY = "example/other-backend"
 
 
 class RecordOssShadowTests(unittest.TestCase):
@@ -29,6 +31,7 @@ class RecordOssShadowTests(unittest.TestCase):
         self._write_json(
             self.repositories_path,
             {
+                "schema_version": 3,
                 "policy": dict(record_oss_shadow.EXPECTED_POLICY),
                 "repositories": [
                     {
@@ -57,6 +60,14 @@ class RecordOssShadowTests(unittest.TestCase):
             json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
+
+    def add_other_repository(self) -> dict[str, object]:
+        payload = json.loads(self.repositories_path.read_text(encoding="utf-8"))
+        profile = copy.deepcopy(payload["repositories"][0])
+        profile["repository"] = OTHER_REPOSITORY
+        payload["repositories"].append(profile)
+        self._write_json(self.repositories_path, payload)
+        return payload
 
     @staticmethod
     def locked_gate() -> dict[str, object]:
@@ -90,13 +101,15 @@ class RecordOssShadowTests(unittest.TestCase):
         }
 
     @staticmethod
-    def candidate(number: int, created_at: str) -> dict[str, object]:
+    def candidate(
+        number: int, created_at: str, repository: str = REPOSITORY
+    ) -> dict[str, object]:
         return {
             "decision": "READY_TO_ASK",
-            "repository": REPOSITORY,
+            "repository": repository,
             "issue_number": number,
             "title": f"Improve backend test {number}",
-            "url": f"https://github.com/{REPOSITORY}/issues/{number}",
+            "url": f"https://github.com/{repository}/issues/{number}",
             "created_at": created_at,
             "updated_at": "2026-07-16T00:20:00Z",
             "checked_at": "2026-07-16T00:46:00Z",
@@ -124,7 +137,7 @@ class RecordOssShadowTests(unittest.TestCase):
             cls.candidate(102, "2026-07-14T00:00:00Z"),
         ]
         return {
-            "schema_version": 2,
+            "schema_version": 3,
             "mode": "live-dry-run",
             "generated_at": "2026-07-16T00:47:00Z",
             "checked_at": "2026-07-16T00:46:00Z",
@@ -155,7 +168,7 @@ class RecordOssShadowTests(unittest.TestCase):
             ],
             "precheck_exclusions": [],
             "candidates": candidates,
-            "ready_to_ask": candidates,
+            "ready_to_ask": [candidates[0]],
             "errors": [],
             "warnings": [],
             "limitations": list(record_oss_shadow.EXPECTED_LIMITATIONS),
@@ -262,12 +275,158 @@ class RecordOssShadowTests(unittest.TestCase):
         self.assertEqual(run["shadow_contract_sha256"], delivery_gate.CURRENT_SHADOW_CONTRACT)
         self.assertEqual(
             run["candidate_keys"],
-            [f"{REPOSITORY}#101", f"{REPOSITORY}#102"],
+            [f"{REPOSITORY}#101"],
         )
         self.assertEqual(run["http_403_count"], 0)
         self.assertEqual(run["http_429_count"], 0)
         self.assertEqual(run["repository_keys"], [REPOSITORY])
         self.assertEqual(gate["runs"], [run])
+
+    def test_eight_details_backfill_and_record_only_the_selected_ready_key(self) -> None:
+        artifact = self.success_artifact()
+        candidates = [
+            self.candidate(number, "2026-07-10T00:00:00Z")
+            for number in range(101, 109)
+        ]
+        for candidate in candidates[:-1]:
+            candidate["decision"] = "MANUAL_REVIEW"
+            candidate["feasibility_evidence"]["scope_defined"] = False
+            candidate["manual_review_reasons"] = ["scope_missing"]
+        artifact["candidates"] = candidates
+        artifact["ready_to_ask"] = [candidates[-1]]
+        artifact["request_count"] = 26
+        artifact["http_status_counts"] = {"200": 26}
+        artifact["repository_results"][0]["search_count"] = 8
+        artifact["repository_results"][0]["eligible_search_count"] = 8
+        self.write_outputs(artifact)
+        self.build_metadata(run_id="1020")
+
+        run = record_oss_shadow.record_run(
+            self.metadata_path,
+            self.artifact_path,
+            self.markdown_path,
+            True,
+            True,
+            self.gate_path,
+            self.repositories_path,
+            now=NOW,
+            allow_repository_override=True,
+        )
+
+        self.assertEqual(run["request_count"], 26)
+        self.assertEqual(run["candidate_keys"], [f"{REPOSITORY}#108"])
+
+    def test_second_repository_ready_stops_detail_validation_immediately(self) -> None:
+        repository_payload = self.add_other_repository()
+        artifact = self.success_artifact()
+        first = self.candidate(101, "2026-07-15T00:00:00Z")
+        second = self.candidate(
+            201,
+            "2026-07-14T00:00:00Z",
+            OTHER_REPOSITORY,
+        )
+        artifact["request_count"] = 10
+        artifact["http_status_counts"] = {"200": 10}
+        artifact["candidates"] = [first, second]
+        artifact["ready_to_ask"] = [first, second]
+        artifact["repository_results"][0]["search_count"] = 2
+        artifact["repository_results"][0]["eligible_search_count"] = 2
+        artifact["repository_results"].append(
+            {
+                "repository": OTHER_REPOSITORY,
+                "label_contract": "VERIFIED",
+                "missing_labels": [],
+                "search_count": 1,
+                "eligible_search_count": 1,
+                "fail_closed_reason": None,
+            }
+        )
+        repositories, profiles, policy = record_oss_shadow.repository_contract(
+            repository_payload
+        )
+        validated = record_oss_shadow.validate_artifact(
+            json.dumps(artifact).encode("utf-8"),
+            repositories,
+            profiles,
+            policy,
+            0,
+        )
+
+        self.assertEqual(
+            validated["candidate_keys"],
+            [f"{REPOSITORY}#101", f"{OTHER_REPOSITORY}#201"],
+        )
+
+        third = self.candidate(102, "2026-07-13T00:00:00Z")
+        artifact["candidates"].append(third)
+        artifact["request_count"] = 13
+        artifact["http_status_counts"] = {"200": 13}
+        with self.assertRaisesRegex(record_oss_shadow.EvidenceError, "continued"):
+            record_oss_shadow.validate_artifact(
+                json.dumps(artifact).encode("utf-8"),
+                repositories,
+                profiles,
+                policy,
+                0,
+            )
+
+    def test_incomplete_detail_evidence_accepts_round_robin_subsequence(self) -> None:
+        repository_payload = self.add_other_repository()
+        artifact = self.success_artifact()
+        artifact.update(
+            {
+                "complete": False,
+                "delivery_allowed": False,
+                "request_count": 13,
+                "http_status_counts": {"200": 12, "403": 1},
+                "errors": ["first detail request failed"],
+                "ready_to_ask": [],
+            }
+        )
+        artifact["repository_results"][0]["search_count"] = 2
+        artifact["repository_results"][0]["eligible_search_count"] = 2
+        artifact["repository_results"].append(
+            {
+                "repository": OTHER_REPOSITORY,
+                "label_contract": "VERIFIED",
+                "missing_labels": [],
+                "search_count": 2,
+                "eligible_search_count": 2,
+                "fail_closed_reason": None,
+            }
+        )
+        artifact["candidates"] = [
+            self.candidate(201, "2026-07-14T00:00:00Z", OTHER_REPOSITORY),
+            self.candidate(102, "2026-07-13T00:00:00Z"),
+        ]
+        repositories, profiles, policy = record_oss_shadow.repository_contract(
+            repository_payload
+        )
+
+        validated = record_oss_shadow.validate_artifact(
+            json.dumps(artifact).encode("utf-8"),
+            repositories,
+            profiles,
+            policy,
+            2,
+        )
+
+        self.assertFalse(validated["collector_complete"])
+        self.assertEqual(validated["candidate_keys"], [])
+
+        artifact["candidates"] = [
+            self.candidate(201, "2026-07-14T00:00:00Z", OTHER_REPOSITORY),
+            self.candidate(202, "2026-07-13T00:00:00Z", OTHER_REPOSITORY),
+            self.candidate(102, "2026-07-12T00:00:00Z"),
+        ]
+        with self.assertRaisesRegex(record_oss_shadow.EvidenceError, "subsequence"):
+            record_oss_shadow.validate_artifact(
+                json.dumps(artifact).encode("utf-8"),
+                repositories,
+                profiles,
+                policy,
+                2,
+            )
 
     def test_custom_repository_config_is_rejected_by_default(self) -> None:
         self.build_metadata()
@@ -517,7 +676,7 @@ class RecordOssShadowTests(unittest.TestCase):
                 allow_repository_override=True,
             )
 
-    def test_preselection_cannot_omit_eligible_candidates(self) -> None:
+    def test_round_robin_backfill_cannot_omit_eligible_candidates(self) -> None:
         artifact = self.success_artifact()
         artifact["candidates"] = []
         artifact["ready_to_ask"] = []
@@ -527,7 +686,7 @@ class RecordOssShadowTests(unittest.TestCase):
         self.write_outputs(artifact)
         self.build_metadata(run_id="1010")
 
-        with self.assertRaisesRegex(record_oss_shadow.EvidenceError, "omitted candidates"):
+        with self.assertRaisesRegex(record_oss_shadow.EvidenceError, "backfill"):
             record_oss_shadow.record_run(
                 self.metadata_path,
                 self.artifact_path,
@@ -747,8 +906,18 @@ class RecordOssShadowTests(unittest.TestCase):
             now=NOW + timedelta(minutes=5),
             allow_repository_override=True,
         )
+        gate = json.loads(self.gate_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(gate["candidate_reviews"], [normal])
+        self.assertEqual(normal["reviewer"], "backend-reviewer")
+        self.assertTrue(normal["notes"])
+        self.assertIsNone(normal["false_positive_reason"])
+
+        base = self.locked_gate()
+        base["runs"] = [run]
+        self._write_json(self.gate_path, base)
         false_positive = record_oss_shadow.record_review(
-            f"{REPOSITORY}#102",
+            f"{REPOSITORY}#101",
             str(run["run_id"]),
             "backend-reviewer",
             "A linked pull request appeared after collection.",
@@ -762,16 +931,9 @@ class RecordOssShadowTests(unittest.TestCase):
             now=NOW + timedelta(minutes=5),
             allow_repository_override=True,
         )
-        gate = json.loads(self.gate_path.read_text(encoding="utf-8"))
 
-        self.assertEqual(gate["candidate_reviews"], [normal, false_positive])
-        self.assertEqual(normal["reviewer"], "backend-reviewer")
-        self.assertTrue(normal["notes"])
-        self.assertIsNone(normal["false_positive_reason"])
         self.assertEqual(false_positive["false_positive_reason"], "linked_pull_request")
 
-        base = self.locked_gate()
-        base["runs"] = [run]
         invalid_reviews = (
             {
                 "candidate_key": f"{REPOSITORY}#103",

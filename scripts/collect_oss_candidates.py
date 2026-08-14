@@ -31,6 +31,19 @@ ALLOWED_REPOSITORIES = (
     "micrometer-metrics/micrometer",
     "testcontainers/testcontainers-java",
 )
+INCLUSION_LABEL_PRIORITIES = {
+    "status: first-timers-only": 0,
+    "status: ideal-for-contribution": 1,
+    "good first issue": 2,
+    "help wanted": 3,
+}
+CONTRIBUTION_TYPE_PRIORITIES = {
+    "test": 0,
+    "docs": 1,
+    "sample": 2,
+    "code": 3,
+    "code/test": 4,
+}
 MAINTAINER_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
 EXTERNAL_ASSOCIATIONS = {"NONE", "FIRST_TIMER", "FIRST_TIME_CONTRIBUTOR", "CONTRIBUTOR"}
 ACTIVITY_EVENTS = {
@@ -280,8 +293,8 @@ def validate_eligibility_evidence(
 
 def load_config(path: Path, as_of: date | None = None) -> dict[str, Any]:
     config = read_object(path)
-    if config.get("schema_version") != 2:
-        raise ConfigurationError("oss config schema_version must be 2")
+    if config.get("schema_version") != 3:
+        raise ConfigurationError("oss config schema_version must be 3")
     checked_at = parse_config_date(config.get("checked_at"), "checked_at")
     valid_until = parse_config_date(config.get("valid_until"), "valid_until")
     reference_date = as_of or datetime.now(timezone.utc).date()
@@ -344,8 +357,10 @@ def load_config(path: Path, as_of: date | None = None) -> dict[str, Any]:
         "fresh_days": 90,
         "warm_days": 180,
         "search_per_repository": 10,
-        "preselect_limit": 3,
-        "request_limit": 19,
+        "detail_limit": 8,
+        "ready_limit": 2,
+        "max_ready_per_repository": 1,
+        "request_limit": 34,
     }
     if policy != expected_policy:
         raise ConfigurationError(f"policy must equal the approved contract: {expected_policy}")
@@ -401,7 +416,7 @@ def load_config(path: Path, as_of: date | None = None) -> dict[str, Any]:
             raise ConfigurationError(f"{repository}: contributing_url must use HTTPS")
         validate_eligibility_evidence(profile, repository, checked_at)
 
-    planned_requests = len(repositories) * 2 + policy["preselect_limit"] * 3
+    planned_requests = len(repositories) * 2 + policy["detail_limit"] * 3
     if planned_requests != policy["request_limit"]:
         raise ConfigurationError("request_limit must equal the approved maximum request plan")
     return config
@@ -693,18 +708,47 @@ def validate_search_issue(
     issue_copy["_repository"] = repository
     issue_copy["_profile"] = profile
     issue_copy["_created"] = created_at
+    issue_copy["_updated"] = updated_at
     return issue_copy, None
 
 
-def sort_candidates(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return sorted(
-        items,
-        key=lambda item: (
+def sort_repository_candidates(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def priority(item: dict[str, Any]) -> tuple[int, int, float, float, str, int]:
+        labels = issue_labels(item) or []
+        inclusion_priority = min(
+            (
+                INCLUSION_LABEL_PRIORITIES[label]
+                for label in labels
+                if label in INCLUSION_LABEL_PRIORITIES
+            ),
+            default=len(INCLUSION_LABEL_PRIORITIES),
+        )
+        type_priority = CONTRIBUTION_TYPE_PRIORITIES[
+            contribution_type(item["_profile"], labels)
+        ]
+        return (
+            inclusion_priority,
+            type_priority,
+            -item["_updated"].timestamp(),
             -item["_created"].timestamp(),
             item["_repository"],
             item["number"],
-        ),
-    )
+        )
+
+    return sorted(items, key=priority)
+
+
+def round_robin_candidates(
+    queues: dict[str, list[dict[str, Any]]], repositories: list[str]
+) -> list[dict[str, Any]]:
+    ordered: list[dict[str, Any]] = []
+    maximum_depth = max((len(queue) for queue in queues.values()), default=0)
+    for depth in range(maximum_depth):
+        for repository in repositories:
+            queue = queues.get(repository, [])
+            if depth < len(queue):
+                ordered.append(queue[depth])
+    return ordered
 
 
 def text_claims_work(value: object) -> bool:
@@ -1159,11 +1203,22 @@ def collect_candidates(
             )
             continue
         unique[key] = issue
-    preselected = sort_candidates(list(unique.values()))[: policy["preselect_limit"]]
+
+    repository_order = [profile["repository"] for profile in config["repositories"]]
+    queues = {repository: [] for repository in repository_order}
+    for issue in unique.values():
+        queues[issue["_repository"]].append(issue)
+    for repository, queue in queues.items():
+        queues[repository] = sort_repository_candidates(queue)
+    detail_queue = round_robin_candidates(queues, repository_order)
 
     candidates: list[dict[str, Any]] = []
+    ready: list[dict[str, Any]] = []
+    ready_counts: Counter[str] = Counter()
     last_detail_checked_at: datetime | None = None
-    for issue in preselected:
+    for issue in detail_queue:
+        if len(candidates) >= policy["detail_limit"]:
+            break
         repository = issue["_repository"]
         number = issue["number"]
         responses: dict[str, ApiResponse] = {}
@@ -1225,19 +1280,26 @@ def collect_candidates(
                 }
             )
             continue
-        candidates.append(
-            evaluate_candidate(
-                issue["_profile"],
-                ExpectedIssue(repository, number, issue["_created"]),
-                responses["detail"].body,
-                responses["comments"].body,
-                responses["timeline"].body,
-                now,
-                responses["timeline"].received_at,
-                comments_paginated=has_next_page(responses["comments"].headers),
-                timeline_paginated=has_next_page(responses["timeline"].headers),
-            )
+        candidate = evaluate_candidate(
+            issue["_profile"],
+            ExpectedIssue(repository, number, issue["_created"]),
+            responses["detail"].body,
+            responses["comments"].body,
+            responses["timeline"].body,
+            now,
+            responses["timeline"].received_at,
+            comments_paginated=has_next_page(responses["comments"].headers),
+            timeline_paginated=has_next_page(responses["timeline"].headers),
         )
+        candidates.append(candidate)
+        if (
+            candidate["decision"] == "READY_TO_ASK"
+            and ready_counts[repository] < policy["max_ready_per_repository"]
+        ):
+            ready.append(candidate)
+            ready_counts[repository] += 1
+            if len(ready) >= policy["ready_limit"]:
+                break
 
     generated_at = client.transport.clock()
     errors.extend(sorted(client.rate_limit_header_errors))
@@ -1264,11 +1326,10 @@ def collect_candidates(
     if last_detail_checked_at and generated_at - last_detail_checked_at > timedelta(minutes=15):
         errors.append("candidate detail validation is older than 15 minutes")
     complete = not errors
-    ready = [candidate for candidate in candidates if candidate["decision"] == "READY_TO_ASK"]
     if not complete:
         ready = []
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "mode": mode,
         "generated_at": format_timestamp(generated_at),
         "checked_at": format_timestamp(last_detail_checked_at),
@@ -1287,8 +1348,10 @@ def collect_candidates(
         "errors": errors,
         "warnings": warnings,
         "limitations": [
-            "created_at DESC, repository/number 순으로 고른 최신 3개만 상세 검증합니다.",
-            "상세 검증에서 탈락해도 4번째 이후 후보를 backfill하지 않습니다.",
+            "저장소별 우선순위 큐를 순환하며 "
+            "최대 8개만 상세 검증합니다.",
+            "서로 다른 저장소의 READY_TO_ASK 2개가 채워지면 중단하고 "
+            "탈락·수동 검토 뒤에는 다음 후보를 보충합니다.",
             "issue body와 댓글 전문은 artifact에 저장하지 않습니다.",
         ],
     }
@@ -1311,10 +1374,18 @@ def render_markdown(result: dict[str, Any]) -> str:
     if not result["complete"]:
         lines.append("API 또는 labels 계약 검증이 불완전하여 이번 실행에서는 후보를 노출하지 않습니다.")
     elif not result["ready_to_ask"]:
-        lines.append("최신 검색 후보 3개 중 READY_TO_ASK 없음")
+        lines.append("상세 검증 후보 중 READY_TO_ASK 없음")
     else:
         for candidate in result["ready_to_ask"]:
             safe_title = re.sub(r"([\\`*_[\]()<>~|])", r"\\\1", candidate["title"])
+            evidence = candidate["feasibility_evidence"]
+            scope_label = "있음" if evidence["scope_defined"] else "없음"
+            acceptance_label = (
+                "있음" if evidence["acceptance_criteria_present"] else "없음"
+            )
+            reproduction_label = (
+                "있음" if evidence["reproduction_steps_present"] else "없음"
+            )
             lines.extend(
                 [
                     f"### [{candidate['repository']}#{candidate['issue_number']}]({candidate['url']}) — {safe_title}",
@@ -1323,7 +1394,20 @@ def render_markdown(result: dict[str, Any]) -> str:
                     f"- 최종 확인일: {candidate['checked_at']}",
                     f"- 기여 라벨/유형: `{candidate['contribution_label']}` · {candidate['contribution_type']}",
                     f"- 관련 이유: {candidate['relevance_reason']}",
-                    f"- 첫 30분 검증: `{candidate['build_test_command']}`",
+                    "- 선정 이유: "
+                    f"`{candidate['contribution_label']}` 라벨 · "
+                    f"{candidate['freshness']} maintainer 활동 · "
+                    f"`{candidate['module_label']}` 실행 경로 확인",
+                    "- 실행 가능성 근거: "
+                    f"범위 {scope_label} · 완료 조건 {acceptance_label} · "
+                    f"재현 {reproduction_label}",
+                    f"- 첫 30분: `{candidate['build_test_command']}` "
+                    "기준선 확인 → issue 재현 절차 실행",
+                    "- 현재 검토 필요: "
+                    f"{'예' if evidence['current_review_required'] else '아니요'}",
+                    "- maintainer 문의 초안: "
+                    "`Hi, is this issue still available? I confirmed the documented "
+                    "test path and plan to reproduce it first. May I work on it?`",
                     "",
                 ]
             )
@@ -1331,7 +1415,8 @@ def render_markdown(result: dict[str, Any]) -> str:
         [
             "## 제한",
             "",
-            "- 최신 3개만 상세 검증하며 탈락 시 4번째 후보를 자동 보충하지 않습니다.",
+            "- 저장소별 후보를 번갈아 최대 8개 상세 검증하고, "
+            "서로 다른 저장소의 READY_TO_ASK 2개가 채워지면 중단합니다.",
             "- 댓글을 기계적으로 확정할 수 없거나 페이지가 잘리면 MANUAL_REVIEW로 분류합니다.",
             "- 이 수집기는 issue를 조회만 하며 comment, assign, label, branch, fork, PR을 만들지 않습니다.",
             "",

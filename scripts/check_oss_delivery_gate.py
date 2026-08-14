@@ -53,6 +53,9 @@ FALSE_POSITIVE_REASONS = {
     "scope_too_large_or_unclear",
 }
 RATE_LIMIT_MAXIMUMS = {"core": 60, "search": 10}
+DETAIL_LIMIT = 8
+READY_LIMIT = 2
+MAX_READY_PER_REPOSITORY = 1
 SHA256_RE = re.compile(r"sha256:[0-9a-f]{64}")
 COMMIT_RE = re.compile(r"[0-9a-f]{40}")
 CANDIDATE_RE = re.compile(r"([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)#([1-9][0-9]*)")
@@ -374,17 +377,24 @@ def evaluate_gate(
             raise GateError("OSS Shadow candidate_keys must contain repository#number values")
         if len(candidate_keys) != len(set(candidate_keys)):
             raise GateError("OSS Shadow candidate_keys must not contain duplicates")
-        if len(candidate_keys) > 3 or (not collector_complete and candidate_keys):
+        if len(candidate_keys) > READY_LIMIT or (not collector_complete and candidate_keys):
             raise GateError("OSS Shadow candidate_keys exceed the collector artifact contract")
-        candidate_repositories = {
+        candidate_repository_keys = [
             CANDIDATE_RE.fullmatch(key).group(1) for key in candidate_keys
-        }
+        ]
+        candidate_repositories = set(candidate_repository_keys)
+        if any(
+            candidate_repository_keys.count(repository)
+            > MAX_READY_PER_REPOSITORY
+            for repository in candidate_repositories
+        ):
+            raise GateError("OSS Shadow candidate_keys exceed the per-repository READY limit")
         if not candidate_repositories <= repositories:
             raise GateError("OSS Shadow candidate_keys contain a repository outside the allowlist")
         run_candidates[run_id] = set(candidate_keys)
 
         request_count = run.get("request_count")
-        maximum_request_count = 2 * len(repositories) + 3 * 3
+        maximum_request_count = 2 * len(repositories) + 3 * DETAIL_LIMIT
         if request_count is not None and (
             type(request_count) is not int
             or not 0 <= request_count <= maximum_request_count
@@ -435,7 +445,7 @@ def evaluate_gate(
 
         clean_request_counts = {
             2 * len(repositories) + 3 * candidate_count
-            for candidate_count in range(len(candidate_keys), 4)
+            for candidate_count in range(len(candidate_keys), DETAIL_LIMIT + 1)
         }
         if (
             collector_complete

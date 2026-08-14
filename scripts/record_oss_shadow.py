@@ -94,8 +94,9 @@ FEASIBILITY_EVIDENCE_KEYS = {
     "current_review_required",
 }
 EXPECTED_LIMITATIONS = [
-    "created_at DESC, repository/number 순으로 고른 최신 3개만 상세 검증합니다.",
-    "상세 검증에서 탈락해도 4번째 이후 후보를 backfill하지 않습니다.",
+    "저장소별 우선순위 큐를 순환하며 최대 8개만 상세 검증합니다.",
+    "서로 다른 저장소의 READY_TO_ASK 2개가 채워지면 중단하고 "
+    "탈락·수동 검토 뒤에는 다음 후보를 보충합니다.",
     "issue body와 댓글 전문은 artifact에 저장하지 않습니다.",
 ]
 REPOSITORY_FAILURE_REASONS = {
@@ -127,8 +128,10 @@ EXPECTED_POLICY = {
     "fresh_days": 90,
     "warm_days": 180,
     "search_per_repository": 10,
-    "preselect_limit": 3,
-    "request_limit": 19,
+    "detail_limit": 8,
+    "ready_limit": 2,
+    "max_ready_per_repository": 1,
+    "request_limit": 34,
 }
 
 
@@ -229,6 +232,8 @@ def file_hash_or_none(path: Path) -> str | None:
 def repository_contract(
     payload: dict[str, Any],
 ) -> tuple[set[str], dict[str, dict[str, Any]], dict[str, int]]:
+    if payload.get("schema_version") != 3:
+        raise EvidenceError("OSS repository schema_version must match collector schema 3")
     repositories = delivery_gate.allowed_repositories(payload)
     if payload.get("policy") != EXPECTED_POLICY:
         raise EvidenceError("OSS repository policy does not match the recorder contract")
@@ -471,8 +476,8 @@ def validate_artifact(
         raise EvidenceError("OSS artifact is not valid UTF-8 JSON") from exc
     if not isinstance(payload, dict) or set(payload) != ARTIFACT_KEYS:
         raise EvidenceError("OSS artifact does not match the exact collector schema")
-    if payload.get("schema_version") != 2 or payload.get("mode") != "live-dry-run":
-        raise EvidenceError("Only schema 2 live-dry-run artifacts can be recorded")
+    if payload.get("schema_version") != 3 or payload.get("mode") != "live-dry-run":
+        raise EvidenceError("Only schema 3 live-dry-run artifacts can be recorded")
 
     generated_at = delivery_gate.parse_utc(payload.get("generated_at"), "generated_at")
     complete = payload.get("complete")
@@ -626,19 +631,25 @@ def validate_artifact(
 
     candidates = payload.get("candidates")
     ready = payload.get("ready_to_ask")
-    if not isinstance(candidates, list) or len(candidates) > 3 or not isinstance(ready, list):
+    if (
+        not isinstance(candidates, list)
+        or len(candidates) > policy["detail_limit"]
+        or not isinstance(ready, list)
+        or len(ready) > policy["ready_limit"]
+    ):
         raise EvidenceError("OSS artifact candidate collections are invalid")
-    expected_request_count = (
+    complete_request_count = (
         len(repositories) + verified_repository_count + 3 * len(candidates)
     )
-    if request_count != expected_request_count:
+    if complete and request_count != complete_request_count:
         raise EvidenceError("OSS artifact request_count contradicts repository and candidate work")
     candidate_keys: list[str] = []
     candidate_counts_by_repository = {repository: 0 for repository in repositories}
     candidate_checked_times: list[datetime] = []
-    created_order: list[tuple[float, str, int]] = []
     expected_ready: list[dict[str, Any]] = []
-    for candidate in candidates:
+    ready_counts_by_repository = {repository: 0 for repository in repositories}
+    selection_completed_at: int | None = None
+    for candidate_index, candidate in enumerate(candidates):
         key = candidate_identity(candidate, repositories)
         if key in candidate_keys:
             raise EvidenceError("OSS artifact candidates contain duplicates")
@@ -704,8 +715,7 @@ def validate_artifact(
             )
         ):
             raise EvidenceError("OSS artifact candidate fields are invalid")
-        repository, number = key.rsplit("#", 1)
-        created_order.append((-created_at.timestamp(), repository, int(number)))
+        repository, _ = key.rsplit("#", 1)
         decision = candidate.get("decision")
         if decision not in {"READY_TO_ASK", "MANUAL_REVIEW", "EXCLUDED"}:
             raise EvidenceError("OSS artifact candidate decision is invalid")
@@ -833,21 +843,44 @@ def validate_artifact(
                 or not feasibility["reproduction_steps_present"]
             ):
                 raise EvidenceError("READY_TO_ASK candidates need executable scope evidence")
-            expected_ready.append(candidate)
-    if created_order != sorted(created_order):
-        raise EvidenceError("OSS artifact candidates are not sorted by the frozen policy")
+            if (
+                ready_counts_by_repository[repository]
+                < policy["max_ready_per_repository"]
+                and len(expected_ready) < policy["ready_limit"]
+            ):
+                expected_ready.append(candidate)
+                ready_counts_by_repository[repository] += 1
+                if len(expected_ready) == policy["ready_limit"]:
+                    selection_completed_at = candidate_index
+    if (
+        complete
+        and selection_completed_at is not None
+        and selection_completed_at != len(candidates) - 1
+    ):
+        raise EvidenceError("OSS artifact continued after filling the READY selection")
     expected_checked_at = max(candidate_checked_times) if candidate_checked_times else None
-    if parsed_artifact_checked_at != expected_checked_at:
+    if complete and parsed_artifact_checked_at != expected_checked_at:
         raise EvidenceError("OSS artifact checked_at does not match candidate snapshots")
+    if (
+        not complete
+        and expected_checked_at is not None
+        and (
+            parsed_artifact_checked_at is None
+            or parsed_artifact_checked_at < expected_checked_at
+        )
+    ):
+        raise EvidenceError("OSS artifact checked_at predates preserved candidate evidence")
     results_by_repository = {
         result["repository"]: result for result in repository_results
     }
     unique_eligible_total = 0
+    unique_eligible_by_repository: dict[str, int] = {}
     for repository, result in results_by_repository.items():
         eligible_count = result["eligible_search_count"]
         unique_eligible_count = (
             eligible_count - duplicate_prechecks_by_repository[repository]
         )
+        unique_eligible_by_repository[repository] = unique_eligible_count
         unique_eligible_total += unique_eligible_count
         if (
             unique_eligible_count < 0
@@ -857,10 +890,32 @@ def validate_artifact(
             or duplicate_prechecks_by_repository[repository] > max(0, eligible_count - 1)
         ):
             raise EvidenceError("OSS artifact search evidence contradicts its candidates")
-    if len(candidates) != min(policy["preselect_limit"], unique_eligible_total):
-        raise EvidenceError("OSS artifact omitted candidates from the frozen preselection")
+    repository_order = list(profiles)
+    expected_repository_order: list[str] = []
+    maximum_depth = max(unique_eligible_by_repository.values(), default=0)
+    for depth in range(maximum_depth):
+        for repository in repository_order:
+            if depth < unique_eligible_by_repository[repository]:
+                expected_repository_order.append(repository)
+    actual_repository_order = [candidate["repository"] for candidate in candidates]
+    if complete:
+        if actual_repository_order != expected_repository_order[: len(candidates)]:
+            raise EvidenceError("OSS artifact candidates violate round-robin repository order")
+        if len(expected_ready) < policy["ready_limit"] and len(candidates) != min(
+            policy["detail_limit"], unique_eligible_total
+        ):
+            raise EvidenceError("OSS artifact omitted candidates from round-robin backfill")
+    else:
+        expected_iterator = iter(expected_repository_order)
+        if not all(
+            any(repository == expected for expected in expected_iterator)
+            for repository in actual_repository_order
+        ):
+            raise EvidenceError(
+                "Incomplete OSS artifact candidates violate round-robin subsequence order"
+            )
     if ready != (expected_ready if complete else []):
-        raise EvidenceError("OSS artifact ready_to_ask does not match candidate decisions")
+        raise EvidenceError("OSS artifact ready_to_ask does not match the selected candidates")
 
     return {
         "run_at": payload["generated_at"],

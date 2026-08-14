@@ -1,5 +1,5 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "checked_at": "2026-07-16",
   "valid_until": "2026-10-14",
   "audit": {
@@ -24,8 +24,10 @@
     "fresh_days": 90,
     "warm_days": 180,
     "search_per_repository": 10,
-    "preselect_limit": 3,
-    "request_limit": 19
+    "detail_limit": 8,
+    "ready_limit": 2,
+    "max_ready_per_repository": 1,
+    "request_limit": 34
   },
   "repositories": [
     {

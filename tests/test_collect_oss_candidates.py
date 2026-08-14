@@ -47,6 +47,62 @@ class OssCollectorTests(unittest.TestCase):
         client = collector.GitHubClient(transport, self.config["policy"]["request_limit"])
         return collector.collect_candidates(self.config, client, NOW, "fixture"), transport
 
+    def add_fixture_issue(
+        self,
+        fixture: dict[str, object],
+        repository: str,
+        number: int,
+        *,
+        created_day: int,
+        updated_day: int,
+        manual: bool = False,
+    ) -> None:
+        profile = next(
+            item for item in self.config["repositories"] if item["repository"] == repository
+        )
+        labels = [
+            {"name": profile["include_labels"][0]},
+            {"name": next(iter(profile["module_label_to_build_command"]))},
+        ]
+        created_at = f"2026-07-{created_day:02d}T00:00:00Z"
+        updated_at = f"2026-07-{updated_day:02d}T00:00:00Z"
+        title = f"Add focused regression test {number}"
+        url = f"https://github.com/{repository}/issues/{number}"
+        search_item = {
+            "number": number,
+            "title": title,
+            "html_url": url,
+            "repository_url": f"https://api.github.com/repos/{repository}",
+            "state": "open",
+            "locked": False,
+            "assignee": None,
+            "assignees": [],
+            "labels": labels,
+            "created_at": created_at,
+            "updated_at": updated_at,
+        }
+        body = (
+            "## Scope\n"
+            "Add a focused regression test in the labeled module for the target behavior.\n\n"
+            "## Acceptance criteria\n"
+            "The focused test captures the expected result and existing tests remain green.\n\n"
+            "## Reproduction\n"
+            f"Run {next(iter(profile['module_label_to_build_command'].values()))}."
+        )
+        if manual:
+            body += "\n\nOpen question: we still need to decide which API to change."
+        detail = {
+            **search_item,
+            "user": {"login": "maintainer", "type": "User"},
+            "author_association": "MEMBER",
+            "body": body,
+        }
+        responses = fixture["responses"]
+        responses[f"search:{repository}"]["body"]["items"].append(search_item)
+        responses[f"detail:{repository}#{number}"] = {"body": detail}
+        responses[f"comments:{repository}#{number}"] = {"body": []}
+        responses[f"timeline:{repository}#{number}"] = {"body": []}
+
     def framework_detail(self, **updates: object) -> dict[str, object]:
         payload: dict[str, object] = {
             "number": 200,
@@ -103,39 +159,172 @@ class OssCollectorTests(unittest.TestCase):
         )
 
     def test_config_is_the_exact_approved_five_repository_contract(self) -> None:
+        self.assertEqual(self.config["schema_version"], 3)
         self.assertEqual(
             tuple(profile["repository"] for profile in self.config["repositories"]),
             collector.ALLOWED_REPOSITORIES,
         )
-        self.assertEqual(self.config["policy"]["request_limit"], 19)
+        self.assertEqual(
+            self.config["policy"],
+            {
+                "lookback_days": 180,
+                "fresh_days": 90,
+                "warm_days": 180,
+                "search_per_repository": 10,
+                "detail_limit": 8,
+                "ready_limit": 2,
+                "max_ready_per_repository": 1,
+                "request_limit": 34,
+            },
+        )
         self.assertTrue(all(profile["checked_at"] for profile in self.config["repositories"]))
         self.assertEqual(
             len(self.config["repositories"]) * 2
-            + self.config["policy"]["preselect_limit"] * 3,
-            19,
+            + self.config["policy"]["detail_limit"] * 3,
+            34,
         )
 
-    def test_fixture_run_uses_19_requests_and_only_exposes_ready_candidates(self) -> None:
-        result, _ = self.run_fixture()
+    def test_round_robin_backfills_until_fourth_and_fifth_candidates_are_ready(self) -> None:
+        result, transport = self.run_fixture()
 
         self.assertTrue(result["complete"])
         self.assertTrue(result["delivery_allowed"])
-        self.assertEqual(result["request_count"], 19)
+        self.assertEqual(result["schema_version"], 3)
+        self.assertEqual(result["request_count"], 25)
         self.assertEqual(
-            [candidate["decision"] for candidate in result["candidates"]],
-            ["READY_TO_ASK", "EXCLUDED", "READY_TO_ASK"],
+            [
+                (candidate["repository"], candidate["issue_number"], candidate["decision"])
+                for candidate in result["candidates"]
+            ],
+            [
+                ("spring-projects/spring-framework", 200, "MANUAL_REVIEW"),
+                ("micrometer-metrics/micrometer", 300, "MANUAL_REVIEW"),
+                ("testcontainers/testcontainers-java", 400, "EXCLUDED"),
+                ("spring-projects/spring-framework", 201, "READY_TO_ASK"),
+                ("micrometer-metrics/micrometer", 301, "READY_TO_ASK"),
+            ],
         )
         self.assertEqual(
-            [candidate["repository"] for candidate in result["ready_to_ask"]],
-            ["micrometer-metrics/micrometer", "spring-projects/spring-framework"],
+            [
+                (candidate["repository"], candidate["issue_number"])
+                for candidate in result["ready_to_ask"]
+            ],
+            [
+                ("spring-projects/spring-framework", 201),
+                ("micrometer-metrics/micrometer", 301),
+            ],
         )
         self.assertFalse(
-            result["candidates"][1]["feasibility_evidence"]["current_review_required"]
+            result["candidates"][2]["feasibility_evidence"]["current_review_required"]
         )
+        self.assertFalse(any("issues/401" in url for url in transport.urls))
         serialized = json.dumps(result, ensure_ascii=False)
         self.assertNotIn("Thanks for the report", serialized)
         self.assertNotIn("I'd like to work on this", serialized)
         self.assertNotIn("focused test captures the expected result", serialized)
+
+    def test_ready_limit_keeps_one_candidate_per_repository(self) -> None:
+        fixture = copy.deepcopy(self.fixture)
+        for key, response in fixture["responses"].items():
+            if key.startswith("search:"):
+                response["body"]["items"] = []
+        self.add_fixture_issue(
+            fixture,
+            "spring-projects/spring-framework",
+            501,
+            created_day=10,
+            updated_day=15,
+        )
+        self.add_fixture_issue(
+            fixture,
+            "spring-projects/spring-framework",
+            502,
+            created_day=9,
+            updated_day=14,
+        )
+        self.add_fixture_issue(
+            fixture,
+            "micrometer-metrics/micrometer",
+            601,
+            created_day=8,
+            updated_day=15,
+            manual=True,
+        )
+        self.add_fixture_issue(
+            fixture,
+            "micrometer-metrics/micrometer",
+            602,
+            created_day=7,
+            updated_day=14,
+        )
+
+        result, _ = self.run_fixture(fixture)
+
+        self.assertEqual(
+            [candidate["issue_number"] for candidate in result["candidates"]],
+            [501, 601, 502, 602],
+        )
+        self.assertEqual(
+            [candidate["issue_number"] for candidate in result["ready_to_ask"]],
+            [501, 602],
+        )
+        self.assertEqual(
+            [
+                candidate["issue_number"]
+                for candidate in result["candidates"]
+                if candidate["decision"] == "READY_TO_ASK"
+            ],
+            [501, 502, 602],
+        )
+
+    def test_ready_result_cardinality_is_zero_one_or_two(self) -> None:
+        zero_fixture = copy.deepcopy(self.fixture)
+        for key, response in zero_fixture["responses"].items():
+            if key.startswith("search:"):
+                response["body"]["items"] = []
+
+        one_fixture = copy.deepcopy(zero_fixture)
+        self.add_fixture_issue(
+            one_fixture,
+            "spring-projects/spring-framework",
+            501,
+            created_day=10,
+            updated_day=15,
+        )
+
+        zero, _ = self.run_fixture(zero_fixture)
+        one, _ = self.run_fixture(one_fixture)
+        two, _ = self.run_fixture()
+
+        self.assertEqual(
+            [len(result["ready_to_ask"]) for result in (zero, one, two)],
+            [0, 1, 2],
+        )
+
+    def test_detail_and_request_limits_stop_after_eight_candidates(self) -> None:
+        fixture = copy.deepcopy(self.fixture)
+        for key, response in fixture["responses"].items():
+            if key.startswith("search:"):
+                response["body"]["items"] = []
+        repositories = list(collector.ALLOWED_REPOSITORIES)
+        for index in range(9):
+            self.add_fixture_issue(
+                fixture,
+                repositories[index % len(repositories)],
+                700 + index,
+                created_day=1,
+                updated_day=15,
+                manual=True,
+            )
+
+        result, transport = self.run_fixture(fixture)
+
+        self.assertTrue(result["complete"])
+        self.assertEqual(len(result["candidates"]), 8)
+        self.assertEqual(result["ready_to_ask"], [])
+        self.assertEqual(result["request_count"], 34)
+        self.assertLessEqual(result["request_count"], result["request_limit"])
+        self.assertFalse(any("issues/708" in url for url in transport.urls))
 
     def test_feasibility_evidence_is_derived_without_persisting_issue_body(self) -> None:
         result = self.evaluate()
@@ -345,20 +534,69 @@ class OssCollectorTests(unittest.TestCase):
         self.assertIn("no_maintainer_activity", result["exclusion_reasons"])
         self.assertIn("invalid_activity_evidence", result["manual_review_reasons"])
 
-    def test_sort_is_created_desc_then_repository_and_number(self) -> None:
+    def test_repository_queue_prioritizes_labels_then_contribution_type(self) -> None:
+        profile = {
+            "contribution_type_by_label": {
+                "test-kind": "test",
+                "docs-kind": "docs",
+                "sample-kind": "sample",
+                "code-kind": "code",
+            },
+            "default_contribution_type": "code/test",
+        }
+
+        def item(number: int, inclusion: str, kind: str | None) -> dict[str, object]:
+            labels = [{"name": inclusion}]
+            if kind is not None:
+                labels.append({"name": kind})
+            return {
+                "number": number,
+                "labels": labels,
+                "_profile": profile,
+                "_repository": "example/repository",
+                "_created": NOW,
+                "_updated": NOW,
+            }
+
         items = [
-            {"_created": NOW, "_repository": "b/repo", "number": 1},
-            {"_created": NOW + timedelta(days=1), "_repository": "z/repo", "number": 2},
-            {"_created": NOW, "_repository": "a/repo", "number": 3},
-            {"_created": NOW, "_repository": "a/repo", "number": 2},
+            item(8, "help wanted", "test-kind"),
+            item(7, "good first issue", "test-kind"),
+            item(6, "status: ideal-for-contribution", None),
+            item(5, "status: ideal-for-contribution", "code-kind"),
+            item(4, "status: ideal-for-contribution", "sample-kind"),
+            item(3, "status: ideal-for-contribution", "docs-kind"),
+            item(2, "status: ideal-for-contribution", "test-kind"),
+            item(1, "status: first-timers-only", "code-kind"),
         ]
 
-        ordered = collector.sort_candidates(items)
+        ordered = collector.sort_repository_candidates(items)
 
-        self.assertEqual(
-            [(item["_repository"], item["number"]) for item in ordered],
-            [("z/repo", 2), ("a/repo", 2), ("a/repo", 3), ("b/repo", 1)],
+        self.assertEqual([candidate["number"] for candidate in ordered], list(range(1, 9)))
+
+    def test_repository_queue_tie_breaks_by_updated_created_and_identity(self) -> None:
+        profile = {
+            "contribution_type_by_label": {"test-kind": "test"},
+            "default_contribution_type": "code/test",
+        }
+
+        def item(number: int, updated: int, created: int) -> dict[str, object]:
+            return {
+                "number": number,
+                "labels": [
+                    {"name": "status: ideal-for-contribution"},
+                    {"name": "test-kind"},
+                ],
+                "_profile": profile,
+                "_repository": "example/repository",
+                "_created": NOW - timedelta(days=created),
+                "_updated": NOW - timedelta(days=updated),
+            }
+
+        ordered = collector.sort_repository_candidates(
+            [item(4, 2, 1), item(3, 1, 2), item(2, 1, 1), item(1, 1, 1)]
         )
+
+        self.assertEqual([candidate["number"] for candidate in ordered], [1, 2, 3, 4])
 
     def test_closed_pr_assigned_and_excluded_label_are_hard_failures(self) -> None:
         cases = (
@@ -507,7 +745,7 @@ class OssCollectorTests(unittest.TestCase):
         self.assertEqual(result["decision"], "MANUAL_REVIEW")
         self.assertIn("module_mapping_missing", result["manual_review_reasons"])
 
-    def test_duplicate_search_issue_is_removed_before_preselection(self) -> None:
+    def test_duplicate_search_issue_is_removed_before_queueing(self) -> None:
         fixture = copy.deepcopy(self.fixture)
         items = fixture["responses"]["search:micrometer-metrics/micrometer"]["body"]["items"]
         items.append(copy.deepcopy(items[0]))
@@ -518,7 +756,7 @@ class OssCollectorTests(unittest.TestCase):
             item for item in result["precheck_exclusions"] if item["reason"] == "duplicate_search_result"
         ]
         self.assertEqual(len(duplicates), 1)
-        self.assertEqual(result["request_count"], 19)
+        self.assertEqual(result["request_count"], 25)
 
     def test_allowlist_repository_and_url_mismatch_are_rejected(self) -> None:
         search_item = copy.deepcopy(
@@ -683,12 +921,12 @@ class OssCollectorTests(unittest.TestCase):
         def clock() -> datetime:
             nonlocal calls
             calls += 1
-            return NOW if calls <= 19 else NOW + timedelta(minutes=1)
+            return NOW if calls <= 25 else NOW + timedelta(minutes=1)
 
         transport = collector.FixtureTransport(fixture, clock)
         result = collector.collect_candidates(
             self.config,
-            collector.GitHubClient(transport, 19),
+            collector.GitHubClient(transport, 34),
             NOW,
             "fixture",
         )
@@ -853,6 +1091,17 @@ class OssCollectorTests(unittest.TestCase):
         self.assertNotIn("[trusted](https://evil.example)", markdown)
         self.assertIn(r"\[trusted\]\(https://evil.example\)", markdown)
         self.assertIn(r"\*urgent\*", markdown)
+        self.assertIn(
+            "실행 가능성 근거: 범위 있음 · 완료 조건 있음 · 재현 있음",
+            markdown,
+        )
+        self.assertIn("첫 30분:", markdown)
+        self.assertIn("기준선 확인 → issue 재현 절차 실행", markdown)
+        self.assertIn("선정 이유:", markdown)
+        self.assertIn("현재 검토 필요: 예", markdown)
+        self.assertIn("maintainer 문의 초안:", markdown)
+        self.assertIn("Hi, is this issue still available?", markdown)
+        self.assertNotIn("target method behavior", markdown)
 
     def test_api_partial_failure_marks_incomplete_and_blocks_candidates(self) -> None:
         fixture = copy.deepcopy(self.fixture)

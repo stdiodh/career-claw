@@ -109,6 +109,22 @@
             ],
             "created_at": "2026-07-10T00:00:00Z",
             "updated_at": "2026-07-15T00:00:00Z"
+          },
+          {
+            "number": 201,
+            "title": "Add request mapping regression test",
+            "html_url": "https://github.com/spring-projects/spring-framework/issues/201",
+            "repository_url": "https://api.github.com/repos/spring-projects/spring-framework",
+            "state": "open",
+            "locked": false,
+            "assignee": null,
+            "assignees": [],
+            "labels": [
+              {"name": "status: ideal-for-contribution"},
+              {"name": "in: web"}
+            ],
+            "created_at": "2026-07-09T00:00:00Z",
+            "updated_at": "2026-07-14T00:00:00Z"
           }
         ]
       }
@@ -138,6 +154,23 @@
             ],
             "created_at": "2026-07-12T00:00:00Z",
             "updated_at": "2026-07-15T00:00:00Z"
+          },
+          {
+            "number": 301,
+            "title": "Add observation filter regression test",
+            "html_url": "https://github.com/micrometer-metrics/micrometer/issues/301",
+            "repository_url": "https://api.github.com/repos/micrometer-metrics/micrometer",
+            "state": "open",
+            "locked": false,
+            "assignee": null,
+            "assignees": [],
+            "labels": [
+              {"name": "help wanted"},
+              {"name": "module: micrometer-core"},
+              {"name": "java"}
+            ],
+            "created_at": "2026-07-08T00:00:00Z",
+            "updated_at": "2026-07-14T00:00:00Z"
           }
         ]
       }
@@ -163,6 +196,23 @@
             ],
             "created_at": "2026-07-11T00:00:00Z",
             "updated_at": "2026-07-15T00:00:00Z"
+          },
+          {
+            "number": 401,
+            "title": "Add PostgreSQL startup regression sample",
+            "html_url": "https://github.com/testcontainers/testcontainers-java/issues/401",
+            "repository_url": "https://api.github.com/repos/testcontainers/testcontainers-java",
+            "state": "open",
+            "locked": false,
+            "assignee": null,
+            "assignees": [],
+            "labels": [
+              {"name": "good first issue"},
+              {"name": "modules/postgres"},
+              {"name": "java"}
+            ],
+            "created_at": "2026-07-07T00:00:00Z",
+            "updated_at": "2026-07-14T00:00:00Z"
           }
         ]
       }
@@ -186,7 +236,7 @@
         "author_association": "NONE",
         "created_at": "2026-07-12T00:00:00Z",
         "updated_at": "2026-07-15T00:00:00Z",
-        "body": "## Scope\nAdd a focused convention test in micrometer-core for blank tag values.\n\n## Acceptance criteria\n- [ ] The new test captures the expected convention behavior.\n- [ ] Existing core tests remain green.\n\n## Reproduction\nRun ./gradlew :micrometer-core:test before and after the change."
+        "body": "## Scope\nAdd a focused convention test in micrometer-core for blank tag values.\n\n## Acceptance criteria\n- [ ] The new test captures the expected convention behavior.\n- [ ] Existing core tests remain green.\n\n## Reproduction\nRun ./gradlew :micrometer-core:test before and after the change.\n\nOpen question: we still need to decide which observation API to change."
       }
     },
     "comments:micrometer-metrics/micrometer#300": {
@@ -200,6 +250,30 @@
       ]
     },
     "timeline:micrometer-metrics/micrometer#300": {"body": []},
+    "detail:micrometer-metrics/micrometer#301": {
+      "body": {
+        "number": 301,
+        "title": "Add observation filter regression test",
+        "html_url": "https://github.com/micrometer-metrics/micrometer/issues/301",
+        "repository_url": "https://api.github.com/repos/micrometer-metrics/micrometer",
+        "state": "open",
+        "locked": false,
+        "assignee": null,
+        "assignees": [],
+        "labels": [
+          {"name": "help wanted"},
+          {"name": "module: micrometer-core"},
+          {"name": "java"}
+        ],
+        "user": {"login": "maintainer", "type": "User"},
+        "author_association": "MEMBER",
+        "created_at": "2026-07-08T00:00:00Z",
+        "updated_at": "2026-07-14T00:00:00Z",
+        "body": "## Scope\nAdd an observation filter regression test in micrometer-core for blank tag values.\n\n## Acceptance criteria\n- [ ] The new test captures the expected filter behavior.\n- [ ] Existing core tests remain green.\n\n## Reproduction\nRun ./gradlew :micrometer-core:test before and after the change."
+      }
+    },
+    "comments:micrometer-metrics/micrometer#301": {"body": []},
+    "timeline:micrometer-metrics/micrometer#301": {"body": []},
     "detail:testcontainers/testcontainers-java#400": {
       "body": {
         "number": 400,
@@ -251,10 +325,33 @@
         "author_association": "MEMBER",
         "created_at": "2026-07-10T00:00:00Z",
         "updated_at": "2026-07-15T00:00:00Z",
-        "body": "## Scope\nUpdate the web binding test to document the target method behavior.\n\n## Acceptance criteria\n- [ ] The focused test captures the expected result.\n- [ ] Existing web tests remain green.\n\n## Reproduction\nRun ./gradlew :spring-web:test before and after the change."
+        "body": "## Scope\nUpdate the web binding test to document the target method behavior.\n\n## Acceptance criteria\n- [ ] The focused test captures the expected result.\n- [ ] Existing web tests remain green.\n\n## Reproduction\nRun ./gradlew :spring-web:test before and after the change.\n\nOpen question: we still need to decide which binding API to change."
       }
     },
     "comments:spring-projects/spring-framework#200": {"body": []},
-    "timeline:spring-projects/spring-framework#200": {"body": []}
+    "timeline:spring-projects/spring-framework#200": {"body": []},
+    "detail:spring-projects/spring-framework#201": {
+      "body": {
+        "number": 201,
+        "title": "Add request mapping regression test",
+        "html_url": "https://github.com/spring-projects/spring-framework/issues/201",
+        "repository_url": "https://api.github.com/repos/spring-projects/spring-framework",
+        "state": "open",
+        "locked": false,
+        "assignee": null,
+        "assignees": [],
+        "labels": [
+          {"name": "status: ideal-for-contribution"},
+          {"name": "in: web"}
+        ],
+        "user": {"login": "maintainer", "type": "User"},
+        "author_association": "MEMBER",
+        "created_at": "2026-07-09T00:00:00Z",
+        "updated_at": "2026-07-14T00:00:00Z",
+        "body": "## Scope\nAdd a focused request mapping regression test in spring-web for the target method behavior.\n\n## Acceptance criteria\n- [ ] The new test captures the expected result.\n- [ ] Existing web tests remain green.\n\n## Reproduction\nRun ./gradlew :spring-web:test before and after the change."
+      }
+    },
+    "comments:spring-projects/spring-framework#201": {"body": []},
+    "timeline:spring-projects/spring-framework#201": {"body": []}
   }
 }
