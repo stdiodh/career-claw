@@ -41,13 +41,20 @@ class DocumentationContractTests(unittest.TestCase):
     def test_readme_states_the_current_oss_and_document_contract(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         for marker in (
-            "주간 최대 19회",
-            "백엔드 실무`, `PS`, `OSS 기여 준비`, `백엔드 연결 CS 지식",
+            "`오늘의 PS`와 `공식 Spring 새소식` 두 영역",
+            "실행당 최대 34회",
+            "최대 8개",
+            "최종 OSS 후보 최대 2개",
+            "./career-feed oss",
             "configs/delivery-schedule.json",
             "Spring Security는 학습 lab에는 남아 있지만",
             "실제 원격 동작 기준은 기본 브랜치에 병합된 commit",
             "한국어 README를 단일 기준으로 관리합니다",
-            "./career-feed done backend",
+            "일반 AI 동향, 블로그, 뉴스 사이트, 소셜 미디어, 투자 뉴스 수집은 범위 밖",
+            "`published_at` 기준 최근 14일",
+            "draft와 prerelease는 제외",
+            "100개씩 최대 10페이지를 끝까지 확인",
+            "더 오래된 항목으로 대체하지 않고 전체를 fail closed",
         ):
             with self.subTest(marker=marker):
                 self.assertIn(marker, readme)

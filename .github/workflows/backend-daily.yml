@@ -31,8 +31,18 @@ jobs:
         with:
           python-version: "3.x"
 
+      - name: Collect official Spring updates
+        continue-on-error: true
+        run: |
+          rm -f reports/spring-updates.json
+          python3 scripts/collect_spring_updates.py \
+            --live-dry-run \
+            --output reports/spring-updates.json
+
       - name: Generate deterministic brief
-        run: python3 scripts/generate_backend_daily.py
+        run: >-
+          python3 scripts/generate_backend_daily.py
+          --spring-updates reports/spring-updates.json
 
       - name: Show brief in run summary
         run: cat reports/backend-daily.md >> "${GITHUB_STEP_SUMMARY}"

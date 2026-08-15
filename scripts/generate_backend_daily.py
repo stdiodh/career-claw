@@ -1,26 +1,23 @@
 #!/usr/bin/env python3
-"""Render a deterministic backend, PS, OSS-prep, and applied-CS brief."""
+"""Render a deterministic PS and official Spring update brief."""
 
 from __future__ import annotations
 
 import argparse
-import json
-import sys
+from dataclasses import dataclass
 from datetime import date, datetime, timezone
+import json
 from pathlib import Path
+import re
+import sys
 from typing import Any
+from urllib.parse import unquote, urlsplit
 from zoneinfo import ZoneInfo
 
 try:
-    from . import check_oss_delivery_gate as oss_gate
-    from . import collect_oss_candidates as oss_collector
     from . import sync_delivery_schedule as sync_schedule
-    from . import verify_curriculum
 except ImportError:
-    import check_oss_delivery_gate as oss_gate
-    import collect_oss_candidates as oss_collector
     import sync_delivery_schedule as sync_schedule
-    import verify_curriculum
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,14 +25,13 @@ BACKEND_CONFIG = ROOT / "configs/backend-practice.json"
 PS_CONFIG = ROOT / "configs/ps-problems.json"
 PROGRESS_FILE = ROOT / "data/progress.json"
 OUTPUT_FILE = ROOT / "reports/backend-daily.md"
+SPRING_UPDATES_FILE = ROOT / "reports/spring-updates.json"
 MATRIX_CONFIG = ROOT / "configs/curriculum-matrix.json"
 PROFILE_CONFIG = ROOT / "configs/verification-profile.json"
 TAXONOMY_CONFIG = ROOT / "configs/competency-taxonomy.json"
 JOB_MARKET_AUDIT = ROOT / "audits/job-market-2026q3.json"
 VERIFICATION_MANIFEST = ROOT / "data/curriculum-verification.json"
 LAB_DIR = ROOT / "lab"
-OSS_CONFIG = ROOT / "configs/oss-repositories.json"
-OSS_GATE = ROOT / "configs/oss-delivery-gate.json"
 SCHEDULE_CONFIG = ROOT / sync_schedule.CONFIG_PATH
 DEFAULT_TIMEZONE = "Asia/Seoul"
 
@@ -53,23 +49,27 @@ BACKEND_REQUIRED_FIELDS = {
     "check_question",
 }
 PS_REQUIRED_FIELDS = {"id", "title", "url", "level", "first_thought"}
+SPRING_UPDATE_FIELDS = {"title", "date", "link", "source"}
+SPRING_RELEASE_PATHS = {
+    "Spring Boot": "/spring-projects/spring-boot/releases/tag/",
+    "Spring AI": "/spring-projects/spring-ai/releases/tag/",
+}
+MARKDOWN_SPECIAL_RE = re.compile(r"([\\`*_[\]()<>~|#])")
+
+
+@dataclass(frozen=True)
+class SpringUpdateBrief:
+    status: str
+    item: dict[str, str] | None = None
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--date", help="Report date in YYYY-MM-DD format.")
     parser.add_argument("--output", type=Path, default=OUTPUT_FILE)
-    parser.add_argument("--backend-config", type=Path, default=BACKEND_CONFIG)
     parser.add_argument("--ps-config", type=Path, default=PS_CONFIG)
     parser.add_argument("--progress", type=Path, default=PROGRESS_FILE)
-    parser.add_argument("--matrix", type=Path, default=MATRIX_CONFIG)
-    parser.add_argument("--profile", type=Path, default=PROFILE_CONFIG)
-    parser.add_argument("--taxonomy", type=Path, default=TAXONOMY_CONFIG)
-    parser.add_argument("--job-market-audit", type=Path, default=JOB_MARKET_AUDIT)
-    parser.add_argument("--verification-manifest", type=Path, default=VERIFICATION_MANIFEST)
-    parser.add_argument("--lab", type=Path, default=LAB_DIR)
-    parser.add_argument("--oss-config", type=Path, default=OSS_CONFIG)
-    parser.add_argument("--oss-gate", type=Path, default=OSS_GATE)
+    parser.add_argument("--spring-updates", type=Path, default=SPRING_UPDATES_FILE)
     parser.add_argument("--schedule-config", type=Path, default=SCHEDULE_CONFIG)
     output_mode = parser.add_mutually_exclusive_group()
     output_mode.add_argument(
@@ -92,7 +92,6 @@ def read_json(path: Path) -> dict[str, Any]:
         raise RuntimeError(f"Required file does not exist: {path}") from exc
     except json.JSONDecodeError as exc:
         raise RuntimeError(f"Invalid JSON in {path}: {exc}") from exc
-
     if not isinstance(payload, dict):
         raise RuntimeError(f"JSON root must be an object: {path}")
     return payload
@@ -110,14 +109,8 @@ def require_string_list(value: object, field: str, item_id: str) -> None:
         require_string(entry, field, item_id)
 
 
-def is_verified_lesson(lesson: dict[str, Any]) -> bool:
-    verification = lesson.get("_verification")
-    return (
-        isinstance(verification, dict)
-        and verification.get("status") == "VERIFIED"
-    )
-
-
+# These backend catalog helpers remain for the standalone progress command. Daily
+# generation below never loads the curriculum, lab, manifest, or OSS contracts.
 def load_backend_lessons(path: Path) -> list[dict[str, Any]]:
     payload = read_json(path)
     lessons = payload.get("lessons")
@@ -142,7 +135,6 @@ def load_backend_lessons(path: Path) -> list[dict[str, Any]]:
         if item_id in seen:
             raise RuntimeError(f"Duplicate backend lesson id: {item_id}")
         seen.add(item_id)
-
     return lessons
 
 
@@ -155,6 +147,11 @@ def load_verified_backend_lessons(
     lab_dir: Path = LAB_DIR,
     job_market_path: Path = JOB_MARKET_AUDIT,
 ) -> list[dict[str, Any]]:
+    try:
+        from . import verify_curriculum
+    except ImportError:
+        import verify_curriculum
+
     lessons = load_backend_lessons(backend_path)
     summary = verify_curriculum.verify_paths(
         backend_path,
@@ -189,7 +186,6 @@ def load_verified_backend_lessons(
             "test_ids": entries[lesson["id"]]["lab"]["test_ids"],
         }
         verified.append(enriched)
-
     if not verified:
         raise RuntimeError("No VERIFIED core backend lessons are available")
     return verified
@@ -231,7 +227,6 @@ def load_ps_tracks(path: Path) -> list[dict[str, Any]]:
             if item_id in seen_problems:
                 raise RuntimeError(f"Duplicate PS problem id: {item_id}")
             seen_problems.add(item_id)
-
     return tracks
 
 
@@ -262,19 +257,18 @@ def validate_progress_ids(
     progress: dict[str, list[str]],
 ) -> None:
     lesson_ids = {str(lesson["id"]) for lesson in lessons}
-    problem_ids = ps_problem_ids(tracks)
     unknown_lessons = sorted(set(progress["backend_completed"]) - lesson_ids)
-    unknown_problems = sorted(set(progress["ps_solved"]) - problem_ids)
     if unknown_lessons:
         raise RuntimeError(f"Unknown completed backend id(s): {', '.join(unknown_lessons)}")
+    validate_ps_progress_ids(tracks, progress)
+
+
+def validate_ps_progress_ids(
+    tracks: list[dict[str, Any]], progress: dict[str, list[str]]
+) -> None:
+    unknown_problems = sorted(set(progress["ps_solved"]) - ps_problem_ids(tracks))
     if unknown_problems:
         raise RuntimeError(f"Unknown solved PS id(s): {', '.join(unknown_problems)}")
-
-
-def select_backend_lesson(
-    lessons: list[dict[str, Any]], completed: set[str]
-) -> dict[str, Any] | None:
-    return next((lesson for lesson in lessons if lesson["id"] not in completed), None)
 
 
 def select_ps_problem(
@@ -287,112 +281,70 @@ def select_ps_problem(
     return None
 
 
-def select_rotating_item(
-    items: list[dict[str, Any]], report_date: date
-) -> dict[str, Any] | None:
-    if not items:
-        return None
-    return items[report_date.toordinal() % len(items)]
+def validate_spring_release_url(link: str, source: str) -> None:
+    prefix = SPRING_RELEASE_PATHS[source]
+    parsed = urlsplit(link)
+    if (
+        parsed.scheme != "https"
+        or parsed.netloc != "github.com"
+        or parsed.query
+        or parsed.fragment
+        or not parsed.path.startswith(prefix)
+    ):
+        raise RuntimeError("Spring update link is outside the official release path")
+    tag = unquote(parsed.path.removeprefix(prefix))
+    if not tag or "/" in tag or link != f"https://github.com{parsed.path}":
+        raise RuntimeError("Spring update release tag path is invalid")
 
 
-def select_cs_lesson(
-    lessons: list[dict[str, Any]], report_date: date
-) -> dict[str, Any] | None:
-    verified = [lesson for lesson in lessons if is_verified_lesson(lesson)]
-    return select_rotating_item(verified, report_date)
-
-
-def load_oss_brief(
-    report_date: date,
-    evaluation_time: datetime,
-    config_path: Path = OSS_CONFIG,
-    gate_path: Path = OSS_GATE,
-) -> dict[str, Any]:
+def load_spring_update(path: Path, reference_date: date) -> dict[str, str] | None:
     try:
-        config = oss_collector.load_config(config_path, as_of=report_date)
-        gate = oss_gate.read_object(gate_path)
-        progress = oss_gate.evaluate_gate(
-            gate,
-            oss_gate.allowed_repositories(config),
-            now=evaluation_time,
-        )
-        profile = select_rotating_item(config["repositories"], report_date)
-        if profile is None:
-            raise RuntimeError("OSS allowlist has no repository profiles")
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise RuntimeError(f"Spring update result does not exist: {path}") from exc
+    except UnicodeError as exc:
+        raise RuntimeError(f"Spring update result is not valid UTF-8: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Invalid Spring update JSON in {path}: {exc}") from exc
+    if payload is None:
+        return None
+    if not isinstance(payload, dict) or set(payload) != SPRING_UPDATE_FIELDS:
+        raise RuntimeError("Spring update result must match the exact item schema")
+    if not all(isinstance(payload[field], str) and payload[field].strip() for field in payload):
+        raise RuntimeError("Spring update fields must be non-empty strings")
+    title = payload["title"]
+    if any(ord(character) < 32 for character in title):
+        raise RuntimeError("Spring update title contains control characters")
+    source = payload["source"]
+    if source not in SPRING_RELEASE_PATHS:
+        raise RuntimeError("Spring update source is not allowlisted")
+    try:
+        published_date = date.fromisoformat(payload["date"])
+    except ValueError as exc:
+        raise RuntimeError("Spring update date must use YYYY-MM-DD") from exc
+    if published_date.isoformat() != payload["date"]:
+        raise RuntimeError("Spring update date must use YYYY-MM-DD")
+    age = reference_date - published_date
+    if age.days < 0:
+        raise RuntimeError("Spring update date is in the future")
+    if age.days > 14:
+        raise RuntimeError("Spring update result is older than 14 days")
+    validate_spring_release_url(payload["link"], source)
+    return {field: payload[field] for field in ("title", "date", "link", "source")}
+
+
+def load_spring_update_brief(path: Path, reference_date: date) -> SpringUpdateBrief:
+    try:
+        item = load_spring_update(path, reference_date)
     except (OSError, RuntimeError):
-        return {"available": False}
-
-    return {
-        "available": True,
-        "profile": profile,
-        "progress": progress,
-        "requirements": oss_gate.REQUIREMENTS,
-    }
+        return SpringUpdateBrief("unavailable")
+    if item is None:
+        return SpringUpdateBrief("empty")
+    return SpringUpdateBrief("available", item)
 
 
-def render_links(urls: list[str]) -> list[str]:
-    return [f"  - [참고 자료 {index}]({url})" for index, url in enumerate(urls, start=1)]
-
-
-def resolve_delivery_datetime(
-    report_date: date,
-    timezone_name: str,
-    hour: int,
-    minute: int,
-) -> datetime:
-    local_delivery = datetime(
-        report_date.year,
-        report_date.month,
-        report_date.day,
-        hour,
-        minute,
-        tzinfo=ZoneInfo(timezone_name),
-    )
-    return local_delivery.astimezone(timezone.utc)
-
-
-def render_backend_section(lesson: dict[str, Any] | None) -> list[str]:
-    lines = ["## 오늘의 백엔드 실무", ""]
-    if lesson is None:
-        return lines + [
-            "모든 백엔드 실습을 완료했습니다. 새 주제를 추가하거나 진행 상태를 초기화하세요.",
-            "",
-        ]
-
-    lines.extend(
-        [
-            f"### {lesson['title']}",
-            f"- 트랙: {lesson['track']}",
-            f"- 준비: {lesson['setup']}",
-            f"- 상황: {lesson['situation']}",
-            "",
-            "실습:",
-        ]
-    )
-    lines.extend(
-        f"{index}. {step}"
-        for index, step in enumerate(lesson["practice_steps"], start=1)
-    )
-    lines.extend(
-        [
-            "",
-            f"남길 증거: {lesson['evidence']}",
-            f"완료 ID: `{lesson['id']}`",
-        ]
-    )
-    verification = lesson.get("_verification")
-    if isinstance(verification, dict):
-        test_ids = ", ".join(verification["test_ids"])
-        lines.extend(
-            [
-                f"검증 profile: `{verification['profile_id']}`",
-                f"검증 명령: `{verification['verify_command']}`",
-                f"검증 test ID: `{test_ids}`",
-            ]
-        )
-    lines.append(f"완료 처리: `./career-feed done backend {lesson['id']}`")
-    lines.append("")
-    return lines
+def escape_markdown_text(value: str) -> str:
+    return MARKDOWN_SPECIAL_RE.sub(r"\\\1", value)
 
 
 def render_ps_section(
@@ -414,112 +366,55 @@ def render_ps_section(
     ]
 
 
-def render_oss_section(oss_brief: dict[str, Any]) -> list[str]:
-    lines = ["## 오늘의 OSS 기여 준비", ""]
-    if not oss_brief["available"]:
+def render_spring_update_section(brief: SpringUpdateBrief) -> list[str]:
+    lines = ["## 공식 Spring 새소식", ""]
+    if brief.status == "unavailable":
         return lines + [
-            "OSS 계약을 검증하지 못해 오늘은 저장소와 이슈 후보를 노출하지 않습니다.",
-            "- 검증 상태: config 또는 gate 계약 오류로 fail-closed",
+            "공식 Spring 새소식 수집 결과를 검증하지 못해 오늘은 항목을 노출하지 않습니다.",
+            "- 검증 상태: 수집 결과 누락 또는 계약 오류로 fail-closed",
             "",
         ]
-
-    profile = oss_brief["profile"]
-    gate_progress = oss_brief["progress"]
-    requirements = oss_brief["requirements"]
-    repository = profile["repository"]
-    build_command = profile["eligibility_evidence"]["build_test"]["command"]
-    lines.extend(
-        [
-            f"### [{repository}](https://github.com/{repository})",
-            f"- 관련 이유: {profile['relevance_reason']}",
-            f"- 기여 가이드: {profile['contributing_url']}",
-            f"- 첫 build/test: `{build_command}`",
-            f"- 전송 gate: `{gate_progress['status']}`",
-            "- Shadow 진행: "
-            f"연속 {gate_progress['consecutive_qualifying_weeks']}/"
-            f"{requirements['minimum_consecutive_qualifying_weeks']}주 · "
-            f"후보 리뷰 {gate_progress['unique_candidates']}/"
-            f"{requirements['minimum_unique_candidates']}개",
-        ]
-    )
-    if gate_progress["status"] == "LOCKED":
-        lines.append("- 현재는 저장소 온보딩만 제공하며 실제 이슈 후보는 노출하지 않습니다.")
-    lines.append("")
-    return lines
-
-
-def render_cs_section(cs_lesson: dict[str, Any] | None) -> list[str]:
-    lines = ["## 오늘의 백엔드 연결 CS 지식", ""]
-    if cs_lesson is None:
-        return lines + ["현재 노출할 수 있는 VERIFIED CS 연결 주제가 없습니다.", ""]
-
-    lines.extend(
-        [
-            f"### {cs_lesson['track']} — {cs_lesson['title']}",
-            f"- 핵심 개념: {cs_lesson['core_concept']}",
-            f"- 실패 모드: {cs_lesson['failure_mode']}",
-            f"- 확인 질문: {cs_lesson['check_question']}",
+    if brief.status == "empty":
+        return lines + [
+            "최근 14일 내 공식 Spring Boot 또는 Spring AI 릴리스가 없습니다.",
             "",
-            "공식 참고:",
         ]
-    )
-    lines.extend(render_links(cs_lesson["official_refs"][:2]))
-    lines.append("")
-    return lines
+    if brief.status != "available" or brief.item is None:
+        raise RuntimeError("Unknown Spring update brief status")
+    item = brief.item
+    return lines + [
+        f"### [{escape_markdown_text(item['title'])}]({item['link']})",
+        f"- 날짜: {item['date']}",
+        f"- 출처: {item['source']}",
+        "",
+    ]
 
 
 def render_report(
     report_date: date,
-    lessons: list[dict[str, Any]],
     tracks: list[dict[str, Any]],
     progress: dict[str, list[str]],
-    oss_config_path: Path = OSS_CONFIG,
-    oss_gate_path: Path = OSS_GATE,
+    spring_update: SpringUpdateBrief,
     report_timezone: str = DEFAULT_TIMEZONE,
-    report_hour: int = 9,
-    report_minute: int = 0,
 ) -> str:
-    lesson_ids = {lesson["id"] for lesson in lessons}
-    completed = set(progress["backend_completed"]) & lesson_ids
     solved = set(progress["ps_solved"])
-    lesson = select_backend_lesson(lessons, completed)
     ps_selection = select_ps_problem(tracks, solved)
-    cs_lesson = (
-        lesson
-        if lesson is not None and is_verified_lesson(lesson)
-        else select_cs_lesson(lessons, report_date)
-    )
-    oss_brief = load_oss_brief(
-        report_date,
-        resolve_delivery_datetime(
-            report_date,
-            report_timezone,
-            report_hour,
-            report_minute,
-        ),
-        oss_config_path,
-        oss_gate_path,
-    )
-
     lines: list[str] = [
         "# Career Feed - Backend Daily",
         "",
         f"기준일: {report_date.isoformat()} · {report_timezone}",
         "",
-        f"진행: 백엔드 {len(completed)}/{len(lessons)} · PS {len(solved)}/{len(ps_problem_ids(tracks))}",
+        f"진행: PS {len(solved)}/{len(ps_problem_ids(tracks))}",
         "",
     ]
-    lines.extend(render_backend_section(lesson))
     lines.extend(render_ps_section(ps_selection))
-    lines.extend(render_oss_section(oss_brief))
-    lines.extend(render_cs_section(cs_lesson))
-
+    lines.extend(render_spring_update_section(spring_update))
     lines.extend(
         [
             "---",
             "",
-            "로컬에서는 각 항목의 `완료 처리` 명령을 실행합니다.",
-            "GitHub Actions의 `Mark Progress`에서는 종류와 완료 ID를 입력합니다.",
+            "로컬에서는 PS 항목의 `완료 처리` 명령을 실행합니다.",
+            "GitHub Actions의 `Mark Progress`에서는 PS와 완료 ID를 입력합니다.",
             "",
         ]
     )
@@ -545,29 +440,16 @@ def main() -> int:
     try:
         schedule = sync_schedule.load_schedule(args.schedule_config)
         report_date = resolve_date(args.date, schedule.timezone)
-        catalog_lessons = load_backend_lessons(args.backend_config)
-        lessons = load_verified_backend_lessons(
-            args.backend_config,
-            args.matrix,
-            args.profile,
-            args.taxonomy,
-            args.verification_manifest,
-            args.lab,
-            args.job_market_audit,
-        )
         tracks = load_ps_tracks(args.ps_config)
         progress = load_progress(args.progress)
-        validate_progress_ids(catalog_lessons, tracks, progress)
+        validate_ps_progress_ids(tracks, progress)
+        spring_update = load_spring_update_brief(args.spring_updates, report_date)
         report = render_report(
             report_date,
-            lessons,
             tracks,
             progress,
-            args.oss_config,
-            args.oss_gate,
+            spring_update,
             schedule.timezone,
-            schedule.hour,
-            schedule.minute,
         )
         if not args.stdout_only:
             args.output.parent.mkdir(parents=True, exist_ok=True)

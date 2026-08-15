@@ -341,6 +341,213 @@ class OssCollectorTests(unittest.TestCase):
         )
         self.assertNotIn("focused test captures the expected result", json.dumps(result))
 
+    def test_issue_form_empty_responses_are_not_feasibility_evidence(self) -> None:
+        for placeholder in (
+            "_No response_",
+            "Not provided for this issue.",
+            "No information is available.",
+            "I don't know.",
+            "Lorem ipsum placeholder text.",
+        ):
+            with self.subTest(placeholder=placeholder):
+                body = (
+                    f"### Description\n{placeholder}\n\n"
+                    f"### Expected Behavior\n{placeholder}\n\n"
+                    f"### Steps to Reproduce\n{placeholder}\n\n"
+                    f"### Additional context\n{placeholder}"
+                )
+
+                result = self.evaluate(self.framework_detail(body=body))
+
+                self.assertEqual(result["decision"], "MANUAL_REVIEW")
+                self.assertEqual(
+                    result["feasibility_evidence"],
+                    {
+                        "scope_defined": False,
+                        "acceptance_criteria_present": False,
+                        "reproduction_steps_present": False,
+                        "current_review_required": True,
+                    },
+                )
+                self.assertNotIn(placeholder, json.dumps(result))
+
+    def test_negative_absence_sentences_are_not_positive_evidence(self) -> None:
+        body = (
+            "### Description\n"
+            "There are no details about how to update the API behavior for this module.\n\n"
+            "### Expected Behavior\n"
+            "No one has specified what the API should return after the change.\n\n"
+            "### Steps to Reproduce\n"
+            "No one has explained how to run or reproduce the current behavior."
+        )
+
+        result = self.evaluate(self.framework_detail(body=body))
+
+        self.assertEqual(result["decision"], "MANUAL_REVIEW")
+        self.assertEqual(
+            result["feasibility_evidence"],
+            {
+                "scope_defined": False,
+                "acceptance_criteria_present": False,
+                "reproduction_steps_present": False,
+                "current_review_required": True,
+            },
+        )
+        self.assertEqual(
+            result["manual_review_reasons"],
+            [
+                "scope_evidence_insufficient",
+                "acceptance_criteria_missing",
+                "reproduction_steps_missing",
+            ],
+        )
+
+    def test_adjacent_negative_phrases_and_negated_commands_are_not_evidence(self) -> None:
+        cases = (
+            (
+                "### Description\n"
+                "I have no idea how to update the API behavior for this module.\n\n"
+                "### Expected Behavior\n"
+                "I have no idea what the API should return after the change.\n\n"
+                "### Steps to Reproduce\n"
+                "1. Run nothing because I have no idea how to reproduce it."
+            ),
+            (
+                "### Description\n"
+                "Update the API behavior for an invalid request in this module.\n\n"
+                "### Expected Behavior\n"
+                "The API should return 400 for the invalid request.\n\n"
+                "### Steps to Reproduce\n"
+                "Do not run ./gradlew :spring-web:test because no usable reproducer exists."
+            ),
+            (
+                "### Description\n"
+                "TODO: update the documentation API behavior for the module contract.\n\n"
+                "### Expected Behavior\n"
+                "TBD: the implementation should preserve behavior and pass all checks.\n\n"
+                "### Test Plan\n"
+                "1. Run TODO verification when somebody defines it."
+            ),
+            (
+                "### Description\n"
+                "Update the documentation API behavior for every supported path.\n\n"
+                "### Expected Behavior\n"
+                "The API should return the expected response, but the exact behavior is TBD.\n\n"
+                "### Test Plan\n"
+                "Run ./gradlew :spring-web:test; TODO: add a focused reproducer later."
+            ),
+            (
+                "### Description\n"
+                "Update the API behavior, but I don't know which method should change.\n\n"
+                "### Expected Behavior\n"
+                "The API should return something, but I don't know what.\n\n"
+                "### Test Plan\n"
+                "Run ./gradlew :spring-web:test, but I don't know what this reproduces."
+            ),
+        )
+        for body in cases:
+            with self.subTest(body=body):
+                result = self.evaluate(self.framework_detail(body=body))
+
+                self.assertEqual(result["decision"], "MANUAL_REVIEW")
+                self.assertIn(
+                    "reproduction_steps_missing", result["manual_review_reasons"]
+                )
+
+    def test_unknown_domain_value_is_valid_positive_evidence(self) -> None:
+        body = (
+            "### Description\n"
+            "Update the API behavior so an unknown user receives a clear response.\n\n"
+            "### Expected Behavior\n"
+            "The API should return 404 for an unknown user.\n\n"
+            "### Steps to Reproduce\n"
+            "Run ./gradlew :spring-web:test with the focused fixture."
+        )
+
+        result = self.evaluate(self.framework_detail(body=body))
+
+        self.assertEqual(result["decision"], "READY_TO_ASK")
+        self.assertTrue(all(result["feasibility_evidence"].values()))
+
+    def test_common_positive_natural_language_is_valid_evidence(self) -> None:
+        body = (
+            "### Description\n"
+            "We need to update the API behavior for invalid headers in this module.\n\n"
+            "### Expected Behavior\n"
+            "A request with an invalid header should return 400.\n\n"
+            "### Steps to Reproduce\n"
+            "From the repository root, run ./gradlew :spring-web:test."
+        )
+
+        result = self.evaluate(self.framework_detail(body=body))
+
+        self.assertEqual(result["decision"], "READY_TO_ASK")
+        self.assertTrue(all(result["feasibility_evidence"].values()))
+
+    def test_allowlist_issue_template_sections_are_supported(self) -> None:
+        bodies = (
+            (
+                "**Describe the bug**\n"
+                "The observation API returns duplicate tags for an empty value.\n\n"
+                "**To Reproduce**\n"
+                "Run ./gradlew :spring-web:test with the focused fixture.\n\n"
+                "**Expected behavior**\n"
+                "The API should return one normalized tag."
+            ),
+            (
+                "## Expected Behavior\n"
+                "The rule should report one finding for the invalid declaration.\n\n"
+                "## Observed Behavior\n"
+                "The rule does not report the invalid declaration.\n\n"
+                "## Steps to Reproduce\n"
+                "Run ./gradlew :spring-web:test with the focused fixture."
+            ),
+        )
+        for body in bodies:
+            with self.subTest(body=body):
+                result = self.evaluate(self.framework_detail(body=body))
+
+                self.assertEqual(result["decision"], "READY_TO_ASK")
+                self.assertTrue(all(result["feasibility_evidence"].values()))
+
+    def test_solution_without_execution_steps_requires_manual_review(self) -> None:
+        body = (
+            "### Problem\n"
+            "The container API cannot configure the documented startup behavior.\n\n"
+            "### Solution\n"
+            "Add a method to the container class for the missing configuration.\n\n"
+            "### Benefit\n"
+            "Users can configure the container without a custom subclass."
+        )
+
+        result = self.evaluate(self.framework_detail(body=body))
+
+        self.assertEqual(result["decision"], "MANUAL_REVIEW")
+        self.assertFalse(
+            result["feasibility_evidence"]["reproduction_steps_present"]
+        )
+        self.assertIn("reproduction_steps_missing", result["manual_review_reasons"])
+
+    def test_todo_cleanup_is_not_treated_as_unresolved_work(self) -> None:
+        scopes = (
+            "Remove the TODO marker from the API documentation and add the example.",
+            "The goal is to remove the TODO marker from the API documentation and update the test.",
+        )
+        for scope in scopes:
+            with self.subTest(scope=scope):
+                body = (
+                    f"### Scope\n{scope}\n\n"
+                    "### Acceptance Criteria\n"
+                    "The documentation should contain the complete example and no TODO marker.\n\n"
+                    "### Test Plan\n"
+                    "Run ./gradlew :spring-web:test from the repository root."
+                )
+
+                result = self.evaluate(self.framework_detail(body=body))
+
+                self.assertEqual(result["decision"], "READY_TO_ASK")
+                self.assertTrue(all(result["feasibility_evidence"].values()))
+
     def test_uncertain_issue_body_requires_manual_review(self) -> None:
         cases = (
             (None, "issue_body_missing", False),
@@ -353,6 +560,14 @@ class OssCollectorTests(unittest.TestCase):
                 "Please fix this.",
                 "scope_evidence_insufficient",
                 False,
+            ),
+            (
+                "## Scope\nUpdate the web binding test to document the target method behavior. "
+                "Keep the focused change within the spring-web module.\n\n"
+                "## Acceptance criteria\n_No response_\n\n"
+                "## Reproduction\nRun ./gradlew :spring-web:test.",
+                "acceptance_criteria_missing",
+                True,
             ),
             (
                 self.framework_detail()["body"]
@@ -1098,6 +1313,7 @@ class OssCollectorTests(unittest.TestCase):
         self.assertIn("첫 30분:", markdown)
         self.assertIn("기준선 확인 → issue 재현 절차 실행", markdown)
         self.assertIn("선정 이유:", markdown)
+        self.assertIn("대상 저장소를 로컬에 clone한 뒤 저장소 루트", markdown)
         self.assertIn("현재 검토 필요: 예", markdown)
         self.assertIn("maintainer 문의 초안:", markdown)
         self.assertIn("Hi, is this issue still available?", markdown)

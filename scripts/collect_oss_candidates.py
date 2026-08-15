@@ -71,21 +71,57 @@ CLAIM_PATTERNS = (
     ),
 )
 ISSUE_TEMPLATE_COMMENT_PATTERN = re.compile(r"<!--.*?-->", re.S)
+ISSUE_TEMPLATE_EMPTY_RESPONSE_PATTERN = re.compile(
+    r"^\s*(?:[-*+]\s*)?(?:\[[ xX]\]\s*)?(?:[_*`~]+\s*)?"
+    r"(?:no response(?: provided)?|no (?:details?|information)(?: (?:is|was))? (?:available|provided)"
+    r"|not (?:provided|supplied|available|specified)(?: for (?:this|the) issue)?"
+    r"|(?:i|we) (?:do not|don't) know|left blank|unknown|unspecified"
+    r"|n/?a|none|not applicable|tbd|todo)"
+    r"(?:\s*[_*`~]+)?\s*[.!]?\s*$",
+    re.I | re.M,
+)
+EVIDENCE_HEADING_PATTERN = re.compile(
+    r"^\s*(?:#{1,6}\s+.*|\*\*[^*\n]+\*\*\s*:?)\s*$",
+    re.M,
+)
 MIN_SCOPE_BODY_CHARACTERS = 80
+MIN_EVIDENCE_SECTION_CHARACTERS = 12
 SCOPE_EVIDENCE_PATTERNS = (
     re.compile(
-        r"^\s{0,3}#{1,6}\s+(?:scope|description|task|problem|proposed change|범위|설명|작업|문제)\b",
+        r"^\s*(?:#{1,6}\s+|\*\*)"
+        r"(?:scope|description|describe the bug|task|problem|proposed change"
+        r"|observed behavior|solution|범위|설명|작업|문제)\b"
+        r"(?:\*\*)?\s*:?[ \t]*$",
         re.I | re.M,
     ),
     re.compile(
-        r"\b(?:add|change|document|fix|implement|remove|rename|replace|update)\b"
+        r"^\s*(?:[-*+]\s*)?"
+        r"(?:add|change|document|fix|implement|remove|rename|replace|update)\b"
         r"[^\n]{0,160}\b(?:api|behavior|class|documentation|method|module|test)\b",
-        re.I,
+        re.I | re.M,
+    ),
+)
+SCOPE_CONTENT_PATTERNS = (
+    SCOPE_EVIDENCE_PATTERNS[1],
+    re.compile(
+        r"^\s*(?:we need to|the (?:goal|task) is to|this (?:issue|change) (?:will|should))\s+"
+        r"(?:add|change|document|fix|implement|remove|rename|replace|update)\b"
+        r"[^\n]{0,160}\b(?:api|behavior|class|documentation|method|module|test)\b",
+        re.I | re.M,
+    ),
+    re.compile(
+        r"^\s*(?:the|a|an|when|using|calling|request|rule|api|method|module|test|container)\b"
+        r"[^\n]{0,200}\b(?:fails?|returns?|reports?|throws?|does not|cannot"
+        r"|unexpected|incorrect|error|exception|warning|behavior)\b",
+        re.I | re.M,
     ),
 )
 ACCEPTANCE_EVIDENCE_PATTERNS = (
     re.compile(
-        r"^\s{0,3}#{1,6}\s+(?:acceptance criteria|definition of done|expected (?:behavior|result)|완료 조건|기대 동작)\b",
+        r"^\s*(?:#{1,6}\s+|\*\*)"
+        r"(?:acceptance criteria|definition of done|expected (?:behavior|result)"
+        r"|benefit|solution|완료 조건|기대 동작)\b"
+        r"(?:\*\*)?\s*:?[ \t]*$",
         re.I | re.M,
     ),
     re.compile(
@@ -93,12 +129,77 @@ ACCEPTANCE_EVIDENCE_PATTERNS = (
         re.I | re.M,
     ),
 )
+ACCEPTANCE_CONTENT_PATTERNS = (
+    re.compile(
+        r"^\s*(?:[-*+]\s*(?:\[[ xX]\]\s*)?)?"
+        r"(?:a|an|the|it|when|then|existing|new|all|api|method|module|test|tests"
+        r"|users?|callers?|developers?|requests?|rule|container)\b"
+        r"[^\n]{0,180}\b(?:should|must|expect(?:ed)?|captures?|passes?|remains?"
+        r"|returns?|produces?|supports?|preserves?|prevents?|fails?|succeeds?|can|will)\b"
+        r"|(?:해야|기대|통과|유지|반환|생성|지원|방지|성공|실패)",
+        re.I | re.M,
+    ),
+    *SCOPE_CONTENT_PATTERNS[:2],
+)
 REPRODUCTION_EVIDENCE_PATTERNS = (
     re.compile(
-        r"^\s{0,3}#{1,6}\s+(?:reproducer|reproduction|steps to reproduce|test plan|verification|재현|검증)\b",
+        r"^\s*(?:#{1,6}\s+|\*\*)"
+        r"(?:reproducer|reproduction|steps to reproduce|to reproduce|test plan"
+        r"|verification|재현|검증)\b"
+        r"(?:\*\*)?\s*:?[ \t]*$",
         re.I | re.M,
     ),
     re.compile(r"(?:^|\s)\./gradlew(?:\s|$)", re.I),
+)
+REPRODUCTION_CONTENT_PATTERNS = (
+    re.compile(
+        r"^\s*(?:(?:\d+[.)]|[-*+])\s+)?"
+        r"(?:from the repository root,?\s+)?(?:run|execute)\s+"
+        r"`?\./gradlew(?:\s|`|$)",
+        re.I | re.M,
+    ),
+)
+EVIDENCE_ABSENCE_PATTERNS = (
+    re.compile(
+        r"^\s*(?:[-*+]\s*)?(?:\[[ xX]\]\s*)?(?:todo|tbd)\s*:"
+        r"|;\s*(?:todo|tbd)\s*:"
+        r"|\b(?:is|are|remains?)\s+(?:still\s+)?(?:a\s+)?(?:todo|tbd)\b"
+        r"|\bstill\s+(?:a\s+)?(?:todo|tbd)\b",
+        re.I | re.M,
+    ),
+    re.compile(
+        r"\b(?:there (?:is|are|was|were) )?no (?:available )?"
+        r"(?:details?|information|steps?|criteria|description|scope|reproducer|reproduction)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:no one|nobody)\b.{0,100}\b"
+        r"(?:specified|explained|provided|documented|defined|decided|knows?)\b",
+        re.I | re.S,
+    ),
+    re.compile(
+        r"\b(?:has|have|is|are|was|were) not (?:yet )?"
+        r"(?:specified|explained|provided|documented|defined|decided|known)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:do not|don't|cannot|can't|unable to)\s+"
+        r"(?:run|execute|reproduce|verify|실행|재현|검증)\b",
+        re.I,
+    ),
+    re.compile(r"\b(?:i|we) have no idea\b", re.I),
+    re.compile(r"\bi (?:do not|don't) know\b", re.I),
+    re.compile(
+        r"\bremains? to be (?:determined|decided|defined|specified)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\bno (?:failure|bug|issue|behavior|problem)\b.{0,60}\b"
+        r"(?:reproducible|reproduced)\b",
+        re.I,
+    ),
+    re.compile(r"\b(?:return|produce) something\b", re.I),
+    re.compile(r"\brun nothing\b|\bno usable reproducer\b", re.I),
 )
 UNDECIDED_DESIGN_PATTERNS = (
     re.compile(r"\b(?:design\s+(?:is\s+)?tbd|not yet decided|to be decided|undecided)\b", re.I),
@@ -759,6 +860,35 @@ def comment_claims_work(comment: dict[str, Any]) -> bool:
     return not is_bot(comment.get("user")) and text_claims_work(comment.get("body"))
 
 
+def substantive_text(value: str, *, remove_headings: bool = False) -> str:
+    cleaned = ISSUE_TEMPLATE_COMMENT_PATTERN.sub("", value)
+    cleaned = ISSUE_TEMPLATE_EMPTY_RESPONSE_PATTERN.sub("", cleaned)
+    if remove_headings:
+        cleaned = EVIDENCE_HEADING_PATTERN.sub("", cleaned)
+    return re.sub(r"[\W_]+", "", cleaned)
+
+
+def section_has_substantive_content(
+    body: str,
+    patterns: tuple[re.Pattern[str], ...],
+    content_patterns: tuple[re.Pattern[str], ...],
+) -> bool:
+    for pattern in patterns:
+        for match in pattern.finditer(body):
+            remainder = body[match.end() :]
+            next_heading = EVIDENCE_HEADING_PATTERN.search(remainder)
+            section = remainder[: next_heading.start()] if next_heading else remainder
+            if (
+                len(substantive_text(section)) >= MIN_EVIDENCE_SECTION_CHARACTERS
+                and not any(
+                    pattern.search(section) for pattern in EVIDENCE_ABSENCE_PATTERNS
+                )
+                and any(pattern.search(section) for pattern in content_patterns)
+            ):
+                return True
+    return False
+
+
 def feasibility_evidence(
     detail: dict[str, Any],
 ) -> tuple[dict[str, bool], list[str]]:
@@ -768,17 +898,40 @@ def feasibility_evidence(
         if isinstance(raw_body, str)
         else ""
     )
-    body_present = bool(visible_body)
+    body_present = bool(substantive_text(visible_body, remove_headings=True))
     scope_defined = (
         body_present
-        and len(re.sub(r"\s+", "", visible_body)) >= MIN_SCOPE_BODY_CHARACTERS
-        and any(pattern.search(visible_body) for pattern in SCOPE_EVIDENCE_PATTERNS)
+        and len(substantive_text(visible_body, remove_headings=True))
+        >= MIN_SCOPE_BODY_CHARACTERS
+        and (
+            section_has_substantive_content(
+                visible_body,
+                SCOPE_EVIDENCE_PATTERNS[:1],
+                SCOPE_CONTENT_PATTERNS,
+            )
+            or (
+                not any(
+                    pattern.search(visible_body)
+                    for pattern in EVIDENCE_ABSENCE_PATTERNS
+                )
+                and any(
+                    pattern.search(visible_body)
+                    for pattern in SCOPE_CONTENT_PATTERNS
+                )
+            )
+        )
     )
-    acceptance_present = body_present and any(
-        pattern.search(visible_body) for pattern in ACCEPTANCE_EVIDENCE_PATTERNS
+    acceptance_present = body_present and section_has_substantive_content(
+        visible_body,
+        ACCEPTANCE_EVIDENCE_PATTERNS,
+        ACCEPTANCE_CONTENT_PATTERNS,
     )
-    reproduction_present = body_present and any(
-        pattern.search(visible_body) for pattern in REPRODUCTION_EVIDENCE_PATTERNS
+    reproduction_present = body_present and (
+        section_has_substantive_content(
+            visible_body,
+            REPRODUCTION_EVIDENCE_PATTERNS[:1],
+            REPRODUCTION_CONTENT_PATTERNS,
+        )
     )
     design_undecided = body_present and any(
         pattern.search(visible_body) for pattern in UNDECIDED_DESIGN_PATTERNS
@@ -790,8 +943,10 @@ def feasibility_evidence(
     )
 
     manual_reasons: list[str] = []
-    if not body_present:
+    if not visible_body:
         manual_reasons.append("issue_body_missing")
+    elif not body_present:
+        manual_reasons.append("issue_body_placeholder")
     elif not scope_defined:
         manual_reasons.append("scope_evidence_insufficient")
     if body_present and not acceptance_present:
@@ -1401,6 +1556,7 @@ def render_markdown(result: dict[str, Any]) -> str:
                     "- 실행 가능성 근거: "
                     f"범위 {scope_label} · 완료 조건 {acceptance_label} · "
                     f"재현 {reproduction_label}",
+                    "- 실행 위치: 대상 저장소를 로컬에 clone한 뒤 저장소 루트",
                     f"- 첫 30분: `{candidate['build_test_command']}` "
                     "기준선 확인 → issue 재현 절차 실행",
                     "- 현재 검토 필요: "

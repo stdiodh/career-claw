@@ -54,6 +54,23 @@ class WorkflowContractTests(unittest.TestCase):
 
         self.assertIn("GITHUB_STEP_SUMMARY", daily)
 
+    def test_daily_collects_spring_updates_fail_soft_before_generation(self) -> None:
+        daily = self.contents["backend-daily.yml"]
+        collect = daily.index("name: Collect official Spring updates")
+        remove_stale = daily.index("rm -f reports/spring-updates.json")
+        collector = daily.index("python3 scripts/collect_spring_updates.py")
+        generate = daily.index("name: Generate deterministic brief")
+
+        self.assertLess(collect, remove_stale)
+        self.assertLess(remove_stale, collector)
+        self.assertLess(collector, generate)
+        self.assertIn("continue-on-error: true", daily[collect:generate])
+        self.assertIn("--live-dry-run", daily[collect:generate])
+        self.assertIn(
+            "--spring-updates reports/spring-updates.json",
+            daily[generate:],
+        )
+
     def test_delivery_workflows_match_the_single_local_time_config(self) -> None:
         schedule = sync_schedule.load_schedule(ROOT / sync_schedule.CONFIG_PATH)
         self.assertFalse(schedule.enabled)
