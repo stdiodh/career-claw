@@ -1,20 +1,14 @@
-name: OSS Weekly
+name: OSS Recommendations
 
 on:
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: "Collect an artifact without sending it to Discord"
-        required: false
-        type: boolean
-        default: true
 
 permissions:
   contents: read
 
 jobs:
   collect:
-    name: Collect read-only OSS candidates
+    name: Collect read-only OSS recommendations
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -28,77 +22,21 @@ jobs:
           python-version: "3.x"
 
       - name: Collect candidates
-        id: collector
-        continue-on-error: true
         run: |
-          rm -f reports/oss-candidates.json reports/oss-candidates.md reports/oss-run-metadata.json
-          set +e
           python3 scripts/collect_oss_candidates.py \
             --live-dry-run \
             --json-output reports/oss-candidates.json \
             --markdown-output reports/oss-candidates.md
-          result=$?
-          set -e
-          echo "exit_code=${result}" >> "${GITHUB_OUTPUT}"
-          exit "${result}"
 
-      - name: Evaluate tracked Shadow delivery gate
-        id: delivery-gate
-        run: python3 scripts/check_oss_delivery_gate.py --github-output "${GITHUB_OUTPUT}"
+      - name: Publish summary
+        run: cat reports/oss-candidates.md >> "${GITHUB_STEP_SUMMARY}"
 
-      - name: Send verified candidates to Discord
-        id: discord
-        if: >-
-          ${{
-            github.repository == 'stdiodh/career-feed' &&
-            github.ref == 'refs/heads/main' &&
-            steps.collector.outputs.exit_code == '0' &&
-            steps.delivery-gate.outputs.approved == 'true' &&
-            vars.OSS_DELIVERY_ENABLED == 'true' &&
-            (github.event_name != 'workflow_dispatch' || inputs.dry_run == false)
-          }}
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL || secrets.DISCORD_WEBHOOK_KR_TECH_DAILY }}
-        run: |
-          set -euo pipefail
-          if [ -z "${DISCORD_WEBHOOK_URL}" ]; then
-            echo "DISCORD_WEBHOOK_URL is not configured; artifact generation still succeeded."
-            echo "sent=no" >> "${GITHUB_OUTPUT}"
-          else
-            # Count a started delivery conservatively even if a later chunk fails.
-            echo "sent=yes" >> "${GITHUB_OUTPUT}"
-            python3 scripts/send_discord.py reports/oss-candidates.md
-          fi
-
-      - name: Bind workflow provenance to Shadow evidence
-        if: ${{ always() }}
-        env:
-          COLLECTOR_EXIT_CODE: ${{ steps.collector.outputs.exit_code || '1' }}
-          DISCORD_SENT: ${{ steps.discord.outputs.sent || 'no' }}
-        run: |
-          python3 scripts/record_oss_shadow.py build-metadata \
-            --collector-exit-code "${COLLECTOR_EXIT_CODE}" \
-            --discord-sent "${DISCORD_SENT}" \
-            --artifact reports/oss-candidates.json \
-            --markdown reports/oss-candidates.md \
-            --output reports/oss-run-metadata.json
-
-      - name: Upload immutable Shadow evidence
-        if: ${{ always() && hashFiles('reports/oss-run-metadata.json') != '' }}
+      - name: Upload recommendation artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: oss-weekly-${{ github.run_id }}-${{ github.run_attempt }}
+          name: oss-recommendations-${{ github.run_id }}
           path: |
-            reports/oss-run-metadata.json
             reports/oss-candidates.json
             reports/oss-candidates.md
           if-no-files-found: error
-          retention-days: 90
-
-      - name: Fail incomplete collection after evidence upload
-        if: ${{ always() && steps.collector.outputs.exit_code != '0' }}
-        env:
-          COLLECTOR_EXIT_CODE: ${{ steps.collector.outputs.exit_code }}
-        run: |
-          echo "OSS collection was incomplete or failed closed (exit ${COLLECTOR_EXIT_CODE:-not-run})." >&2
-          exit 1
+          retention-days: 14
