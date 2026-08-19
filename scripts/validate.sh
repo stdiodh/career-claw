@@ -20,7 +20,7 @@ temporary="$(mktemp -d)"
 trap 'rm -rf "${temporary}"' EXIT
 python3 scripts/collect_oss_candidates.py \
   --fixture tests/fixtures/oss-api-responses.json \
-  --now 2026-07-16T00:00:00Z \
+  --now 2026-08-20T09:00:00Z \
   --json-output "${temporary}/oss-candidates.json" \
   --markdown-output "${temporary}/oss-candidates.md"
 python3 - "${temporary}/oss-candidates.json" <<'PY'
@@ -31,9 +31,11 @@ with open(sys.argv[1], encoding="utf-8") as handle:
     artifact = json.load(handle)
 assert artifact["complete"] is True
 assert artifact["request_count"] <= artifact["request_limit"]
-assert len(artifact["ready_to_ask"]) <= 2
+assert len(artifact["shortlist"]) <= 5
+assert len(artifact["recommendations"]) <= 3
+assert all(0 <= item["score"] <= 100 for item in artifact["recommendations"])
 PY
-grep -q '^# Career Feed - OSS Weekly$' "${temporary}/oss-candidates.md"
+grep -q '^# Daily OSS Contribution$' "${temporary}/oss-candidates.md"
 
 echo "==> Checking active workflows"
 test -f .github/workflows/oss-weekly.yml

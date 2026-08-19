@@ -1,41 +1,110 @@
 {
-  "schema_version": 3,
-  "checked_at": "2026-07-16",
-  "valid_until": "2026-10-14",
-  "audit": {
-    "performed_by": "Codex",
-    "performed_by_type": "AUTOMATED",
-    "method": "GitHub REST repository and pull request metadata plus official CONTRIBUTING/build instructions",
-    "human_attested": false
+  "schema_version": 4,
+  "reviewed_at": "2026-08-20",
+  "valid_until": "2026-11-18",
+  "profile": {
+    "strengths": [
+      "Kotlin / Spring Boot",
+      "Security and authentication",
+      "API and error contracts",
+      "Logging and operations",
+      "Testing",
+      "Technical documentation"
+    ],
+    "preferred_contribution_types": [
+      "docs",
+      "sample",
+      "test",
+      "javadoc",
+      "small-bug"
+    ]
   },
-  "excluded_repositories": [
-    {
-      "repository": "spring-projects/spring-security",
-      "checked_at": "2026-07-16",
-      "window_start": "2026-04-17",
-      "merged_pull_request_count": 132,
-      "external_human_merged_pull_request_count": 0,
-      "reason": "no_external_human_merged_pr_within_90_days",
-      "evidence_url": "https://github.com/spring-projects/spring-security/pulls?q=is%3Apr%20is%3Amerged%20merged%3A%3E%3D2026-04-17"
-    }
-  ],
   "policy": {
     "lookback_days": 180,
     "fresh_days": 90,
     "warm_days": 180,
     "search_per_repository": 10,
-    "detail_limit": 8,
-    "ready_limit": 2,
-    "max_ready_per_repository": 1,
-    "request_limit": 34
+    "shortlist_limit": 5,
+    "recommendation_limit": 3,
+    "request_limit": 21
+  },
+  "scoring": {
+    "skill_fit": 30,
+    "contribution_signal": 20,
+    "scope_clarity": 15,
+    "validation": 15,
+    "maintainer_activity": 10,
+    "learning_value": 10
   },
   "repositories": [
     {
-      "repository": "spring-projects/spring-boot",
-      "checked_at": "2026-07-16",
-      "include_labels": [
+      "repository": "spring-projects/spring-security",
+      "tier": "A",
+      "discovery_labels": [
+        "status: first-timers-only",
         "status: ideal-for-contribution",
-        "status: first-timers-only"
+        "theme: documentation"
+      ],
+      "strong_signal_labels": [
+        "status: first-timers-only",
+        "status: ideal-for-contribution"
+      ],
+      "exclude_labels": [
+        "status: blocked",
+        "status: waiting-for-feedback",
+        "type: epic"
+      ],
+      "contribution_type_by_label": {
+        "theme: documentation": "docs",
+        "in: test": "test",
+        "type: bug": "small-bug"
+      },
+      "default_contribution_type": "small-bug",
+      "contributing_url": "https://github.com/spring-projects/spring-security/blob/main/CONTRIBUTING.adoc",
+      "build_command": "./gradlew test",
+      "relevance_reason": "인증·인가, OAuth2, 테스트와 Spring 문서 경험을 직접 활용할 수 있습니다.",
+      "skill_fit": 30,
+      "learning_value": 10
+    },
+    {
+      "repository": "spring-projects/spring-restdocs",
+      "tier": "A",
+      "discovery_labels": [
+        "status: ideal-for-contribution",
+        "type: documentation"
+      ],
+      "strong_signal_labels": [
+        "status: ideal-for-contribution"
+      ],
+      "exclude_labels": [
+        "status: blocked",
+        "status: pending-design-work",
+        "status: waiting-for-feedback",
+        "status: waiting-for-votes"
+      ],
+      "contribution_type_by_label": {
+        "type: documentation": "docs",
+        "type: bug": "small-bug",
+        "type: regression": "test"
+      },
+      "default_contribution_type": "small-bug",
+      "contributing_url": "https://github.com/spring-projects/spring-restdocs/blob/main/CONTRIBUTING.adoc",
+      "build_command": "./gradlew test",
+      "relevance_reason": "API 문서 계약, 예제와 테스트 작성 경험을 직접 활용할 수 있습니다.",
+      "skill_fit": 30,
+      "learning_value": 10
+    },
+    {
+      "repository": "spring-projects/spring-boot",
+      "tier": "A",
+      "discovery_labels": [
+        "status: first-timers-only",
+        "status: ideal-for-contribution",
+        "type: documentation"
+      ],
+      "strong_signal_labels": [
+        "status: first-timers-only",
+        "status: ideal-for-contribution"
       ],
       "exclude_labels": [
         "status: blocked",
@@ -47,242 +116,18 @@
         "type: blocker",
         "type: epic"
       ],
-      "module_label_to_build_command": {
-        "theme: config-data": "./gradlew :core:spring-boot:test",
-        "theme: containers": "./gradlew :core:spring-boot-docker-compose:test",
-        "theme: observability": "./gradlew :module:spring-boot-actuator:test"
-      },
       "contribution_type_by_label": {
-        "type: documentation": "docs"
+        "type: documentation": "docs",
+        "type: wiki-documentation": "docs",
+        "type: bug": "small-bug",
+        "type: regression": "test"
       },
-      "default_contribution_type": "code/test",
-      "relevance_reason": "Spring Boot 설정, Actuator, 컨테이너 통합 코드를 직접 읽고 검증할 수 있습니다.",
+      "default_contribution_type": "small-bug",
       "contributing_url": "https://github.com/spring-projects/spring-boot/blob/main/CONTRIBUTING.adoc",
-      "eligibility_evidence": {
-        "repository_url": "https://github.com/spring-projects/spring-boot",
-        "archived": false,
-        "fork": false,
-        "issues_enabled": true,
-        "default_branch": "main",
-        "default_branch_commit_sha": "046d4c64bcc9ac9499963c4575024f321a1141a0",
-        "default_branch_commit_url": "https://github.com/spring-projects/spring-boot/commit/046d4c64bcc9ac9499963c4575024f321a1141a0",
-        "default_branch_pushed_at": "2026-07-15T18:43:23Z",
-        "external_merged_pull_request": {
-          "number": 50892,
-          "url": "https://github.com/spring-projects/spring-boot/pull/50892",
-          "author_login": "sourabh-bhattacharjee",
-          "author_type": "User",
-          "author_association": "CONTRIBUTOR",
-          "merged_at": "2026-07-15T18:37:55Z"
-        },
-        "build_test": {
-          "instructions_url": "https://github.com/spring-projects/spring-boot/blob/main/CONTRIBUTING.adoc",
-          "command": "./gradlew check",
-          "proprietary_environment_required": false
-        },
-        "jvm_backend_relevant": true
-      }
-    },
-    {
-      "repository": "spring-projects/spring-framework",
-      "checked_at": "2026-07-16",
-      "include_labels": [
-        "status: ideal-for-contribution"
-      ],
-      "exclude_labels": [
-        "status: blocked",
-        "status: waiting-for-feedback",
-        "status: waiting-for-internal-feedback",
-        "status: pending-design-work",
-        "status: on-hold"
-      ],
-      "module_label_to_build_command": {
-        "in: core": "./gradlew :spring-aop:test :spring-beans:test :spring-context:test :spring-core:test :spring-expression:test",
-        "in: data": "./gradlew :spring-jdbc:test :spring-orm:test :spring-oxm:test :spring-tx:test",
-        "in: test": "./gradlew :spring-test:test",
-        "in: web": "./gradlew :spring-web:test :spring-webflux:test :spring-webmvc:test :spring-websocket:test",
-        "theme: kotlin": "./gradlew test"
-      },
-      "contribution_type_by_label": {
-        "in: test": "test"
-      },
-      "default_contribution_type": "code/test",
-      "relevance_reason": "Spring Web, transaction, core container와 Kotlin 지원의 기반 구현을 학습할 수 있습니다.",
-      "contributing_url": "https://github.com/spring-projects/spring-framework/blob/main/CONTRIBUTING.md",
-      "eligibility_evidence": {
-        "repository_url": "https://github.com/spring-projects/spring-framework",
-        "archived": false,
-        "fork": false,
-        "issues_enabled": true,
-        "default_branch": "main",
-        "default_branch_commit_sha": "99b991b6f378c9804381a013530cb8393094b8d9",
-        "default_branch_commit_url": "https://github.com/spring-projects/spring-framework/commit/99b991b6f378c9804381a013530cb8393094b8d9",
-        "default_branch_pushed_at": "2026-07-13T08:16:37Z",
-        "external_merged_pull_request": {
-          "number": 36967,
-          "url": "https://github.com/spring-projects/spring-framework/pull/36967",
-          "author_login": "junhyeong9812",
-          "author_type": "User",
-          "author_association": "CONTRIBUTOR",
-          "merged_at": "2026-07-12T09:56:01Z"
-        },
-        "build_test": {
-          "instructions_url": "https://github.com/spring-projects/spring-framework/wiki/Build-from-Source#build-from-the-command-line",
-          "command": "./gradlew build",
-          "proprietary_environment_required": false
-        },
-        "jvm_backend_relevant": true
-      }
-    },
-    {
-      "repository": "detekt/detekt",
-      "checked_at": "2026-07-16",
-      "include_labels": [
-        "good first issue"
-      ],
-      "exclude_labels": [
-        "blocked",
-        "breaking change",
-        "discussion",
-        "needs type and symbol solving"
-      ],
-      "module_label_to_build_command": {
-        "cli": "./gradlew :detekt-cli:test",
-        "compiler-plugin": "./gradlew :detekt-compiler-plugin:test",
-        "core": "./gradlew :detekt-core:test",
-        "gradle-plugin": "./gradlew -p detekt-gradle-plugin test"
-      },
-      "contribution_type_by_label": {
-        "documentation": "docs"
-      },
-      "default_contribution_type": "code/test",
-      "relevance_reason": "Kotlin 정적 분석 규칙과 Gradle 플러그인 구현을 작은 범위에서 연습할 수 있습니다.",
-      "contributing_url": "https://github.com/detekt/detekt/blob/main/.github/CONTRIBUTING.md",
-      "eligibility_evidence": {
-        "repository_url": "https://github.com/detekt/detekt",
-        "archived": false,
-        "fork": false,
-        "issues_enabled": true,
-        "default_branch": "main",
-        "default_branch_commit_sha": "bc1e091e56ba5e9b516b639bfdc847129fb9d567",
-        "default_branch_commit_url": "https://github.com/detekt/detekt/commit/bc1e091e56ba5e9b516b639bfdc847129fb9d567",
-        "default_branch_pushed_at": "2026-07-16T01:00:36Z",
-        "external_merged_pull_request": {
-          "number": 9492,
-          "url": "https://github.com/detekt/detekt/pull/9492",
-          "author_login": "mwaddo",
-          "author_type": "User",
-          "author_association": "CONTRIBUTOR",
-          "merged_at": "2026-07-12T06:58:55Z"
-        },
-        "build_test": {
-          "instructions_url": "https://github.com/detekt/detekt/blob/main/.github/CONTRIBUTING.md",
-          "command": "./gradlew build -x dokkaGenerate",
-          "proprietary_environment_required": false
-        },
-        "jvm_backend_relevant": true
-      }
-    },
-    {
-      "repository": "micrometer-metrics/micrometer",
-      "checked_at": "2026-07-16",
-      "include_labels": [
-        "help wanted"
-      ],
-      "exclude_labels": [
-        "blocked",
-        "breaking-change",
-        "internal",
-        "needs: design work",
-        "question",
-        "waiting for team"
-      ],
-      "module_label_to_build_command": {
-        "module: micrometer-core": "./gradlew :micrometer-core:test",
-        "module: micrometer-observation": "./gradlew :micrometer-observation:test",
-        "module: micrometer-test": "./gradlew :micrometer-test:test"
-      },
-      "contribution_type_by_label": {
-        "doc-update": "docs",
-        "java": "code",
-        "kotlin": "code"
-      },
-      "default_contribution_type": "code/test",
-      "relevance_reason": "Spring 관측성의 기반인 meter와 observation 동작을 Java 테스트로 검증할 수 있습니다.",
-      "contributing_url": "https://github.com/micrometer-metrics/micrometer/blob/main/CONTRIBUTING.md",
-      "eligibility_evidence": {
-        "repository_url": "https://github.com/micrometer-metrics/micrometer",
-        "archived": false,
-        "fork": false,
-        "issues_enabled": true,
-        "default_branch": "main",
-        "default_branch_commit_sha": "442eccb19727950fa1de77b2109bae6e665deb5b",
-        "default_branch_commit_url": "https://github.com/micrometer-metrics/micrometer/commit/442eccb19727950fa1de77b2109bae6e665deb5b",
-        "default_branch_pushed_at": "2026-07-15T23:49:27Z",
-        "external_merged_pull_request": {
-          "number": 7509,
-          "url": "https://github.com/micrometer-metrics/micrometer/pull/7509",
-          "author_login": "schiemon",
-          "author_type": "User",
-          "author_association": "CONTRIBUTOR",
-          "merged_at": "2026-07-03T04:49:54Z"
-        },
-        "build_test": {
-          "instructions_url": "https://github.com/micrometer-metrics/micrometer/blob/main/CONTRIBUTING.md#testing-changes-locally",
-          "command": "./gradlew check",
-          "proprietary_environment_required": false
-        },
-        "jvm_backend_relevant": true
-      }
-    },
-    {
-      "repository": "testcontainers/testcontainers-java",
-      "checked_at": "2026-07-16",
-      "include_labels": [
-        "good first issue"
-      ],
-      "exclude_labels": [
-        "blocker",
-        "resolution/duplicate",
-        "resolution/invalid",
-        "resolution/waiting-for-info"
-      ],
-      "module_label_to_build_command": {
-        "modules/jdbc": "./gradlew :testcontainers-jdbc:test",
-        "modules/jupiter": "./gradlew :testcontainers-junit-jupiter:test",
-        "modules/kafka": "./gradlew :testcontainers-kafka:test",
-        "modules/postgres": "./gradlew :testcontainers-postgresql:test"
-      },
-      "contribution_type_by_label": {
-        "java": "code"
-      },
-      "default_contribution_type": "code/test",
-      "relevance_reason": "Java 기반 실제 인프라 integration test와 컨테이너 수명주기를 연습할 수 있습니다.",
-      "contributing_url": "https://github.com/testcontainers/testcontainers-java/blob/main/CONTRIBUTING.md",
-      "eligibility_evidence": {
-        "repository_url": "https://github.com/testcontainers/testcontainers-java",
-        "archived": false,
-        "fork": false,
-        "issues_enabled": true,
-        "default_branch": "main",
-        "default_branch_commit_sha": "deb78e1e6e47675f56e8d7b3f4747093d66f1baa",
-        "default_branch_commit_url": "https://github.com/testcontainers/testcontainers-java/commit/deb78e1e6e47675f56e8d7b3f4747093d66f1baa",
-        "default_branch_pushed_at": "2026-06-22T16:56:04Z",
-        "external_merged_pull_request": {
-          "number": 11845,
-          "url": "https://github.com/testcontainers/testcontainers-java/pull/11845",
-          "author_login": "jprinet",
-          "author_type": "User",
-          "author_association": "CONTRIBUTOR",
-          "merged_at": "2026-06-22T16:56:05Z"
-        },
-        "build_test": {
-          "instructions_url": "https://github.com/testcontainers/testcontainers-java/blob/main/docs/contributing.md",
-          "command": "./gradlew check",
-          "proprietary_environment_required": false
-        },
-        "jvm_backend_relevant": true
-      }
+      "build_command": "./gradlew test",
+      "relevance_reason": "Spring Boot 설정, Actuator, 운영과 테스트 경험을 직접 활용할 수 있습니다.",
+      "skill_fit": 30,
+      "learning_value": 10
     }
   ]
 }
