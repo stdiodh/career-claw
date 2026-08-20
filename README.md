@@ -1,211 +1,143 @@
 # Career Feed
 
-Career Feed는 매일 Programmers PS 한 문제와 공식 Spring Boot 또는 Spring AI 릴리스 한 건을 보여 주고, 별도 명령으로 실행 가능한 오픈소스 후보를 최대 두 건 찾는 개인용 한국어 백엔드 성장 루프입니다. LLM을 호출하지 않으며 모델 토큰 비용은 0입니다.
+Career Feed는 현재 GitHub 상태를 확인해 실제 첫 기여로 이어질 가능성이 높은 Spring 생태계 오픈소스 이슈를 추천하는 개인용 도구입니다.
 
-## 지금 검증된 범위
+LLM, 데이터베이스, 웹 서버를 사용하지 않습니다. 공개 GitHub REST API를 읽기만 하며 외부 저장소에 comment, assign, label, branch, fork, PR을 만들지 않습니다.
 
-- 백엔드 핵심 과제 16개: Spring MVC, 테스트 계층, JPA/N+1, PostgreSQL 인덱스, Flyway, Kotlin 경계, 설정/Secret, 관측성, Java/JVM, 인증/인가, idempotency, transaction 복구, timeout/retry, 동시성
-- 고정 profile: Temurin `21.0.11+10-LTS`, Spring Boot `4.1.0`, Kotlin `2.4.10`, Gradle `9.5.0`, PostgreSQL `17.10`
-- `lab/` 기본 테스트 25개와 PostgreSQL 전용 테스트 1개
-- 최근 60일 한국 신입·인턴·3년 이하 공고 15개 회사 표본, 통제된 경력 범위 코드, 분기 만료일, 고정 taxonomy
-- 공식 Spring Boot·Spring AI GitHub Releases API 두 개, `published_at` 기준 최근 14일 안정 릴리스 최대 1개
-- 실행당 최대 34회 공개 GitHub REST 조회, 상세 검증 최대 8개, 최종 OSS 후보 최대 2개, 외부 저장소 쓰기 0회
+## 현재 범위
 
-Daily는 `data/progress.json`에서 아직 풀지 않은 PS 한 문제를 고르고, allowlist에 고정된 두 공식 Releases API의 수집 결과만 렌더링합니다. 새소식 수집이 실패하거나 결과 계약이 맞지 않으면 해당 항목만 fail closed하고 PS는 계속 보여 줍니다. `lab/`의 과제·소스·테스트 검증 계약과 OSS 후보 수집은 Daily와 분리되어 있습니다.
+매 실행마다 Tier A 저장소를 다음 순서로 확인합니다.
+
+1. `spring-projects/spring-security`
+2. `spring-projects/spring-restdocs`
+3. `spring-projects/spring-boot`
+
+검색 결과 중 최대 5개를 issue detail, comments, timeline으로 다시 검증하고 최대 3개를 추천합니다.
+
+- Best actionable candidate
+- Safe docs/test candidate
+- Learning candidate
+
+추천할 후보가 없어도 정상입니다. API 응답이나 검증 증거가 불완전하면 전체 추천을 fail closed합니다.
 
 ## 빠른 시작
 
-필수 환경은 Python 3과 JDK 21입니다. Docker는 PostgreSQL 전용 테스트를 실행할 때만 필요합니다.
-
-저장소를 받은 뒤 별도 설치 없이 오늘의 브리핑을 확인합니다.
+Python 3만 필요합니다. 별도 패키지 설치나 GitHub token은 필요하지 않습니다.
 
 ```bash
 ./career-feed
 ```
 
-출력은 `오늘의 PS`와 `공식 Spring 새소식` 두 영역으로만 구성됩니다. 새소식은 Spring Boot 또는 Spring AI의 공식 GitHub 안정 릴리스이며, 최근 14일 안에 항목이 없으면 없다고 명시합니다.
+결과는 터미널에 출력되고, Git에서 무시되는 `reports/oss-candidates.json`과 `reports/oss-candidates.md`에도 기록됩니다.
 
-PS를 푼 뒤 브리핑에 표시된 `완료 처리` 명령을 그대로 실행합니다. 명령에는 안전한 재실행을 위해 완료 ID가 포함됩니다.
-
-```bash
-./career-feed done ps programmers-1845
-```
-
-PS 완료 상태는 `data/progress.json`에만 저장됩니다. 로컬 변경을 다음 예약 실행에 이어 쓰려면 이 파일을 commit해야 합니다. 기존 `backend_completed` 기록과 `./career-feed done backend <완료 ID>` 명령은 lab 진행 데이터의 호환성을 위해 유지되지만 Daily에는 렌더링되지 않습니다. GitHub에서는 `Mark Progress` workflow에 종류와 완료 ID를 입력합니다.
-
-전체 명령은 `./career-feed help`에서 확인합니다. 저장소 전체 Python·계약·lab 검증은 다음 한 명령으로 실행합니다.
+저장소 전체 검증은 다음 명령으로 실행합니다.
 
 ```bash
 ./career-feed check
 ```
 
-전체 기본 lab만 확인하려면 다음 명령을 실행합니다.
+## 추천 과정
+
+### Discover
+
+저장소별 실제 label을 기여 신호의 의미에 맞게 config에서 관리합니다.
+
+- `first-timers-only`, `ideal-for-contribution`
+- documentation, test, sample
+- small bug or regression
+
+정확한 label 이름은 저장소마다 다르지만 점수는 동일한 의미 범주로 계산합니다.
+
+### Filter
+
+검색 단계에서 다음 후보를 제외합니다.
+
+- closed 또는 locked issue
+- assignee가 있는 issue
+- exclusion label이 있는 issue
+- 최근 180일 안에 갱신되지 않은 issue
+- 허용한 저장소와 URL이 일치하지 않는 결과
+
+### Validate
+
+최대 5개 후보에 대해 현재 상태를 다시 확인합니다.
+
+- open 상태와 assignee
+- 연결된 PR
+- 외부 기여자의 작업 선점 댓글
+- 최근 maintainer 활동
+- 범위, 완료 조건과 재현 근거
+- 공식 CONTRIBUTING 문서와 Gradle 검증 명령
+
+comments 또는 timeline이 한 페이지를 넘거나 API 응답이 불완전하면 추천을 노출하지 않습니다.
+
+### Score
+
+후보는 100점 기준으로 평가합니다.
+
+| Category | Score |
+| --- | ---: |
+| Skill Fit | 30 |
+| Contribution Signal | 20 |
+| Scope Clarity | 15 |
+| Validation | 15 |
+| Maintainer Activity | 10 |
+| Learning Value | 10 |
+
+75점 이상이더라도 연결 PR, 작업 선점, 설계 미결정이나 불완전 증거가 있으면 추천하지 않습니다. 점수 계산 결과는 JSON의 `score_breakdown`에 남습니다.
+
+### Decide
+
+추천 결과에는 다음 정보가 포함됩니다.
+
+- repository와 issue URL
+- 현재 상태와 마지막 수정 시각
+- 기여 유형, 난이도와 점수
+- 추천 이유와 예상 범위
+- 검증 명령, 위험과 첫 행동
+- 중요한 제외 후보와 제외 이유
+
+첫 행동은 CONTRIBUTING 확인, 기준선 테스트, 재현까지입니다. Maintainer 댓글이나 코드 변경은 사용자가 현재 상태를 다시 확인한 뒤 직접 결정합니다.
+
+## 결정론적 fixture 실행
+
+네트워크 없이 수집 계약을 재현할 수 있습니다. 생성물은 임시 경로에 두어 `reports/`에 테스트 파일을 남기지 않습니다.
 
 ```bash
-./lab/gradlew -p lab test --no-daemon
+temporary="$(mktemp -d)"
+python3 scripts/collect_oss_candidates.py \
+  --fixture tests/fixtures/oss-api-responses.json \
+  --json-output "${temporary}/oss-candidates.json" \
+  --markdown-output "${temporary}/oss-candidates.md"
 ```
 
-Docker가 실행 중이면 pinned PostgreSQL integration test도 실행할 수 있습니다.
+종료 코드는 다음 의미입니다.
 
-```bash
-./lab/gradlew -p lab postgresTest --no-daemon
-```
+- `0`: 완전한 수집
+- `1`: config, fixture 또는 로컬 실행 오류
+- `2`: GitHub 수집 증거가 불완전해 추천 차단
 
-## 발송 시각 선택
+## GitHub Actions
 
-예약 발송은 현재 중지되어 있습니다. [`configs/delivery-schedule.json`](./configs/delivery-schedule.json)의 `enabled`를 `true`로 바꾸고 동기화하면 한국시간 오전 9시 예약을 재개합니다. 발송 시각은 같은 파일의 `local_time`과 `timezone`에서 수정하며, `timezone`은 `Asia/Seoul`, `America/New_York` 같은 IANA 이름을 사용합니다.
+`OSS Recommendations` workflow는 수동 실행만 지원합니다. 읽기 전용 권한으로 JSON과 Markdown을 생성해 실행 요약과 14일 artifact로 보존합니다.
 
-```bash
-python3 scripts/sync_delivery_schedule.py
-python3 scripts/sync_delivery_schedule.py --check
-```
+예약 실행, Discord 전송과 품질 ledger는 현재 범위에 없습니다. 추천 품질을 실제로 검토한 뒤 각각 별도 PR로 추가합니다.
 
-동기화하면 `Backend Daily`는 선택한 현지 시각에 매일, `OSS Weekly`은 같은 현지 시각에 월요일 실행되도록 두 workflow의 예약 블록이 함께 갱신됩니다. 브리핑 기준일도 같은 timezone을 사용합니다. GitHub Actions가 [IANA timezone 예약을 직접 지원](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onschedule)하므로 UTC 변환이나 반복 폴링은 사용하지 않습니다.
+## 계약 파일
 
-아직 OSS Shadow 증거가 없는 `LOCKED` gate라면 동기화 스크립트가 변경된 Weekly workflow의 contract hash도 함께 갱신합니다. 이미 run·후보 리뷰·승인이 존재하면 증거를 조용히 지우지 않고 시간 변경을 거부하므로, 먼저 기존 증거를 보존하고 새 관찰 기간으로 전환할지 명시적으로 결정해야 합니다.
+- [추천 기준](./OSS_RECOMMENDATION_GUIDE.md)
+- [저장소·점수 config](./configs/oss-repositories.json)
+- [검증 계획](./VALIDATION_PLAN.md)
+- [보안 정책](./SECURITY.md)
 
-예약 시각은 목표 시각이지 도착 보장 시간이 아닙니다. GitHub 공식 문서도 [예약 실행이 부하에 따라 지연되거나 누락될 수 있음](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)을 명시합니다. 정확한 시각 SLA가 필요하면 GitHub Actions 외부 scheduler가 `workflow_dispatch`를 호출해야 합니다.
+config는 검토일부터 최대 한 분기만 유효합니다. `valid_until`이 지나면 오래된 label과 기여 정책으로 추천하지 않도록 실행을 거부합니다.
 
-## 공식 Spring 새소식
+## 후속 확장 순서
 
-Daily 새소식은 Spring Boot와 Spring AI 두 저장소에 고정된 공식 GitHub Releases API 경로만 읽습니다. draft와 prerelease는 제외하고, API의 `published_at` 기준 최근 14일 안정 릴리스 중 가장 최신 한 건만 선택합니다. 편집 시각인 `updated_at`은 freshness 근거로 쓰지 않으며 allowlist 밖 링크는 노출하지 않습니다. `./career-feed today --date YYYY-MM-DD`에서 기준 구간의 릴리스가 현지 발송 시각 뒤 수정됐다면, 더 오래된 항목으로 대체하지 않고 전체를 fail closed해 당시 상태를 추측하지 않습니다. 릴리스 목록은 저장소별 100개씩 최대 10페이지를 끝까지 확인하고, 10페이지가 모두 가득 차면 불완전한 결과를 노출하지 않고 fail closed합니다. 일반 AI 동향, 블로그, 뉴스 사이트, 소셜 미디어, 투자 뉴스 수집은 범위 밖입니다.
+현재 범위가 안정된 뒤 기능을 한 PR씩 추가합니다.
 
-`./career-feed`와 `./career-feed today`는 임시 디렉터리에 수집 결과를 만든 뒤 Daily generator에 전달하고 종료할 때 임시 파일을 지웁니다. 수집 실패 시 경고를 남기되 PS 브리핑은 계속 생성합니다. 수집기만 fixture로 재현하려면 다음과 같이 실행합니다.
-
-```bash
-python3 scripts/collect_spring_updates.py \
-  --fixture tests/fixtures/spring-updates.json \
-  --output /tmp/spring-updates.json
-
-python3 scripts/generate_backend_daily.py \
-  --date 2026-08-15 \
-  --spring-updates /tmp/spring-updates.json \
-  --stdout-only
-```
-
-## 주간 OSS 후보
-
-수집 대상은 Spring Boot, Spring Framework, detekt, Micrometer, Testcontainers Java의 공개 issue입니다. 각 저장소의 상태, 최근 기본 브랜치 활동, 최근 외부 사람 병합 PR, 공식 build/test 경로를 분기 단위로 config에 고정하고 만료되면 수집을 거부합니다. Spring Security는 학습 lab에는 남아 있지만 2026-07-16 기준 최근 90일 병합 PR이 Dependabot뿐이어서 OSS 후보 수집에서는 제외했습니다.
-
-```bash
-./career-feed oss
-```
-
-수집기는 `archived:false`와 repository별 exact label 계약을 확인하고 저장소별 후보를 번갈아 최대 8개까지 detail/comments/timeline으로 다시 검증합니다. closed, singular/plural assignee 증거가 불일치하거나 assigned인 issue, 연결 PR, 선점 댓글, actor가 불완전한 maintainer activity는 fail closed합니다. module label을 build 명령에 매핑할 수 없거나 상태가 애매하면 `MANUAL_REVIEW`로 분류하고 다음 후보를 보충합니다. 서로 다른 저장소의 `READY_TO_ASK` 두 개가 채워지면 중단하며, 안전한 후보가 없으면 정상적인 empty 결과입니다. 후보 카드의 첫 30분 명령은 대상 저장소를 로컬에 clone한 뒤 그 저장소 루트에서 실행합니다.
-
-공개 API rate limit이 부족하면 결과를 `complete=false`로 기록하고 Discord 전송을 차단합니다. 수집기는 인증 헤더를 보내지 않으며 `GITHUB_TOKEN`, PAT, GitHub App key를 받지 않습니다. 현재 repository에 한정된 installation token은 여러 외부 조직의 저장소를 조회하는 신뢰 가능한 fallback이 아니기 때문입니다.
-
-`OSS Weekly`은 매주 월요일 `configs/delivery-schedule.json`의 현지 시각에 artifact-only shadow를 실행하도록 구성돼 있습니다. 기본값은 `Asia/Seoul` 09:00입니다. checkout과 metadata 생성까지 도달한 실행은 고유한 run/attempt 이름으로 provenance metadata와 실제 생성된 JSON/Markdown을 90일간 보존합니다. [tracked delivery gate](./configs/oss-delivery-gate.json)는 현재 `LOCKED`입니다. 서로 다른 연속 ISO 주차 4회와 고유 후보 10개 리뷰, 정렬·freshness 100%, hard-gate false positive 0건을 기록해 gate가 `APPROVED`되고 repository variable `OSS_DELIVERY_ENABLED=true`일 때만 실제 이슈 후보를 Discord로 전송할 수 있습니다. OSS 후보는 Daily에 섞지 않고 `./career-feed oss`에서 명시적으로 조회합니다.
-
-주차로 인정되는 것은 canonical repository의 `main`에서 GitHub-hosted Linux runner가 실행한 `schedule` 이벤트의 첫 attempt뿐입니다. 성공적으로 업로드된 실패·재실행 artifact도 운영자가 `record-run`으로 ledger에 보존하지만 승인 주차에는 넣지 않습니다. 미래 시각, 불완전 수집, non-zero exit, HTTP 403·429, warning 또는 repository fail-closed가 있는 실행도 주차로 셀 수 없습니다. 리뷰 후보는 hash로 묶인 source artifact의 `READY_TO_ASK` 목록에 실제로 있어야 하며, 변수만 먼저 켜도 전송되지 않습니다.
-
-### Shadow 증거 누적
-
-예약 실행 뒤 GitHub 화면 또는 `gh`로 run의 event, ref, SHA, 모든 attempt와 conclusion을 먼저 확인합니다. recorder는 중간 attempt 누락과 역순은 거부하지만 아직 ledger에 없는 마지막 재실행을 GitHub API 없이 자동 발견하지는 못하므로, run history와 대조하는 절차가 provenance sidecar의 운영 신뢰 경계입니다. 수동 `workflow_dispatch` artifact는 smoke 용도이며 gate에 기록할 수 없습니다.
-
-```bash
-gh run view RUN_ID \
-  --attempt ATTEMPT \
-  --repo stdiodh/career-feed \
-  --json attempt,conclusion,event,headBranch,headSha,status,url,workflowName
-gh run download RUN_ID \
-  --repo stdiodh/career-feed \
-  --name oss-weekly-RUN_ID-ATTEMPT \
-  --dir /tmp/career-feed-oss-RUN_ID-ATTEMPT
-```
-
-JSON의 정렬과 각 후보의 `checked_at`/현재 GitHub 상태를 직접 대조한 뒤에만 attestation을 기록합니다.
-
-```bash
-python3 scripts/record_oss_shadow.py record-run \
-  /tmp/career-feed-oss-RUN_ID-ATTEMPT/oss-run-metadata.json \
-  --artifact /tmp/career-feed-oss-RUN_ID-ATTEMPT/oss-candidates.json \
-  --markdown /tmp/career-feed-oss-RUN_ID-ATTEMPT/oss-candidates.md \
-  --sort-accurate yes \
-  --freshness-accurate yes
-```
-
-exit `2`의 incomplete 실행은 JSON/Markdown을 함께 넘기고 두 attestation을 `no`로 기록합니다. artifact 생성 전 exit `1`이면 metadata만 넘기며, JSON 또는 Markdown 한쪽만 남았다면 존재하는 파일의 flag만 추가합니다.
-
-```bash
-python3 scripts/record_oss_shadow.py record-run \
-  /tmp/career-feed-oss-RUN_ID-ATTEMPT/oss-run-metadata.json \
-  --sort-accurate no \
-  --freshness-accurate no
-
-python3 scripts/record_oss_shadow.py record-run \
-  /tmp/career-feed-oss-RUN_ID-ATTEMPT/oss-run-metadata.json \
-  --artifact /tmp/career-feed-oss-RUN_ID-ATTEMPT/oss-candidates.json \
-  --markdown /tmp/career-feed-oss-RUN_ID-ATTEMPT/oss-candidates.md \
-  --sort-accurate no \
-  --freshness-accurate no
-```
-
-실제 `READY_TO_ASK` 후보마다 관련성, 범위, hard-gate 오추천 여부와 짧은 근거를 남깁니다. 오추천이면 `--hard-gate-false-positive yes`와 함께 recorder가 허용하는 사유를 반드시 선택합니다.
-
-```bash
-python3 scripts/record_oss_shadow.py record-review \
-  'spring-projects/spring-boot#12345' \
-  --source-run-id github-RUN_ID-attempt-1 \
-  --reviewer backend-owner \
-  --notes '재현 경로와 module test 범위를 issue에서 확인함' \
-  --relevant yes \
-  --scope-clear yes \
-  --hard-gate-false-positive no
-
-python3 scripts/check_oss_delivery_gate.py
-```
-
-각 주의 gate diff를 검토한 뒤 `configs/oss-delivery-gate.json`만 commit/push합니다. 다운로드한 `reports/`나 `/tmp` artifact는 commit하지 않습니다. 4주/10개 조건이 실제로 채워진 뒤에만 `approve`를 실행합니다. 관련 workflow, collector, recorder, gate checker 또는 OSS config가 바뀌면 Shadow contract hash가 달라져 기존 승인이 자동으로 무효화되므로 새 관찰 기간을 시작해야 합니다.
-
-```bash
-python3 scripts/record_oss_shadow.py approve
-```
-
-## GitHub Actions와 Discord
-
-### 로컬 구현 기준
-
-현재 로컬 작업 트리에는 다음 네 workflow와 공식 Spring Releases API 2개, 5개 OSS 저장소·실행당 최대 34회 조회 계약이 구현돼 있습니다. OSS gate는 `LOCKED`이므로 artifact만 생성하고 Discord로 전송하지 않습니다.
-
-- `Backend Daily`: 기본 `Asia/Seoul` 09:00, 오늘의 PS·공식 Spring 새소식 생성
-- `OSS Weekly`: 기본 매주 월요일 `Asia/Seoul` 09:00, read-only 실제 후보 artifact 생성
-- `Mark Progress`: 지정한 완료 ID를 `data/progress.json`에 기록
-- `Pull Request Checks`: Python, contract, Gradle, PostgreSQL, 결정론적 생성 검증
-
-repository secret은 `DISCORD_WEBHOOK_URL`을 사용합니다. 기존 저장소의 `DISCORD_WEBHOOK_KR_TECH_DAILY`는 Secret 값을 다시 등록할 때까지 migration fallback으로만 읽으며 둘 중 하나만 있으면 됩니다. 수동 실행은 기본 `dry_run=true`라 전송하지 않으며, 생성된 브리핑은 실행 요약에서 바로 확인할 수 있습니다. OSS Discord는 위 shadow gate와 `OSS_DELIVERY_ENABLED`를 추가로 통과해야 합니다.
-
-### 원격 배포 확인
-
-실제 원격 동작 기준은 기본 브랜치에 병합된 commit입니다. 병합 뒤 Actions 목록이 위 네 workflow만 포함하는지 확인하고, `Backend Daily`는 `dry_run=true`, `OSS Weekly`은 artifact-only로 먼저 실행합니다. 배포 전 원격 상태와 실행 시각·SHA는 [검증 증거](./audits/verification-evidence-2026-07-16.md#의도적으로-남겨-둔-승격-gate)에 역사 기록으로 남깁니다.
-
-## 문서 기준과 검증 근거
-
-제품 설명과 운영 안내는 이 한국어 README를 단일 기준으로 관리합니다. 영어는 코드 식별자, 명령, 외부 프로젝트·제품의 공식 명칭에만 유지하며, 삭제한 `docs/en/`·`docs/kr/` 번역 복제 트리를 다시 만들지 않습니다. 상세 합격 계약은 [검증 계획](./VALIDATION_PLAN.md), 실행 결과는 [검증 증거](./audits/verification-evidence-2026-07-16.md)에서만 관리합니다.
-
-- 백엔드 과제: [`configs/backend-practice.json`](./configs/backend-practice.json)
-- 과제/소스/lab 계약: [`configs/curriculum-matrix.json`](./configs/curriculum-matrix.json)
-- 호환 버전과 checksum: [`configs/verification-profile.json`](./configs/verification-profile.json)
-- 채용 표본: [`audits/job-market-2026q3.json`](./audits/job-market-2026q3.json)
-- 공식 Spring release source: [`configs/spring-updates.json`](./configs/spring-updates.json)
-- OSS allowlist: [`configs/oss-repositories.json`](./configs/oss-repositories.json)
-- OSS 4주/10개 승격 gate: [`configs/oss-delivery-gate.json`](./configs/oss-delivery-gate.json)
-- 사용자 발송 시각: [`configs/delivery-schedule.json`](./configs/delivery-schedule.json)
-- 전체 기준과 phase 기록: [`VALIDATION_PLAN.md`](./VALIDATION_PLAN.md)
-
-`reports/`는 생성물이라 커밋하지 않습니다. Secret, issue body, 댓글 전문도 저장하지 않습니다.
-
-## 구조
-
-```text
-career-feed                 오늘 보기, OSS 후보, 완료 처리, 전체 검증 진입점
-.github/workflows/          일일·주간·진행·PR 검증
-audits/                     채용 표본과 검증 증거
-configs/                    커리큘럼, profile, Spring/OSS 계약
-data/                       진행 상태와 검증 manifest
-lab/                        Kotlin/Java/Spring 실행 실습
-scripts/                    생성, 수집, 전송, 검증
-tests/                      Python contract/fixture 테스트
-```
-
-라이선스는 [MIT License](./LICENSE)를 따릅니다.
+1. Tier A에 후보가 없을 때만 Tier B 조회
+2. 예약 artifact 생성
+3. opt-in Discord 전송
+4. 추천에서 PR merge까지의 품질 ledger
+5. 주간 기여 회고
