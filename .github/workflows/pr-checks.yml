@@ -17,7 +17,7 @@ jobs:
   validate:
     name: Validate repository
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
 
     steps:
       - name: Checkout repository
@@ -30,12 +30,6 @@ jobs:
         with:
           python-version: "3.x"
 
-      - name: Set up exact Java verification runtime
-        uses: actions/setup-java@0f481fcb613427c0f801b606911222b5b6f3083a # v5
-        with:
-          distribution: temurin
-          java-version: "21.0.11+10"
-
       - name: Validate GitHub Actions workflows
         run: >-
           docker run --rm
@@ -45,8 +39,6 @@ jobs:
           -color
 
       - name: Run validation
-        env:
-          RUN_POSTGRES_TESTS: "1"
         run: ./scripts/validate.sh
 
       - name: Check committed whitespace

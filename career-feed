@@ -6,113 +6,27 @@ CAREER_FEED_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 show_help() {
   cat <<'EOF'
-Career Feed의 일상 명령을 한 곳에서 실행합니다.
+현재 GitHub 상태를 확인해 실행 가능한 Spring 생태계 OSS 후보를 추천합니다.
 
 사용법:
-  ./career-feed                         오늘의 브리핑 보기
-  ./career-feed today [--date YYYY-MM-DD]
-                                        오늘 또는 지정일 브리핑 보기
-  ./career-feed done <backend|ps> <완료 ID>
-                                        지정 항목 완료
-  ./career-feed oss                     실행 가능한 OSS 후보 보기
-  ./career-feed check                   저장소 전체 검증
-  ./career-feed help                    도움말 보기
+  ./career-feed          공개 GitHub API로 후보 확인
+  ./career-feed check    저장소 검증
+  ./career-feed help     도움말 보기
 
-예시:
-  ./career-feed done backend spring-mvc-validation-problem-detail
-  ./career-feed done ps programmers-1845
-  ./career-feed today --date 2026-08-15
+이 도구는 issue를 읽기만 하며 comment, assign, branch, fork, PR을 만들지 않습니다.
 EOF
 }
 
-run_today() {
-  local temporary spring_updates generator_status
-  local -a collector_mode collector_arguments
-
-  temporary="$(mktemp -d)"
-  spring_updates="${temporary}/spring-updates.json"
-  trap 'rm -rf -- "${temporary}"' EXIT
-
-  if [[ -n "${CAREER_FEED_SPRING_FIXTURE:-}" ]]; then
-    collector_mode=(--fixture "${CAREER_FEED_SPRING_FIXTURE}")
-  else
-    collector_mode=(--live-dry-run)
-  fi
-
-  collector_arguments=("${collector_mode[@]}")
-  if (($# == 1)) && [[ "$1" == --date=* ]]; then
-    collector_arguments+=(--as-of "${1#--date=}")
-  elif (($# == 2)) && [[ "$1" == "--date" ]]; then
-    collector_arguments+=(--as-of "$2")
-  fi
-  collector_arguments+=(--output "${spring_updates}")
-
-  if ! python3 "${CAREER_FEED_ROOT}/scripts/collect_spring_updates.py" \
-    "${collector_arguments[@]}"; then
-    echo "공식 Spring 새소식 수집에 실패했습니다. PS 브리핑은 계속 생성합니다." >&2
-    spring_updates="${temporary}/missing-spring-updates.json"
-  fi
-
-  if python3 "${CAREER_FEED_ROOT}/scripts/generate_backend_daily.py" \
-    --stdout-only \
-    --spring-updates "${spring_updates}" \
-    "$@"; then
-    generator_status=0
-  else
-    generator_status=$?
-  fi
-
-  rm -rf -- "${temporary}"
-  trap - EXIT
-  return "${generator_status}"
-}
-
 if (($# == 0)); then
-  run_today
-  exit $?
+  exec python3 "${CAREER_FEED_ROOT}/scripts/collect_oss_candidates.py" \
+    --live-dry-run \
+    --stdout
 fi
 
 command_name="$1"
 shift
 
 case "${command_name}" in
-  today)
-    if (($# == 0)); then
-      run_today
-      exit $?
-    fi
-    if (($# == 1)) && [[ "$1" == "help" || "$1" == "-h" || "$1" == "--help" ]]; then
-      show_help
-      exit 0
-    fi
-    if (($# == 1)) && [[ "$1" == --date=* ]]; then
-      run_today "$1"
-      exit $?
-    fi
-    if (($# == 2)) && [[ "$1" == "--date" ]]; then
-      run_today "$@"
-      exit $?
-    fi
-    echo "today 명령은 --date YYYY-MM-DD 옵션만 받습니다." >&2
-    exit 2
-    ;;
-  done)
-    if (($# < 2)); then
-      echo "완료할 종류와 브리핑에 표시된 완료 ID를 입력하세요." >&2
-      show_help >&2
-      exit 2
-    fi
-    exec python3 "${CAREER_FEED_ROOT}/scripts/mark_progress.py" "$@"
-    ;;
-  oss)
-    if (($# != 0)); then
-      echo "oss 명령은 추가 옵션을 받지 않습니다." >&2
-      exit 2
-    fi
-    exec python3 "${CAREER_FEED_ROOT}/scripts/collect_oss_candidates.py" \
-      --live-dry-run \
-      --stdout
-    ;;
   check)
     if (($# != 0)); then
       echo "check 명령은 추가 옵션을 받지 않습니다." >&2
@@ -121,6 +35,10 @@ case "${command_name}" in
     exec "${CAREER_FEED_ROOT}/scripts/validate.sh"
     ;;
   help | -h | --help)
+    if (($# != 0)); then
+      echo "help 명령은 추가 옵션을 받지 않습니다." >&2
+      exit 2
+    fi
     show_help
     ;;
   *)

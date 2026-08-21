@@ -1,11 +1,15 @@
 # Security Policy
 
-보안 문제는 공개 Issue 대신 GitHub의 비공개 Security Advisory로 제보해 주세요.
+보안 문제는 공개 issue 대신 GitHub의 비공개 Security Advisory로 제보해 주세요.
 
-Career Feed의 운영 Secret 값은 선택적 Discord Webhook 하나뿐입니다. 표준 repository secret 이름은 `DISCORD_WEBHOOK_URL`이며, 기존 저장소의 `DISCORD_WEBHOOK_KR_TECH_DAILY`는 같은 값의 migration fallback으로만 지원합니다. 둘 다 설정하지 않습니다.
+Career Feed는 Secret이나 credential을 요구하지 않습니다. 수집기는 공개 GitHub REST API에 인증 헤더 없이 GET 요청만 보내며 외부 저장소를 수정하지 않습니다.
 
-OSS 수집기는 인증 헤더 없이 공개 issue를 GET으로만 조회합니다. `GITHUB_TOKEN`, 개인 PAT, GitHub App private key와 installation token은 지원하지 않습니다. issue body와 댓글 전문, credential, token은 artifact에 저장하지 않습니다.
+다음 정보는 JSON과 Markdown artifact에 저장하지 않습니다.
 
-실제 Webhook URL과 개인 식별 정보가 Issue, 로그, 브리핑, config에 포함되지 않도록 확인해 주세요.
+- issue body와 댓글 전문
+- GitHub token, PAT 또는 App key
+- 개인 credential과 환경 변수 값
 
-Webhook이 노출되었다면 즉시 Discord에서 기존 Webhook을 폐기하고 새 URL로 교체하세요. 저장소 이력에서 문자열만 지우는 것으로는 폐기되지 않습니다.
+artifact에는 검증에 필요한 issue 식별자, URL, 시각, 계산된 근거와 제외 이유만 남깁니다. 생성되는 `reports/`는 Git에서 무시되며 공유하기 전에 개인 식별 정보가 없는지 확인해야 합니다.
+
+수집기가 예상하지 않은 저장소 URL, 불완전 API 응답, pagination 또는 rate-limit 증거를 만나면 추천을 차단합니다.
