@@ -154,6 +154,68 @@ def format_timestamp(value: datetime | None) -> str | None:
     return value.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def validate_repository_config(repository: dict[str, Any]) -> None:
+    expected_keys = {
+        "repository",
+        "tier",
+        "discovery_labels",
+        "strong_signal_labels",
+        "exclude_labels",
+        "contribution_type_by_label",
+        "default_contribution_type",
+        "contributing_url",
+        "build_command",
+        "relevance_reason",
+        "skill_fit",
+        "learning_value",
+    }
+    name = require_string(repository.get("repository"), "repository")
+    if set(repository) != expected_keys or repository.get("tier") != "A":
+        raise ConfigurationError(f"{name}: repository contract is incomplete")
+    discovery = require_string_list(
+        repository.get("discovery_labels"), f"{name}.discovery_labels"
+    )
+    strong = require_string_list(
+        repository.get("strong_signal_labels"), f"{name}.strong_signal_labels"
+    )
+    excluded = require_string_list(
+        repository.get("exclude_labels"), f"{name}.exclude_labels"
+    )
+    if not set(strong) <= set(discovery):
+        raise ConfigurationError(f"{name}: strong signals must be discovery labels")
+    if set(discovery) & set(excluded):
+        raise ConfigurationError(f"{name}: discovery and exclusion labels overlap")
+    mapping = repository.get("contribution_type_by_label")
+    if not isinstance(mapping, dict) or not mapping:
+        raise ConfigurationError(f"{name}: contribution type mapping is required")
+    if not all(
+        isinstance(label, str)
+        and label
+        and contribution_type in CONTRIBUTION_TYPES
+        for label, contribution_type in mapping.items()
+    ):
+        raise ConfigurationError(f"{name}: contribution type mapping is invalid")
+    if repository.get("default_contribution_type") not in CONTRIBUTION_TYPES:
+        raise ConfigurationError(f"{name}: default contribution type is invalid")
+    contributing_url = require_string(
+        repository.get("contributing_url"), f"{name}.contributing_url"
+    )
+    if not contributing_url.startswith(f"https://github.com/{name}/"):
+        raise ConfigurationError(f"{name}: contributing URL is invalid")
+    build_command = require_string(
+        repository.get("build_command"), f"{name}.build_command"
+    )
+    if BUILD_COMMAND_PATTERN.fullmatch(build_command) is None:
+        raise ConfigurationError(f"{name}: build command is unsafe")
+    relevance = require_string(
+        repository.get("relevance_reason"), f"{name}.relevance_reason"
+    )
+    if "\n" in relevance:
+        raise ConfigurationError(f"{name}: relevance reason must be one line")
+    if repository.get("skill_fit") != 30 or repository.get("learning_value") != 10:
+        raise ConfigurationError(f"{name}: profile score does not match Tier A")
+
+
 def load_config(path: Path, as_of: date | None = None) -> dict[str, Any]:
     config = read_object(path)
     if config.get("schema_version") != 4:
@@ -213,66 +275,8 @@ def load_config(path: Path, as_of: date | None = None) -> dict[str, Any]:
     )
     if names != TIER_A_REPOSITORIES:
         raise ConfigurationError("repositories must exactly match Tier A order")
-    expected_keys = {
-        "repository",
-        "tier",
-        "discovery_labels",
-        "strong_signal_labels",
-        "exclude_labels",
-        "contribution_type_by_label",
-        "default_contribution_type",
-        "contributing_url",
-        "build_command",
-        "relevance_reason",
-        "skill_fit",
-        "learning_value",
-    }
     for repository in repositories:
-        name = require_string(repository.get("repository"), "repository")
-        if set(repository) != expected_keys or repository.get("tier") != "A":
-            raise ConfigurationError(f"{name}: repository contract is incomplete")
-        discovery = require_string_list(
-            repository.get("discovery_labels"), f"{name}.discovery_labels"
-        )
-        strong = require_string_list(
-            repository.get("strong_signal_labels"), f"{name}.strong_signal_labels"
-        )
-        excluded = require_string_list(
-            repository.get("exclude_labels"), f"{name}.exclude_labels"
-        )
-        if not set(strong) <= set(discovery):
-            raise ConfigurationError(f"{name}: strong signals must be discovery labels")
-        if set(discovery) & set(excluded):
-            raise ConfigurationError(f"{name}: discovery and exclusion labels overlap")
-        mapping = repository.get("contribution_type_by_label")
-        if not isinstance(mapping, dict) or not mapping:
-            raise ConfigurationError(f"{name}: contribution type mapping is required")
-        if not all(
-            isinstance(label, str)
-            and label
-            and contribution_type in CONTRIBUTION_TYPES
-            for label, contribution_type in mapping.items()
-        ):
-            raise ConfigurationError(f"{name}: contribution type mapping is invalid")
-        if repository.get("default_contribution_type") not in CONTRIBUTION_TYPES:
-            raise ConfigurationError(f"{name}: default contribution type is invalid")
-        contributing_url = require_string(
-            repository.get("contributing_url"), f"{name}.contributing_url"
-        )
-        if not contributing_url.startswith(f"https://github.com/{name}/"):
-            raise ConfigurationError(f"{name}: contributing URL is invalid")
-        build_command = require_string(
-            repository.get("build_command"), f"{name}.build_command"
-        )
-        if BUILD_COMMAND_PATTERN.fullmatch(build_command) is None:
-            raise ConfigurationError(f"{name}: build command is unsafe")
-        relevance = require_string(
-            repository.get("relevance_reason"), f"{name}.relevance_reason"
-        )
-        if "\n" in relevance:
-            raise ConfigurationError(f"{name}: relevance reason must be one line")
-        if repository.get("skill_fit") != 30 or repository.get("learning_value") != 10:
-            raise ConfigurationError(f"{name}: profile score does not match Tier A")
+        validate_repository_config(repository)
     return config
 
 

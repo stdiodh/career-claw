@@ -254,6 +254,39 @@ class OssCollectorTests(unittest.TestCase):
                 with self.assertRaises(collector.ConfigurationError):
                     collector.load_config(path, NOW.date())
 
+    def test_repository_config_validation_preserves_error_contracts(self) -> None:
+        cases = {
+            "missing_key": (
+                lambda profile: profile.pop("build_command"),
+                "repository contract is incomplete",
+            ),
+            "strong_signal_without_discovery": (
+                lambda profile: profile["strong_signal_labels"].append("help wanted"),
+                "strong signals must be discovery labels",
+            ),
+            "overlapping_labels": (
+                lambda profile: profile["exclude_labels"].append(
+                    profile["discovery_labels"][0]
+                ),
+                "discovery and exclusion labels overlap",
+            ),
+            "invalid_contribution_type": (
+                lambda profile: profile["contribution_type_by_label"].update(
+                    {"type: feature": "feature"}
+                ),
+                "contribution type mapping is invalid",
+            ),
+        }
+        for name, (mutate, message) in cases.items():
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as directory:
+                config = copy.deepcopy(self.config)
+                mutate(config["repositories"][0])
+                path = Path(directory) / "config.json"
+                path.write_text(json.dumps(config), encoding="utf-8")
+
+                with self.assertRaisesRegex(collector.ConfigurationError, message):
+                    collector.load_config(path, NOW.date())
+
     def test_live_transport_never_sends_authorization(self) -> None:
         captured: list[object] = []
 
