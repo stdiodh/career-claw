@@ -763,6 +763,23 @@ def select_recommendations(candidates: list[dict[str, Any]], limit: int) -> list
     return selected
 
 
+def build_search_query(profile: dict[str, Any], cutoff: datetime) -> str:
+    label_expression = ",".join(
+        f'"{label}"' for label in profile["discovery_labels"]
+    )
+    return " ".join(
+        (
+            f"repo:{profile['repository']}",
+            "is:issue",
+            "is:open",
+            "no:assignee",
+            "-linked:pr",
+            f"updated:>={cutoff.date().isoformat()}",
+            f"label:{label_expression}",
+        )
+    )
+
+
 def collect_candidates(
     config: dict[str, Any],
     client: GitHubClient,
@@ -785,20 +802,7 @@ def collect_candidates(
             reason = validate_repository(profile, repo_response.body)
             if reason:
                 raise ApiError(reason)
-            label_expression = ",".join(
-                f'"{label}"' for label in profile["discovery_labels"]
-            )
-            query = " ".join(
-                (
-                    f"repo:{repository}",
-                    "is:issue",
-                    "is:open",
-                    "no:assignee",
-                    "-linked:pr",
-                    f"updated:>={cutoff.date().isoformat()}",
-                    f"label:{label_expression}",
-                )
-            )
+            query = build_search_query(profile, cutoff)
             search_response = client.get(
                 "/search/issues",
                 {
