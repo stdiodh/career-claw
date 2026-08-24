@@ -763,6 +763,23 @@ def select_recommendations(candidates: list[dict[str, Any]], limit: int) -> list
     return selected
 
 
+def build_search_query(profile: dict[str, Any], cutoff: datetime) -> str:
+    label_expression = ",".join(
+        f'"{label}"' for label in profile["discovery_labels"]
+    )
+    return " ".join(
+        (
+            f"repo:{profile['repository']}",
+            "is:issue",
+            "is:open",
+            "no:assignee",
+            "-linked:pr",
+            f"updated:>={cutoff.date().isoformat()}",
+            f"label:{label_expression}",
+        )
+    )
+
+
 def collect_candidates(
     config: dict[str, Any],
     client: GitHubClient,
@@ -785,20 +802,7 @@ def collect_candidates(
             reason = validate_repository(profile, repo_response.body)
             if reason:
                 raise ApiError(reason)
-            label_expression = ",".join(
-                f'"{label}"' for label in profile["discovery_labels"]
-            )
-            query = " ".join(
-                (
-                    f"repo:{repository}",
-                    "is:issue",
-                    "is:open",
-                    "no:assignee",
-                    "-linked:pr",
-                    f"updated:>={cutoff.date().isoformat()}",
-                    f"label:{label_expression}",
-                )
-            )
+            query = build_search_query(profile, cutoff)
             search_response = client.get(
                 "/search/issues",
                 {
@@ -914,6 +918,42 @@ def escape_markdown(value: object) -> str:
     return MARKDOWN_ESCAPE_PATTERN.sub(r"\\\1", str(value))
 
 
+def render_recommendation(candidate: dict[str, Any]) -> list[str]:
+    return [
+        f"## Recommendation {candidate['rank']}",
+        "",
+        f"- Category: {candidate['category']}",
+        f"- Repository: `{candidate['repository']}`",
+        f"- Issue: [{escape_markdown(candidate['title'])}]({candidate['url']})",
+        f"- Current Status: {candidate['current_status']}",
+        f"- Type: {candidate['contribution_type']}",
+        f"- Score: {candidate['score']}/100",
+        f"- Last Updated: {candidate['last_updated']}",
+        f"- Difficulty: {candidate['difficulty']}",
+        "",
+        "### Why",
+        "",
+        candidate["why"],
+        "",
+        "### Scope",
+        "",
+        candidate["scope"],
+        "",
+        "### Validation",
+        "",
+        f"`{candidate['validation']}`",
+        "",
+        "### Risk",
+        "",
+        *[f"- {risk}" for risk in candidate["risks"]],
+        "",
+        "### First Action",
+        "",
+        candidate["first_action"],
+        "",
+    ]
+
+
 def render_markdown(result: dict[str, Any]) -> str:
     recommendations = result["recommendations"]
     checked = ", ".join(item["repository"] for item in result["repositories"])
@@ -936,41 +976,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "",
     ]
     for candidate in recommendations:
-        lines.extend(
-            [
-                f"## Recommendation {candidate['rank']}",
-                "",
-                f"- Category: {candidate['category']}",
-                f"- Repository: `{candidate['repository']}`",
-                f"- Issue: [{escape_markdown(candidate['title'])}]({candidate['url']})",
-                f"- Current Status: {candidate['current_status']}",
-                f"- Type: {candidate['contribution_type']}",
-                f"- Score: {candidate['score']}/100",
-                f"- Last Updated: {candidate['last_updated']}",
-                f"- Difficulty: {candidate['difficulty']}",
-                "",
-                "### Why",
-                "",
-                candidate["why"],
-                "",
-                "### Scope",
-                "",
-                candidate["scope"],
-                "",
-                "### Validation",
-                "",
-                f"`{candidate['validation']}`",
-                "",
-                "### Risk",
-                "",
-                *[f"- {risk}" for risk in candidate["risks"]],
-                "",
-                "### First Action",
-                "",
-                candidate["first_action"],
-                "",
-            ]
-        )
+        lines.extend(render_recommendation(candidate))
     lines.extend(["## Excluded", "", "| Candidate | Reason |", "| --- | --- |"])
     excluded = [
         candidate for candidate in result["shortlist"] if candidate["decision"] != "RECOMMENDED"

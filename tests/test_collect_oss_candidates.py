@@ -183,6 +183,22 @@ class OssCollectorTests(unittest.TestCase):
             result["precheck_exclusions"],
         )
 
+    def test_search_query_preserves_the_read_only_candidate_filters(self) -> None:
+        profile = self.config["repositories"][0]
+
+        query = collector.build_search_query(
+            profile,
+            NOW - timedelta(days=self.config["policy"]["lookback_days"]),
+        )
+
+        self.assertEqual(
+            query,
+            'repo:spring-projects/spring-security is:issue is:open no:assignee '
+            '-linked:pr updated:>=2026-02-21 '
+            'label:"status: first-timers-only","status: ideal-for-contribution",'
+            '"theme: documentation"',
+        )
+
     def test_incomplete_api_evidence_blocks_all_recommendations(self) -> None:
         fixture = copy.deepcopy(self.fixture)
         del fixture["responses"]["timeline:spring-projects/spring-boot#301"]
@@ -313,8 +329,12 @@ class OssCollectorTests(unittest.TestCase):
         result, _ = self.run_fixture(fixture)
 
         markdown = collector.render_markdown(result)
+        recommendation = "\n".join(
+            collector.render_recommendation(result["recommendations"][0])
+        )
 
         self.assertIn("# Daily OSS Contribution", markdown)
+        self.assertIn(recommendation, markdown)
         self.assertIn("## Recommendation 1", markdown)
         self.assertIn("## Excluded", markdown)
         self.assertIn("## Today", markdown)
