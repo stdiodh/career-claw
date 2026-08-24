@@ -329,8 +329,12 @@ class OssCollectorTests(unittest.TestCase):
         result, _ = self.run_fixture(fixture)
 
         markdown = collector.render_markdown(result)
+        recommendation = "\n".join(
+            collector.render_recommendation(result["recommendations"][0])
+        )
 
         self.assertIn("# Daily OSS Contribution", markdown)
+        self.assertIn(recommendation, markdown)
         self.assertIn("## Recommendation 1", markdown)
         self.assertIn("## Excluded", markdown)
         self.assertIn("## Today", markdown)
